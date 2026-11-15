@@ -139,7 +139,7 @@ public class ListViewTests
     /// <summary>How far a part's own transform moves it across: its translation.</summary>
     private static double ShiftOf(Control part) => part.RenderTransform?.Value.M31 ?? 0;
 
-    private static bool IsOn(ListBoxItem item) => item.GetValue(PhoneListMultiSelect.IsOnProperty);
+    private static bool IsOn(ListBoxItem item) => PhoneListMultiSelect.GetIsOn(item);
 
     /// <summary>
     /// Runs Avalonia's frames until the check mode's slide has come to rest on every item given: its transitions move on

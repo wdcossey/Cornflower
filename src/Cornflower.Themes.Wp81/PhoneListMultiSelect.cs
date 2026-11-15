@@ -27,6 +27,4 @@ internal static class PhoneListMultiSelect
         AvaloniaProperty.RegisterAttached<Control, bool>("IsOn", typeof(PhoneListMultiSelect), inherits: true);
 
     public static bool GetIsOn(Control control) => control.GetValue(IsOnProperty);
-
-    public static void SetIsOn(Control control, bool value) => control.SetValue(IsOnProperty, value);
 }
