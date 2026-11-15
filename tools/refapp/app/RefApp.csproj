@@ -50,6 +50,7 @@
     <Compile Include="Probe.cs" />
     <Compile Include="Probe.Motion.cs" />
     <Compile Include="Probe.Scroll.cs" />
+    <Compile Include="Probe.Shell.cs" />
     <Compile Include="ProbePage.xaml.cs">
       <DependentUpon>ProbePage.xaml</DependentUpon>
     </Compile>

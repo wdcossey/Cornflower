@@ -34,7 +34,7 @@
   -Probe <name> runs one of the app's probes (app\Probe.cs) instead of the suite: the app lays a control out and
   writes the touches it wants, vm\touch.ps1 plays them on the emulator's display with the mouse, and the app's
   log of what the control did comes back as probe.txt, beside touch.log. Probes: toggleswitch, toggletap,
-  togglehalf, tilt, tiltedge, tiltgrid, motion, pages, projections, ring, ringsize, scroll, scrollend, listpress.
+  togglehalf, tilt, tiltedge, tiltgrid, motion, pages, projections, ring, ringsize, scroll, scrollend, listpress, turnstile, pivot, hub.
   -Record (with -Probe) records the emulator's display with ffmpeg gdigrab from just before the touches until the
   probe is done, lossless, and brings back record.mkv and frames.csv, each frame's time in seconds. Probes motion,
   pages, projections and ring start their sequence on one tap, so the recording and the log start together;
@@ -47,8 +47,8 @@
   emulator's zoom at 100%, so the window is 1080 x 1920, one pixel per phone pixel.
   -Native reads, instead of the suite, what the phone computes in native code, through its API: the display's
   scale and DPI, the system tray's occluded rectangle and opacity and the view's visible bounds (tray shown and
-  hidden, portrait and both landscapes), and the TemplateSettings of ComboBox, ProgressBar, ProgressRing and
-  ToggleSwitch (app\Suite.Native.cs). They come back as native.json. It captures nothing.
+  hidden, portrait and both landscapes), the TemplateSettings of ComboBox, ProgressBar, ProgressRing and
+  ToggleSwitch, and the page's app bar's size and the visible bounds with it (app\Suite.Native.cs). They come back as native.json. It captures nothing.
 
   Device indexes come from AppDeployCmd /EnumerateDevices: 7 to 13 are the 8.1 Update 1 profiles,
   10 is 720p 4.7", 13 is qHD 5". See wp81-emulator-profiles.md in the reference folder.

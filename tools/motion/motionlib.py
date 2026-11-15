@@ -389,6 +389,15 @@ def solve_angle(m, xa, za, d, cx, sign=0):
     return th, cost(th), sum(1 for b in m if b is not None)
 
 
+def torn_frame(m, xa, za, d, cx, sign=0, limit=2.0):
+    """Whether one frame's outline m fits no rotation about the axis within `limit` px rms: a frame the recording grabbed
+    while the emulator drew it shows two angles at once (a 2026-11-15 turnstile run had one). Returns (torn, theta,
+    rms px); a clipped outline (fewer than 3 edges) is never called torn."""
+    th, e, k = solve_angle(m, xa, za, d, cx, sign)
+    rms = math.sqrt(e / k) if k else 0.0
+    return k >= 3 and rms > limit, th, rms
+
+
 def axis_rms(segs, xa, za, d, cx):
     """rms px over every unclipped frame of segs, each frame at its own best angle about the axis (xa, za)."""
     se, n = 0.0, 0
@@ -487,6 +496,15 @@ def distinct(vals, decimals=1, tol=0.25, min_abs=0.0):
             continue
         out.append(v)
     return out
+
+
+def off_ladder(vals, tol=0.03):
+    """The distinct values that sit between two others a step apart (their ratio within tol of the median step), so
+    are no step of their own: a recorded frame caught between two steps, or drawn while the screen was grabbed."""
+    if len(vals) < 4:
+        return []
+    r0 = median([vals[i + 1] / vals[i] for i in range(len(vals) - 1)])
+    return [vals[i] for i in range(1, len(vals) - 1) if abs(vals[i + 1] / vals[i - 1] - r0) < tol]
 
 
 def tick_numbers(vals):

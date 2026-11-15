@@ -12,13 +12,20 @@ projections probe (1000 view px, vanishing point at the element's centre, 225, 4
 Prints:
 - the axis that fits every unclipped frame of the forward turns best (skipped with --no-search; it takes minutes),
   and the rms at the published axis, x -44 z -99 (or --axis);
+- how many frames it leaves out: those no rotation about the published axis fits within 2 px (torn: the recording
+  grabbed the screen while the emulator drew it). The axis search, its rms and the angles below are without them;
 - each forward turn's first angle;
 - the distinct angles of the forward and back turns (|angle| >= 0.9, to 0.1, within 0.25 taken as one), the tick of
   the 64 Hz clock each is on, and fits to them: a pure exponential and an exponential ease-out ending at a tick
   (the ratio a tick, the time constant, the end and the exponent), and ExponentialEase curves with a free start
-  value over a duration.
+  value over a duration, and the ExponentialEase 6 starting on tick 0. A distinct angle between two others a step apart (a frame caught between two steps) is left
+  out of the fits, and said so;
+- when each turn's first step (tick 0) reached the screen after its step in the log, forward and back, and the
+  difference: a step drawn before the first one shown would put the forward turns' a tick later.
 """
+import math
 import os
+import statistics
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -40,8 +47,35 @@ turns = [(t, d) for t, d in ml.steps(run) if d.split()[1] in ('default', 'Common
 lag, pairs, lags = ml.match_steps([s[0][1] for s in segs], [t / 1000 for t, d in turns], what='turnstile turns')
 forward = [segs[j] for j, (t, d) in zip(pairs, turns) if d.startswith('forward')]
 back = [segs[j] for j, (t, d) in zip(pairs, turns) if d.startswith('back')]
+steps_of = {id(segs[j]): t / 1000 for j, (t, d) in zip(pairs, turns)}
 print('%d turns in the log, %d forward and %d back in the recording; each starts %.3f to %.3f s after its step '
       '(recording time - app time)' % (len(turns), len(forward), len(back), min(lags), max(lags)))
+
+# A frame the recording grabbed while the emulator drew it shows two angles at once and fits no rotation: left out,
+# before the axis and the angles (the published axis, 2 px; see motionlib.torn_frame).
+TORN = 2.0
+torn = []
+
+
+def untorn(seg):
+    out = []
+    for r in seg:
+        bad, th, rms = ml.torn_frame(r[2], axis[0], axis[1], D, CX, 0, TORN)
+        if bad:
+            torn.append((round(th, 1), round(rms, 1)))
+        else:
+            out.append(r)
+    return out
+
+
+step_at = {}
+for group in (forward, back):
+    for i, sg in enumerate(group):
+        clean = untorn(sg)
+        step_at[id(clean)] = steps_of[id(sg)]
+        group[i] = clean
+print('%d frames left out that no rotation about the axis fits within %.0f px (torn: grabbed mid-draw)%s'
+      % (len(torn), TORN, ': ' + ', '.join('%.1f (%.1f px)' % a for a in torn[:12]) if torn else ''))
 
 if search:
     e, xa, za = ml.fit_axis(forward, D, CX)
@@ -64,9 +98,40 @@ for a in fwd:
     firsts[v] = firsts.get(v, 0) + 1
 print('forward, the first angle shown: %s' % ', '.join('%.1f in %d' % (v, n) for v, n in sorted(firsts.items(), key=lambda x: -x[1])))
 
-for name, runs in (('forward', fwd), ('back', bk)):
+first_tick = {}
+for name, runs, segs_ in (('forward', fwd, forward), ('back', bk, back)):
     vals = ml.distinct([v for a in runs for _, v in a], decimals=1, tol=0.25, min_abs=0.9)
+    off = ml.off_ladder(vals)
+    if off:
+        vals = [v for v in vals if v not in off]
     r0, ticks = ml.tick_numbers(vals)
-    print('%s: %d distinct angles %s' % (name, len(vals), ','.join('%.1f' % v for v in vals)))
+    print('%s: %d distinct angles %s%s' % (name, len(vals), ','.join('%.1f' % v for v in vals),
+                                          '; left out, between two steps a tick apart: %s' % ','.join('%.1f' % v for v in off) if off else ''))
     print('  ticks %s (median ratio %.4f)' % (ticks, r0))
     ml.print_fits(vals, ticks, (('ExponentialEase 6', ml.expo_out(6)), ('ExponentialEase 5', ml.expo_out(5))), ' deg')
+    # The same ease starting on the first value shown (tick 0), its start and duration free.
+    f6 = ml.expo_out(6)
+    best = None
+    for dur in range(300, 601, 5):
+        g = [1 - f6(min(1.0, k * ml.TICK / dur)) for k in ticks]
+        a = sum(v * x for v, x in zip(vals, g)) / sum(x * x for x in g)
+        rms = math.sqrt(sum((v - a * x) ** 2 for v, x in zip(vals, g)) / len(vals))
+        if best is None or rms < best[0]:
+            best = (rms, dur, a)
+    print('  ExponentialEase 6 from tick 0: from %.2f over %d ms, rms %.3f deg' % (best[2], best[1], best[0]))
+    # When each turn's first step (tick 0, the largest angle) is on the screen: the first frame's time after its step,
+    # less the steps it is past tick 0 at 15.625 ms each.
+    t0s = []
+    for a, seg in zip(runs, segs_):
+        if not a:
+            continue
+        k = max(0, round(math.log(a[0][1] / vals[0]) / math.log(r0)))
+        t0s.append((seg[0][1] - (step_at[id(seg)] + lag)) * 1000 - k * ml.TICK)
+    first_tick[name] = t0s
+    print('  tick 0 on the screen %.1f ms after the step (the mean; sd %.1f, %d turns; recording time against the log, paired by the lag above)'
+          % (statistics.mean(t0s), statistics.pstdev(t0s), len(t0s)))
+if first_tick.get('forward') and first_tick.get('back'):
+    f, b = first_tick['forward'], first_tick['back']
+    err = math.sqrt(statistics.pvariance(f) / len(f) + statistics.pvariance(b) / len(b))
+    print('forward against back: tick 0 %+.1f ms later (standard error %.1f); a hidden step before the first one shown would make it %.1f'
+          % (statistics.mean(f) - statistics.mean(b), err, ml.TICK))

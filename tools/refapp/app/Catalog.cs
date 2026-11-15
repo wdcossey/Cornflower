@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Markup;
+using Windows.UI.Xaml.Media;
 
 namespace RefApp
 {
@@ -94,6 +96,18 @@ namespace RefApp
             return sv;
         }
 
+        /// <summary>A 200 x 100 slot at the stage's top left, holding the element.</summary>
+        private static FrameworkElement Slot(FrameworkElement element)
+        {
+            return new Grid { Width = 200, Height = 100, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Children = { element } };
+        }
+
+        /// <summary>A child smaller than its slot: a 60 x 30 rectangle in the reference's accent.</summary>
+        private static FrameworkElement Child()
+        {
+            return new Windows.UI.Xaml.Shapes.Rectangle { Width = 60, Height = 30, Fill = new SolidColorBrush(Color.FromArgb(255, 0x3E, 0x65, 0xFF)) };
+        }
+
         public static List<Specimen> All()
         {
             var list = new List<Specimen>();
@@ -178,6 +192,15 @@ namespace RefApp
             add("ScrollBar", "vertical", 240, () => new ScrollBar { Orientation = Orientation.Vertical, Height = 200, Maximum = 100, ViewportSize = 50, Value = 25, IndicatorMode = ScrollingIndicatorMode.TouchIndicator, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top });
             add("ScrollBar", "horizontal", 60, () => new ScrollBar { Orientation = Orientation.Horizontal, Width = 200, Maximum = 100, ViewportSize = 50, Value = 25, IndicatorMode = ScrollingIndicatorMode.TouchIndicator, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
             add("ScrollBar", "no-indicator", 240, () => new ScrollBar { Orientation = Orientation.Vertical, Height = 200, Maximum = 100, ViewportSize = 50, Value = 25, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top });
+
+            // For #117 (ContentControl): a ContentPresenter placed on a page, outside any template, with a child smaller than
+            // its slot, which shows whether the phone's implicit ContentPresenter style (HorizontalAlignment Left,
+            // VerticalAlignment Top) reaches it; the same with Stretch set, to compare; and a bare ContentControl with a
+            // Background, a Padding and a small child (its template is a lone ContentPresenter, with nothing to draw the
+            // Background). Each sits in a 200 x 100 slot; the child is a 60 x 30 rectangle.
+            list.Add(new Specimen { Name = "ContentPresenter", Variant = "page", Height = 130, States = false, Make = () => Slot(new ContentPresenter { Content = Child() }) });
+            list.Add(new Specimen { Name = "ContentPresenter", Variant = "page-stretch", Height = 130, States = false, Make = () => Slot(new ContentPresenter { Content = Child(), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch }) });
+            list.Add(new Specimen { Name = "ContentControl", Variant = "background-padding", Height = 130, States = false, Make = () => Slot(new ContentControl { Content = Child(), Background = new SolidColorBrush(Color.FromArgb(255, 128, 128, 128)), Padding = new Thickness(12) }) });
 
             list.Add(new Specimen
             {

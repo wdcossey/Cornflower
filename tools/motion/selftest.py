@@ -557,6 +557,57 @@ def listpress_tilt():
     assert 'item2: projection first changes at +30.0 ms' in out, out
 
 
+@check
+def torn_frames_and_off_ladder():
+    # A turn's frame fits one rotation; a frame grabbed mid-draw, half one angle and half another, fits none.
+    d, cx = 1000.0, 225.0
+    whole = ml.project_y(-43.1, -44, -99, d, cx)
+    bad, th, rms = ml.torn_frame(whole, -44, -99, d, cx)
+    assert not bad and abs(th + 43.1) < 1e-3, (bad, th, rms)
+    a, b = ml.project_y(-67.0, -44, -99, d, cx), ml.project_y(-22.3, -44, -99, d, cx)
+    assert ml.torn_frame([a[0], b[1], a[2], b[3]], -44, -99, d, cx)[0]
+    assert not ml.torn_frame([a[0], None, None, None], -44, -99, d, cx)[0]  # clipped: never torn
+    # A ladder of steps a 0.8 ratio apart, with one value caught between two of them.
+    vals = [-67.0 * 0.8 ** k for k in range(12)]
+    extra = vals[:7] + [-6.5 * 0.8 ** 0] + vals[7:]
+    extra = sorted(extra)
+    assert ml.off_ladder(vals) == [], ml.off_ladder(vals)
+    assert ml.off_ladder(extra) == [-6.5], ml.off_ladder(extra)
+
+
+@check
+def pivot_header_and_slide():
+    # A Pivot swipe: the header moves 0.237 px a px of offset until it jumps; the new item slides in by an
+    # ExponentialEase 4 over 400 ms. A Hub: the header at 1/18 of the offset.
+    import tempfile
+    f4 = ml.expo_out(4)
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            line = '%.1f\tframe\trt %g offset %g index %d panel [p] items [translate %g 0] itemsAt %g | one %g op 1 cp none | two %g op 1 cp none\n'
+            f.write('100.0\tstep\tswipe left\n')
+            f.write(line % (110.0, 1000, 1000, 0, 1000, 0, 15.84, 122.51))
+            f.write('200.0\tpressed\tpivot 380 450 ts 1\n')
+            f.write('210.0\tcapturelost\tpivot 380 450 ts 1\n')
+            for k in range(1, 9):
+                off = 1000 + 40 * k
+                f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - 0.23706 * (off - 1000), 122.51 - 0.23706 * (off - 1000)))
+            f.write('340.0\tselection\tindex 1\n')
+            for k in range(0, 27):
+                frac = 1 - f4(min(1.0, k * ml.TICK / 400))
+                f.write(line % (345.0 + 15 * k, 1140.625 + 15.625 * k, 1450, 1, 1450 + 450 * frac, 450 * frac, 402, 15.83))
+        code, out = run_script('pivot.py', run)
+    assert code == 0, out
+    assert 'header "one" moves 0.23706 px a px of offset' in out, out
+    assert 'slides in from 450.00 px: at 0 after 406.' in out and '16:0.8526 31:0.7266' in out, out
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            for k in range(40):
+                off = 30 * k
+                f.write('%.1f\tframe\trt %g offset %g header %g [none] | section 1 %g\n' % (k * 15.0, k * 15.625, off, 15 - off / 18.0, -off))
+        code, out = run_script('pivot.py', run)
+    assert code == 0 and '1 / slope = 18.000' in out, out
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)

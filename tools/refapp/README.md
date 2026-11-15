@@ -24,6 +24,7 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Demo                            # th
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe tilt                        # one probe, with real touches (see Probes)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pages -Record               # a probe, with a recording of the screen (see Motion)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe scrollend -Record           # the end of the content and the indicator (see Probes)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pivot -Record               # Pivot's header strip (see Motion; also turnstile, hub)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
 
@@ -108,7 +109,8 @@ the signed-in desktop. Run from an SSH session, `ISETool` starts a hidden second
   (the app asks for each with `DisplayInformation.AutoRotationPreferences`, and the phone turns
   to it); then every `TemplateSettings` property of ComboBox, ProgressBar, ProgressRing and
   ToggleSwitch, for the catalogue's specimens at rest and in every state their templates declare,
-  each forced on a fresh instance as the suite forces it, and for ComboBoxes opened inline. It is
+  each forced on a fresh instance as the suite forces it, and for ComboBoxes opened inline; and the page's app bar's
+  size and the visible bounds with it ([the page's app bar](#the-pages-app-bar-2026-11-09-device-11-23)). It is
   the only mode that leaves the tray shown at launch; the others hide it first, as before.
 
 What a capture is and isn't:
@@ -342,6 +344,19 @@ a travel of 56.56; [the knob's slide](#toggleswitch-the-knobs-slide) says which 
 drag's halfway line is half of it: 28.33 on the reference, and between 27.77 and 28.04 on qHD, whose offset is
 55.83 ([the hold limit, the distance and the halfway line](#toggleswitch-the-hold-limit-the-distance-and-the-halfway-line-2026-11-11-and-12-33)).
 
+### A ContentPresenter outside a template, and a bare ContentControl (2026-11-15, device 11, #114, for #117)
+
+`20261115-2048-dev11` (`-Only '^Content(Presenter|Control)$'`), dark and light. Each specimen sits in a 200 × 100 slot,
+with a 60 × 30 rectangle as its child.
+
+- **The phone's `ContentPresenter` style doesn't reach a ContentPresenter placed on a page.** The runtime's style sets
+  `HorizontalAlignment` Left and `VerticalAlignment` Top, but a ContentPresenter in a page's Grid, outside any template,
+  reads Stretch and Stretch. It fills its 200 × 100 slot and centres its child: the rectangle is at 70, 35. That is the
+  same as with Stretch set (`page-stretch`).
+- **A bare `ContentControl` doesn't draw its `Background`**: its template is a lone ContentPresenter. The dump has the
+  Background (`#FF808080`), but the pixels under its padding are the page's (black dark, white light). Its presenter is
+  Left and Top at the Padding: the child at 12.08, 12.08 (12, snapped to raw pixels), 60 × 30.
+
 ### What this didn't read
 
 - **The `Current` offsets during a drag.** They are what a drag's release animates from, so they
@@ -414,7 +429,7 @@ last touch has settled. `touch.log` says where each step landed on the VM's scre
 Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tiltedge` and `tiltgrid` (#22), and for #24 `motion`, `pages`,
 `projections` and `ring` ([Motion](#motion-2026-11-10-device-11-24)), and `ringsize` for #28 (B6:
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
-`listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)). Each frame's value is read on the UI thread in
+`listpress`, and for #114 `turnstile`, `pivot` and `hub` ([the turnstile's start](#the-turnstiles-forward-start-2026-11-15-device-11-114)) ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -835,6 +850,9 @@ to about a frame.
 | The ProgressRing's 4.132 s cycle; a dot hiding 3.090 s after it shows; the dots 164 ms apart (the median), 150 to 165 ms in the first cycle and 129 to 167 ms over nine | the stopwatch | 4,307.6 ms, 3,221.3 ms, 171 ms, 156 to 172 ms and 134 to 174 ms of animation time (× 1.0425 on `20261110-0829-dev11`), against the keyframes' 4,305 ms, 3,220 ms and 167 ms. The spacing is read on frames, so each is ±15 ms |
 | The ProgressRing clock's own numbers (`Completed` 3,856.5 ms after `Begin()` and the like) | the stopwatch, and said so | the storyboard's own time is read beside them |
 | The tilt press's first frame, 30 to 40 ms after the press | the stopwatch | about 31 to 42 ms (× 1.0405 on `20261109-2307-dev11`); a press is a jump, so there is no duration to build |
+| The turnstile's forward ease, 425 ms (#114) | frames: distinct values one a 15.625 ms step | as given |
+| Pivot's header strip and the new item's 400 ms slide, Hub's header (#114) | frames: `RenderingTime` | as given; the selection's times are the stopwatch's |
+| The turnstile's tick-0 times (#114) | the recording against the log, by the turns' median lag | only forward against back is used |
 | The ScrollViewer's inertia (#113): each flick's time, 812 to 2,156 ms, and the fits' constants | frames: `RenderingTime`, which steps by 15.625 ms a frame | as given |
 | The indicator's `IndicatorMode` changes and the ListView's press and release times (#113) | the stopwatch, between input events and states | left as read, as the tap limit is |
 | The ListView item's tilt return (#113) | frames: the same fractions a frame as the Button's | the Button's 182.6 ms hold and 167.0 ms `KeySpline` |
@@ -922,7 +940,8 @@ is solved for the page's rotation with the camera above.
   first frame shown is at −67.0° (in 4 of 9 runs; else −53.8° or −43.1°), and an exponential
   ease-out from there ending 391 ms later (exponent 5.5) fits the 19 distinct angles within 0.05°;
   exponent 6 over 430 ms fits only with a start far off the screen. It is within 1° of rest after
-  about 300 ms.
+  about 300 ms. *Settled 2026-11-15 (B10, #114, [below](#the-turnstiles-forward-start-2026-11-15-device-11-114)):
+  forward starts at −67.0°, on the same `ExponentialEase` (exponent 6) as back, over 425 to 430 ms.*
 - **`SlideNavigationTransitionInfo`**: forward, the new page rises from below, first seen 200 px down;
   its offset falls by 0.765 a step (58 ms): an `ExponentialEase` (exponent 6, ease-out) from 200 px
   over 350 ms, starting on the first frame shown, fits the 16 distinct offsets within 0.05 px. Back, the page going
@@ -937,6 +956,70 @@ is solved for the page's rotation with the camera above.
   first of the new page, so an upper bound; 2026-11-10's 60 to 100 ms isn't reproduced. Back, the page going out slides down as in the slide's back,
   then the page under it fades in: what is left of its opacity falls by about 0.84 a step, over
   about 340 ms.
+
+### The turnstile's forward start (2026-11-15, device 11, #114)
+
+B10. `20261115-2053-dev11` (`-Probe turnstile -Record`): the default transition alone, forward and back 30 times. The
+recording can't go faster: gdigrab gets 40 to 43 frames a second on the VM whatever the rate asked for or the area
+grabbed (60, 120 and 240 tried, the whole display and 200 × 100 px), and `ddagrab` finds no Direct3D 11 device there. So
+the turns are many instead. `tools/motion/turnstile.py` prints every number below; on `20261110-0810-dev11` it gives the
+same.
+
+- **The first frame shown was −53.8° in 25 turns, −67.0° in 4 and −43.1° in 1** (−67.0 in 4 of 9 before). They are
+  ticks 0, 1 and 2 of one ladder: 67.0 × 0.803 = 53.8, × 0.803 = 43.1.
+- **No step comes before −67.0°.** The back turn's first step, +42.0°, is its start (above). Each turn's tick 0 is
+  timed as the first frame's time after its step in the log, less 15.625 ms for each tick it is past tick 0. Forward
+  tick 0 reaches the screen 3.7 ms *earlier* than back's (standard error 3.4 ms; on the 2026-11-10 run 0.4 ms later,
+  ± 6.8). A step drawn before −67.0° would put forward's a tick, 15.6 ms, later. So −67.0° is the turn's first value,
+  shown on the same frame as the back turn's +42.0°.
+- **Forward is the back turn's curve**: an `ExponentialEase` (exponent 6, ease-out) starting on tick 0 fits the 19
+  distinct forward angles from −67.10° over 425 ms within 0.072° rms, and the back ones from +41.97° over 430 ms within
+  0.070°. A free fit still prefers a start before the screen (−147° over 430 ms, 3.6 ticks in, 0.063°), but by 0.01°,
+  which the timing above rules out.
+- Two frames were left out: one torn (grabbed while the emulator drew it, so half one angle and half another; no
+  rotation fits it within 123 px), and one value, −6.5°, between two steps a tick apart (a frame caught between them).
+- Clock: the angles are on frames (one a 15.625 ms step); the tick-0 times are the recording's clock against the log's,
+  paired by the turns' median lag, so only the forward-against-back difference is used.
+
+### Pivot's header strip (2026-11-15, device 11, #114)
+
+`20261115-2056-dev11` (`-Probe pivot -Record`, `tools/motion/pivot.py`): a Pivot of four items, headers "one" to "four",
+below the header band. Swipes left (200 px in 150 ms) from each item, twice round (the swipe from "four" wraps to "one");
+a swipe right from "one" (it wraps to "four"); a tap on the header "two" and on "three" from "one"; a drag of 100 px
+held and let go. The Pivot's ScrollViewer reads DirectManipulation's offset, and the header items' and the
+ItemsPresenter's places follow it frame by frame in the app. The recording shows the same places about a frame (30 ms)
+earlier than the log has them (checked on the first swipe, header and content).
+
+- **The header strip moves with the content's offset, at one header's pitch a page.** A header's left edge moves
+  against the offset, in a straight line (worst 0.015 px over every frame): 0.23706 px a px for "one", 0.23056 for
+  "two", 0.30462 for "three", 0.24909 for "four". Each is that header's pitch over the page's 450 px: the next header's
+  left edge less its own (106.67, 103.75, 137.08), which is its width plus 15.83. So when the content has moved a page,
+  the next header has come to where this one was. Going right, from "one", it moves at "four"'s 0.24907: the pitch of
+  the header coming in. On the wrap the strip goes on the same way; "four"'s pitch to the "one" after it is 112.1.
+- **Once the new item is chosen, the header that left goes to the end.** On the frame the new item jumps in, the
+  header that was selected, by then partly off the left edge (its left edge at −52), moves to after the last (402); the
+  others keep their places. The header panel's translate is reset when the offset settles, with no move on the screen.
+- **The selection changes during the swipe**, 209 to 237 ms after the press (stopwatch), once the inertia is under way,
+  and at the release of a header tap (49 and 71 ms after its press).
+- **The content isn't the offset's.** The old item goes with the finger and the offset. When the selection changes,
+  the ItemsPresenter's translate jumps to put the new item 450 px beyond it, and the new item then slides in on its own:
+  one frame at 450, then an `ExponentialEase` (exponent 4) over 400 ms to 0, the same fractions a frame on every swipe,
+  wrap and tap to four places (0.8526, 0.7266, 0.6188, 0.5266, …; exponent 4 over 400 ms fits all 25 distinct
+  fractions to rms 0.003, 1.4 px of 450). A tap on "three", two pages on, does the same, from 450 px.
+- **The offset settles** 625 to 672 ms (rt) after the first frame after a swipe's press, and 516 to 531 ms after a tap.
+  A drag of 100 px held 300 ms and let go goes back: the offset returns to where it was.
+- Clocks: the per-frame values are on `RenderingTime` (15.625 ms a step); the selection times are the stopwatch's.
+
+### Hub's header (2026-11-15, device 11, #114)
+
+`20261115-2059-dev11` (`-Probe hub -Record`): a Hub with the header "hub" and four sections, swiped left three times,
+right once, and dragged 150 px and let go.
+
+- **The header moves at 1/18 of the sections' speed**: its left edge is 15 − offset / 18 view px, in a straight line
+  over all 270 frames with the offset past 20 px (offsets 21 to 1,215; worst 0.0005 px). The sections move one for one
+  with the offset. The recording agrees within a frame.
+- At launch the Hub's entrance animation moves the header in from 19.7 to 15 (and the sections with it) before any
+  touch.
 
 ### ProgressRing: Active
 
@@ -1014,6 +1097,27 @@ Read from the screenshots, in view pixels (raw ÷ 2.4):
 The bar is `#FF1F1F1F` dark and `#FFDDDDDD` light, as the pickers' bars are. The ellipsis's dots
 start 25 raw px (10.4 view px) below the bar's top in every variant. The checked toggle is a
 filled circle; the disabled one is grey, its label too.
+
+**Its size, read through the API** (B2, #114; `20261115-2050-dev11`, `-Native`, which now reads the app bar after the
+`TemplateSettings`: a `CommandBar` with two primary and two secondary commands as the page's `BottomAppBar`, in portrait,
+under each bounds mode with the tray hidden and shown, closed and then open, and the page with none before and after).
+In view pixels, the same in every reading of each row:
+
+| `ClosedDisplayMode` | `ActualHeight` | The bar in the window | `VisibleBounds`' height, tray hidden / shown | What the screenshot draws |
+|---|---|---|---|---|
+| (none) | | | 800 / 772.08 | |
+| `Compact`, closed or open | 57.5 (138 raw px) | 0, 742.5, 450 × 57.5 | 737.08 / 709.17 | 62.92 tall from 737.08 closed; 285.42 from 514.58 open |
+| `Minimal`, closed or open | 26.25 (63 raw px) | 0, 773.75, 450 × 26.25 | 773.75 / 745.83 | 26.25 from 773.75 closed; 285.42 from 514.58 open |
+
+- **The compact bar's control is 57.5 tall, but the view gives it 62.92**: `VisibleBounds` ends 62.92 above the
+  screen's bottom (151 raw px, the tray's width in landscape), and the shell draws the bar that tall. The control sits
+  in the bottom 57.5 of it. The minimal bar is 26.25 in all three.
+- **Opening changes nothing the API reports**: `ActualHeight`, the bar's place and `VisibleBounds` stay as closed
+  (`IsOpen` true, `Opened` raised). The open bar is the shell's drawing over the page.
+- **`VisibleBounds` takes the bar off the bottom, and the tray off the top**: tray shown, compact, it is 0, 27.92,
+  450 × 709.17. Under `UseVisible` (the default) the page's content is laid out in it; under `UseCoreWindow` the
+  content fills the window, 450 × 800, and `VisibleBounds` still says what the bar and the tray cover. The page itself
+  fills the window in both.
 
 ## Popup pixels
 

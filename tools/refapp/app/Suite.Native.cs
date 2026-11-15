@@ -46,6 +46,7 @@ namespace RefApp
 
             var tray = new List<string>();
             var settings = new List<string>();
+            var appBar = new List<string>();
             var stageWidth = double.NaN;
             try
             {
@@ -93,6 +94,15 @@ namespace RefApp
                 {
                     Error("templateSettings", ex);
                 }
+
+                try
+                {
+                    await AppBarReadings(appBar);
+                }
+                catch (Exception ex)
+                {
+                    Error("appBar", ex);
+                }
             }
 
             try
@@ -121,6 +131,7 @@ namespace RefApp
             WriteArray(j, "tray", tray);
             j.Prop("stageWidth", stageWidth);
             WriteArray(j, "templateSettings", settings);
+            WriteArray(j, "appBar", appBar);
             WriteErrors(j);
             j.Prop("finished", DateTimeOffset.Now.ToString("o", CultureInfo.InvariantCulture));
             j.EndObj();
@@ -181,6 +192,158 @@ namespace RefApp
                 await Write("progress.txt", "templateSettings " + s.Name + " " + s.Variant);
                 await Settings(into, s);
             }
+        }
+
+        /// <summary>
+        /// B2 (#114): the page's app bar, in portrait. With the tray hidden and shown, under each bounds mode: the page with
+        /// no bar; then a CommandBar as the page's BottomAppBar in each ClosedDisplayMode, closed and then open; then no
+        /// bar again. Each is read once the layout has settled: the bar's ActualWidth and ActualHeight, where it is in the
+        /// window, its template root's height, the view's VisibleBounds and where the page and its content are. The bar
+        /// is opened 400 ms after it has loaded (IsOpen set as it is attached is ignored), closed with IsOpen, and taken
+        /// off the page only once it has closed (README, "The page's app bar"). Leaves the tray hidden and the bounds
+        /// mode UseVisible.
+        /// </summary>
+        private async Task AppBarReadings(List<string> into)
+        {
+            var page = CurrentPage();
+            if (page == null)
+            {
+                _errors.Add("appBar: no page");
+                return;
+            }
+
+            var view = ApplicationView.GetForCurrentView();
+            var statusBar = StatusBar.GetForCurrentView();
+            foreach (var boundsMode in new[] { ApplicationViewBoundsMode.UseVisible, ApplicationViewBoundsMode.UseCoreWindow })
+            {
+                foreach (var shown in new[] { false, true })
+                {
+                    var tray = shown ? "shown" : "hidden";
+                    await Write("progress.txt", "appBar " + boundsMode + " tray " + tray);
+                    await Step("appBar " + boundsMode, () =>
+                    {
+                        view.SetDesiredBoundsMode(boundsMode);
+                        return Task.FromResult(true);
+                    });
+                    await Step("appBar tray " + tray, async () => await (shown ? statusBar.ShowAsync() : statusBar.HideAsync()));
+                    var settled = await SettleTray(() => (statusBar.OccludedRect.Height > 0) == shown);
+                    Entry(into, "appBar none", e => AppBar(e, page, null, "none", tray, settled));
+                    foreach (var mode in new[] { AppBarClosedDisplayMode.Compact, AppBarClosedDisplayMode.Minimal })
+                    {
+                        var what = "appBar " + boundsMode + " tray " + tray + " " + mode;
+                        await Write("progress.txt", what);
+                        var bar = new CommandBar { ClosedDisplayMode = mode };
+                        bar.PrimaryCommands.Add(new AppBarButton { Label = "add", Icon = new SymbolIcon(Symbol.Add) });
+                        bar.PrimaryCommands.Add(new AppBarButton { Label = "delete", Icon = new SymbolIcon(Symbol.Delete) });
+                        bar.SecondaryCommands.Add(new AppBarButton { Label = "first menu item" });
+                        bar.SecondaryCommands.Add(new AppBarButton { Label = "second menu item" });
+                        var loaded = new TaskCompletionSource<bool>();
+                        var opened = new TaskCompletionSource<bool>();
+                        var closed = new TaskCompletionSource<bool>();
+                        bar.Loaded += (o, a) => loaded.TrySetResult(true);
+                        bar.Opened += (o, a) => opened.TrySetResult(true);
+                        bar.Closed += (o, a) => closed.TrySetResult(true);
+                        if (!await Step(what + " attach", () =>
+                        {
+                            page.BottomAppBar = bar;
+                            return Task.FromResult(true);
+                        }))
+                        {
+                            continue;
+                        }
+
+                        await Task.WhenAny(loaded.Task, Task.Delay(3000));
+                        settled = await SettleTray(() => bar.ActualHeight > 0);
+                        Entry(into, what + " closed", e => AppBar(e, page, bar, mode.ToString(), tray, settled));
+
+                        await Task.Delay(400);
+                        await Step(what + " open", () =>
+                        {
+                            bar.IsOpen = true;
+                            return Task.FromResult(true);
+                        });
+                        if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
+                        {
+                            _errors.Add(what + ": Opened never came");
+                        }
+
+                        // The open animation, then the layout.
+                        await Task.Delay(800);
+                        settled = await SettleTray(() => true);
+                        Entry(into, what + " open", e => AppBar(e, page, bar, mode.ToString(), tray, settled));
+
+                        await Step(what + " close", () =>
+                        {
+                            bar.IsOpen = false;
+                            return Task.FromResult(true);
+                        });
+                        if (await Task.WhenAny(closed.Task, Task.Delay(3000)) != closed.Task)
+                        {
+                            _errors.Add(what + ": Closed never came");
+                        }
+
+                        await Task.Delay(800);
+                        await Step(what + " detach", () =>
+                        {
+                            page.BottomAppBar = null;
+                            return Task.FromResult(true);
+                        });
+                        await SettleTray(() => true);
+                    }
+
+                    settled = await SettleTray(() => true);
+                    Entry(into, "appBar none again", e => AppBar(e, page, null, "none again", tray, settled));
+                }
+            }
+
+            await Step("appBar restore", async () =>
+            {
+                view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseVisible);
+                await statusBar.HideAsync();
+            });
+            await SettleTray(() => true);
+        }
+
+        /// <summary>One app bar reading (see <see cref="AppBarReadings"/>); bar is null for the page with none.</summary>
+        private static void AppBar(Json j, Page page, CommandBar bar, string mode, string tray, int settledMs)
+        {
+            var view = ApplicationView.GetForCurrentView();
+            j.Obj();
+            j.Prop("mode", mode);
+            j.Prop("tray", tray);
+            j.Prop("boundsMode", view.DesiredBoundsMode.ToString());
+            j.Prop("settledMs", settledMs);
+            if (bar != null)
+            {
+                j.Prop("isOpen", bar.IsOpen);
+                j.Key("barSize").Arr().Val(bar.ActualWidth).Val(bar.ActualHeight).EndArr();
+                try
+                {
+                    WriteBounds(j, "bar", bar);
+                }
+                catch (ArgumentException)
+                {
+                    j.Prop("bar", "not in the visual tree");
+                }
+
+                var root = VisualTreeHelper.GetChildrenCount(bar) > 0 ? VisualTreeHelper.GetChild(bar, 0) as FrameworkElement : null;
+                if (root != null)
+                {
+                    j.Key("templateRoot").Arr().Val(root.ActualWidth).Val(root.ActualHeight).EndArr();
+                }
+            }
+
+            WriteRect(j, "windowBounds", Window.Current.Bounds);
+            WriteRect(j, "visibleBounds", view.VisibleBounds);
+            WriteRect(j, "occludedRect", StatusBar.GetForCurrentView().OccludedRect);
+            WriteBounds(j, "page", page);
+            var content = page.Content as FrameworkElement;
+            if (content != null)
+            {
+                WriteBounds(j, "pageContent", content);
+            }
+
+            j.EndObj();
         }
 
         /// <summary>A ComboBox as the popup catalogue opens it inline (5 items or fewer), with a chosen item selected.</summary>
