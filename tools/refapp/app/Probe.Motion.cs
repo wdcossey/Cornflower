@@ -407,7 +407,26 @@ namespace RefApp
         /// NavigationTransitionInfo the phone has. Page A is white, page B the accent blue, each on black with a 19 px
         /// margin, so a recording shows each page's outline. The theme transition doesn't show in the app's values.
         /// </summary>
-        private async Task Pages(Grid host)
+        private Task Pages(Grid host)
+        {
+            return PageTurns(host, 8, true);
+        }
+
+        /// <summary>
+        /// The turnstile's forward start (B10, #114): the default transition alone, forward and back 30 times, so that
+        /// a recording at about 40 frames a second, which catches about two 64 Hz steps in three, shows every step of
+        /// the turn's start in many of them.
+        /// </summary>
+        private Task Turnstile(Grid host)
+        {
+            return PageTurns(host, 30, false);
+        }
+
+        /// <summary>
+        /// <see cref="Pages"/>: the default transition <paramref name="defaults"/> times, then, with
+        /// <paramref name="others"/>, CommonNavigationTransitionInfo once and the slide and continuum four times each.
+        /// </summary>
+        private async Task PageTurns(Grid host, int defaults, bool others)
         {
             var root = Window.Current.Content as Frame;
             var rootTransitions = root != null ? root.ContentTransitions : null;
@@ -422,13 +441,16 @@ namespace RefApp
 
             Func<Task> sequence = async () =>
             {
-                // The default eight times, as a recording at about 40 frames a second samples each run at other moments;
+                // The default several times, as a recording at about 40 frames a second samples each run at other moments;
                 // then each NavigationTransitionInfo, the slide and continuum four times each.
                 var infos = new List<Func<NavigationTransitionInfo>>();
-                infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => null, 8));
-                infos.Add(() => new CommonNavigationTransitionInfo());
-                infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => new SlideNavigationTransitionInfo(), 4));
-                infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => new ContinuumNavigationTransitionInfo(), 4));
+                infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => null, defaults));
+                if (others)
+                {
+                    infos.Add(() => new CommonNavigationTransitionInfo());
+                    infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => new SlideNavigationTransitionInfo(), 4));
+                    infos.AddRange(Enumerable.Repeat<Func<NavigationTransitionInfo>>(() => new ContinuumNavigationTransitionInfo(), 4));
+                }
                 foreach (var make in infos)
                 {
                     var info = make();

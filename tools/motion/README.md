@@ -37,7 +37,7 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 |---|---|---|
 | `decode.py` | a recorded run | writes `analysis\record.gray` |
 | `camera.py` | a `-Probe projections -Record` run | each held projection's outline, and the pinhole camera that fits them |
-| `turnstile.py` | a `-Probe pages -Record` run | the turnstile's axis, each forward turn's first angle, the distinct angles of the forward and back turns and the curves fitted to them. The axis search takes a few minutes; `--no-search` skips it, `--axis <x>,<z>` sets the axis the angles are solved about (−44,−99) |
+| `turnstile.py` | a `-Probe pages -Record` or `-Probe turnstile -Record` run | the turnstile's axis, each forward turn's first angle, the distinct angles of the forward and back turns and the curves fitted to them, an `ExponentialEase` 6 starting on the first one shown, and when each turn's first step reached the screen, forward against back (#114: no step before −67°). It leaves out torn frames (grabbed mid-draw) and values between two steps, and says so. The axis search takes a few minutes; `--no-search` skips it, `--axis <x>,<z>` sets the axis the angles are solved about (−44,−99) |
 | `slide.py` | a `-Probe pages -Record` run | the slide's offsets in and out and their fits; the continuum's scale in and fade back. `--lag <s>` gives the lag (27.815 for `20261110-0810-dev11`) instead of finding it from the turnstile turns |
 | `knob.py` | a `-Probe motion -Record` run | the ToggleSwitch knob's positions through its slide, and KeySplines and ease-outs fitted to them |
 | `popups.py` | a `-Probe motion -Record` run | each popup's opening and closing times (50%, 90%, 99%, and by band), and the top Flyout's bottom edge as it opens |
@@ -50,6 +50,7 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 | `scroll.py` | a `-Probe scroll` run (#113) | each flick's inertia: its distance and time, `FinalView` against the end, and an exponential, a constant deceleration and a deceleration `a + c v²` fitted to its frames; a table of every flick; with `--shared`, one `a` and `c` for all (about 30 s, and 15 s more with it); and when the indicator's `IndicatorMode` changes |
 | `scrollend.py` | a `-Probe scrollend -Record` run (#113) | the end-of-content squash frame by frame (the bars' spacing over their rest spacing), its limit and the point it scales about; the indicator's size, colour and fades. It reads two strips of the recording, which `--decode` makes with ffmpeg |
 | `listpress.py` | a `-Probe listpress` run (#113) | each touch's states, `ItemClick` and gestures, the item's tilt held beside the Button's model, and its return frame by frame |
+| `pivot.py` | a `-Probe pivot` or `-Probe hub` run (#114) | Pivot: each touch's selection time, the header strip against the offset (px a px, beside the header's pitch over 450) and the new item's slide in, frame by frame, with fits; Hub: the header against the offset |
 | `clock.py` | any probe run that logs its frames | the frames' mean spacing by the stopwatch (`motionlib.frame_spacing`), and the factor, 15.625 ms over it, that takes the run's stopwatch durations to animation time |
 | `motionlib.py` | | what they share: the run, the frame measurements, the projection, the easing curves and the fits |
 | `selftest.py` | nothing | checks the measurements and fits on synthetic data with known answers |
@@ -82,7 +83,8 @@ asserts the answer comes back: the edge crossings, the sheet's outline, the easi
 ticks (and a true median ratio), the exponential, ExponentialEase and KeySpline fits, the camera fit (on and off its
 grid) and the turnstile's angle and axis, the knob's missing-tick check, the arguments, and reading a run folder; and
 for #113 the deceleration fits, the inertia taken after the press, the squash and the indicator read off synthetic
-strips, and a list item's held tilt and return.
+strips, and a list item's held tilt and return; and for #114 a torn frame and a value between two steps, and Pivot's
+header strip and slide and Hub's header.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
 logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.
@@ -103,6 +105,7 @@ Each published number, run again on its original run on 2026-11-11. The runs are
 | Turnstile forward: the first frame at −67.0° in 4 of 9 runs, else −53.8° or −43.1° | README, ADR, gap register B10 | `turnstile.py` | `20261110-0810-dev11` | Yes: −67.0 in 4, −43.1 in 3, −53.8 in 2 |
 | Turnstile forward: an exponential ease-out (5.5) from −67.0° ending 391 ms later, the 19 distinct angles within 0.05° | README, ADR | `turnstile.py` | `20261110-0810-dev11` | Yes: from −67.02, ending at tick 25 (391 ms), exponent 5.48, rms 0.050° over 19 |
 | Turnstile forward: exponent 6 over 430 ms fits only with a start far off the screen | README, ADR | `turnstile.py` | `20261110-0810-dev11` | Yes: from −147.2°, 3.6 steps before the first frame, rms 0.063° |
+| Turnstile forward starts at −67.0°: no step before it; `ExponentialEase` (6) from tick 0, from −67.10° over 425 ms (#114, B10) | README | `turnstile.py` | `20261115-2053-dev11` (30 turns), and `20261110-0810-dev11` | Yes: tick 0 3.7 ms earlier than back's (± 3.4), and 0.4 ms later (± 7.2) on the older run; rms 0.072° on both. The free fit above still prefers −147°, by 0.01° |
 | Slide in: first seen 200 px down; ×0.765 a step (58 ms); `ExponentialEase` (6) from 200 px over 350 ms, the 16 distinct offsets within 0.05 px | README, ADR | `slide.py` | `20261110-0810-dev11` | Yes: 200.0 in 3 of 4 runs (152.8 in one); ×0.7648 (58.3 ms); from 199.95 over 350 ms, rms 0.047 px over 16. The 2026-11-10 list was picked by hand; the script's cutoff, 2 px, gives the same 16 |
 | Slide out: faster each step, ×1.4 to 1.46, for about 220 ms, to about 140 to 200 px | README | `slide.py` | `20261110-0810-dev11` | **In part.** ×1.43 a step (0.700): yes. About 220 ms: 188 ms here (the hand-picked list of 2026-11-10 had 1.0 px and not 4.2, and ended at 219 ms). 140 to 200 px: the last offsets seen are 64.6 to 137.3 px |
 | Continuum forward: the old page fades in two frames (about 60 ms), black for 60 to 100 ms, then the new page grows from a scale of 0.94 to 1 in about 280 ms | README, ADR | `slide.py` | `20261110-0810-dev11` | **In part.** Scale 0.941 to 0.963 at the first frame, 281 to 312 ms to rest: yes. The fade: 1 or 2 frames. Black: 94 to 125 ms from the first black frame to the first of the new page, an upper bound at about 31 ms a frame |

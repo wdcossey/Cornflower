@@ -557,6 +557,63 @@ def listpress_tilt():
     assert 'item2: projection first changes at +30.0 ms' in out, out
 
 
+@check
+def torn_frames_and_off_ladder():
+    # A turn's frame fits one rotation; a frame grabbed mid-draw, half one angle and half another, fits none.
+    d, cx = 1000.0, 225.0
+    whole = ml.project_y(-43.1, -44, -99, d, cx)
+    bad, th, rms = ml.torn_frame(whole, -44, -99, d, cx)
+    assert not bad and abs(th + 43.1) < 1e-3, (bad, th, rms)
+    a, b = ml.project_y(-67.0, -44, -99, d, cx), ml.project_y(-22.3, -44, -99, d, cx)
+    assert ml.torn_frame([a[0], b[1], a[2], b[3]], -44, -99, d, cx)[0]
+    assert not ml.torn_frame([a[0], None, None, None], -44, -99, d, cx)[0]  # clipped: never torn
+    # A ladder of steps a 0.8 ratio apart, with one value caught between two of them.
+    vals = [-67.0 * 0.8 ** k for k in range(12)]
+    # -6.5 between steps 10 (-7.19) and 11 (-5.75), which are a step apart, in the order the list has them.
+    extra = vals[:11] + [-6.5] + vals[11:]
+    assert ml.off_ladder(vals) == [], ml.off_ladder(vals)
+    assert ml.off_ladder(extra) == [-6.5], ml.off_ladder(extra)
+    # Each turn's tick 0: its first frame's time less its tick's steps; a first value on no step is left out.
+    times, left = ml.tick0_times([(10.0, -53.8), (5.0, -67.0), (40.0, -43.12), (3.0, -60.0)], [-67.0, -53.8, -43.1], [0, 1, 2])
+    assert left == 1 and [round(t, 3) for t in times] == [-5.625, 5.0, 8.75], (times, left)
+
+
+@check
+def pivot_header_and_slide():
+    # A Pivot swipe: the header moves 0.237 px a px of offset until it jumps; the new item slides in by an
+    # ExponentialEase 4 over 400 ms. A Hub: the header at 1/18 of the offset.
+    import tempfile
+    f4 = ml.expo_out(4)
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            line = '%.1f\tframe\trt %g offset %g index %d panel [p] items [translate %g 0] itemsAt %g | one %g op 1 cp none | two %g op 1 cp none\n'
+            f.write('0.0\tlayout\theader one 15.84 115.4 90.83 82.5\n0.0\tlayout\theader two 122.51 115.4 87.92 82.5\n')
+            # As in a real run, the frame at rest is logged before the touch's step, not in its segment.
+            f.write(line % (50.0, 1000, 1000, 0, 1000, 0, 15.84, 122.51))
+            f.write('100.0\tstep\tswipe left\n')
+            f.write('200.0\tpressed\tpivot 380 450 ts 1\n')
+            f.write('210.0\tcapturelost\tpivot 380 450 ts 1\n')
+            for k in range(1, 9):
+                off = 1000 + 40 * k
+                f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - 0.23706 * (off - 1000), 122.51 - 0.23706 * (off - 1000)))
+            f.write('340.0\tselection\tindex 1\n')
+            for k in range(0, 27):
+                frac = 1 - f4(min(1.0, k * ml.TICK / 400))
+                f.write(line % (345.0 + 15 * k, 1140.625 + 15.625 * k, 1450, 1, 1450 + 450 * frac, 450 * frac, 402, 15.83))
+        code, out = run_script('pivot.py', run)
+    assert code == 0, out
+    assert 'header "one" moves 0.23706 px a px of offset' in out, out
+    assert 'slides in from 450.00 px: at 0 after 406.' in out and '16:0.8526 31:0.7266' in out, out
+    assert 'offset +450.00' in out, out  # from the frame at rest, logged before the step
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            for k in range(40):
+                off = 30 * k
+                f.write('%.1f\tframe\trt %g offset %g header %g [none] | section 1 %g\n' % (k * 15.0, k * 15.625, off, 15 - off / 18.0, -off))
+        code, out = run_script('pivot.py', run)
+    assert code == 0 and '1 / slope = 18.000' in out, out
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)
