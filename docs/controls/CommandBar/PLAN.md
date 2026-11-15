@@ -114,13 +114,15 @@ px where the template's is 45): Lucide's shapes and sizes are its own (ADR 0001,
 | The ellipsis shows with no secondary commands (Avalonia's `Auto` hides it) | the shell always draws it | `The_Ellipsis_Shows_Without_Secondary_Commands` |
 | A press outside the open bar closes it, and doesn't reach the page | Avalonia's light dismiss | `A_Press_Outside_The_Open_Bar_Closes_It` |
 | A sticky bar stays open | WinRT's and Avalonia's `IsSticky` | `A_Sticky_Bar_Stays_Open` |
-| Invoking a command, primary or secondary, closes the open bar, unless sticky | the phone's menu, by common account (not read) | `Invoking_A_Command_Closes_The_Open_Bar`, `A_Sticky_Bar_Stays_Open_After_A_Command` |
+| Invoking a command, primary or secondary, closes the open bar, unless sticky | Avalonia's `IsSticky` documentation ("stays open after a command is invoked"); not read on the phone | `Invoking_A_Command_Closes_The_Open_Bar`, `A_Sticky_Bar_Stays_Open_After_A_Command` |
 | A list longer than the bar's room scrolls, and the ellipsis stays reachable | none read; the room is the page | `A_Long_List_Scrolls_Inside_The_Page` |
 | The closed heights are keys a page can read | for #120 | `The_Closed_Heights_Are_Keys_A_Page_Can_Read` |
 | The phone's keys, dark and light | the template, the screenshots | `The_Bar_Takes_The_Phones_Keys` |
 | Pressed, checked, checked and pressed | the template's states, the shell's checked icon | `Pressed_Fills_The_Circle_...`, `Checked_Fills_The_Circle_...` |
 | Disabled at 0.451, as one layer | the screenshots | `Disabled_Dims_The_Whole_Command_As_One_Layer`, and the ring's pixels in `The_Compact_Bar_Is_The_Shells` |
-| An app's `DefaultLabelPosition` shows the labels closed too | Avalonia's API | `The_Labels_Follow_DefaultLabelPosition_When_An_App_Sets_It` |
+| An app's `DefaultLabelPosition` shows the labels closed too, the bar as tall as its commands | Avalonia's API | `The_Labels_Follow_DefaultLabelPosition_When_An_App_Sets_It` |
+| Dynamic overflow keeps the centred row clear of the ellipsis: four commands on the 450 view | the phone's most is four | `Dynamic_Overflow_Keeps_The_Row_Clear_Of_The_Ellipsis` |
+| A command with a `Flyout`, or a command of another bar, leaves the bar open; a bound `Command` runs with the bar open | Avalonia's `Button` order (flyout, `Click`, `Command`) | `A_Command_With_A_Flyout_Or_On_Another_Bar_Leaves_The_Bar_Open`, `A_Commands_Bound_Command_Runs_With_The_Bar_Still_Open` |
 | Every type has its theme; the separator draws nothing and takes no room | the phone has no `AppBarSeparator` style | `Every_Type_Has_The_Phones_Template` |
 | `ClosedDisplayMode` is Compact unless set | WinRT's default | `ClosedDisplayMode_Is_Compact_Unless_Set` |
 
@@ -249,7 +251,7 @@ _none_
 |---|---|---|---|---|
 | [x] | `Foreground` | `{ThemeResource CommandBarForegroundThemeBrush}` | `TemplatedControl.Foreground` | `CommandBarForegroundThemeBrush`: the dots; the commands set it too, for their icons and words |
 | [x] | `Background` | `{ThemeResource CommandBarBackgroundThemeBrush}` | `TemplatedControl.Background` | `CommandBarBackgroundThemeBrush`, on `LayoutRoot` |
-| [x] | `BorderBrush` | `{ThemeResource AppBarBorderThemeBrush}` | `TemplatedControl.BorderBrush` | `AppBarBorderThemeBrush`, set and not drawn, as on the phone |
+| [-] | `BorderBrush` | `{ThemeResource AppBarBorderThemeBrush}` | `TemplatedControl.BorderBrush` | Not set: the phone's template doesn't draw it either |
 | [x] | `IsTabStop` | `False` | `InputElement.IsTabStop` | `False` |
 | [-] | `HorizontalContentAlignment` | `Stretch` | none | Avalonia's CommandBar has none; the phone's template doesn't read it |
 | [-] | `VerticalContentAlignment` | `Stretch` | none | Avalonia's CommandBar has none; the phone's template doesn't read it |
@@ -279,7 +281,7 @@ _none_
 |---|---|---|---|---|---|
 | [x] | `CommandBarForegroundThemeBrush` | `SolidColorBrush {ThemeResource PhoneTextHighColor} → #FFFFFFFF` | `SolidColorBrush {ThemeResource PhoneTextHighColor} → #DE000000` | yes | By its key |
 | [x] | `CommandBarBackgroundThemeBrush` | `SolidColorBrush {ThemeResource PhoneChromeColor} → #FF1F1F1F` | `SolidColorBrush {ThemeResource PhoneChromeColor} → #FFDDDDDD` | yes | By its key |
-| [x] | `AppBarBorderThemeBrush` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FF000000` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FFFFFFFF` | yes | By its key |
+| [-] | `AppBarBorderThemeBrush` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FF000000` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FFFFFFFF` | yes | By its key |
 
 
 

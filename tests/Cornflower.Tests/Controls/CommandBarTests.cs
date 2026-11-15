@@ -518,6 +518,75 @@ public class CommandBarTests
     {
         using var page = new AppBarPage(configure: bar => bar.DefaultLabelPosition = CommandBarDefaultLabelPosition.Bottom);
         Assert.False(page.Add.IsCompact);
-        Assert.True(Part<TextBlock>(page.Add, "PART_TextLabel").IsVisible);
+        var label = Part<TextBlock>(page.Add, "PART_TextLabel");
+        Assert.True(label.IsVisible);
+        // Closed, the bar is as tall as its commands, the labels inside it.
+        Assert.Equal(page.Add.Bounds.Height, page.Bar.Bounds.Height, 0.001);
+        Assert.True(label.TranslatePoint(new Point(0, label.Bounds.Height), page.Bar)!.Value.Y <= page.Bar.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void Dynamic_Overflow_Keeps_The_Row_Clear_Of_The_Ellipsis()
+    {
+        var fifth = new CommandBarButton { Label = "fifth" };
+        using var page = new AppBarPage(configure: bar =>
+        {
+            bar.IsDynamicOverflowEnabled = true;
+            bar.PrimaryCommands.Add(new CommandBarButton { Label = "fourth" });
+            bar.PrimaryCommands.Add(fifth);
+        });
+        page.Settle();
+
+        Assert.Equal(4, page.Bar.VisiblePrimaryCommands.Count);
+        Assert.True(fifth.IsInOverflow);
+        var row = Part<ItemsControl>(page.Bar, "PART_PrimaryCommands");
+        var ellipsis = Part<Button>(page.Bar, "PART_OverflowButton");
+        Assert.True(row.TranslatePoint(new Point(row.Bounds.Width, 0), page.Bar)!.Value.X <= ellipsis.TranslatePoint(default, page.Bar)!.Value.X);
+    }
+
+    [AvaloniaFact]
+    public void A_Command_With_A_Flyout_Or_On_Another_Bar_Leaves_The_Bar_Open()
+    {
+        var withFlyout = new CommandBarButton { Label = "more", Flyout = new Flyout { Content = new TextBlock { Text = "flyout" } } };
+        var inner = new CommandBar();
+        var innerCommand = new CommandBarButton { Label = "inner" };
+        inner.PrimaryCommands.Add(innerCommand);
+        using var page = new AppBarPage(configure: bar =>
+        {
+            bar.SecondaryCommands.Add(withFlyout);
+            bar.Content = inner;
+        });
+        page.Bar.IsOpen = true;
+        page.Settle();
+
+        withFlyout.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        innerCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(page.Bar.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Commands_Bound_Command_Runs_With_The_Bar_Still_Open()
+    {
+        bool? openWhenRun = null;
+        using var page = new AppBarPage();
+        page.Second.Command = new RunCommand(() => openWhenRun = page.Bar.IsOpen);
+        page.Bar.IsOpen = true;
+        page.Settle();
+
+        page.Tap(page.CentreOf(page.Second));
+
+        Assert.True(openWhenRun);
+        Assert.False(page.Bar.IsOpen);
+    }
+
+    private sealed class RunCommand(Action run) : System.Windows.Input.ICommand
+    {
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => run();
     }
 }

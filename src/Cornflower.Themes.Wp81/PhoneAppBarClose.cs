@@ -1,15 +1,19 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// The phone's open app bar closes when one of its commands is invoked, primary or secondary, unless it is sticky.
-/// Avalonia's <c>CommandBar</c> leaves it open (only its light dismiss closes it). Turned on by the CommandBar theme's
-/// own setter: a command's <c>Click</c> (a <c>CommandBarButton</c>'s or a <c>CommandBarToggleButton</c>'s) bubbling
-/// through the bar clears <c>IsOpen</c> with <c>SetCurrentValue</c>, after the command's own handlers. The bar's
-/// ellipsis isn't a command, so it still opens and closes the bar as Avalonia's does.
+/// An open app bar closes when one of its commands is invoked, primary or secondary, unless it is sticky: what
+/// Avalonia documents for <c>IsSticky</c> ("stays open after a command is invoked") and its <c>CommandBar</c> doesn't
+/// do (only its light dismiss closes it). Turned on by the CommandBar theme's own setter: a <c>Click</c> of one of the
+/// bar's own <c>PrimaryCommands</c> or <c>SecondaryCommands</c> bubbling through it clears <c>IsOpen</c> with
+/// <c>SetCurrentValue</c>, posted, so the click's handlers and its bound <c>Command</c> (which Avalonia's
+/// <c>Button</c> runs after <c>Click</c>) see the bar still open. A command with a <c>Flyout</c> leaves the bar open:
+/// Avalonia opens the flyout against the command before <c>Click</c>, and closing would move or hide what it points
+/// at. The bar's ellipsis isn't a command, so it still opens and closes the bar as Avalonia's does.
 /// </summary>
 internal static class PhoneAppBarClose
 {
@@ -33,7 +37,16 @@ internal static class PhoneAppBarClose
 
     private static void Close(object? sender, RoutedEventArgs e)
     {
-        if (sender is CommandBar { IsOpen: true, IsSticky: false } bar && e.Source is ICommandBarElement)
-            bar.SetCurrentValue(CommandBar.IsOpenProperty, false);
+        if (sender is not CommandBar { IsOpen: true, IsSticky: false } bar || e.Source is not ICommandBarElement command)
+            return;
+        if (command is Button { Flyout: not null })
+            return;
+        if (!bar.PrimaryCommands.Contains(command) && !bar.SecondaryCommands.Contains(command))
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!bar.IsSticky)
+                bar.SetCurrentValue(CommandBar.IsOpenProperty, false);
+        });
     }
 }

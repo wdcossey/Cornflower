@@ -58,7 +58,11 @@ The phone's shell draws the page's bar over the page and keeps its closed height
 - **States**: pressed fills the circle and shows the icon in the bar's colour; a checked toggle is filled the same,
   and shows the ring alone while pressed; disabled is the whole command at 0.451, as one layer.
 - **`CommandBarSeparator`** draws nothing and takes no room: the phone has no style for `AppBarSeparator`.
-- An app's `DefaultLabelPosition` shows the labels closed too; the theme sets Collapsed closed and Bottom open.
+- An app's `DefaultLabelPosition` shows the labels closed too, the bar as tall as its commands; the theme sets
+  Collapsed closed and Bottom open.
+- **Dynamic overflow** (`IsDynamicOverflowEnabled`) keeps the centred row clear of the ellipsis: the theme's
+  `Padding`, which nothing draws, is the room Avalonia's reckoning needs for that, so four commands fit on the 450
+  view, the phone's most.
 
 ## The checklist
 
@@ -71,7 +75,7 @@ default) or `Minimal` (1), WinRT's `AppBar.ClosedDisplayMode` and its 8.1 member
 
 ## Resource keys
 
-`CommandBarBackgroundThemeBrush`, `CommandBarForegroundThemeBrush`, `AppBarBorderThemeBrush`,
+`CommandBarBackgroundThemeBrush`, `CommandBarForegroundThemeBrush`,
 `AppBarItemForegroundThemeBrush`, `AppBarItemBackgroundThemeBrush`, `AppBarToggleButtonCheckedBorderThemeBrush`,
 `AppBarToggleButtonCheckedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedBorderThemeBrush`,
 `AppBarToggleButtonCheckedPressedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedForegroundThemeBrush`,
@@ -93,10 +97,11 @@ when a command is invoked (`PhoneAppBarClose`, internal to the theme). No type s
   for any number, draws none with none, and scrolls a list longer than the room.
 - **A pressed command and a pressed secondary command** on the shell's bar aren't read: the pressed command is the
   template's state with the bar's colour; a secondary command shows no press.
-- **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as the phone's menu does by
-  common account; it isn't read on the emulator.
-- **At most four primary commands**, as on the phone: a fifth runs under the ellipsis, which then takes the presses
-  there.
+- **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as Avalonia documents
+  `IsSticky`; it isn't read on the emulator. A command with a `Flyout` leaves it open, and a bound `Command` runs
+  before it closes.
+- **At most four primary commands**, as on the phone: without dynamic overflow a fifth runs under the ellipsis,
+  which then takes the presses there.
 - **Avalonia's `Content`** is drawn at the bar's left, under the commands: the phone's bar has none, and the commands
   stay centred on the bar.
 - **A toggle among the secondary commands** shows no checked state, and a pressed line no press: the phone's menu has

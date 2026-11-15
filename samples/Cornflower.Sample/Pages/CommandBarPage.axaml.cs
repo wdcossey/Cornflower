@@ -17,6 +17,11 @@ public partial class CommandBarPage : UserControl
     {
         InitializeComponent();
         KeepTheBarsHeightFree();
+        Bar.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == CommandBarOptions.ClosedDisplayModeProperty)
+                KeepTheBarsHeightFree();
+        };
     }
 
     /// <summary>The closed bar's height, compact or minimal, kept free at the content's foot, from the theme's keys.</summary>
@@ -40,7 +45,6 @@ public partial class CommandBarPage : UserControl
     {
         var minimal = Minimal.IsChecked == true;
         CommandBarOptions.SetClosedDisplayMode(Bar, minimal ? AppBarClosedDisplayMode.Minimal : AppBarClosedDisplayMode.Compact);
-        KeepTheBarsHeightFree();
     }
 
     private void OnLightChanged(object? sender, RoutedEventArgs e) =>
