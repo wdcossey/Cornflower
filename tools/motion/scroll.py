@@ -18,7 +18,8 @@ For each touch that ends in inertia it prints:
   drag), whose speed v0 at the start, a and c are fitted (`drag`).
 
 Then a table of every flick: the drag fit's v0, the distance and the time. With --shared, one a and c for every flick
-(only v0 and the start fitted to each), and the rms of each and of all; it takes a minute or two.
+(only v0 and the start fitted to each), and the rms of each and of all. A run of 22 flicks takes about 30 s, and
+--shared about 15 s more: each flick's a + c v^2 fit is a Nelder-Mead over a golden-section search.
 
 Last, for each touch, the ScrollBar's `IndicatorMode` changes against the press and the end of the inertia (the app sees
 no change of the indicator's opacity: the fades are only in a recording, `scrollend.py`).
