@@ -526,9 +526,15 @@ public class PageTransitionTests
         var task = new TurnstileTransition().Start(from, to, true, cancel.Token);
         AtTick(clock, 3);
         // A thread of its own: Task.Wait could run a task inline on this one.
-        var other = new Thread(cancel.Cancel);
+        Exception? error = null;
+        var other = new Thread(() =>
+        {
+            try { cancel.Cancel(); }
+            catch (Exception e) { error = e; }
+        });
         other.Start();
-        other.Join();
+        Assert.True(other.Join(TimeSpan.FromSeconds(5)), "the cancel didn't return");
+        Assert.Null(error);
         // Nothing is done on the other thread: the stop waits for the UI thread.
         Assert.False(task.IsCompleted);
         Assert.NotNull(to.RenderTransform);
