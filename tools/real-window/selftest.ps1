@@ -64,9 +64,10 @@ Check 'SliderAt takes another range' ($x5 -eq (4 * ($SliderThumb / 2 + 50))) "$x
 Check 'CountOf reads a count' (((CountOf '31') -eq 31) -and ((CountOf '-2') -eq -2) -and ((CountOf '0') -eq 0))
 Check 'CountOf is nothing for anything else' (($null -eq (CountOf 'wi-fi is on')) -and ($null -eq (CountOf '')) -and ($null -eq (CountOf $null)))
 
-Check 'HoverVerdict: the rest''s pixel under the touch is not set' ((HoverVerdict 1 2 1) -eq 'not set')
-Check 'HoverVerdict: any other is set' (((HoverVerdict 1 2 2) -eq 'set') -and ((HoverVerdict 1 2 3) -eq 'set'))
-Check 'HoverVerdict: a pixel the mouse doesn''t change settles nothing' ((HoverVerdict 1 1 1) -eq 'unsettled')
+Check 'HoverVerdict: the rest''s pixel under the touch is not set' (((HoverVerdict 1 2 1 $false) -eq 'not set') -and ((HoverVerdict 1 2 1 $true) -eq 'not set'))
+Check 'HoverVerdict: any other is set' (((HoverVerdict 1 2 2 $false) -eq 'set') -and ((HoverVerdict 1 2 3 $false) -eq 'set'))
+Check 'HoverVerdict: set with the cursor on it is not settled' ((HoverVerdict 1 2 2 $true) -like 'set, but*')
+Check 'HoverVerdict: a pixel the mouse doesn''t change settles nothing' ((HoverVerdict 1 1 1 $false) -eq 'unsettled')
 
 '== drive.ps1, as parsed'
 $repo = (Resolve-Path (Join-Path (Join-Path $PSScriptRoot '..') '..')).Path
@@ -93,8 +94,10 @@ foreach ($title in $sections) {
 
 # The sample's pages, by their [SamplePage] titles, and its controls' x:Names.
 $sample = Join-Path $repo 'samples'
-$pages = @(Get-ChildItem $sample -Recurse -Filter *.cs | Select-String -Pattern '\[SamplePage\("([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })
-$names = @(Get-ChildItem $sample -Recurse -Filter *.axaml | Select-String -Pattern 'x:Name="([^"]+)"' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value })
+# Not bin/ or obj/, where a stale copy could keep a name the source has lost.
+function Sources($filter) { Get-ChildItem $sample -Recurse -Filter $filter | Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } }
+$pages = @(Sources *.cs | Select-String -Pattern '\[SamplePage\("([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+$names = @(Sources *.axaml | Select-String -Pattern 'x:Name="([^"]+)"' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value })
 Check 'the sample has pages' ($pages.Count -gt 0)
 foreach ($title in @(ArgumentsOf 'Open' | Sort-Object -Unique)) {
     Check "the page it opens, '$title', is in the sample" ($pages -ccontains $title)

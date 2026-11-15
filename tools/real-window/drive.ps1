@@ -22,11 +22,13 @@ param(
     [string]$Out = (Join-Path ([IO.Path]::GetTempPath()) ('cornflower-real-window\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))),
     # Runs only the sections whose title is like one of these, comma-separated, such as 'toggleswitch*,slider*', to
     # work on them. The whole run is the gate.
-    [string]$Only = '*'
+    [string[]]$Only = '*'
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')
+# From a PowerShell prompt, -Only a*,b* comes as an array; through -File, as one string. Either way, one comma list.
+$Only = $Only -join ','
 function Step([string]$text) { Write-Host "-- $text" }
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -69,6 +71,9 @@ Add-Type @'
 using System; using System.Runtime.InteropServices;
 public static class RealInput {
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr c);
+  [DllImport("user32.dll")] public static extern bool GetCursorPos(out PT p);
+  public static int[] Cursor() { PT p; GetCursorPos(out p); return new[] { p.x, p.y }; }
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
@@ -80,7 +85,7 @@ public static class RealInput {
   public static void Wheel(int d) { mouse_event(0x800, 0, 0, unchecked((uint)d), IntPtr.Zero); }
 
   // Touch, through InjectTouchInput: one contact, with no feedback drawn (TOUCH_FEEDBACK_NONE), so frames show only the app.
-  [StructLayout(LayoutKind.Sequential)] struct PT { public int x, y; }
+  [StructLayout(LayoutKind.Sequential)] public struct PT { public int x, y; }
   [StructLayout(LayoutKind.Sequential)] struct RC { public int l, t, r, b; }
   [StructLayout(LayoutKind.Sequential)] struct PI {
     public uint type, id, frame, flags; public IntPtr device, hwnd;
@@ -124,7 +129,10 @@ public static class Pixels {
   }
 }
 '@
-[void][RealInput]::SetProcessDPIAware()
+# Per-monitor aware (-4, PER_MONITOR_AWARE_V2), so that UI Automation's rectangles, the cursor and a touch are the screen's
+# own pixels on any monitor, as the ready line's scaling is: system aware, a window on a monitor at another scale would be
+# scaled by Windows and every Px would miss. A host that has set it already keeps its own; then system aware, as before.
+if (-not [RealInput]::SetProcessDpiAwarenessContext([IntPtr]::new(-4))) { [void][RealInput]::SetProcessDPIAware() }
 $AE = [System.Windows.Automation.AutomationElement]
 $TS = [System.Windows.Automation.TreeScope]
 $CT = [System.Windows.Automation.ControlType]
@@ -137,29 +145,22 @@ $script:sections = 0
 $script:scale = 0
 
 # From the screen, not PrintWindow, which offsets a window with no frame of its own by its invisible border.
-function Shot($name) {
-    $r = $win.Current.BoundingRectangle
-    $bmp = New-Object Drawing.Bitmap ([int]$r.Width), ([int]$r.Height)
-    $g = [Drawing.Graphics]::FromImage($bmp)
-    $g.CopyFromScreen([int]$r.X, [int]$r.Y, 0, 0, $bmp.Size)
-    $g.Dispose()
-    $bmp.Save((Join-Path $Out "$name.png"))
-    $bmp.Dispose()
-}
-# One pixel of the screen, as ARGB.
-function Pixel($x, $y) {
-    $bmp = New-Object Drawing.Bitmap 1, 1
-    $g = [Drawing.Graphics]::FromImage($bmp)
-    $g.CopyFromScreen([int]$x, [int]$y, 0, 0, $bmp.Size)
-    $g.Dispose()
-    $c = $bmp.GetPixel(0, 0).ToArgb()
-    $bmp.Dispose()
-    $c
-}
 # A region of the screen, which the caller disposes of, or hands to Changed as the region taken now.
 function Region($x, $y, $wd, $ht) {
     $bmp = New-Object Drawing.Bitmap ([int]$wd), ([int]$ht)
-    $g = [Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen([int]$x, [int]$y, 0, 0, $bmp.Size); $g.Dispose(); $bmp
+    $g = [Drawing.Graphics]::FromImage($bmp)
+    try { $g.CopyFromScreen([int]$x, [int]$y, 0, 0, $bmp.Size) } finally { $g.Dispose() }
+    $bmp
+}
+function Shot($name) {
+    $r = $win.Current.BoundingRectangle
+    $bmp = Region $r.X $r.Y $r.Width $r.Height
+    try { $bmp.Save((Join-Path $Out "$name.png")) } finally { $bmp.Dispose() }
+}
+# One pixel of the screen, as ARGB.
+function Pixel($x, $y) {
+    $bmp = Region $x $y 1 1
+    try { $bmp.GetPixel(0, 0).ToArgb() } finally { $bmp.Dispose() }
 }
 # How many of every other pixel differ between a region taken earlier, which the caller keeps, and one taken now, which this
 # disposes of. A disposed bitmap's size reads as nothing in PowerShell, so a reused one would compare nothing and pass.
@@ -179,7 +180,8 @@ function ById($id) {
     $el
 }
 # A TextBlock on the page that a section reads, by its x:Name: UI Automation's name for it is its text, read live from
-# .Current.Name. Found once, as a search of the whole tree takes long enough to shift a timed read.
+# .Current.Name. ById by another name, so that RealWindowTests can check each is a TextBlock; a section finds it once, as
+# a search of the whole tree takes long enough to shift a timed read.
 function ReadOut($id) { ById $id }
 function Texts { (All $CT::Text | ForEach-Object { $_.Current.Name } | Where-Object { $_ }) }
 function FirstText($like) { Texts | Where-Object { $_ -like $like } | Select-Object -First 1 }
@@ -332,6 +334,7 @@ function Open($title) {
     Invoke-Element $link
     $line = WaitForReady $seen
     if (-not $line) { throw "$title wrote no ready line" }
+    if ($line -notmatch 'scaling=[\d.]+ ') { throw "$title's ready line has no scaling, so nothing can be aimed: $line" }
     $script:ready = $line
     $script:scale = ScalingOf $line
 }
@@ -367,7 +370,6 @@ try {
     "$Exe"
     "window $($r.Width) x $($r.Height) on the screen, frames in $Out"
     "touch hardware contacts $contacts, touch injection $($script:touch)"
-    Check 'touch injection starts' $script:touch 'InitializeTouchInjection failed: the touch sections will fail at their first touch'
     $titles = @(AppButtons | ForEach-Object { $_.Current.Name })
     Shot 'index'
     Check 'the list has a page' ($titles.Count -gt 0)
@@ -433,74 +435,76 @@ try {
         $switch = { Region ($b.Right - (Px $SwitchColumn)) ($oy - (Px ($SwitchHeight / 2))) (Px $SwitchColumn) (Px $SwitchHeight) }
         Away
         $offLook = & $switch
-        Check 'the first switch starts off' (-not (IsOn)) (State)
+        try {
+            Check 'the first switch starts off' (-not (IsOn)) (State)
 
-        Tap $ox $oy
-        Start-Sleep -Milliseconds 600
-        Shot 'toggleswitch-tapped-on'
-        Check 'a touch tap on the knob turns it on' (IsOn) (State)
-        $moved = Changed $offLook (& $switch)
-        Check 'and the knob slides over' ($moved -gt 20) "$moved sampled pixels differ"
-        Tap $nx $ny
-        Start-Sleep -Milliseconds 600
-        Check 'a second tap turns it off' (-not (IsOn)) (State)
-        $returned = Changed $offLook (& $switch)
-        Check 'and the knob slides back to where it was' ($returned -lt 5) "$returned sampled pixels differ"
+            Tap $ox $oy
+            Start-Sleep -Milliseconds 600
+            Shot 'toggleswitch-tapped-on'
+            Check 'a touch tap on the knob turns it on' (IsOn) (State)
+            $moved = Changed $offLook (& $switch)
+            Check 'and the knob slides over' ($moved -gt 20) "$moved sampled pixels differ"
+            Tap $nx $ny
+            Start-Sleep -Milliseconds 600
+            Check 'a second tap turns it off' (-not (IsOn)) (State)
+            $returned = Changed $offLook (& $switch)
+            Check 'and the knob slides back to where it was' ($returned -lt 5) "$returned sampled pixels differ"
 
-        TouchDrag $ox $oy (Px $SwitchTapMove) 0 5
-        Start-Sleep -Milliseconds 600
-        Check "a press that moves $SwitchTapMove view px is still a tap, and toggles" (IsOn) (State)
-        Tap $nx $ny
-        Start-Sleep -Milliseconds 600
-        TouchDrag $ox $oy (Px $SwitchShortDrag) 0
-        Start-Sleep -Milliseconds 600
-        Check "a drag of $SwitchShortDrag view px, short of half the travel, goes back off" (-not (IsOn)) (State)
-        TouchDrag $ox $oy (Px $SwitchLongDrag) 0
-        Start-Sleep -Milliseconds 600
-        Check "a drag of $SwitchLongDrag view px goes on" (IsOn) (State)
-        TouchDrag $nx $ny (-(Px $SwitchLongDrag)) 0
-        Start-Sleep -Milliseconds 600
-        Check 'and one back goes off' (-not (IsOn)) (State)
+            TouchDrag $ox $oy (Px $SwitchTapMove) 0 5
+            Start-Sleep -Milliseconds 600
+            Check "a press that moves $SwitchTapMove view px is still a tap, and toggles" (IsOn) (State)
+            Tap $nx $ny
+            Start-Sleep -Milliseconds 600
+            TouchDrag $ox $oy (Px $SwitchShortDrag) 0
+            Start-Sleep -Milliseconds 600
+            Check "a drag of $SwitchShortDrag view px, short of half the travel, goes back off" (-not (IsOn)) (State)
+            TouchDrag $ox $oy (Px $SwitchLongDrag) 0
+            Start-Sleep -Milliseconds 600
+            Check "a drag of $SwitchLongDrag view px goes on" (IsOn) (State)
+            TouchDrag $nx $ny (-(Px $SwitchLongDrag)) 0
+            Start-Sleep -Milliseconds 600
+            Check 'and one back goes off' (-not (IsOn)) (State)
 
-        # The knob is the finger's from the first move, before the switch decides anything.
-        TouchDown $ox $oy
-        Slide ($ox + (Px 20)) $oy 5
-        Hold 150
-        $following = Changed $offLook (& $switch)
-        Shot 'toggleswitch-following'
-        TouchUp
-        Start-Sleep -Milliseconds 600
-        Check 'the knob follows the finger while it is down' ($following -gt 10) "$following sampled pixels differ"
+            # The knob is the finger's from the first move, before the switch decides anything.
+            TouchDown $ox $oy
+            Slide ($ox + (Px 20)) $oy 5
+            Hold 150
+            $following = Changed $offLook (& $switch)
+            Shot 'toggleswitch-following'
+            TouchUp
+            Start-Sleep -Milliseconds 600
+            Check 'the knob follows the finger while it is down' ($following -gt 10) "$following sampled pixels differ"
 
-        TouchDown $ox $oy
-        Hold 1300
-        TouchUp
-        Start-Sleep -Milliseconds 600
-        Check 'a still press held past 1,000 ms is a hold, and leaves it off' (-not (IsOn)) (State)
+            TouchDown $ox $oy
+            Hold 1300
+            TouchUp
+            Start-Sleep -Milliseconds 600
+            Check 'a still press held past 1,000 ms is a hold, and leaves it off' (-not (IsOn)) (State)
 
-        # Only the thumb takes the finger: the header's corner is the switch's, but nothing happens there.
-        Tap ([int]$b.X + (Px $SwitchHeaderIn)) ([int]$b.Y + (Px $SwitchHeaderIn))
-        Start-Sleep -Milliseconds 600
-        Check 'a tap on the header, away from the knob, does nothing' (-not (IsOn)) (State)
+            # Only the thumb takes the finger: the header's corner is the switch's, but nothing happens there.
+            Tap ([int]$b.X + (Px $SwitchHeaderIn)) ([int]$b.Y + (Px $SwitchHeaderIn))
+            Start-Sleep -Milliseconds 600
+            Check 'a tap on the header, away from the knob, does nothing' (-not (IsOn)) (State)
 
-        ClickAt $ox $oy
-        Check 'a mouse click on the knob turns it on' (IsOn) (State)
-        MouseDrag $nx $ny (-(Px $SwitchLongDrag)) 0
-        Start-Sleep -Milliseconds 600
-        Check 'and a mouse drag back turns it off' (-not (IsOn)) (State)
+            ClickAt $ox $oy
+            Check 'a mouse click on the knob turns it on' (IsOn) (State)
+            MouseDrag $nx $ny (-(Px $SwitchLongDrag)) 0
+            Start-Sleep -Milliseconds 600
+            Check 'and a mouse drag back turns it off' (-not (IsOn)) (State)
 
-        # PhoneNoManipulation on the switch: a drag up it is the switch's, not the page's.
-        $top = $wifi.Current.BoundingRectangle.Y
-        TouchDrag $ox $oy 0 (-(Px 120))
-        Start-Sleep -Milliseconds 1200
-        Check "a touch drag up the knob doesn't scroll the page" ($wifi.Current.BoundingRectangle.Y -eq $top) "$($wifi.Current.BoundingRectangle.Y) against $top"
-        Check 'and, moving nothing across, leaves it off' (-not (IsOn)) (State)
-        # Off the switch, the same drag pans the page, so the check above proves something.
-        $hx, $hy = Centre (Named $CT::Text 'no header')
-        TouchDrag $hx $hy 0 (-(Px 120))
-        Start-Sleep -Milliseconds 1500
-        Check 'a touch drag up off the switch scrolls the page' ($wifi.Current.BoundingRectangle.Y -lt ($top - (Px 60))) "$($wifi.Current.BoundingRectangle.Y) against $top"
-        $offLook.Dispose()
+            # PhoneNoManipulation on the switch: a drag up it is the switch's, not the page's.
+            $top = $wifi.Current.BoundingRectangle.Y
+            TouchDrag $ox $oy 0 (-(Px 120))
+            Start-Sleep -Milliseconds 1200
+            Check "a touch drag up the knob doesn't scroll the page" ($wifi.Current.BoundingRectangle.Y -eq $top) "$($wifi.Current.BoundingRectangle.Y) against $top"
+            Check 'and, moving nothing across, leaves it off' (-not (IsOn)) (State)
+            # Off the switch, the same drag pans the page, so the check above proves something.
+            $hx, $hy = Centre (Named $CT::Text 'no header')
+            TouchDrag $hx $hy 0 (-(Px 120))
+            Start-Sleep -Milliseconds 1500
+            Check 'a touch drag up off the switch scrolls the page' ($wifi.Current.BoundingRectangle.Y -lt ($top - (Px 60))) "$($wifi.Current.BoundingRectangle.Y) against $top"
+        }
+        finally { $offLook.Dispose() }
     }
 
     # PhoneNoManipulation on a Slider in the page's ScrollViewer: a touch drag that starts on it moves the thumb, however
@@ -546,7 +550,9 @@ try {
         Check 'and leaves the value' (Near 20) ($valueText.Current.Name)
 
         # In the page's margin, left of every Slider.
-        [void][RealInput]::SetCursorPos(([int]$win.Current.BoundingRectangle.X + (Px 6)), $hy); Start-Sleep -Milliseconds 150
+        $mx = [int]$win.Current.BoundingRectangle.X + (Px 6)
+        Within $mx $hy
+        [void][RealInput]::SetCursorPos($mx, $hy); Start-Sleep -Milliseconds 150
         WheelUp 10
         Check 'the wheel scrolls it back to the top' ((Top) -eq $top) "$(Top) against $top"
         Wheel 3
@@ -643,12 +649,16 @@ try {
         TouchDown $x $y
         Hold 400
         $touched = Pixel $cx $cy
+        # Where Windows has put the cursor: on Back, a mouse move it made of the touch could have set :pointerover too.
+        $at = [RealInput]::Cursor()
+        $cursorOn = Inside $bb.X $bb.Y $bb.Right $bb.Bottom $at[0] $at[1]
         Shot 'pointerover-touch-held'
         TouchUp
         Start-Sleep -Milliseconds 600
-        $verdict = HoverVerdict $rest $hover $touched
-        "        under a held touch, :pointerover is $verdict ({0:X8}; at rest {1:X8}, under the mouse {2:X8})" -f $touched, $rest, $hover
-        Check 'a held touch settles whether :pointerover is set' ($verdict -ne 'unsettled') $verdict
+        $verdict = HoverVerdict $rest $hover $touched $cursorOn
+        "        under a held touch, :pointerover is $verdict ({0:X8}; at rest {1:X8}, under the mouse {2:X8}; the cursor at {3}, {4})" -f $touched, $rest, $hover, $at[0], $at[1]
+        # Only once the pixel can tell: if the mouse didn't change it, the check above has failed for that already.
+        if ($hover -ne $rest) { Check 'a held touch settles whether :pointerover is set' ($verdict -in 'set', 'not set') $verdict }
         Check 'and the tap on Back shows the list' (OnIndex)
         Away
     }

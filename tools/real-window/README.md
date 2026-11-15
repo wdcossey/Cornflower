@@ -70,8 +70,8 @@ shows under its first control.
   mouse click and a mouse drag; and a drag up the knob doesn't scroll the page, where the same drag
   off the switch does. The limits are the probes' (`tools/refapp/README.md`, "Probes").
 - **slider** (`PhoneNoManipulation`): in the page's ScrollViewer, a touch drag across moves the thumb
-  from 20 to 80 and leaves the page; a drag mostly up the page, 150 view px up and 20 across, still
-  moves the thumb, from 30 to 50, and still leaves the page; a mouse drag moves it back; a touch drag
+  from 20 to 80 and leaves the page; a drag mostly up the page, 150 view px up and a fifth of the track
+  across (about 80 view px), still moves the thumb, from 30 to 50, and still leaves the page; a mouse drag moves it back; a touch drag
   up off the Slider does scroll the page, so the first two prove something; and the wheel scrolls it
   back to the top and down again.
 - **repeatbutton** (`PhonePress`): a click counts once and focuses it, Space counts once, a touch
@@ -83,7 +83,8 @@ shows under its first control.
   `PhonePress`'s note says the headless tests found it doesn't. The rail's Back draws `PhoneLowBrush`
   behind its arrow only under `:pointerover`, and a press dims it to 0.6, so a pixel in its corner is
   the rail's black unless `:pointerover` is set. It checks that the mouse over Back changes that pixel,
-  then reads it while a touch is held on Back, and prints `set` or `not set`. It reads while the touch
+  then reads it while a touch is held on Back, and prints `set` or `not set`, or that it was set with
+  the cursor on Back, which can't tell the touch from a mouse move Windows made of it. It reads while the touch
   is held, as Windows can promote a touch to a mouse move about a second later (Avonic saw it), which
   would hover Back as the mouse does. The answer is the desktop's: a phone's touch comes through
   Avalonia's Android backend (`tools/android`).

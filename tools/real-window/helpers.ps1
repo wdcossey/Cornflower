@@ -77,9 +77,11 @@ function SliderAt([double]$left, [double]$width, [double]$bottom, [double]$scale
 function CountOf($text) { if ("$text" -match '^-?\d+$') { [int]$text } }
 
 # Whether :pointerover was set under a held touch, from one pixel of a control that draws a brush only while the pointer is
-# over it: at rest, under the mouse (which has to differ, or the pixel shows nothing), and under the touch.
-function HoverVerdict($rest, $hover, $touched) {
+# over it: at rest, under the mouse (which has to differ, or the pixel shows nothing), and under the touch; and whether
+# the cursor was on the control then, as Windows can make a mouse move of a touch, and the mouse would set it too.
+function HoverVerdict($rest, $hover, $touched, [bool]$cursorOn) {
     if ($hover -eq $rest) { 'unsettled' }
     elseif ($touched -eq $rest) { 'not set' }
+    elseif ($cursorOn) { 'set, but the cursor was on it, so perhaps by the mouse' }
     else { 'set' }
 }

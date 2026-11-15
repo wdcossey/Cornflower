@@ -183,16 +183,16 @@ public partial class RealWindowTests
     private static bool IsOn(IInputElement? hit, Visual control) =>
         hit is Visual visual && (visual == control || control.IsVisualAncestorOf(visual));
 
-    private static string Root
+    /// <summary>The repository, found once: the folder above the tests' output that holds the solution.</summary>
+    private static string Root => LazyRoot.Value;
+
+    private static readonly Lazy<string> LazyRoot = new(() =>
     {
-        get
-        {
-            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-                if (File.Exists(Path.Combine(dir.FullName, "Cornflower.sln")))
-                    return dir.FullName;
-            throw new InvalidOperationException("Cornflower.sln not found above " + AppContext.BaseDirectory);
-        }
-    }
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            if (File.Exists(Path.Combine(dir.FullName, "Cornflower.sln")))
+                return dir.FullName;
+        throw new InvalidOperationException("Cornflower.sln not found above " + AppContext.BaseDirectory);
+    });
 
     [GeneratedRegex(@"^\$(\w+) = ([\d.]+)\r?$", RegexOptions.Multiline)]
     private static partial Regex Constant();
