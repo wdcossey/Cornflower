@@ -1,0 +1,105 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ScrollBar: the default style of the 8.1 Update 1 runtime (scrollbar.json, which equals the
+    SDK's generic.xaml), re-expressed as an Avalonia ControlTheme. Every value is the phone's resource key, by
+    DynamicResource. docs/controls/ScrollViewer/PLAN.md has the values and their sources.
+
+    The phone's ScrollBar is its thin scroll indicator, not a bar to drag: its template has no thumb, no track and no
+    buttons, only a panning root per orientation, each holding a Rectangle, the panning thumb, 2.4 thick and at least
+    7 long (ScrollBarPanningThumbThemeWidth, ScrollBarMinThemeHeight), in ScrollBarPanningBackgroundThemeBrush.
+    WinRT's code sizes it as the viewport is to the extent and moves it by the offset; Avalonia's Track does the same
+    sums for its Thumb (PLAN.md has both), so each panning root is a Track and each panning thumb a Thumb in
+    Wp81ScrollBarPanningThumbTheme, which draws the Rectangle. The root of the other orientation is hidden, as WinRT's
+    code collapses it.
+
+    In a ScrollViewer (the Wp81 ScrollViewer theme's styles) the ScrollBar takes no pointer, so a press on it falls
+    through to the content under it and a touch at the very edge pans; and its mode is the ScrollViewer's state,
+    NoIndicator at rest. A ScrollBar an app places on its own (or one in a control's template outside a ScrollViewer)
+    takes the pointer, so its thin thumb can be dragged, and its mode is MouseIndicator unless set: it shows. The
+    phone's would draw nothing, at None: a deliberate difference, so such a bar isn't lost (PLAN.md).
+
+    The states:
+    - ScrollingIndicatorStates, from wp81:PhoneScrollIndicators.IndicatorMode, which the ScrollViewer theme sets from
+      its own state: NoIndicator fades the panning roots out (340 ms), TouchIndicator fades them in (370 ms),
+      MouseIndicator shows them at once, as the phone's do (FadeOutThemeAnimation, FadeInThemeAnimation, measured),
+      by wp81:PhoneIndicatorFade.
+    - AllowAutoHide false, Avalonia's, which WinRT lacks, keeps them shown.
+    - Disabled draws the root at 0.5. PointerOver changes nothing.
+  -->
+
+  <!-- The panning thumb: a Rectangle in ScrollBarPanningBackgroundThemeBrush, as long as the Track makes it. -->
+  <ControlTheme x:Key="Wp81ScrollBarPanningThumbTheme" TargetType="Thumb">
+    <Setter Property="Background" Value="{DynamicResource ScrollBarPanningBackgroundThemeBrush}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Rectangle x:Name="PanningThumb" Fill="{TemplateBinding Background}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type ScrollBar}" TargetType="ScrollBar">
+    <Setter Property="MinWidth" Value="{DynamicResource ScrollBarMinThemeWidth}" />
+    <Setter Property="MinHeight" Value="{DynamicResource ScrollBarMinThemeHeight}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel x:Name="Root">
+          <Track x:Name="HorizontalPanningRoot"
+                 MinWidth="53"
+                 Orientation="Horizontal"
+                 Minimum="{TemplateBinding Minimum}"
+                 Maximum="{TemplateBinding Maximum}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
+                 ViewportSize="{TemplateBinding ViewportSize}">
+            <Thumb x:Name="HorizontalPanningThumb"
+                   Theme="{StaticResource Wp81ScrollBarPanningThumbTheme}"
+                   Height="{DynamicResource ScrollBarPanningThumbThemeHeight}"
+                   MinWidth="{DynamicResource ScrollBarMinThemeWidth}" />
+          </Track>
+          <Track x:Name="VerticalPanningRoot"
+                 MinHeight="53"
+                 Orientation="Vertical"
+                 IsDirectionReversed="True"
+                 Minimum="{TemplateBinding Minimum}"
+                 Maximum="{TemplateBinding Maximum}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
+                 ViewportSize="{TemplateBinding ViewportSize}">
+            <Thumb x:Name="VerticalPanningThumb"
+                   Theme="{StaticResource Wp81ScrollBarPanningThumbTheme}"
+                   Width="{DynamicResource ScrollBarPanningThumbThemeWidth}"
+                   MinHeight="{DynamicResource ScrollBarMinThemeHeight}" />
+          </Track>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- WinRT's code shows the root of the ScrollBar's orientation and collapses the other. -->
+    <Style Selector="^:vertical /template/ Track#HorizontalPanningRoot">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:horizontal /template/ Track#VerticalPanningRoot">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!--
+      ScrollingIndicatorStates, frame by frame on CornflowerClock (wp81:PhoneIndicatorFade): NoIndicator fades the panning
+      roots out over 340 ms (FadeOutThemeAnimation), TouchIndicator fades them in over 370 ms (FadeInThemeAnimation),
+      each from wherever the other had got to; MouseIndicator, and AllowAutoHide off, show them at once, as the phone's
+      MouseIndicator state runs no animation. Run 20261115-1946-dev11's recording (tools/refapp/README.md).
+    -->
+    <Style Selector="^:vertical /template/ Track#VerticalPanningRoot, ^:horizontal /template/ Track#HorizontalPanningRoot">
+      <Setter Property="wp81:PhoneIndicatorFade.IsEnabled" Value="True" />
+    </Style>
+
+    <!-- Disabled: the root at 0.5. -->
+    <Style Selector="^:disabled /template/ Panel#Root">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ScrollViewer: the default style of the 8.1 Update 1 runtime (scrollviewer.json, which equals
+    the SDK's generic.xaml), re-expressed as an Avalonia ControlTheme, and the runtime's ScrollViewerScrollBarlessTemplate
+    (themeresources.json) as a keyed one. docs/controls/ScrollViewer/PLAN.md has the values and their sources, and
+    README.md how a control's template holds either.
+
+    The template is the phone's, part for part, with Avalonia's part names:
+    - The Border draws BorderBrush and BorderThickness; the Grid inside it, Background, in two columns and two rows,
+      the second of each as wide or as tall as its ScrollBar.
+    - PART_ContentPresenter is the phone's ScrollContentPresenter: over all four cells, so the indicators lie over the
+      content, the ScrollViewer's Padding round it as its Margin, so what scrolls is clipped inside the Padding, and
+      its ContentTemplate bound, as the phone's is (Avalonia's presenter takes the Content itself, not the template). It
+      has a transparent Background of its own, so a press anywhere on it, between the content's parts too, reaches its
+      gesture recogniser; the Grid draws the ScrollViewer's. Its
+      gesture recogniser and its snap point and inertia bindings are Avalonia's, as in Simple's template. The scroll
+      physics are Avalonia's, a recorded deviation (PLAN.md, "Scroll physics").
+    - PART_VerticalScrollBar, in the second column at the right, and PART_HorizontalScrollBar, in the second row: the
+      phone's thin indicators (Controls/ScrollBar.axaml), taking no pointer (styles below).
+
+    ScrollingIndicatorStates: wp81:PhoneScrollIndicators, turned on here, sets the ScrollViewer's state from the
+    scroll and the pointer, and the styles below pass it to both ScrollBars, as the phone's TouchIndicator state sets
+    their IndicatorMode. The phone's MouseIndicator state sets nothing, so a mouse would see no indicator; ours passes
+    it on too (a deliberate difference: PLAN.md).
+  -->
+
+  <ControlTheme x:Key="{x:Type ScrollViewer}" TargetType="ScrollViewer">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Visible" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="wp81:PhoneScrollIndicators.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="*,Auto" Background="{TemplateBinding Background}">
+            <ScrollContentPresenter x:Name="PART_ContentPresenter"
+                                    Grid.RowSpan="2"
+                                    Grid.ColumnSpan="2"
+                                    Margin="{TemplateBinding Padding}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    Background="Transparent"
+                                    HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
+                                    VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
+                                    HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"
+                                    VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
+                                    ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+              <ScrollContentPresenter.GestureRecognizers>
+                <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                                         CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                                         IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                                         Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                                         Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                                         Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+              </ScrollContentPresenter.GestureRecognizers>
+            </ScrollContentPresenter>
+            <ScrollBar x:Name="PART_VerticalScrollBar"
+                       Grid.Column="1"
+                       Orientation="Vertical"
+                       HorizontalAlignment="Right" />
+            <ScrollBar x:Name="PART_HorizontalScrollBar"
+                       Grid.Row="1"
+                       Orientation="Horizontal" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!--
+      Its ScrollBars are the phone's indicators: they take no pointer, so a press on one falls through to the content
+      under it and pans, and nothing drags them; and they draw the ScrollViewer's state, passed to their IndicatorMode,
+      NoIndicator at rest.
+    -->
+    <Style Selector="^ /template/ ScrollBar">
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="None" />
+    </Style>
+    <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=TouchIndicator] /template/ ScrollBar">
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="TouchIndicator" />
+    </Style>
+    <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=MouseIndicator] /template/ ScrollBar">
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="MouseIndicator" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    The phone's ScrollViewerScrollBarlessTemplate, which its Hub and Pivot templates set on their ScrollViewers: the
+    Grid with the Background and the ScrollContentPresenter, the Padding as its Margin, and no ScrollBars, so no
+    indicator. As a keyed ControlTheme a control's template sets it by Theme="{DynamicResource ...}"; the
+    ScrollViewer's own values (visibility, snap points) stay its template's to set.
+  -->
+  <ControlTheme x:Key="Wp81ScrollViewerScrollBarlessTheme" TargetType="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="{TemplateBinding Background}">
+          <ScrollContentPresenter x:Name="PART_ContentPresenter"
+                                  Margin="{TemplateBinding Padding}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Background="Transparent"
+                                  HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
+                                  VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
+                                  HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"
+                                  VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
+                                  ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+            <ScrollContentPresenter.GestureRecognizers>
+              <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                                       CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                                       IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                                       Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                                       Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                                       Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+            </ScrollContentPresenter.GestureRecognizers>
+          </ScrollContentPresenter>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

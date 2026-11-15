@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ScrollViewerPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 ScrollViewer, as an 8.1 page writes one: no style, no size. The page is itself the first: drag it, and
+    the thin indicator shows at the right edge while it scrolls and goes soon after; a mouse moving over it shows it
+    too. The strip scrolls sideways, its indicator at the bottom. The boxes below keep theirs shown (AllowAutoHide off,
+    Avalonia's), so they can be seen at rest: enabled, disabled at half, and in the light theme.
+  -->
+  <ScrollViewer x:Name="Page" ScrollChanged="OnScrollChanged">
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="this page" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <TextBlock x:Name="State" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+      <TextBlock Text="sideways" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ScrollViewer x:Name="Sideways" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Height="80">
+        <StackPanel x:Name="Strip" Orientation="Horizontal" Spacing="12" />
+      </ScrollViewer>
+
+      <TextBlock Text="always shown" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ScrollViewer x:Name="Shown" AllowAutoHide="False" Height="120">
+        <StackPanel x:Name="ShownLines" />
+      </ScrollViewer>
+
+      <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ScrollViewer x:Name="Disabled" AllowAutoHide="False" IsEnabled="False" Height="120">
+        <StackPanel x:Name="DisabledLines" />
+      </ScrollViewer>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <ScrollViewer x:Name="Light" AllowAutoHide="False" Height="120">
+              <StackPanel x:Name="LightLines" />
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+
+      <TextBlock Text="more of the page" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <StackPanel x:Name="PageLines" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
