@@ -54,7 +54,8 @@ the bar's colour).
 | The pressed command: the circle filled, the icon the bar's colour | no reference on the shell's bar; the template's state with the bar's colour for the page's |
 | Checked and pressed: the ring alone | no reference on the shell's bar; the template's state |
 | A press outside the open bar closes it | Avalonia's light dismiss; not read on the phone |
-| The open bar's height with other numbers of secondary commands, and a list that doesn't fit | gap: not read; ours keeps the 100 px foot and doesn't scroll |
+| Invoking a command closes the open bar | ours does, as the phone's menu does by common account; not read |
+| The open bar's height with other numbers of secondary commands, and a list that doesn't fit | gap: not read; ours keeps the 100 px foot (none with no list) and scrolls a list longer than the room |
 | The opening and closing motion | gap: not read; ours opens at once |
 | `ActualHeight`: 57.5 on the phone, the control under the shell's 62.92 | deliberate difference: ours is the drawn 62.9166 (PLAN, "The bar") |
 | The open bar: on the phone the shell draws it over the page and the control stays 57.5 | deliberate difference: ours grows upwards from its foot; a page lays it over its content (README, "On a page") |

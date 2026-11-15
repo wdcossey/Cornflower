@@ -41,7 +41,8 @@ The phone's shell draws the page's bar over the page and keeps its closed height
   open bar covers the content rather than pushing it up. The bar's `VerticalAlignment` is `Bottom`; open, it grows
   upwards.
 - Keep the closed bar's height free at the content's foot: 62.9166 compact (151 raw px at 2.4, the phone's 62.92),
-  26.25 minimal. The sample's page does it with its `ScrollViewer`'s `Padding`.
+  26.25 minimal, the theme's keys `Wp81CommandBarCompactHeight` and `Wp81CommandBarMinimalHeight`. The sample's page
+  binds its `ScrollViewer`'s `Padding` to them.
 
 ## What it does
 
@@ -50,8 +51,9 @@ The phone's shell draws the page's bar over the page and keeps its closed height
 - **Closed, minimal** (`ClosedDisplayMode` Minimal): 26.25 tall, the ellipsis alone.
 - **Open** (`IsOpen`, or a tap on the ellipsis), either mode: the circles where they were with their labels under
   them, then the secondary commands as a list of words in `PhoneFontFamilySemiLight` 27.92, a line 59.1666 each, and
-  the bar's foot; the bar as tall as that, growing upwards. The ellipsis closes it, and so does a press anywhere
-  outside it, unless `IsSticky`.
+  the bar's foot (none without secondary commands); the bar as tall as that, growing upwards, and a list longer than
+  the room scrolls. The ellipsis closes it; so does invoking a command, and a press anywhere outside it, unless
+  `IsSticky`.
 - **The ellipsis always shows**: the phone's opens a bar with no secondary commands to show its labels.
 - **States**: pressed fills the circle and shows the icon in the bar's colour; a checked toggle is filled the same,
   and shows the ring alone while pressed; disabled is the whole command at 0.451, as one layer.
@@ -73,23 +75,32 @@ default) or `Minimal` (1), WinRT's `AppBar.ClosedDisplayMode` and its 8.1 member
 `AppBarItemForegroundThemeBrush`, `AppBarItemBackgroundThemeBrush`, `AppBarToggleButtonCheckedBorderThemeBrush`,
 `AppBarToggleButtonCheckedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedBorderThemeBrush`,
 `AppBarToggleButtonCheckedPressedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedForegroundThemeBrush`,
-`PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`, `Wp81.Glyph.AppBarEllipsis`. The themes of the bar's own parts are
+`PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`, `Wp81.Glyph.AppBarEllipsis`. The theme's own:
+`Wp81CommandBarCompactHeight` (62.9166) and `Wp81CommandBarMinimalHeight` (26.25), the closed bar's heights. The themes of the bar's own parts are
 keyed `Wp81CommandBarItemsTheme` (its `ItemsControl`s) and `Wp81CommandBarEllipsisButtonTheme` (the ellipsis).
 
 ## The ladder
 
-Rung 1, a theme, for the four types; rung 2 for `ClosedDisplayMode`, an attached property. No type substitution.
+Rung 1, a theme, for the four types; rung 2 for `ClosedDisplayMode`, an attached property, and for closing the bar
+when a command is invoked (`PhoneAppBarClose`, internal to the theme). No type substitution.
 
 ## Known gaps
 
 - **The icons are Lucide's**, at `LucideIcon`'s 20 × 20: smaller than the shell's Segoe UI Symbol glyphs (the plus
   inks 32 raw px where the shell's inks 51).
 - **The opening and closing motion** isn't read; the bar opens at once.
-- **The open bar with other numbers of secondary commands** isn't read: ours keeps the foot the shell draws under two,
-  and a list longer than the screen doesn't scroll.
+- **The open bar with other numbers of secondary commands** isn't read: ours keeps the foot the shell draws under two
+  for any number, draws none with none, and scrolls a list longer than the room.
 - **A pressed command and a pressed secondary command** on the shell's bar aren't read: the pressed command is the
   template's state with the bar's colour; a secondary command shows no press.
-- **Invoking a command doesn't close the bar**, as Avalonia's doesn't; whether the phone's does isn't read.
+- **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as the phone's menu does by
+  common account; it isn't read on the emulator.
+- **At most four primary commands**, as on the phone: a fifth runs under the ellipsis, which then takes the presses
+  there.
+- **Avalonia's `Content`** is drawn at the bar's left, under the commands: the phone's bar has none, and the commands
+  stay centred on the bar.
+- **A toggle among the secondary commands** shows no checked state, and a pressed line no press: the phone's menu has
+  no toggles, and its pressed line isn't read.
 - **`Bounds.Height` is the drawn 62.9166**, where the phone's `ActualHeight` is 57.5, and the open bar's control
   grows where the phone's stays 57.5.
 - **A command off a bar** looks as on the bar, where the phone's template draws a smaller one

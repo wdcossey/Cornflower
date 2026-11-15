@@ -60,14 +60,19 @@ internal sealed class AppBarPage : IDisposable
     public static Point Raw(double x, double y) => new(x / Scale, y / Scale);
 
     /// <summary>The centre of <paramref name="control"/>, in the window.</summary>
-    public Point CentreOf(Visual control) =>
-        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), Window)!.Value;
+    public Point CentreOf(Visual control) => CentreOf(control, Window);
 
-    public void Tap(Point at)
+    public static Point CentreOf(Visual control, Window window) =>
+        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
+
+    public void Tap(Point at) => Tap(Window, at);
+
+    /// <summary>A mouse press and release at <paramref name="at"/>, the jobs run after each.</summary>
+    public static void Tap(Window window, Point at)
     {
-        Window.MouseDown(at, MouseButton.Left);
+        window.MouseDown(at, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        Window.MouseUp(at, MouseButton.Left);
+        window.MouseUp(at, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
     }
 
@@ -325,7 +330,7 @@ public class CommandBarTests
         Assert.Equal(CompactTop / Scale, page.BarTop, 0.001);
         // Closed again, the labels go again.
         Assert.False(Part<TextBlock>(page.Add, "PART_TextLabel").IsVisible);
-        Assert.False(Part<ItemsControl>(page.Bar, "PART_OverflowPresenter").IsVisible);
+        Assert.False(Part<ScrollViewer>(page.Bar, "OverflowScrollViewer").IsVisible);
     }
 
     [AvaloniaFact]
@@ -340,6 +345,38 @@ public class CommandBarTests
         page.Settle();
         Assert.True(page.Bar.IsOpen);
         Assert.True(Part<TextBlock>(page.Add, "PART_TextLabel").IsEffectivelyVisible);
+        // No list, and no foot under the labels: the bar is the commands' row.
+        Assert.Equal(page.Add.Bounds.Height, page.Bar.Bounds.Height, 0.001);
+    }
+
+    [AvaloniaFact]
+    public void The_Closed_Heights_Are_Keys_A_Page_Can_Read()
+    {
+        using var page = new AppBarPage();
+        Assert.Equal(CompactHeight, (double)page.Window.FindResource("Wp81CommandBarCompactHeight")!, 0.0001);
+        Assert.Equal(MinimalHeight, (double)page.Window.FindResource("Wp81CommandBarMinimalHeight")!, 0.0001);
+    }
+
+    [AvaloniaFact]
+    public void A_Long_List_Scrolls_Inside_The_Page()
+    {
+        using var page = new AppBarPage(configure: bar =>
+        {
+            for (var i = 0; i < 12; i++)
+                bar.SecondaryCommands.Add(new CommandBarButton { Label = $"item {i}" });
+        });
+        page.Bar.IsOpen = true;
+        page.Settle();
+
+        Assert.Equal(0, page.BarTop, 0.001);
+        Assert.Equal(800, page.Bar.Bounds.Height, 0.001);
+        var viewer = Part<ScrollViewer>(page.Bar, "OverflowScrollViewer");
+        Assert.True(viewer.Extent.Height > viewer.Viewport.Height);
+
+        // The ellipsis is still on the screen, and closes the bar.
+        page.Tap(AppBarPage.Raw(1003, 31));
+        page.Settle();
+        Assert.False(page.Bar.IsOpen);
     }
 
     [AvaloniaFact]
@@ -373,21 +410,45 @@ public class CommandBarTests
     }
 
     [AvaloniaFact]
-    public void The_Open_Bar_Takes_Its_Own_Presses()
+    public void Invoking_A_Command_Closes_The_Open_Bar()
     {
         using var page = new AppBarPage();
         var clicks = 0;
         page.Second.Click += (_, _) => clicks++;
         var adds = 0;
         page.Add.Click += (_, _) => adds++;
+
+        page.Bar.IsOpen = true;
+        page.Settle();
+        page.Tap(page.CentreOf(page.Second));
+        Assert.Equal(1, clicks);
+        Assert.False(page.Bar.IsOpen);
+
+        page.Bar.IsOpen = true;
+        page.Settle();
+        page.Tap(page.CentreOf(page.Add));
+        Assert.Equal(1, adds);
+        Assert.False(page.Bar.IsOpen);
+
+        page.Bar.IsOpen = true;
+        page.Settle();
+        page.Tap(page.CentreOf(page.Favorite));
+        Assert.False(page.Favorite.IsChecked);
+        Assert.False(page.Bar.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Sticky_Bar_Stays_Open_After_A_Command()
+    {
+        using var page = new AppBarPage(configure: bar => bar.IsSticky = true);
+        var clicks = 0;
+        page.Second.Click += (_, _) => clicks++;
         page.Bar.IsOpen = true;
         page.Settle();
 
         page.Tap(page.CentreOf(page.Second));
-        page.Tap(page.CentreOf(page.Add));
 
         Assert.Equal(1, clicks);
-        Assert.Equal(1, adds);
         Assert.True(page.Bar.IsOpen);
     }
 

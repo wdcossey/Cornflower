@@ -13,13 +13,19 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("commandbar", Order = 118)]
 public partial class CommandBarPage : UserControl
 {
-    // The closed bar's height, compact and minimal, which the page keeps free at its foot (docs/controls/CommandBar).
-    private const double CompactHeight = 62.9166;
-    private const double MinimalHeight = 26.25;
-
     public CommandBarPage()
     {
         InitializeComponent();
+        KeepTheBarsHeightFree();
+    }
+
+    /// <summary>The closed bar's height, compact or minimal, kept free at the content's foot, from the theme's keys.</summary>
+    private void KeepTheBarsHeightFree()
+    {
+        var minimal = CommandBarOptions.GetClosedDisplayMode(Bar) == AppBarClosedDisplayMode.Minimal;
+        Body.Bind(ScrollViewer.PaddingProperty, Body.GetResourceObservable(
+            minimal ? "Wp81CommandBarMinimalHeight" : "Wp81CommandBarCompactHeight",
+            height => new Thickness(0, 0, 0, height is double h ? h : 0)));
     }
 
     private void OnCommand(object? sender, RoutedEventArgs e)
@@ -34,7 +40,7 @@ public partial class CommandBarPage : UserControl
     {
         var minimal = Minimal.IsChecked == true;
         CommandBarOptions.SetClosedDisplayMode(Bar, minimal ? AppBarClosedDisplayMode.Minimal : AppBarClosedDisplayMode.Compact);
-        Body.Padding = new Thickness(0, 0, 0, minimal ? MinimalHeight : CompactHeight);
+        KeepTheBarsHeightFree();
     }
 
     private void OnLightChanged(object? sender, RoutedEventArgs e) =>

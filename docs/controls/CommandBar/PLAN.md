@@ -114,7 +114,9 @@ px where the template's is 45): Lucide's shapes and sizes are its own (ADR 0001,
 | The ellipsis shows with no secondary commands (Avalonia's `Auto` hides it) | the shell always draws it | `The_Ellipsis_Shows_Without_Secondary_Commands` |
 | A press outside the open bar closes it, and doesn't reach the page | Avalonia's light dismiss | `A_Press_Outside_The_Open_Bar_Closes_It` |
 | A sticky bar stays open | WinRT's and Avalonia's `IsSticky` | `A_Sticky_Bar_Stays_Open` |
-| The open bar takes its own presses | Avalonia's `OverlayInputPassThroughElement` | `The_Open_Bar_Takes_Its_Own_Presses` |
+| Invoking a command, primary or secondary, closes the open bar, unless sticky | the phone's menu, by common account (not read) | `Invoking_A_Command_Closes_The_Open_Bar`, `A_Sticky_Bar_Stays_Open_After_A_Command` |
+| A list longer than the bar's room scrolls, and the ellipsis stays reachable | none read; the room is the page | `A_Long_List_Scrolls_Inside_The_Page` |
+| The closed heights are keys a page can read | for #120 | `The_Closed_Heights_Are_Keys_A_Page_Can_Read` |
 | The phone's keys, dark and light | the template, the screenshots | `The_Bar_Takes_The_Phones_Keys` |
 | Pressed, checked, checked and pressed | the template's states, the shell's checked icon | `Pressed_Fills_The_Circle_...`, `Checked_Fills_The_Circle_...` |
 | Disabled at 0.451, as one layer | the screenshots | `Disabled_Dims_The_Whole_Command_As_One_Layer`, and the ring's pixels in `The_Compact_Bar_Is_The_Shells` |
@@ -138,6 +140,7 @@ checklists below with what it sets and what ours does.
 | The labels show only while open | 1, theme | `DefaultLabelPosition` Collapsed closed and Bottom open, which Avalonia's bar turns into each command's `IsCompact` |
 | The ellipsis always shows | 1, theme | `OverflowButtonVisibility` Visible |
 | Light dismiss | 1, theme | `PART_OverflowPopup` holds nothing; its light dismiss is Avalonia's, with the bar as `OverlayInputPassThroughElement` |
+| Invoking a command closes the open bar | 2, attached behaviour | `PhoneAppBarClose`, internal to the theme, set by its own setter: a command's `Click` clears `IsOpen` unless `IsSticky` |
 | `ClosedDisplayMode` | 2, attached property | `CommandBarOptions.ClosedDisplayMode`, data only; the theme reads it |
 | `AppBarSeparator` has no style | 1, theme | A `ControlTheme` with no template |
 | The commands' `ItemsControl`s and the ellipsis's `Button` | 1, theme | Keyed themes of their own (`Wp81CommandBarItemsTheme`, `Wp81CommandBarEllipsisButtonTheme`), as Wp81 has no `ItemsControl` theme and its `Button` is the phone's |
@@ -156,9 +159,10 @@ lays the bar over its content is #120's (README, "On a page").
 Reads still missing (no state the shell's screenshots show, nothing a probe has read):
 
 - The open bar with other numbers of secondary commands (none, one, more than fit): whether its foot stays 100 view
-  px, and whether the list scrolls. Ours keeps the foot and doesn't scroll.
+  px, and whether the list scrolls. Ours keeps the foot with any, has none with none, and scrolls.
 - A pressed command and a pressed secondary command on the shell's bar.
-- Whether a press on the minimal bar, away from the ellipsis, opens it; whether invoking a command closes the bar.
+- Whether a press on the minimal bar, away from the ellipsis, opens it; whether invoking a command closes the bar
+  (ours does).
 - The open and close motion.
 - The bar in landscape.
 

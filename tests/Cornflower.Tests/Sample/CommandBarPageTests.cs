@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using Cornflower.Controls;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
+using Cornflower.Tests.Controls;
 
 namespace Cornflower.Tests.Sample;
 
@@ -19,16 +20,9 @@ namespace Cornflower.Tests.Sample;
 /// </summary>
 public class CommandBarPageTests
 {
-    private static void Tap(Window window, Point at)
-    {
-        window.MouseDown(at, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
-        window.MouseUp(at, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
-    }
+    private static void Tap(Window window, Point at) => AppBarPage.Tap(window, at);
 
-    private static Point CentreOf(Visual control, Window window) =>
-        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
+    private static Point CentreOf(Visual control, Window window) => AppBarPage.CentreOf(control, window);
 
     [AvaloniaFact]
     public void The_Page_Is_In_The_Catalogue_After_The_ScrollViewer_Page()

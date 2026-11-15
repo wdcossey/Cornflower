@@ -15,7 +15,7 @@
   -->
   <ThemeVariantScope x:Name="Scope">
     <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
-      <ScrollViewer x:Name="Body" Padding="0,0,0,62.9166">
+      <ScrollViewer x:Name="Body">
         <StackPanel Margin="19,12,19,24">
           <sample:SamplePageHeader x:Name="Header" />
 

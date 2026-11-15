@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:cf="using:Cornflower.Controls">
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
   <!--
     The Windows Phone 8.1 page's app bar: Avalonia's CommandBar, CommandBarButton, CommandBarToggleButton and
     CommandBarSeparator, themed as the phone draws a CommandBar set as a page's BottomAppBar.
@@ -19,6 +20,14 @@
     secondary commands as a list of words. A page lays the bar over its content, so the open bar covers the page
     as the shell's does (docs/controls/CommandBar/README.md, "On a page").
   -->
+
+  <!--
+    The closed bar's height, compact and minimal: the shell's drawing, and what the phone's VisibleBounds keeps off
+    the page (62.92 and 26.25 of 800, run 20261115-2050-dev11). A page that lays the bar over its content keeps this
+    much free at the content's foot (docs/controls/CommandBar/README.md, "On a page").
+  -->
+  <x:Double x:Key="Wp81CommandBarCompactHeight">62.9166</x:Double>
+  <x:Double x:Key="Wp81CommandBarMinimalHeight">26.25</x:Double>
 
   <!-- The bar's ItemsControls: a presenter and the panel, so no theme keyed by ItemsControl reaches them (Wp81 has
        none, and without one an ItemsControl shows nothing). -->
@@ -65,7 +74,7 @@
     <Setter Property="IsTabStop" Value="False" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Bottom" />
-    <Setter Property="Height" Value="62.9166" />
+    <Setter Property="Height" Value="{StaticResource Wp81CommandBarCompactHeight}" />
     <Setter Property="OverflowButtonVisibility" Value="Visible" />
     <Setter Property="DefaultLabelPosition" Value="Collapsed" />
     <!-- Each command's slot, for dynamic overflow, whatever the label's place: the shell's slots are 73.75 wide. -->
@@ -73,9 +82,10 @@
     <Setter Property="ItemWidthRight" Value="73.75" />
     <Setter Property="ItemWidthCollapsed" Value="73.75" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="wp81:PhoneAppBarClose.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
-        <Grid x:Name="LayoutRoot" Background="{TemplateBinding Background}" RowDefinitions="Auto,Auto">
+        <Grid x:Name="LayoutRoot" Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
           <!-- Avalonia's Content, at the left. The phone's bar has none. -->
           <ContentPresenter x:Name="PART_ContentPresenter"
                             HorizontalAlignment="Left"
@@ -108,7 +118,7 @@
                   HorizontalAlignment="Right"
                   VerticalAlignment="Top"
                   Width="63.68"
-                  Height="62.9166"
+                  Height="{StaticResource Wp81CommandBarCompactHeight}"
                   IsVisible="{TemplateBinding IsOverflowButtonVisible}">
             <Path x:Name="Ellipsis"
                   Data="{DynamicResource Wp81.Glyph.AppBarEllipsis}"
@@ -120,19 +130,25 @@
                   VerticalAlignment="Top"
                   UseLayoutRounding="False" />
           </Button>
-          <!-- The secondary commands, open: a list of words under the labels, and the bar's foot under it. -->
-          <ItemsControl x:Name="PART_OverflowPresenter"
+          <!--
+            The secondary commands, open: a list of words under the labels, and the bar's foot under it, 81.7467,
+            which puts the bar's top where the shell's is with two. In a ScrollViewer in the row that takes what is
+            left, so a list taller than the bar's room scrolls rather than pushing the bar off the top.
+          -->
+          <ScrollViewer x:Name="OverflowScrollViewer"
                         Grid.Row="1"
-                        Theme="{StaticResource Wp81CommandBarItemsTheme}"
                         IsVisible="False"
-                        Margin="0,0,0,81.7467"
-                        ItemsSource="{Binding OverflowItems, RelativeSource={RelativeSource TemplatedParent}}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-          </ItemsControl>
+                        HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl x:Name="PART_OverflowPresenter"
+                          Theme="{StaticResource Wp81CommandBarItemsTheme}"
+                          ItemsSource="{Binding OverflowItems, RelativeSource={RelativeSource TemplatedParent}}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </ScrollViewer>
           <Popup x:Name="PART_OverflowPopup"
                  IsOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
                  PlacementTarget="{Binding #LayoutRoot}"
@@ -148,14 +164,23 @@
     <Style Selector="^[IsOpen=True]">
       <Setter Property="Height" Value="NaN" />
       <Setter Property="DefaultLabelPosition" Value="Bottom" />
-      <Style Selector="^ /template/ ItemsControl#PART_OverflowPresenter">
+      <Style Selector="^ /template/ ScrollViewer#OverflowScrollViewer">
         <Setter Property="IsVisible" Value="True" />
       </Style>
     </Style>
 
+    <Style Selector="^ /template/ ItemsControl#PART_OverflowPresenter">
+      <Setter Property="Margin" Value="0,0,0,81.7467" />
+    </Style>
+
+    <!-- With no secondary commands, no list and no foot under the labels (not read on the phone). -->
+    <Style Selector="^[HasSecondaryCommands=False] /template/ ScrollViewer#OverflowScrollViewer">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
     <!-- Minimal and closed: a thin bar, the ellipsis alone. -->
     <Style Selector="^[IsOpen=False][(cf|CommandBarOptions.ClosedDisplayMode)=Minimal]">
-      <Setter Property="Height" Value="26.25" />
+      <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
       <Style Selector="^ /template/ ItemsControl#PART_PrimaryCommands">
         <Setter Property="IsVisible" Value="False" />
       </Style>
@@ -163,7 +188,7 @@
         <Setter Property="IsVisible" Value="False" />
       </Style>
       <Style Selector="^ /template/ Button#PART_OverflowButton">
-        <Setter Property="Height" Value="26.25" />
+        <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
       </Style>
     </Style>
   </ControlTheme>
