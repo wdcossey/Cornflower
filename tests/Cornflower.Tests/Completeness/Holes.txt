@@ -15,10 +15,6 @@ Carousel
 CarouselPage
 ComboBox
 ComboBoxItem
-CommandBar
-CommandBarButton
-CommandBarSeparator
-CommandBarToggleButton
 ContentPage
 ContextMenu
 DataValidationErrors
