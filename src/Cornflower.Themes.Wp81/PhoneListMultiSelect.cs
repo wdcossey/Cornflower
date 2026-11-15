@@ -19,7 +19,8 @@ namespace Cornflower.Themes.Wp81;
 /// as it is reused, and every realised one when <see cref="ListBox.SelectionMode"/> changes. So it costs a list one
 /// handler and a container one property, and no global rule. An item outside a list is never in the mode; an item that
 /// is its own container keeps its mark when it is taken out of the list, until a list prepares it again. Turned off (a
-/// theme of the app's own on the list), it unmarks every realised container and lets go.</para>
+/// theme of the app's own on the list), it lets go: the new theme's template makes new containers, which it doesn't
+/// mark.</para>
 /// </remarks>
 internal static class PhoneListMultiSelect
 {
@@ -38,12 +39,11 @@ internal static class PhoneListMultiSelect
     {
         IsEnabledProperty.Changed.AddClassHandler<ListBox>((list, e) =>
         {
+            // A theme's setter comes before its template, so every container is prepared after this.
             if (e.GetNewValue<bool>())
                 list.ContainerPrepared += OnPrepared;
             else
                 list.ContainerPrepared -= OnPrepared;
-
-            MarkAll(list);
         });
         ListBox.SelectionModeProperty.Changed.AddClassHandler<ListBox>((list, _) =>
         {

@@ -11,7 +11,8 @@
     ListViewItemTextBlockStyle and ListViewItemSubheaderTextBlockStyle. Press an item to see the tilt; drag to pan the
     list, which lets the item go; tap to select it, which the phone draws as nothing. "select" puts the list in the
     check mode (SelectionMode Multiple and Toggle, WinRT's Multiple): the check boxes slide in, and a tap checks an
-    item. Below: strings with no template (the phone's small 12 px text), a disabled list, and the light theme.
+    item. Below: strings with no template (the phone's small 12 px text), a disabled list, and the light theme. The
+    lists with items checked from the start have AutoScrollToSelectedItem off, Avalonia's, so the page opens at its top.
   -->
   <ScrollViewer>
     <StackPanel Margin="19,12,19,24">
@@ -35,13 +36,13 @@
       <ListBox x:Name="Strings" Height="120" />
 
       <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
-      <ListBox x:Name="Disabled" Height="120" IsEnabled="False" SelectionMode="Multiple,Toggle" />
+      <ListBox x:Name="Disabled" Height="120" IsEnabled="False" SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" />
 
       <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
         <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
           <StackPanel>
             <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
-            <ListBox x:Name="Light" Height="160" SelectionMode="Multiple,Toggle" />
+            <ListBox x:Name="Light" Height="160" SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" />
           </StackPanel>
         </Border>
       </ThemeVariantScope>

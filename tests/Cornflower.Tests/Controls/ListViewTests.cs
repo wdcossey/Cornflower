@@ -457,6 +457,21 @@ public class ListViewTests
         }
     }
 
+    // At rest the box is 40.5 to the left of its 25.5 clip: the base capture draws nothing left of the item, which here,
+    // on its own, has no list round it to clip it.
+    [AvaloniaTheory]
+    [MemberData(nameof(Variants))]
+    public void At_Rest_The_Box_Is_Clipped_Away(string variant)
+    {
+        var dark = variant == "Dark";
+        using var stage = new ItemStage(VariantOf(variant));
+        using var frame = stage.Capture();
+
+        for (var y = TopRows[0]; y < TopRows[0] + 62; y++)
+        for (var x = 0; x < LeftColumns[0]; x++)
+            Assert.True(Page(dark) == Frames.PixelAt(frame, x, y), $"raw ({x}, {y}): {Hex(Frames.PixelAt(frame, x, y))}");
+    }
+
     // A tap checks an item and another unchecks it, the tick following: WinRT's Multiple, on Avalonia's Toggle.
     [AvaloniaFact]
     public void In_The_Check_Mode_A_Tap_Checks_And_Unchecks()
@@ -772,18 +787,21 @@ public class ListViewTests
         Assert.Equal(Foreground(false), ColourOf(BoxOf(stage.Item).Stroke));
     }
 
-    // The phone's template has no FocusStates: keyboard focus draws nothing.
+    // The phone's template has no FocusStates, and its PointerOver sets nothing: keyboard focus and a mouse over an item
+    // draw nothing.
     [AvaloniaFact]
-    public void Keyboard_Focus_Draws_Nothing()
+    public void Keyboard_Focus_And_The_Pointer_Over_Draw_Nothing()
     {
         using var stage = new ListStage();
         using var before = stage.Capture();
 
         stage.Item(1).Focus(NavigationMethod.Tab);
+        stage.Window.MouseMove(stage.Item(2).TranslatePoint(new Point(100, 20), stage.Window)!.Value);
         Dispatcher.UIThread.RunJobs();
         using var after = stage.Capture();
 
         Assert.True(stage.Item(1).IsFocused);
-        Assert.True(Frames.SameAs(before, after), "focus drew something");
+        Assert.Contains(":pointerover", stage.Item(2).Classes);
+        Assert.True(Frames.SameAs(before, after), "focus or the pointer drew something");
     }
 }

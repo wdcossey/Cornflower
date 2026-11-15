@@ -37,6 +37,16 @@ public class ListViewPageTests
         Assert.All(page.FindControl<ListBox>("Light")!.GetRealizedContainers(), item => Assert.True(item.GetValue(PhoneListMultiSelect.IsOnProperty)));
     }
 
+    // The lists checked from the start don't scroll the page to their checked items: it opens at its top.
+    [AvaloniaFact]
+    public void The_Page_Opens_At_Its_Top()
+    {
+        var page = new ListViewPage();
+        using var scene = new Scene(page);
+
+        Assert.Equal(0, page.GetVisualDescendants().OfType<ScrollViewer>().First().Offset.Y);
+    }
+
     [AvaloniaFact]
     public void The_Header_Shows_The_Pages_Title()
     {
