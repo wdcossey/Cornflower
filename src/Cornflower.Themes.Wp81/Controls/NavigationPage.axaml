@@ -1,0 +1,126 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 Frame: Avalonia's NavigationPage, the navigation host, as the phone's root Frame runs its
+    pages. docs/controls/Page/PLAN.md has the values and their sources.
+
+    The phone's Frame (frame.json) is a Border round a ContentPresenter that fills it, and its pages come and go with
+    NavigationThemeTransition: the turnstile by default, the slide or the continuum when the navigation asks. Here the
+    turnstile is PageTransition, so every push and pop turns; an app passes SlideTransition or ContinuumTransition to
+    PushAsync and PopAsync as it passed a NavigationTransitionInfo to Frame.Navigate. ModalTransition is the slide: the
+    phone has no modal page, and the slide is its page that rises from below.
+
+    The two page presenters fill the host and draw over its background, ApplicationPageBackgroundThemeBrush, which shows
+    round a page as it turns (the phone's Frame draws SystemColorWindowBrush, which isn't among the theme's resources;
+    the recordings show black there, dark). The host clips, as a page turning near the eye is drawn larger than it.
+
+    The phone has no navigation bar, and a ContentPage under Wp81 turns it off. An app that turns it back on for a
+    page gets this bar: the page's Header beside a back arrow, in the phone's chrome, with no phone to measure it by.
+    Its BottomCommandBar (NavigationPage.BottomCommandBar on the page) is docked at the bottom, outside the transition,
+    as the phone's shell draws the app bar apart from the page.
+  -->
+  <ControlTheme x:Key="Wp81NavigationBackButtonTheme" TargetType="Button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          Padding="{TemplateBinding Padding}"
+                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                          Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonPressedBackgroundThemeBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ButtonDisabledForegroundThemeBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type NavigationPage}" TargetType="NavigationPage">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="PageTransition">
+      <wp81:TurnstileTransition />
+    </Setter>
+    <Setter Property="ModalTransition">
+      <wp81:SlideTransition />
+    </Setter>
+    <!-- The phone's Frame has no edge swipe: back is the hardware button, the app's. -->
+    <Setter Property="IsGestureEnabled" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel ClipToBounds="True" Background="{TemplateBinding Background}">
+          <DockPanel>
+            <Border x:Name="PART_NavBarSpacer" DockPanel.Dock="Top" IsVisible="False"
+                    Height="{TemplateBinding EffectiveBarHeight}" />
+            <ContentPresenter x:Name="PART_BottomCommandBar" DockPanel.Dock="Bottom" ZIndex="1"
+                              HorizontalContentAlignment="Stretch"
+                              Content="{Binding CurrentPage?.(NavigationPage.BottomCommandBar), RelativeSource={RelativeSource TemplatedParent}, FallbackValue={x:Null}}" />
+            <Grid x:Name="PART_ContentHost" ClipToBounds="True">
+              <ContentPresenter x:Name="PART_PageBackPresenter" />
+              <ContentPresenter x:Name="PART_PagePresenter" />
+            </Grid>
+          </DockPanel>
+
+          <Border x:Name="PART_NavigationBar" ZIndex="1" VerticalAlignment="Top" ClipToBounds="True"
+                  Height="{TemplateBinding EffectiveBarHeight}"
+                  Background="{DynamicResource PhoneChromeBrush}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Button x:Name="PART_BackButton" Theme="{StaticResource Wp81NavigationBackButtonTheme}"
+                      IsVisible="{TemplateBinding IsBackButtonEffectivelyVisible}">
+                <Panel>
+                  <cf:LucideIcon x:Name="PART_BackButtonDefaultIcon" Kind="ArrowLeft" />
+                  <ContentPresenter x:Name="PART_BackButtonContentPresenter" />
+                </Panel>
+              </Button>
+              <ContentPresenter x:Name="PART_Header" Grid.Column="1" Margin="0,0,12,0"
+                                VerticalAlignment="Center" HorizontalContentAlignment="Stretch"
+                                Foreground="{DynamicResource PhoneForegroundBrush}"
+                                FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
+                                FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                Content="{Binding CurrentPage?.Header, RelativeSource={RelativeSource TemplatedParent}, FallbackValue={x:Null}}"
+                                ContentTemplate="{Binding CurrentPage?.HeaderTemplate, RelativeSource={RelativeSource TemplatedParent}, FallbackValue={x:Null}}" />
+              <ContentPresenter x:Name="PART_TopCommandBar" Grid.Column="2" HorizontalAlignment="Right"
+                                VerticalContentAlignment="Stretch"
+                                Content="{Binding CurrentPage?.(NavigationPage.TopCommandBar), RelativeSource={RelativeSource TemplatedParent}, FallbackValue={x:Null}}">
+                <!-- A CommandBar here fits the bar, as in Avalonia's own template. -->
+                <ContentPresenter.Styles>
+                  <Style Selector="CommandBar">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="VerticalAlignment" Value="Stretch" />
+                  </Style>
+                </ContentPresenter.Styles>
+              </ContentPresenter>
+            </Grid>
+          </Border>
+
+          <ContentPresenter x:Name="PART_ModalBackPresenter" ZIndex="99" IsVisible="False"
+                            Background="{TemplateBinding Background}" />
+          <ContentPresenter x:Name="PART_ModalPresenter" ZIndex="100" IsVisible="False"
+                            Background="{TemplateBinding Background}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:nav-bar-inset /template/ Border#PART_NavBarSpacer">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^:nav-bar-compact /template/ ContentPresenter#PART_TopCommandBar CommandBar">
+      <Setter Property="DefaultLabelPosition" Value="Collapsed" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

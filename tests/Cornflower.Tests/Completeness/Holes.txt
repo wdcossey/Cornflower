@@ -15,7 +15,6 @@ Carousel
 CarouselPage
 ComboBox
 ComboBoxItem
-ContentPage
 ContextMenu
 DataValidationErrors
 DatePicker
@@ -35,7 +34,6 @@ ManagedFileChooserOverwritePrompt
 Menu
 MenuFlyoutPresenter
 MenuItem
-NavigationPage
 NotificationCard
 NumericUpDown
 OverlayPopupHost
