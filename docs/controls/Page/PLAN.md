@@ -40,11 +40,13 @@ measured. Avalonia's own.
   background, and everything else sits inside it.
 - **The content is laid out inside the safe area**, so below the tray: 27.92 down on the reference with the tray shown.
   With `AutomaticallyApplySafeAreaPadding` off it fills the page, as under `UseCoreWindow`.
-- **The bottom command bar** is docked at the bottom of what the safe area leaves, and the content laid out above it:
-  the content gives up the bar's height, as `VisibleBounds` gives up the app bar's. How tall the bar is (62.92 compact,
-  26.25 minimal) is the CommandBar theme's (#118). The top command bar the same way at the top, below the safe area: the
-  phone has no top app bar to measure.
-- **The bars draw over the content**: an open app bar is drawn over the page, which doesn't move.
+- **The bottom command bar** sits over the content at the foot of what the safe area leaves, and the content gives up
+  the bar's closed height (`PhonePageBars`): the content ends where `VisibleBounds` does. How tall the closed bar is
+  (62.92 compact, 26.25 minimal) is the CommandBar theme's (#118). Open, the bar grows up over the content (285.42 from
+  514.58 on the phone) and the content keeps the closed height free, as `VisibleBounds` doesn't change on opening. A bar
+  that isn't a `CommandBar` is always closed; one open before it was ever laid out closed takes the CommandBar theme's
+  `Wp81CommandBarCompactHeight`, looked up by name. The top command bar the same way at the head: the phone has no top
+  app bar to measure.
 - **A ContentPage in a NavigationPage has no navigation bar**, so the NavigationPage gives it the whole safe area
   (Avalonia gives the top of it to the bar when the bar shows).
 
@@ -125,6 +127,7 @@ Each with its evidence and its test (`tests/Cornflower.Tests/Controls/PageTests.
 | No safe area applied: the content fills the window | "Visible bounds", `UseCoreWindow` | `With_The_Safe_Area_Not_Applied_The_Content_Fills_The_Window_As_Under_UseCoreWindow` |
 | A bottom bar takes its height off the content, at 737.08 and 773.75, tray shown or not | "The page's app bar" | `A_Bottom_Bar_Takes_Its_Height_Off_The_Content_…` (both heights) |
 | The bars draw over the content | "The page's app bar": the open bar is drawn over the page | `A_Bar_Drawn_Past_Its_Place_Draws_Over_The_Content` |
+| An open bar grows over the content, which keeps the closed height free | "The page's app bar": `VisibleBounds` stays as closed | `An_Open_Bar_Grows_Up_Over_The_Content_Which_Keeps_Its_Closed_Height_Free` |
 | The top bar below the tray | chosen: no phone reading | `A_Top_Bar_Sits_Below_The_Tray` |
 | No navigation bar; the page gets the whole safe area | the phone has none | `In_A_NavigationPage_A_ContentPage_Has_No_Navigation_Bar_And_Gets_The_Whole_Safe_Area` |
 | A page that turns the bar on gets the header, a back arrow in its own theme, `PhoneChromeBrush` | an extension, no phone reading | `A_Page_That_Turns_The_Bar_Back_On_…` |
@@ -162,7 +165,7 @@ Each with its evidence and its test (`tests/Cornflower.Tests/Controls/PageTests.
 | No navigation bar by default (`NavigationPage.HasNavigationBar` false in the ContentPage theme) | The phone has none; the page then gets the whole safe area, as the phone's content gets `VisibleBounds` | Drop the setter; the bar then shows the `Header` |
 | `Page.Header` is shown only in that opt-in bar, not drawn in the page | The 8.1 page title is the page's own content (an app's `TextBlock`s), not a property of `Page` | Draw the header in the ContentPage template |
 | The safe area stands for the tray; `AutomaticallyApplySafeAreaPadding` is `UseVisible` | The same rule: the page fills the window, its content doesn't go under the tray | — |
-| The bars inside the safe area, the content above the bottom bar by its height | `VisibleBounds` takes the app bar off the bottom; the bar's own height is its theme's | Put the bars outside `PART_ContentPresenter` as Simple's template does |
+| The bars inside the safe area, over the content, which gives up each bar's closed height | `VisibleBounds` takes the closed app bar off the bottom, open or closed; the bar's own height is its theme's (#118 asked for the bar over the content) | Put the bars outside `PART_ContentPresenter`, docked, as Simple's template does |
 | `ApplicationPageBackgroundThemeBrush` for the page and the NavigationPage | Every 8.1 page sets it; the Frame's `SystemColorWindowBrush` isn't in the theme's resources, and the recordings show black round the turning page, dark | Add `SystemColorWindowBrush` to `Tokens/` and set it on the NavigationPage |
 | The modal transition is the slide | The phone has no modal page; the slide is its page rising from below | Set another `ModalTransition` |
 | The turnstile's axis 44 / 450 of the width; its depth and the camera in view px | `PlaneProjection`'s `CenterOfRotationX` is relative, `CenterOfRotationZ` absolute | Change `AxisX` in `TurnstileTransition` |

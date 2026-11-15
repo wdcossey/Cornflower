@@ -63,10 +63,12 @@ turn does nothing.
 - The page fills its host, and its background (`ApplicationPageBackgroundThemeBrush`) reaches under the system bars.
 - Its content is laid out in the safe area, as the phone lays a page's content out in `VisibleBounds` under
   `UseVisible`; `AutomaticallyApplySafeAreaPadding="False"` lays it under the bars, as `UseCoreWindow` does.
-- `BottomCommandBar` sits at the bottom of the safe area and the content above it, as the phone's app bar is taken off
-  `VisibleBounds` (62.92 for a compact bar, 26.25 for a minimal one, on the reference: the CommandBar theme's heights).
-  The bar draws over the content, so an open bar reaches up over the page without moving it. `TopCommandBar` sits at the
-  top the same way; the phone has none.
+- `BottomCommandBar` sits over the content at the foot of the safe area, and the content gives up the bar's closed
+  height there, as the phone's app bar is taken off `VisibleBounds` (62.92 for a compact bar, 26.25 for a minimal one,
+  on the reference: the CommandBar theme's closed heights, `Wp81CommandBarCompactHeight` and
+  `Wp81CommandBarMinimalHeight`, #118). Open, the bar grows up over the content, which keeps the closed height free and
+  doesn't move, as on the phone (`PhonePageBars`, internal). A bar that isn't a `CommandBar` is always closed.
+  `TopCommandBar` sits at the head the same way; the phone has none.
 - `NavigationPage.BottomCommandBar`, set on a page, is the NavigationPage's: docked below the pages and outside the
   transition, as the phone's shell draws its app bar apart from the page.
 
@@ -99,8 +101,8 @@ for the opt-in bar `PhoneChromeBrush`, `PhoneFontFamilySemiBold`, `TextStyleLarg
 
 ## The templates' parts
 
-`ContentPage`: `PART_ContentPresenter` (the whole page, padded by the safe area, drawing the background), and inside it
-`PART_TopCommandBar`, `PART_BottomCommandBar` and `PART_Content`. `NavigationPage`: Avalonia's parts, `PART_ContentHost`
+`ContentPage`: `PART_ContentPresenter` (the whole page, padded by the safe area, drawing the background), and inside it,
+in one cell, `PART_Content` and over it `PART_TopCommandBar` and `PART_BottomCommandBar`. `NavigationPage`: Avalonia's parts, `PART_ContentHost`
 with `PART_PagePresenter` and `PART_PageBackPresenter`, `PART_NavigationBar` with `PART_BackButton`
 (`PART_BackButtonDefaultIcon`, `PART_BackButtonContentPresenter`), `PART_Header` and `PART_TopCommandBar`,
 `PART_BottomCommandBar`, `PART_NavBarSpacer`, `PART_ModalBackPresenter` and `PART_ModalPresenter`. No

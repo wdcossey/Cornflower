@@ -155,6 +155,31 @@ public class PageTests
     }
 
     [AvaloniaFact]
+    public void An_Open_Bar_Grows_Up_Over_The_Content_Which_Keeps_Its_Closed_Height_Free()
+    {
+        // The phone's VisibleBounds stays as closed when the app bar opens (285.42 tall from 514.58), and the bar is drawn
+        // over the page. The CommandBar theme lays the open bar out taller; here a CommandBar given that height.
+        var bar = new CommandBar { Height = 800 - Bounds.CompactBarTop, MinHeight = 0, Background = Brushes.Red };
+        var page = Page(out var content);
+        page.BottomCommandBar = bar;
+        using var scene = new Scene(page);
+        AssertRect(new Rect(0, 0, 450, Bounds.CompactBarTop), BoundsIn(content, page), "the content, closed");
+
+        bar.IsOpen = true;
+        bar.Height = 285.42;
+        Dispatcher.UIThread.RunJobs();
+        AssertRect(new Rect(0, 800 - 285.42, 450, 285.42), BoundsIn(bar, page), "the open bar");
+        AssertRect(new Rect(0, 0, 450, Bounds.CompactBarTop), BoundsIn(content, page), "the content, open");
+        using var frame = scene.Capture();
+        Assert.Equal(Colors.Red, Frames.PixelAt(frame, 540, (int)(600 * 2.4)));
+
+        bar.IsOpen = false;
+        bar.Height = 26.25;
+        Dispatcher.UIThread.RunJobs();
+        AssertRect(new Rect(0, 0, 450, Bounds.MinimalBarTop), BoundsIn(content, page), "the content, minimal");
+    }
+
+    [AvaloniaFact]
     public void A_Top_Bar_Sits_Below_The_Tray()
     {
         var bar = new Border { Height = 40 };

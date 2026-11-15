@@ -316,6 +316,8 @@ public class PageTransitionTests
         Assert.InRange(from.Opacity, 0.01, 0.99);
         Assert.False(from.IsHitTestVisible);
         Assert.Equal(0, to.Opacity);
+        // Hidden on top, the new page takes no input either.
+        Assert.False(to.IsHitTestVisible);
         AtTick(clock, Continuum.FadeFramesMs / Tick);
         Assert.Equal(0, from.Opacity);
 
