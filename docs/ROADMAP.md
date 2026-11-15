@@ -90,8 +90,7 @@ step, and a control that climbs a rung says so in its PR.
 
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
-| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer | ScrollViewer | Theme: the scroll indicators, set by a behaviour from the pointer type. Scroll physics measured first ([#113](https://github.com/wdcossey/CornflowerUI/issues/113)): a part class or a recorded deviation. The worked example for Tier 2: every other control here holds one | 1, 2, 3 |
-| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollBar, Thumb | both exist | Theme. ScrollBar is the phone's thin indicator | 1 |
+| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme: the scroll indicators, set by a behaviour from the pointer type; ScrollBar is the phone's thin indicator. Scroll physics measured ([#113](https://github.com/wdcossey/CornflowerUI/issues/113), which blocks only this issue's Compare step): a part class or a recorded deviation. The worked example for Tier 2: ListView, Page, Pivot and Hub hold one | 1, 2, 3 |
 | [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | both exist | Theme | 1 |
 | [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme. Measure what Avalonia's lacks: the minimised bar (`ClosedDisplayMode`, an attached property), the ellipsis menu. AppBarSeparator has no default style on the phone | 1, 2 |
 | [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; the header items: to check | Theme. Selection modes and item press feedback to be measured; the multi-select check mode by a behaviour; reorder deferred. The header items are a grouped list's group headers | 1, 2 |
@@ -103,8 +102,8 @@ The reads and tools Tier 2 needs: [#113](https://github.com/wdcossey/CornflowerU
 ScrollViewer physics and ListView press feedback; [#114](https://github.com/wdcossey/CornflowerUI/issues/114)
 the app bar's heights, the turnstile's forward angle and Pivot's header motion;
 [#115](https://github.com/wdcossey/CornflowerUI/issues/115) real touch, drag and wheel input in
-`drive.ps1`, from Avonic. Each control's issue names its blockers. The order: #116, #117, #113,
-#114 and #115 first; then #118, #119 and #120; then #121 and #122.
+`drive.ps1`, from Avonic. The batches: #113, #115, #116 and #117 first; then #114, #118, #119 and
+#120; then #121 and #122. Each issue names its own blockers; they are the record, not this list.
 
 ### Tier 3
 
@@ -293,4 +292,4 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#36](https://github.com/wdcossey/CornflowerUI/issues/36) | TextBox | Done 2026-11-12 (#101) |
 | [#37](https://github.com/wdcossey/CornflowerUI/issues/37) | PasswordBox | Done 2026-11-12 (#103, #106) |
 
-Tier 1 is complete. Every row passed its device run on the Pixel 8.
+Tier 1 is complete. Each row's device run on the Pixel 8 is in the Tier 1 table above.
