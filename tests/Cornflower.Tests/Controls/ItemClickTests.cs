@@ -337,11 +337,12 @@ public class ItemClickTests
         Assert.Equal(0, page.SelectionChanges);
     }
 
-    // Space and Enter, which select the focused item in Avalonia's ListBox, click it instead.
+    // Space and Enter, which select the focused item in Avalonia's ListBox, click it instead, once, as the key is let
+    // go: a held key, whose press repeats, clicks once.
     [AvaloniaTheory]
     [InlineData(Key.Enter, PhysicalKey.Enter)]
     [InlineData(Key.Space, PhysicalKey.Space)]
-    public void Space_And_Enter_Click_The_Focused_Item(Key key, PhysicalKey physical)
+    public void Space_And_Enter_Click_The_Focused_Item_Once_As_They_Are_Let_Go(Key key, PhysicalKey physical)
     {
         using var page = new ClickPage();
         var item = page.Item(2);
@@ -349,11 +350,29 @@ public class ItemClickTests
         Dispatcher.UIThread.RunJobs();
 
         page.Window.KeyPress(key, RawInputModifiers.None, physical, null);
+        page.Window.KeyPress(key, RawInputModifiers.None, physical, null);
+        page.Window.KeyPress(key, RawInputModifiers.None, physical, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(page.Clicked);
         page.Window.KeyRelease(key, RawInputModifiers.None, physical, null);
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(["item 2"], page.Clicked);
         Assert.Equal(-1, page.List.SelectedIndex);
+    }
+
+    // A key let go on an item whose press it didn't take (the key pressed elsewhere) clicks nothing.
+    [AvaloniaFact]
+    public void A_Key_Let_Go_Without_Its_Press_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        Assert.True(page.Item(2).Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
     }
 
     // ----- In and round the item -----
@@ -381,8 +400,8 @@ public class ItemClickTests
         Assert.Equal(-1, page.List.SelectedIndex);
     }
 
-    // A list in an item of a list clicks its own item; the event bubbles to the outer list with the inner as its source,
-    // and the outer list's item is neither clicked nor selected.
+    // A list in an item of a list clicks its own item alone: ItemClick is the list's own, as WinRT's, so the outer
+    // list hears nothing, and neither list selects.
     [AvaloniaFact]
     public void A_List_In_An_Item_Clicks_Its_Own_Item_Alone()
     {
@@ -390,8 +409,10 @@ public class ItemClickTests
         ListBoxOptions.SetIsItemClickEnabled(inner, true);
         var outer = new ListBox { Margin = ProbeListMargin, ItemsSource = new object[] { "first", inner } };
         ListBoxOptions.SetIsItemClickEnabled(outer, true);
-        var heard = new List<(object? Source, object? Item)>();
-        outer.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) => heard.Add((e.Source, e.ClickedItem)));
+        var innerHeard = new List<object?>();
+        var outerHeard = new List<object?>();
+        inner.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) => innerHeard.Add(e.ClickedItem));
+        outer.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) => outerHeard.Add(e.ClickedItem), RoutingStrategies.Direct | RoutingStrategies.Bubble, handledEventsToo: true);
         using var scene = new Scene(outer);
         var b = (ListBoxItem)inner.ContainerFromIndex(1)!;
         var at = b.TranslatePoint(new Point(20, 10), scene.Window)!.Value;
@@ -400,9 +421,53 @@ public class ItemClickTests
         scene.Window.TouchEnd(touch, at);
         Dispatcher.UIThread.RunJobs();
 
-        Assert.Equal([((object?)inner, (object?)"b")], heard);
+        Assert.Equal(["b"], innerHeard);
+        Assert.Empty(outerHeard);
         Assert.Equal(-1, outer.SelectedIndex);
         Assert.Equal(-1, inner.SelectedIndex);
+    }
+
+    // A press something in the item took (here a plain list's item, which selects on the mouse's press) clicks nothing
+    // when it is let go, though the release reaches the outer item: the mouse and a touch agree.
+    [AvaloniaFact]
+    public void A_Press_Something_In_The_Item_Took_Clicks_Nothing()
+    {
+        var inner = new ListBox { ItemsSource = new[] { "a", "b" } };
+        var outer = new ListBox { Margin = ProbeListMargin, ItemsSource = new object[] { "first", inner } };
+        ListBoxOptions.SetIsItemClickEnabled(outer, true);
+        var heard = new List<object?>();
+        outer.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) => heard.Add(e.ClickedItem));
+        using var scene = new Scene(outer);
+        var b = (ListBoxItem)inner.ContainerFromIndex(1)!;
+        var at = b.TranslatePoint(new Point(20, 10), scene.Window)!.Value;
+
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(1, inner.SelectedIndex);
+        var touch = scene.Window.TouchBegin(at);
+        scene.Window.TouchEnd(touch, at);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(heard);
+        Assert.Equal(-1, outer.SelectedIndex);
+    }
+
+    // A release with no press on the item (the mouse pressed off it, its capture let go, and let go on the item) clicks
+    // nothing.
+    [AvaloniaFact]
+    public void A_Release_Without_A_Press_On_The_Item_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        page.Window.AddHandler(InputElement.PointerPressedEvent, (_, e) => e.Pointer.Capture(null), RoutingStrategies.Bubble, handledEventsToo: true);
+
+        page.Window.MouseDown(page.On(2), MouseButton.Left);
+        page.Window.MouseMove(page.On(4));
+        page.Window.MouseUp(page.On(4), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
+        Assert.Equal(0, page.SelectionChanges);
     }
 
     // Behaviour only: under Simple's ListBox, with no Cornflower theme, a tap clicks and selects nothing.

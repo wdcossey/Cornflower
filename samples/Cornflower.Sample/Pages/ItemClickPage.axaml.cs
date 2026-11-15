@@ -14,18 +14,21 @@ public partial class ItemClickPage : UserControl
     /// <summary>WinRT's <c>SelectionMode="Multiple"</c>: the check mode.</summary>
     public const SelectionMode CheckMode = SelectionMode.Multiple | SelectionMode.Toggle;
 
-    private string _clicked = "nothing clicked";
+    /// <summary>What a list's line shows before its first click.</summary>
+    public const string NothingClicked = "nothing clicked";
+
+    private string _clicked = NothingClicked;
 
     public ItemClickPage()
     {
         InitializeComponent();
-        Clickable.ItemsSource = Names("item", 20);
-        Light.ItemsSource = Names("item", 6);
-        LightState.Text = "nothing clicked";
+        Clickable.ItemsSource = Items(20);
+        Light.ItemsSource = Items(6);
+        LightState.Text = NothingClicked;
         ShowState();
     }
 
-    private static List<string> Names(string what, int count) => Enumerable.Range(1, count).Select(i => $"{what} {i}").ToList();
+    private static List<string> Items(int count) => Enumerable.Range(1, count).Select(i => $"item {i}").ToList();
 
     private void OnItemClick(object? sender, ItemClickEventArgs e)
     {
@@ -40,9 +43,19 @@ public partial class ItemClickPage : UserControl
         ShowState();
     }
 
+    /// <summary>
+    /// Into the check mode and out. Out of it, the checks are cleared: Avalonia keeps one selected when a list goes back
+    /// to Single, and with item click on no tap could clear it.
+    /// </summary>
     private void OnSelectChanged(object? sender, RoutedEventArgs e)
     {
-        Clickable.SelectionMode = Select.IsChecked == true ? CheckMode : SelectionMode.Single;
+        var on = Select.IsChecked == true;
+        if (!on)
+        {
+            Clickable.UnselectAll();
+        }
+
+        Clickable.SelectionMode = on ? CheckMode : SelectionMode.Single;
         ShowState();
     }
 

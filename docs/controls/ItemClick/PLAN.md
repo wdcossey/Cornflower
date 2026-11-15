@@ -38,11 +38,12 @@ phone has none). Below is what we do for each.
 | | Phone | Avalonia 12.1.4 | Ours |
 |---|---|---|---|
 | `IsItemClickEnabled` | a property of ListViewBase, False by default | none | `ListBoxOptions.IsItemClickEnabled`, attached, False by default |
-| `ItemClick` | an event of ListViewBase, `ItemClickEventArgs.ClickedItem` | none | `ListBoxOptions.ItemClickEvent`, a bubbling routed event raised on the list, `ItemClickEventArgs.ClickedItem` the item (the data) |
+| `ItemClick` | an event of ListViewBase, `ItemClickEventArgs.ClickedItem` | none | `ListBoxOptions.ItemClickEvent`, a direct routed event raised on the list, `ItemClickEventArgs.ClickedItem` the item (the data) |
 | A tap, Single mode, item click on | `ItemClick` with the release; no selection | selects on a touch's release | clicks with the release; selects nothing |
 | A pan; a release off the item | no `ItemClick` | the scroll gesture takes the pointer; a release off the item selects nothing | clicks nothing (Avalonia's rule, below) |
 | The mouse | `ItemClick` with the left button's release (as the touch) | selects on the press, left or right | the press selects nothing; the left button's release on the item clicks |
-| Space and Enter on the focused item | not read (no keyboard) | select it | click it, and select nothing |
+| Space and Enter on the focused item | not read (no keyboard) | select it, on the press | click it once, as the key is let go; select nothing |
+| A control in an item that takes the press (a TextBox, a plain list) | no `ItemClick` | it takes the press; the item selects on a touch's release | nothing clicked or selected |
 | A Button in an item | the Button's click, no `ItemClick` | the Button takes the press; nothing selected | the same: the Button clicks, the item doesn't |
 | Multiple (the check mode) | not read | `Multiple, Toggle`: a tap toggles | toggles; no click (decided below) |
 | Extended | not read | `Multiple`, the check boxes shown (#119) | as Multiple |
@@ -57,18 +58,29 @@ accepts: a touch or a pen let go within the item, a mouse button (left or right)
 from the focused item. An event that arrives handled selects nothing.
 
 So the behaviour **takes those events**: with item click on and the list out of the check mode, each event Avalonia's
-item would select on is marked handled just before it reaches the item, and nothing is selected. A click is a left
-button or a touch let go within the item, or Space or Enter from it. Because it is Avalonia's own rule, a tap
-clicks exactly where it used to select: a pan takes the pointer from the item, so its release never reaches the item;
-a release off the item is outside its bounds; a press moved 10 px is still inside them. Avalonia marked those same
-events handled when it selected, so an app's handler sees what it saw before.
+item would select on is marked handled just before it reaches the item, and nothing is selected. Avalonia marked those
+same events handled when it selected, so an app's handler on the item or the list sees what it saw before.
+
+A click is a touch or the mouse's left button let go within the item, by the pointer whose press reached the item
+unhandled; or Space or Enter pressed and let go on the focused item. The touch's rule is Avalonia's for selecting, so
+a tap clicks exactly where it used to select: a pan takes the pointer from the item, so its release never reaches the
+item; a release off the item is outside its bounds; a press moved 10 px is still inside them. The mouse clicks on its
+release, as a Button does, where Avalonia selected on its press. A press something in the item took (a Button, a
+TextBox, a plain list's item) clicks nothing when it is let go, whichever the pointer. A key clicks as it is let go,
+so a held key, whose press repeats, clicks once. A click gives the platform's click feedback by the item's
+`PlatformFeedback.FeedbackType`, as Avalonia's selection and Button do.
 
 Where it takes them: the item's class handler is the first on the item to see an event on its way up, and nothing
-outside the item can come before it there. So the behaviour's class handler for the pointer acts on the item's
+outside the item can come before it there. So the behaviour's class handlers for the pointer act on the item's
 template root, after everything inside the item has seen the event (a Button in the item takes its press first, and
-the event arrives handled). A key's source is the focused item itself, so its handler acts on the key's way down, at
+the press arrives handled). A key's source is the focused item itself, so its handlers act on the key's way down, at
 the item, where nothing inside the item comes after it. The handlers are registered once, when `ListBoxOptions` is
-first used, and do nothing for a list without item click.
+first used. The pointer's run on every element of a press's and a release's route, so they return at once while no
+list has item click on (a count of the lists that have).
+
+Limits: the root's own handlers come after the class handler, so they don't see an event that is taken; a `ListBox`
+subclass that overrides its protected `ShouldTriggerSelection` isn't followed, as the rule read is Avalonia's default
+(`ItemSelectionEventTriggers`).
 
 A pointer an app captures to the `ListBoxItem` itself sends its release from the item, past the template root: that
 release selects, as Avalonia's, and clicks nothing (a limit; taking it on the way down would have to come after the
@@ -98,17 +110,22 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
    `Without_Multiple_A_Tap_Clicks`.
 9. **The mouse clicks on the left button's release and selects nothing**; the right button clicks nothing.
    `A_Mouse_Clicks_On_The_Left_Buttons_Release_And_Selects_Nothing`; let go off the item, nothing,
-   `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
+   `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; a release with no press on the item, nothing,
+   `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
    release, neither button selects, `With_Hold_On_The_Mouse_Neither_Button_Selects`.
-10. **Space and Enter click the focused item.** `Space_And_Enter_Click_The_Focused_Item`.
-11. **A Button in an item takes its own tap.** `A_Button_In_An_Item_Takes_Its_Own_Tap`.
-12. **A list in an item clicks its own item alone**; the event bubbles to the outer list with the inner as its
-    source. `A_List_In_An_Item_Clicks_Its_Own_Item_Alone`.
+10. **Space and Enter click the focused item once, as they are let go**, a held key's repeats included.
+    `Space_And_Enter_Click_The_Focused_Item_Once_As_They_Are_Let_Go`; a key let go without its press, nothing,
+    `A_Key_Let_Go_Without_Its_Press_Clicks_Nothing`.
+11. **A Button in an item takes its own tap.** `A_Button_In_An_Item_Takes_Its_Own_Tap`; a press something in the item
+    took clicks nothing, the mouse's and a touch's, `A_Press_Something_In_The_Item_Took_Clicks_Nothing`.
+12. **A list in an item clicks its own item alone**; the outer list hears nothing.
+    `A_List_In_An_Item_Clicks_Its_Own_Item_Alone`.
 13. **Behaviour only**: under Simple's ListBox it clicks too. `It_Works_Under_Another_Theme`.
 14. **An item that is its own container is clicked as itself.**
     `An_Item_That_Is_Its_Own_Container_Is_Clicked_As_Itself`.
 15. **The sample's page** (`Sample/ItemClickPageTests.cs`): in the catalogue after the ListView's, both lists
-    clicking in the phone's look, its header, a tap's click shown, and "select" putting the list in the check mode.
+    clicking in the phone's look, its header, a tap's click shown, and "select" putting the list in the check mode and
+    taking it out with the checks cleared.
 
 ## Decided on the user's behalf
 
@@ -125,12 +142,17 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 - **The mouse clicks on the left button's release, and its press selects nothing**, as a touch, and as WinRT's
   Button. The right button's press selects nothing either (Avalonia's selects the item under a context menu);
   its release is left alone, as before. To reverse: let the press through in `Take`.
-- **Space and Enter click the focused item.** Avalonia's item selects on them; left as they were, a key would select
-  an item a tap can't. The phone has no keyboard to read. To reverse: drop the `KeyDownEvent` handler.
+- **Space and Enter click the focused item, as they are let go.** Avalonia's item selects on them; left as they
+  were, a key would select an item a tap can't. On the release, so a held key clicks once (Avalonia's Button clicks
+  on Enter's press, and repeats). The phone has no keyboard to read. To reverse: drop the key handlers.
 - **Arrow keys move the selection as Avalonia's ListBox does** (a gap): changing them needs the ListBox's own key
   handling.
-- **`ItemClick` bubbles**, as Avalonia's `Button.Click` does, raised on the list with the list as its source, so a
-  page can handle it once for several lists. WinRT's is a plain event. To reverse: register it `Direct`.
+- **`ItemClick` is a direct routed event**, raised on the list alone, as WinRT's is a plain event of the list: a
+  list in an item of a list doesn't reach the outer list's handler with an item of another type (the first review's
+  finding; it bubbled at first). To reverse: register it `Bubble`.
+- **A click gives the platform's click feedback**, as Avalonia's selection and Button do, by the item's
+  `PlatformFeedback.FeedbackType` (Auto on a `ListBoxItem`, Avalonia's). The 8.1 phone wasn't read for it, and a
+  headless test can't reach it (owed: the device run). To reverse: drop `PerformFeedback`.
 - **The class is `ListBoxOptions`**, Avalonia's type and "Options", as `CommandBarOptions` is, and its members WinRT's
   names. In XAML: `cf:ListBoxOptions.IsItemClickEnabled="True" cf:ListBoxOptions.ItemClick="OnItemClick"`.
 - **Its own sample page, `itemclick`**, not a specimen on the listview page, which is #119's.
@@ -149,4 +171,4 @@ From the ListView's checklist ([PLAN](../ListView/PLAN.md#listview)), the two ro
 | | Member | Type | Avalonia | Notes |
 |---|---|---|---|---|
 | [x] | `IsItemClickEnabled` | `Boolean` | `ListBoxOptions.IsItemClickEnabled` | attached on `ListBox`, False by default |
-| [x] | `ItemClick` | `ItemClickEventHandler` | `ListBoxOptions.ItemClickEvent` | a bubbling routed event on the list; `ItemClickEventArgs.ClickedItem` |
+| [x] | `ItemClick` | `ItemClickEventHandler` | `ListBoxOptions.ItemClickEvent` | a direct routed event on the list; `ItemClickEventArgs.ClickedItem` |

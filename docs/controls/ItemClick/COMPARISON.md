@@ -16,9 +16,8 @@ mode on the reference profile ([PLAN](PLAN.md#where-the-behaviour-comes-from)). 
 | Moved 10 px sideways over 300 ms | one | none | one | none |
 | The press tilts | the Button's tilt (#113) | | the Button's tilt (#119), held while the finger is down, back at rest after the release | |
 
-The order: on the phone `ItemClick` comes before the list's own `PointerReleased` handler sees the release and before
-`Tapped`. Ours is raised as the release reaches the item, so before a handler on the list, and before Avalonia's
-`Tapped`, which its gestures raise from the same release.
+The order: on the phone `ItemClick` comes before the list's own `PointerReleased` handler sees the release, and
+before `Tapped`. Ours is raised as the release reaches the item's template root, so before a handler on the list.
 
 ## Not compared
 

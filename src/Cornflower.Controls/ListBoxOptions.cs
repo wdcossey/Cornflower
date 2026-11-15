@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -27,19 +28,26 @@ public sealed class ItemClickEventArgs : RoutedEventArgs
 /// </summary>
 /// <remarks>
 /// <para>
-/// What a click is, is Avalonia's own rule for what selects an item (<see cref="ItemSelectionEventTriggers"/>): a
-/// touch or a pen let go on the item, a mouse's left button let go on it, or Space or Enter on the focused item. Each
-/// event Avalonia's item would select on, the list takes instead, and selects nothing: the mouse's press and its right
-/// button included. So a pan, which takes the pointer from the item, and a press dragged off it, click nothing, as on
-/// the phone (#113); a control in the item that handles the press itself, a Button, takes it as it would.
+/// Each event Avalonia's item would select on (<see cref="ItemSelectionEventTriggers"/>: a touch or a pen let go on
+/// the item, a mouse button pressed on it, Space or Enter on the focused item) the list takes instead, and nothing is
+/// selected. A click is a touch, or the mouse's left button, pressed on the item and let go on it, the press reaching
+/// the item unhandled; or Space or Enter pressed and let go on the focused item. So a pan, which takes the pointer from
+/// the item, and a press dragged off it, click nothing, as on the phone (#113); and a control in the item that takes
+/// the press itself, a Button or a TextBox, takes the tap as it would.
 /// </para>
 /// <para>
 /// In the check mode, a <see cref="ListBox.SelectionMode"/> with <see cref="SelectionMode.Multiple"/>, a tap checks
 /// the item as before and nothing is clicked. A selection set in code stands either way.
 /// </para>
+/// <para>
+/// A pointer's events are taken on the item's template root, by a class handler, so the root's own handlers don't see
+/// an event that is taken. A <see cref="ListBox"/> subclass that overrides when it selects isn't followed: the rule is
+/// Avalonia's default. A pointer captured to the <see cref="ListBoxItem"/> itself selects, as before, and clicks
+/// nothing.
+/// </para>
 /// </remarks>
 /// <example>
-/// <code>&lt;ListBox cf:ListBoxOptions.IsItemClickEnabled="True" /&gt;</code>
+/// <code>&lt;ListBox cf:ListBoxOptions.IsItemClickEnabled="True" cf:ListBoxOptions.ItemClick="OnItemClick" /&gt;</code>
 /// <code>list.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) =&gt; Open(e.ClickedItem));</code>
 /// </example>
 public static class ListBoxOptions
@@ -49,75 +57,130 @@ public static class ListBoxOptions
         AvaloniaProperty.RegisterAttached<ListBox, bool>("IsItemClickEnabled", typeof(ListBoxOptions));
 
     /// <summary>
-    /// Raised on the list when an item is clicked: WinRT's <c>ItemClick</c>. It bubbles, as Avalonia's
-    /// <see cref="Button.ClickEvent"/> does, so a list in an item of a list reaches the outer list's handlers too, with
-    /// the inner list as its source.
+    /// Raised on the list when an item is clicked: WinRT's <c>ItemClick</c>. A direct event, as WinRT's is the list's
+    /// own: a list's handler hears its own items alone, not those of a list inside one of them.
     /// </summary>
     public static readonly RoutedEvent<ItemClickEventArgs> ItemClickEvent =
-        RoutedEvent.Register<ItemClickEventArgs>("ItemClick", RoutingStrategies.Bubble, typeof(ListBoxOptions));
+        RoutedEvent.Register<ItemClickEventArgs>("ItemClick", RoutingStrategies.Direct, typeof(ListBoxOptions));
+
+    /// <summary>The pointer whose press reached the item unhandled, until a left button or a touch is let go.</summary>
+    private static readonly AttachedProperty<IPointer?> PressedByProperty =
+        AvaloniaProperty.RegisterAttached<ListBoxItem, IPointer?>("PressedBy", typeof(ListBoxOptions));
+
+    /// <summary>The key whose press the item took, until it is let go.</summary>
+    private static readonly AttachedProperty<Key?> KeyDownProperty =
+        AvaloniaProperty.RegisterAttached<ListBoxItem, Key?>("KeyDown", typeof(ListBoxOptions));
+
+    /// <summary>How many lists have item click on, so that the pointer's class handlers do nothing while none has.</summary>
+    private static int _enabled;
 
     static ListBoxOptions()
     {
+        IsItemClickEnabledProperty.Changed.AddClassHandler<ListBox>((_, e) => _enabled += e.GetNewValue<bool>() ? 1 : -1);
+
         // The item selects in its own class handler, the first on the item to see an event on its way up. So the list
-        // takes a pointer's event a step before, on the item's template root, after everything in the item has seen it;
-        // and a key, whose source is the focused item itself, on its way down to the item.
-        InputElement.PointerPressedEvent.AddClassHandler<Interactive>(OnBelowItem);
-        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnBelowItem);
-        InputElement.KeyDownEvent.AddClassHandler<ListBoxItem>(Take, RoutingStrategies.Tunnel);
+        // takes a pointer's event a step before, on the item's template root, after everything inside the item has seen
+        // it (a press something there handled too, which then clicks nothing); and a key, whose source is the focused
+        // item itself, on its way down to the item.
+        InputElement.PointerPressedEvent.AddClassHandler<Interactive>(OnPressed, handledEventsToo: true);
+        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnReleased);
+        InputElement.KeyDownEvent.AddClassHandler<ListBoxItem>(OnKeyDown, RoutingStrategies.Tunnel);
+        InputElement.KeyUpEvent.AddClassHandler<ListBoxItem>(OnKeyUp, RoutingStrategies.Tunnel);
     }
 
     public static bool GetIsItemClickEnabled(ListBox list) => list.GetValue(IsItemClickEnabledProperty);
 
     public static void SetIsItemClickEnabled(ListBox list, bool value) => list.SetValue(IsItemClickEnabledProperty, value);
 
-    private static void OnBelowItem(Interactive root, RoutedEventArgs e)
+    /// <summary>The item's list, if it clicks its items now: item click on, and out of the check mode.</summary>
+    private static ListBox? Clicking(ListBoxItem item) =>
+        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list &&
+        GetIsItemClickEnabled(list) &&
+        !list.SelectionMode.HasFlag(SelectionMode.Multiple)
+            ? list
+            : null;
+
+    /// <summary>The item whose template root this is, while some list has item click on.</summary>
+    private static ListBoxItem? ItemOf(Interactive root) => _enabled > 0 ? root.GetVisualParent() as ListBoxItem : null;
+
+    private static void OnPressed(Interactive root, PointerPressedEventArgs e)
     {
-        if (root.GetVisualParent() is ListBoxItem item)
+        if (ItemOf(root) is not { } item)
         {
-            Take(item, e);
+            return;
+        }
+
+        if (e.Handled || Clicking(item) is null)
+        {
+            item.ClearValue(PressedByProperty);
+            return;
+        }
+
+        if (e.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed)
+        {
+            item.SetValue(PressedByProperty, e.Pointer);
+        }
+
+        if (ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
+        {
+            e.Handled = true;
         }
     }
 
-    /// <summary>Takes an event the item would select on, if its list clicks items, and clicks it on a release or a key.</summary>
-    private static void Take(ListBoxItem item, RoutedEventArgs e)
+    private static void OnReleased(Interactive root, PointerReleasedEventArgs e)
     {
-        // An event something in the item handled (a Button's press) doesn't reach a class handler at all.
-        if (ItemsControl.ItemsControlFromItemContainer(item) is not ListBox list ||
-            !GetIsItemClickEnabled(list) ||
-            list.SelectionMode.HasFlag(SelectionMode.Multiple))
+        if (ItemOf(root) is not { } item || Clicking(item) is not { } list)
         {
             return;
         }
 
-        bool take, click;
-        switch (e)
+        // The left button, or a touch, let go on the item, by the pointer whose press reached it.
+        var left = e.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonReleased;
+        var click = left &&
+            ReferenceEquals(item.GetValue(PressedByProperty), e.Pointer) &&
+            new Rect(item.Bounds.Size).Contains(e.GetPosition(item));
+        if (left)
         {
-            case PointerReleasedEventArgs released:
-                // A click is the left button, or a touch, let go on the item, whichever pointer it is.
-                click = released.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonReleased &&
-                    new Rect(item.Bounds.Size).Contains(released.GetPosition(item));
-                take = click || ItemSelectionEventTriggers.ShouldTriggerSelection(item, released);
-                break;
-            case PointerPressedEventArgs pressed:
-                click = false;
-                take = ItemSelectionEventTriggers.ShouldTriggerSelection(item, pressed);
-                break;
-            case KeyEventArgs key:
-                click = take = ItemSelectionEventTriggers.ShouldTriggerSelection(item, key);
-                break;
-            default:
-                return;
+            item.ClearValue(PressedByProperty);
         }
 
-        if (!take)
+        if (click || ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
         {
-            return;
+            e.Handled = true;
         }
 
-        e.Handled = true;
         if (click)
         {
-            list.RaiseEvent(new ItemClickEventArgs(list.ItemFromContainer(item)));
+            // As Avalonia's own click and selection do, by the item's PlatformFeedback.FeedbackType.
+            item.PerformFeedback(FeedbackAction.Click);
+            Raise(list, item);
         }
     }
+
+    private static void OnKeyDown(ListBoxItem item, KeyEventArgs e)
+    {
+        if (Clicking(item) is not null && ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
+        {
+            e.Handled = true;
+            item.SetValue(KeyDownProperty, e.Key);
+        }
+    }
+
+    /// <summary>A key clicks as it is let go, so that a held key, whose press repeats, clicks once.</summary>
+    private static void OnKeyUp(ListBoxItem item, KeyEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, item) || item.GetValue(KeyDownProperty) != e.Key)
+        {
+            return;
+        }
+
+        item.ClearValue(KeyDownProperty);
+        if (Clicking(item) is { } list)
+        {
+            Raise(list, item);
+        }
+    }
+
+    private static void Raise(ListBox list, ListBoxItem item) =>
+        list.RaiseEvent(new ItemClickEventArgs(list.ItemFromContainer(item)));
 }

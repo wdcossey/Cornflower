@@ -69,6 +69,12 @@ public class ItemClickPageTests
         Assert.Equal(ItemClickPage.CheckMode, list.SelectionMode);
         Tap(scene, list.ContainerFromIndex(2)!);
         Assert.Equal("clicked: item 2 · selected: item 3", state.Text);
+
+        // Out of the check mode the checks go, as a tap couldn't clear one left selected.
+        page.FindControl<ToggleButton>("Select")!.IsChecked = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(SelectionMode.Single, list.SelectionMode);
+        Assert.Equal("clicked: item 2 · nothing selected", state.Text);
     }
 
     [AvaloniaFact]
