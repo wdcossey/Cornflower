@@ -9,15 +9,18 @@ using Avalonia.Styling;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox and TextBox out of templates written for the theme under
-/// Wp81. Simple's templates for CalendarItem, CalendarDatePicker, CommandBar, NavigationPage, PipsPager and the managed file
-/// dialogs hold plain Buttons with no theme of their own, ComboBox's and DrawerPage's plain ToggleButtons, ScrollBar's
-/// and the menu ScrollViewer's plain RepeatButtons, the managed file dialog's plain CheckBox, and the plain TextBoxes of
-/// AutoCompleteBox, CalendarDatePicker, ComboBox, the managed file dialog and NumericUpDown, so they would take
-/// Wp81's, keyed by type: the phone's sizes (a Button's 109 × 57.5 minimum), its overhang, the accent and, for a Button
-/// or a CheckBox, the tilt, in chrome laid out for Simple's; for a TextBox, the phone's black text and white box over
-/// the brushes those templates pass it. Such a control takes the theme under Wp81 for its own style key instead: a
-/// ToggleButton the ToggleButton theme, not the Button theme.
+/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox and ContentControl out of templates written for
+/// the theme under Wp81. Simple's templates for CalendarItem, CalendarDatePicker, PipsPager and the managed file dialogs
+/// hold plain Buttons with no theme of their own, ComboBox's and DrawerPage's plain ToggleButtons, the menu
+/// ScrollViewer's plain RepeatButtons, the managed file dialog's plain CheckBox, the plain TextBoxes of
+/// AutoCompleteBox, CalendarDatePicker, ComboBox, the managed file dialog and NumericUpDown, and the plain
+/// ContentControls of ComboBox, DataValidationErrors, MenuItem and the managed file dialog, so they would take Wp81's,
+/// keyed by type: the phone's sizes (a Button's 109 × 57.5 minimum), its overhang, the accent and, for a Button or a
+/// CheckBox, the tilt, in chrome laid out for Simple's; for a TextBox, the phone's black text and white box over the
+/// brushes those templates pass it; for a ContentControl, its content at the top left at its own size where Simple's
+/// stretches it. Such a control takes the theme under Wp81 for its own style key instead: a ToggleButton the
+/// ToggleButton theme, not the Button theme. A ContentControl, for which Simple has no theme, takes Avalonia's own
+/// (<see cref="FallBackToOwnProperty"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Which templates.</b> The templated parent's own template decides: a control falls back when that template
@@ -33,7 +36,8 @@ namespace Cornflower.Themes.Wp81;
 /// are read once and kept beside it; a plain group of styles and a host's own resources, which an app can change as
 /// it runs, are read each time.</para>
 /// <para><b>On and off.</b> Only Wp81's themes set <see cref="FallBackProperty"/> (Button's, ToggleButton's,
-/// RepeatButton's, CheckBox's and TextBox's): it is internal, with no accessor. It goes false when that theme leaves
+/// RepeatButton's, CheckBox's, TextBox's and ContentControl's) and <see cref="FallBackToOwnProperty"/>
+/// (ContentControl's): they are internal, with no accessors. It goes false when that theme leaves
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
 /// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>); one with no
 /// templated parent returns at once.</para>
@@ -41,11 +45,23 @@ namespace Cornflower.Themes.Wp81;
 internal static class HoleParts
 {
     /// <summary>
-    /// Set by Wp81's themes for a Button and its subclasses, and a TextBox: whether the control is in a template written
-    /// for the theme under Wp81.
+    /// Set by Wp81's themes for a Button and its subclasses, a CheckBox, a TextBox and a ContentControl: whether the
+    /// control is in a template written for the theme under Wp81.
     /// </summary>
     public static readonly AttachedProperty<bool> FallBackProperty =
         AvaloniaProperty.RegisterAttached<TemplatedControl, bool>("FallBack", typeof(HoleParts));
+
+    /// <summary>
+    /// Set by Wp81's ContentControl theme: where the theme under Wp81 has no theme for the control's style key (Simple
+    /// has none for ContentControl), the control falls back to an empty <c>ControlTheme</c> for its key, so Avalonia's
+    /// own template and defaults, as under that theme alone. Off, such a control keeps Wp81's, as the other parts do
+    /// (<c>HoleTogglePartsTests.With_No_Theme_Under_Wp81_For_Its_Type_It_Keeps_Wp81s</c>).
+    /// </summary>
+    public static readonly AttachedProperty<bool> FallBackToOwnProperty =
+        AvaloniaProperty.RegisterAttached<TemplatedControl, bool>("FallBackToOwn", typeof(HoleParts));
+
+    /// <summary>The empty theme for each style key, made once: Avalonia's own template and defaults for that type.</summary>
+    private static readonly ConditionalWeakTable<Type, ControlTheme> Bare = new();
 
     /// <summary>Each theme's templates, read once, kept beside the theme.</summary>
     private static readonly ConditionalWeakTable<object, HashSet<object>> Templates = new();
@@ -55,6 +71,11 @@ internal static class HoleParts
         FallBackProperty.Changed.AddClassHandler<TemplatedControl>((control, e) =>
         {
             if (e.GetNewValue<bool>()) Check(control);
+        });
+        // Whichever of a theme's two setters comes in last does the check.
+        FallBackToOwnProperty.Changed.AddClassHandler<TemplatedControl>((control, e) =>
+        {
+            if (e.GetNewValue<bool>() && control.GetValue(FallBackProperty)) Check(control);
         });
     }
 
@@ -75,6 +96,8 @@ internal static class HoleParts
 
             if (ThemeFor(control.StyleKey, below, variant) is { } fallback)
                 control.Theme = fallback;
+            else if (control.GetValue(FallBackToOwnProperty))
+                control.Theme = Bare.GetValue(control.StyleKey, key => new ControlTheme(key));
             return;
         }
     }

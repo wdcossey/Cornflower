@@ -7,8 +7,8 @@
              FontFamily="{DynamicResource PhoneFontFamilyNormal}"
              FontSize="{DynamicResource TextStyleLargeFontSize}">
   <!--
-    The 8.1 ContentControl, in the phone's theme (Wp81ContentControlTheme, set by key: Wp81 doesn't give it to every
-    ContentControl yet). Each is 100 tall in a slot drawn round it in PhoneLowBrush, so where its content sits shows:
+    The 8.1 ContentControl, in the phone's theme, which Wp81 gives every ContentControl (keyed by type, based on
+    Wp81ContentControlTheme). Each is 100 tall in a slot drawn round it in PhoneLowBrush, so where its content sits shows:
     at the top left, at its own size. Text, an element, a padding, a background that isn't drawn (the phone's template
     draws none), the content alignments set by the page, and the light theme. The section headings are the type
     ramp's, by their keys.
@@ -19,7 +19,6 @@
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="ContentControl.specimen">
-      <Setter Property="Theme" Value="{DynamicResource Wp81ContentControlTheme}" />
       <Setter Property="Height" Value="100" />
     </Style>
   </UserControl.Styles>

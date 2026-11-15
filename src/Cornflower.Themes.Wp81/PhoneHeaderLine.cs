@@ -10,8 +10,8 @@ namespace Cornflower.Themes.Wp81;
 /// <summary>
 /// The phone's line for the text a <c>ContentPresenter</c> that doesn't recognise access keys makes of its content, as
 /// <see cref="PhoneContentLine"/> gives it to one that does. The phone's header doesn't recognise them
-/// (<c>"fan_speed"</c> draws its underscore), and nor does a TextBox's placeholder or a ToggleSwitch's OffContent and
-/// OnContent, so their presenters don't, and Avalonia's makes a plain <see cref="TextBlock"/> of data: this gives that
+/// (<c>"fan_speed"</c> draws its underscore), and nor does a TextBox's placeholder, a ToggleSwitch's OffContent and
+/// OnContent, a ContentControl's content or a ListViewItem's, so their presenters don't, and Avalonia's makes a plain <see cref="TextBlock"/> of data: this gives that
 /// <see cref="PhoneTextLine"/>'s MaxHeight line, 1.33 × its own <c>FontSize</c>, Segoe WP's (ADR 0003).
 /// </summary>
 /// <remarks>

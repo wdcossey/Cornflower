@@ -19,8 +19,12 @@
       code collapses it (run 20261112-1319-dev11: 39.1667 tall, not 44).
     - PART_ScrollViewer is the phone's ContentElement: inside the border, at least TextControlThemeMinHeight tall (set
       on ContentRow round it, as Avalonia's TextBox sets the ScrollViewer's own MinHeight for MinLines), the box's
-      Padding round its content. It wears a theme of its own (below), so no ScrollViewer theme keyed by type
-      reaches it, and no scroll bar is drawn, as the phone's Hidden bars draw none.
+      Padding round its content. It wears the phone's ScrollViewerScrollBarlessTemplate,
+      Wp81ScrollViewerScrollBarlessTheme (Controls/ScrollViewer.axaml, by DynamicResource, as a StaticResource can't
+      reach into another file), so no ScrollViewer theme keyed by type reaches it, and no scroll bar or indicator is
+      drawn, as the phone's Hidden bars draw none. (Not the indicator theme: Avalonia's TextBox sets its ScrollViewer's
+      horizontal visibility itself, Auto with AcceptsReturn, so a box of many lines would show an indicator the phone's
+      doesn't.)
     - PART_TextPresenter, the part Avalonia's TextBox looks for, is the phone's text view: its line the phone's,
       1.33 em, the box's LineHeight (inherited), which the style binds to its FontSize through PhoneTextBoxLine, so the first baseline is the placeholder's and each line is 1.33 em below the
       last, as on the phone.
@@ -39,29 +43,6 @@
 
     A TextBox in the template of a control Wp81 doesn't theme yet takes the theme under Wp81's (HoleParts).
   -->
-
-  <!-- ContentElement: the phone's TextBox ScrollViewer, its content presenter inset by the Padding, as the phone's
-       ScrollContentPresenter is (Margin, not Padding: what scrolls is clipped inside it). No scroll bars. -->
-  <ControlTheme x:Key="Wp81TextBoxScrollViewerTheme" TargetType="ScrollViewer">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Template">
-      <ControlTemplate>
-        <ScrollContentPresenter x:Name="PART_ContentPresenter"
-                                Margin="{TemplateBinding Padding}"
-                                Background="{TemplateBinding Background}"
-                                ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
-          <ScrollContentPresenter.GestureRecognizers>
-            <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
-                                     CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
-                                     IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
-                                     Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
-                                     Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
-                                     Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
-          </ScrollContentPresenter.GestureRecognizers>
-        </ScrollContentPresenter>
-      </ControlTemplate>
-    </Setter>
-  </ControlTheme>
 
   <ControlTheme x:Key="{x:Type TextBox}" TargetType="TextBox">
     <Setter Property="MinWidth" Value="{DynamicResource TextControlThemeMinWidth}" />
@@ -120,7 +101,7 @@
             <ContentPresenter x:Name="InnerLeftContentPresenter" Content="{TemplateBinding InnerLeftContent}" />
             <ScrollViewer x:Name="PART_ScrollViewer"
                           Grid.Column="1"
-                          Theme="{StaticResource Wp81TextBoxScrollViewerTheme}"
+                          Theme="{DynamicResource Wp81ScrollViewerScrollBarlessTheme}"
                           Padding="{TemplateBinding Padding}"
                           HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                           VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"

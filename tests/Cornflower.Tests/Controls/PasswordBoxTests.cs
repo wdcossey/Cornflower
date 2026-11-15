@@ -662,7 +662,7 @@ public class PasswordBoxTests
         var box = Specimen();
         using var stage = new TextBoxTests.Stage(box: box);
 
-        Assert.Same(stage.Window.FindResource("Wp81TextBoxScrollViewerTheme"), Part<ScrollViewer>(box, "PART_ScrollViewer").Theme);
+        Assert.Same(stage.Window.FindResource("Wp81ScrollViewerScrollBarlessTheme"), Part<ScrollViewer>(box, "PART_ScrollViewer").Theme);
         Assert.Equal(new Thickness(BorderThickness), ContentRowOf(box).Margin);     // RichEditBoxTextThemeMargin
 
         // RichEditBoxTextThemeMargin, not the box's BorderThickness, which the TextBox's binds: an app's 0 leaves it 2.5.
