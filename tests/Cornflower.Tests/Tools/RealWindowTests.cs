@@ -152,10 +152,11 @@ public partial class RealWindowTests
     }
 
     /// <summary>
-    /// How near a part has to be to where drive.ps1 aims: half a view pixel, as layout rounds each part to the reference
-    /// profile's raw pixels (0.42 of a view pixel at 2.4). A screen pixel is 0.8 of one at 125 %.
+    /// How near a part has to be to where drive.ps1 aims, in view pixels: a raw pixel of the reference profile (0.42 of a
+    /// view pixel at 2.4), as layout rounds each row and part to that grid. Far less than a part's size, so the aim is
+    /// still on it; a screen pixel is 0.8 of a view pixel at 125 %.
     /// </summary>
-    private const double RawPixel = 0.5;
+    private const double RawPixel = 1 / Scene.ReferenceScaling + 0.01;
 
     /// <summary>helpers.ps1's view pixels, its <c>$Name = number</c> lines.</summary>
     private static Dictionary<string, double> Helpers() =>
