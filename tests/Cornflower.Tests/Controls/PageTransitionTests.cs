@@ -123,6 +123,40 @@ public class PageTransitionTests
         Assert.Equal(new Point(450, 0), to.TranslatePoint(new Point(450, 0), nav));
     }
 
+    [AvaloniaTheory]
+    [InlineData("turnstile")]
+    [InlineData("slide")]
+    [InlineData("continuum")]
+    public void At_Its_End_A_Transition_Hides_The_Page_Going_Out_And_Leaves_Both_At_Rest(string which)
+    {
+        // As Avalonia's own transitions do, for any host: NavigationPage hides the page going out again, but a
+        // TransitioningContentControl, say, leaves it to the transition.
+        IPageTransition transition = which switch
+        {
+            "turnstile" => new TurnstileTransition(),
+            "slide" => new SlideTransition(),
+            _ => new ContinuumTransition(),
+        };
+        var from = new Border { Background = Brushes.White };
+        var to = new Border { Background = Brushes.Blue, IsVisible = false };
+        using var scene = new Scene(new Grid { Children = { from, to } });
+        using var clock = EmulatorClock();
+
+        foreach (var forward in new[] { true, false })
+        {
+            from.IsVisible = true;
+            to.IsVisible = false;
+            var task = transition.Start(from, to, forward, default);
+            Assert.True(to.IsVisible);
+            clock.At(clock.Now.TotalMilliseconds + 1000);
+
+            Assert.True(task.IsCompletedSuccessfully);
+            Assert.False(from.IsVisible);
+            Assert.True(to.IsVisible);
+            AssertAtRest(from, to);
+        }
+    }
+
     [AvaloniaFact]
     public void The_Turnstiles_First_Ticks_Are_The_Angles_The_Emulator_Showed_First()
     {
