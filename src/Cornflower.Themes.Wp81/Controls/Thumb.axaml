@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The Windows Phone 8.1 Thumb: the default style of the 8.1 Update 1 runtime (thumb.json, which equals the SDK's
+    generic.xaml), re-expressed as an Avalonia ControlTheme, for a Thumb an app places itself. The phone's own
+    templates don't use it: its ScrollBar has no Thumb, and its Slider's thumbs have their own styles, as Wp81's do
+    (Wp81ScrollBarPanningThumbTheme, Wp81SliderHorizontalThumbTheme, Wp81SliderVerticalThumbTheme).
+
+    The template is the phone's, part for part: Background, a Border in the Thumb's own Background, BorderBrush and
+    BorderThickness (0.8), and BackgroundPressed over it, in ThumbPressedBackgroundThemeBrush and
+    ThumbPressedBorderThemeBrush, transparent until the Pressed state (:pressed) swaps the two. PointerOver and
+    Disabled change nothing.
+  -->
+  <ControlTheme x:Key="{x:Type Thumb}" TargetType="Thumb">
+    <Setter Property="Background" Value="{DynamicResource ThumbBackgroundThemeBrush}" />
+    <Setter Property="BorderThickness" Value="0.8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ThumbBorderThemeBrush}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border x:Name="Background"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" />
+          <Border x:Name="BackgroundPressed"
+                  Background="{DynamicResource ThumbPressedBackgroundThemeBrush}"
+                  BorderBrush="{DynamicResource ThumbPressedBorderThemeBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  Opacity="0" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pressed /template/ Border#BackgroundPressed">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^:pressed /template/ Border#Background">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

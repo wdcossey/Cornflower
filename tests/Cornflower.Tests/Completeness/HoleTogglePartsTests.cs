@@ -13,9 +13,9 @@ namespace Cornflower.Tests.Completeness;
 /// The ToggleButtons and RepeatButtons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme
 /// under Wp81 for their own type, as <see cref="HolePartsTests"/> shows for Buttons. In Avalonia 12.1.4, Simple's
 /// templates for ComboBox (its drop-down toggle) and DrawerPage (three toggles) hold plain ToggleButtons with no theme
-/// of their own, and ScrollBar's (eight, two orientations) and the menu ScrollViewer's (two) plain RepeatButtons: read
-/// from Simple's sources at the 12.1.4 tag. Without HoleParts they would take Wp81's, with the phone's 109 × 57.5
-/// minimum and overhang, in every ComboBox and scroll bar.
+/// of their own, and the menu ScrollViewer's (two) plain RepeatButtons: read from Simple's sources at the 12.1.4 tag.
+/// Without HoleParts they would take Wp81's, with the phone's 109 × 57.5 minimum and overhang, in every ComboBox and
+/// menu. Simple's ScrollBar held eight more; Wp81 themes ScrollBar now (#116), and its template has none.
 /// </summary>
 public class HoleTogglePartsTests
 {
@@ -36,7 +36,7 @@ public class HoleTogglePartsTests
 
     // Every hole shown with Simple then Wp81: the same plain ToggleButtons and RepeatButtons as with Simple alone, none in
     // Wp81's theme, and those that had none of their own in Simple's theme for their own type. (Their sizes are compared
-    // below for ComboBox and ScrollBar: across all the holes, Wp81's font changes the rows some of them stretch to.)
+    // below for ComboBox: across all the holes, Wp81's font changes the rows some of them stretch to.)
     [AvaloniaFact]
     public void Every_Holes_ToggleButtons_And_RepeatButtons_Keep_The_Theme_Under_Wp81()
     {
@@ -67,8 +67,7 @@ public class HoleTogglePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Contains("ComboBox.ToggleButton.toggle", fellBack);
-        Assert.Contains("ScrollBar.RepeatButton.PART_LineUpButton", fellBack);
-        Assert.Contains("ScrollBar.RepeatButton.PART_PageDownButton", fellBack);
+        Assert.Contains("ContextMenu.RepeatButton.", fellBack);
     }
 
     // ComboBox's drop-down toggle: Simple's ToggleButton theme, not Simple's Button theme and not Wp81's, so it is as
@@ -87,26 +86,6 @@ public class HoleTogglePartsTests
 
         toggle.IsChecked = true;
         Assert.True(combo.IsDropDownOpen);
-    }
-
-    // A ScrollBar's RepeatButtons: Simple's RepeatButton theme, laid out as with Simple alone.
-    [AvaloniaFact]
-    public void A_ScrollBars_RepeatButtons_Keep_Simples_Theme()
-    {
-        var alone = new ScrollBar { Orientation = Avalonia.Layout.Orientation.Vertical, Height = 300, Maximum = 100, ViewportSize = 10, Visibility = ScrollBarVisibility.Visible };
-        List<Avalonia.Size> expected;
-        using (new Scene(alone, themes: [new SimpleTheme()]))
-            expected = Plain(alone).Select(b => b.Bounds.Size).ToList();
-
-        var simple = new SimpleTheme();
-        var bar = new ScrollBar { Orientation = Avalonia.Layout.Orientation.Vertical, Height = 300, Maximum = 100, ViewportSize = 10, Visibility = ScrollBarVisibility.Visible };
-        using var scene = new Scene(bar, themes: [simple, new Wp81Theme()]);
-        var repeats = Plain(bar).OfType<RepeatButton>().ToList();
-
-        Assert.NotEmpty(repeats);
-        Assert.All(repeats, r => Assert.Same(ThemeOf(simple, typeof(RepeatButton)), r.Theme));
-        Assert.Equal(expected, repeats.Select(r => r.Bounds.Size).ToList());
-        Assert.All(repeats, r => Assert.False(PhonePress.GetIsEnabled(r)));
     }
 
     // An app's own templated control isn't a hole: its ToggleButton and RepeatButton are the phone's.

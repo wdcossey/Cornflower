@@ -50,8 +50,6 @@ PipsPager
 PopupRoot
 RefreshContainer
 RefreshVisualizer
-ScrollBar
-ScrollViewer
 Separator
 SplitButton
 SplitView
