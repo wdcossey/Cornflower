@@ -3,6 +3,7 @@ using Avalonia.Animation;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
 
@@ -94,8 +95,8 @@ internal sealed class PhonePageRun
     // Its continuations run on later, not inside a frame callback or inside the token's Cancel, where a host such as
     // NavigationPage may be part-way through leaving its window.
     private readonly TaskCompletionSource _done = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly Shown _fromShown = new();
-    private readonly Shown _toShown = new();
+    private readonly Shown _fromShown = new(goingOut: true);
+    private readonly Shown _toShown = new(goingOut: false);
     private readonly CancellationTokenRegistration _cancel;
     private IDisposable? _pending;
     private TimeSpan? _start;
@@ -173,9 +174,32 @@ internal sealed class PhonePageRun
         _toShown.Show(_to, to);
     }
 
-    /// <summary>The end: the page going out hidden, as Avalonia's own transitions leave it, then both at rest.</summary>
-    private void Finish()
+    /// <summary>The end: <see cref="Stop"/>, the task done.</summary>
+    private void Finish() => Stop(cancelled: false);
+
+    /// <summary>
+    /// Given up: <see cref="Stop"/>, the task cancelled. A token can be cancelled on any thread; the pages are the UI
+    /// thread's, so the stop is posted there unless it is already on it.
+    /// </summary>
+    private void Cancel()
     {
+        if (Dispatcher.UIThread.CheckAccess())
+            Stop(cancelled: true);
+        else
+            Dispatcher.UIThread.Post(() => Stop(cancelled: true));
+    }
+
+    /// <summary>
+    /// The end, or given up: the page going out hidden, as Avalonia's own transitions leave it (NavigationPage doesn't
+    /// hide it after a cancel, and on a pop it is on top), then both pages without their looks.
+    /// </summary>
+    private void Stop(bool cancelled)
+    {
+        if (_over)
+        {
+            return;
+        }
+
         End();
         if (_from is not null)
         {
@@ -184,29 +208,10 @@ internal sealed class PhonePageRun
 
         _fromShown.Clear();
         _toShown.Clear();
-        _done.TrySetResult();
-    }
-
-    /// <summary>
-    /// Given up: the page coming in is the host's page now, so the page going out is hidden as at the end (NavigationPage
-    /// doesn't hide it after a cancel, and on a pop it is on top), and both lose their looks.
-    /// </summary>
-    private void Cancel()
-    {
-        if (_over)
-        {
-            return;
-        }
-
-        End();
-        if (_from is not null && _to is not null)
-        {
-            _from.IsVisible = false;
-        }
-
-        _fromShown.Clear();
-        _toShown.Clear();
-        _done.TrySetCanceled();
+        if (cancelled)
+            _done.TrySetCanceled();
+        else
+            _done.TrySetResult();
     }
 
     private void End()
@@ -217,8 +222,12 @@ internal sealed class PhonePageRun
         _cancel.Dispose();
     }
 
-    /// <summary>One page's look, held at animation priority: its opacity, and one transform changed in place.</summary>
-    private sealed class Shown
+    /// <summary>
+    /// One page's look, held at animation priority: its opacity, and one transform changed in place. The page going out
+    /// takes no input from the start (it is leaving, and fading or dropping it may still show); the page coming in takes
+    /// none while it is hidden (Avalonia's hit test doesn't look at opacity, and a pop's page going out is on top).
+    /// </summary>
+    private sealed class Shown(bool goingOut)
     {
         private readonly MatrixTransform _transform = new();
         private IDisposable? _opacity;
@@ -239,10 +248,8 @@ internal sealed class PhonePageRun
                 _opacity?.Dispose();
                 _opacity = look.Opacity == 1 ? null : page.SetValue(Visual.OpacityProperty, look.Opacity, BindingPriority.Animation);
                 _opacityShown = look.Opacity;
-                // A hidden page takes no input: Avalonia's hit test doesn't look at opacity, and a pop's page going out
-                // is on top of the page coming in.
                 _unhit?.Dispose();
-                _unhit = look.Opacity == 0 && page is InputElement input
+                _unhit = (goingOut || look.Opacity == 0) && page is InputElement input
                     ? input.SetValue(InputElement.IsHitTestVisibleProperty, false, BindingPriority.Animation)
                     : null;
             }

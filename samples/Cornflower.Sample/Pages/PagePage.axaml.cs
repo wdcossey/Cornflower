@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -16,10 +17,10 @@ namespace Cornflower.Sample.Pages;
 public partial class PagePage : UserControl
 {
     /// <summary>
-    /// The transition each page came with, to go back with: none for the theme's turnstile. Kept by page, not as a stack
-    /// beside Avalonia's, as NavigationPage also goes back on its own (Alt+Left on desktop).
+    /// The transition each page came with, to go back with: none for the theme's turnstile. Kept with the page, so it goes
+    /// with it however the page leaves the stack.
     /// </summary>
-    private readonly Dictionary<Page, IPageTransition> _cameWith = new();
+    private readonly ConditionalWeakTable<Page, IPageTransition> _cameWith = new();
 
     private TopLevel? _top;
 
@@ -40,10 +41,8 @@ public partial class PagePage : UserControl
             return;
         var page = MakePage(Navigation.StackDepth + 1);
         if (transition is not null)
-            _cameWith[page] = transition;
+            _cameWith.AddOrUpdate(page, transition);
         await (transition is null ? Navigation.PushAsync(page) : Navigation.PushAsync(page, transition));
-        if (!ReferenceEquals(Navigation.CurrentPage, page))
-            _cameWith.Remove(page);
     }
 
     /// <summary>Goes back a page, with the transition it came with; false on the first page or mid-transition.</summary>
@@ -51,7 +50,8 @@ public partial class PagePage : UserControl
     {
         if (Navigation.StackDepth <= 1 || Navigation.IsNavigating || Navigation.CurrentPage is not { } current)
             return false;
-        _ = _cameWith.Remove(current, out var transition) ? Navigation.PopAsync(transition) : Navigation.PopAsync();
+        // Read, not taken: a page that cancels its leaving keeps it for the next back.
+        _ = _cameWith.TryGetValue(current, out var transition) ? Navigation.PopAsync(transition) : Navigation.PopAsync();
         return true;
     }
 

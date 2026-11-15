@@ -308,10 +308,13 @@ public class PageTransitionTests
         var from = PresenterOf(a);
         var to = PresenterOf(b);
 
-        // The fade: the old page going, the new one not yet shown, within the recording's two frames.
+        // The fade: the old page going, the new one not yet shown, within the recording's two frames. The page going
+        // out takes no input though it still shows.
         Assert.Equal(1, from.Opacity);
+        Assert.False(from.IsHitTestVisible);
         AtTick(clock, 2);
         Assert.InRange(from.Opacity, 0.01, 0.99);
+        Assert.False(from.IsHitTestVisible);
         Assert.Equal(0, to.Opacity);
         AtTick(clock, Continuum.FadeFramesMs / Tick);
         Assert.Equal(0, from.Opacity);
@@ -394,7 +397,7 @@ public class PageTransitionTests
     }
 
     [AvaloniaFact]
-    public void A_NavigationPage_Leaving_Its_Window_Mid_Turn_Leaves_No_Page_Turned_Or_Hidden()
+    public void A_NavigationPage_Leaving_Its_Window_Mid_Turn_Leaves_No_Page_Turned_Or_Faded_And_The_Old_One_Hidden()
     {
         var a = Sheet("A", Brushes.White);
         var nav = Host(a, out var scene);
@@ -414,6 +417,7 @@ public class PageTransitionTests
         scene.Window.Content = null;
         Dispatcher.UIThread.RunJobs();
         AssertAtRest(from, to);
+        Assert.False(from.IsVisible);
         Assert.Equal(0, clock.Pending);
     }
 
@@ -440,6 +444,44 @@ public class PageTransitionTests
         Assert.True(to.IsVisible);
         AssertAtRest(from, to);
         Assert.True(from.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public void A_Transition_Given_Up_From_Another_Thread_Stops_On_The_UI_Thread()
+    {
+        var from = new Border { Background = Brushes.White };
+        var to = new Border { Background = Brushes.Blue };
+        using var scene = new Scene(new Grid { Children = { from, to } });
+        using var clock = EmulatorClock();
+        using var cancel = new CancellationTokenSource();
+
+        var task = new TurnstileTransition().Start(from, to, true, cancel.Token);
+        AtTick(clock, 3);
+        Task.Run(cancel.Cancel).Wait();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(task.IsCanceled);
+        Assert.False(from.IsVisible);
+        AssertAtRest(from, to);
+        Assert.True(from.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public void A_Modal_Drop_Given_Up_Leaves_The_Page_Going_Out_Hidden()
+    {
+        // Start(page, null): a modal pop, as NavigationPage calls it; any host is left with the page hidden.
+        var page = new Border { Background = Brushes.Green };
+        using var scene = new Scene(page);
+        using var clock = EmulatorClock();
+        using var cancel = new CancellationTokenSource();
+
+        _ = new SlideTransition().Start(page, null, false, cancel.Token);
+        AtTick(clock, 4);
+        Assert.True(page.TranslatePoint(new Point(0, 0), scene.Window)!.Value.Y > 1);
+        cancel.Cancel();
+
+        Assert.False(page.IsVisible);
+        AssertAtRest(page);
     }
 
     private static List<ContentPresenter> Presenters(NavigationPage nav) => nav.GetVisualDescendants().OfType<ContentPresenter>()
