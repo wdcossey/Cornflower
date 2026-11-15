@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Layout;
+using Avalonia.Threading;
 using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
@@ -68,6 +70,7 @@ internal static class PhonePageBars
             _panel.AttachedToVisualTree -= OnAttached;
             _top.Watch(null);
             _bottom.Watch(null);
+            Part("PART_Content")?.ClearValue(Layoutable.MarginProperty);
         }
 
         private void OnChildrenChanged(object? sender, EventArgs e) => Find();
@@ -106,6 +109,7 @@ internal static class PhonePageBars
         private ContentPresenter? _presenter;
         private CommandBar? _commandBar;
         private double? _closed;
+        private bool _settling;
         private AppBarClosedDisplayMode _closedMode;
 
         /// <summary>The height the content gives up for this bar: none while it isn't shown; its closed height.</summary>
@@ -118,9 +122,11 @@ internal static class PhonePageBars
                     return 0;
                 }
 
-                if (_commandBar is { IsOpen: true } open)
+                // Open, or just closed or switched mode and not yet laid out again (its bounds are still the old ones):
+                // the closed height it had in this mode, or the theme's for the mode.
+                if (_commandBar is { } shown && (shown.IsOpen || _settling))
                 {
-                    var mode = CommandBarOptions.GetClosedDisplayMode(open);
+                    var mode = CommandBarOptions.GetClosedDisplayMode(shown);
                     return _closed is { } closed && _closedMode == mode ? closed : ThemeHeight(presenter, mode);
                 }
 
@@ -192,7 +198,14 @@ internal static class PhonePageBars
         {
             if (e.Property == CommandBar.IsOpenProperty || e.Property == CommandBarOptions.ClosedDisplayModeProperty)
             {
+                // The bar's bounds are the old ones until the next layout: read again once it is done.
+                _settling = true;
                 reserve.Update();
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _settling = false;
+                    reserve.Update();
+                }, DispatcherPriority.Loaded);
             }
         }
 

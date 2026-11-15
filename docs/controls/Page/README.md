@@ -34,9 +34,11 @@ await Navigation.PushAsync(new Details());                          // the turns
 await Navigation.PushAsync(new Details(), new SlideTransition());   // the slide
 await Navigation.PushAsync(new Details(), new ContinuumTransition()); // the continuum
 
-// 8.1: Frame.GoBack(), which plays the reverse of the page's own transition. Avalonia's PopAsync plays PageTransition
-// unless given one, so pass the one the page came with:
-await Navigation.PopAsync(new SlideTransition());
+// 8.1: Frame.GoBack(), which plays the reverse of the page's own transition. So does PopAsync() here: the theme's
+// turnstile, going back, plays the transition the page came with (the slide's drop, the continuum's), and so do the
+// back button, Alt+Left and a back request through a PageNavigationHost. A transition asked for is played as asked:
+await Navigation.PopAsync();                                         // as the page came
+await Navigation.PopAsync(new ContinuumTransition());                // the continuum's back, whatever it came with
 ```
 
 The page has no navigation bar and no title of its own, as on the phone: the title is the page's content, in the
@@ -53,7 +55,8 @@ or gesture on Android, Alt+Left on desktop). Either:
   Avalonia forwards the request to the page, and a `NavigationPage` pops with its `PageTransition` and marks it handled
   while it has a page to go back to; or
 - **handle `TopLevel.BackRequested` yourself**, as the sample's `page` page does, to go back with the transition each
-  page came with: mark the request handled while there is a page to go back to, and leave it alone on the first page.
+  page came with (which `PopAsync()` does by itself): mark the request handled while there is a page to go back to,
+  and leave it alone on the first page.
 
 A `NavigationPage` drops a navigation asked for while a transition runs (`IsNavigating`), so a second press during a
 turn does nothing.
@@ -88,7 +91,7 @@ turn does nothing.
   animation priority on the page presenters and taken away at its end, or at once if it is cancelled (Avalonia cancels
   it when the NavigationPage leaves its window), so no page is left turned, moved or faded. At its end, or cancelled, the page going out is hidden, as Avalonia's own transitions leave it.
 - **No edge swipe**: the theme turns `IsGestureEnabled` off, as the phone's Frame has none. Avalonia's Alt+Left on
-  desktop stays, and pops with `PageTransition`, not the transition the page came with.
+  desktop stays, and goes back as the page came, as every default going back does (above).
 - The page going out takes no input from the transition's start; the page coming in takes none while it is hidden.
 - **On a host wider than the reference's 450**, the turnstile is the reference's scaled: the axis's depth and the
   camera's distance grow with the width, so the near edge never reaches the eye.
@@ -124,6 +127,8 @@ substituted; there is no `Frame` type: `NavigationPage` is the Frame.
 
 ## Known gaps
 
+- **Right to left**: the turnstile turns about an axis left of the page whatever the flow direction; the phone's in a
+  right-to-left language isn't measured.
 - **The continuum's exit element** (`ContinuumNavigationTransitionInfo.ExitElement`), which flies out of the old page,
   isn't measured or done.
 - **The continuum's black** between the old page and the new (at most 94 to 125 ms on the recording) is left out, taken

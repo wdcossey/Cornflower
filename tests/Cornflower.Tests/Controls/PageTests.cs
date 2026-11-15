@@ -206,9 +206,25 @@ public class PageTests
         Assert.True(BoundsIn(bar, nav).Top < barTop - 100, $"the open bar's top at {BoundsIn(bar, nav).Top}");
         AssertRect(new Rect(0, 0, 450, barTop), BoundsIn(content, nav), "the content, open");
 
+        // Just closed, before the next layout, the bar is still the open bar's height: the content keeps the closed one.
         bar.IsOpen = false;
+        var contentPresenter = (Control)content.GetVisualParent()!;
+        Assert.Equal(800 - barTop, contentPresenter.Margin.Bottom, 1 / Scene.ReferenceScaling);
         Dispatcher.UIThread.RunJobs();
         AssertRect(new Rect(0, 0, 450, barTop), BoundsIn(content, nav), "the content, closed again");
+    }
+
+    [AvaloniaFact]
+    public void Turned_Off_The_Reserve_Gives_The_Content_Back_Its_Own_Margin()
+    {
+        var page = Page(out var content);
+        page.BottomCommandBar = new Border { Height = 62.92 };
+        using var scene = new Scene(page);
+        var panel = (Panel)content.GetVisualParent()!.GetVisualParent()!;
+        Assert.Equal(62.92, ((Control)content.GetVisualParent()!).Margin.Bottom, 1 / Scene.ReferenceScaling);
+
+        PhonePageBars.SetIsEnabled(panel, false);
+        Assert.Equal(default, ((Control)content.GetVisualParent()!).Margin);
     }
 
     [AvaloniaFact]

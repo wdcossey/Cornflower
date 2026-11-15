@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -17,11 +16,9 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("page", Order = 120)]
 public partial class PagePage : UserControl
 {
-    /// <summary>
-    /// The transition each page came with, to go back with: none for the theme's turnstile. Kept with the page, so it goes
-    /// with it however the page leaves the stack.
-    /// </summary>
-    private readonly ConditionalWeakTable<Page, IPageTransition> _cameWith = new();
+    // The transitions hold no state: one of each does for every page.
+    private static readonly IPageTransition Slide = new SlideTransition();
+    private static readonly IPageTransition Continuum = new ContinuumTransition();
 
     private TopLevel? _top;
 
@@ -41,18 +38,18 @@ public partial class PagePage : UserControl
         if (Navigation.IsNavigating)
             return;
         var page = MakePage(Navigation.StackDepth + 1);
-        if (transition is not null)
-            _cameWith.AddOrUpdate(page, transition);
         await (transition is null ? Navigation.PushAsync(page) : Navigation.PushAsync(page, transition));
     }
 
-    /// <summary>Goes back a page, with the transition it came with; false on the first page or mid-transition.</summary>
+    /// <summary>
+    /// Goes back a page; false on the first page or mid-transition. The theme's turnstile, going back, plays the
+    /// transition the page came with, as the phone's Frame.GoBack does, so the page names none.
+    /// </summary>
     internal bool GoBack()
     {
-        if (Navigation.StackDepth <= 1 || Navigation.IsNavigating || Navigation.CurrentPage is not { } current)
+        if (Navigation.StackDepth <= 1 || Navigation.IsNavigating)
             return false;
-        // Read, not taken: a page that cancels its leaving keeps it for the next back.
-        _ = _cameWith.TryGetValue(current, out var transition) ? Navigation.PopAsync(transition) : Navigation.PopAsync();
+        _ = Navigation.PopAsync();
         return true;
     }
 
@@ -60,8 +57,8 @@ public partial class PagePage : UserControl
     {
         var buttons = new StackPanel { Spacing = 9.6 };
         buttons.Children.Add(Forward("turnstile", null));
-        buttons.Children.Add(Forward("slide", new SlideTransition()));
-        buttons.Children.Add(Forward("continuum", new ContinuumTransition()));
+        buttons.Children.Add(Forward("slide", Slide));
+        buttons.Children.Add(Forward("continuum", Continuum));
         if (number > 1)
         {
             var back = new Button { Content = "back", HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -101,10 +98,10 @@ public partial class PagePage : UserControl
         add.Click += async (_, _) => await GoForward(null);
         bar.PrimaryCommands.Add(add);
         var slide = new CommandBarButton { Label = "slide to a new page" };
-        slide.Click += async (_, _) => await GoForward(new SlideTransition());
+        slide.Click += async (_, _) => await GoForward(Slide);
         bar.SecondaryCommands.Add(slide);
         var continuum = new CommandBarButton { Label = "continuum to a new page" };
-        continuum.Click += async (_, _) => await GoForward(new ContinuumTransition());
+        continuum.Click += async (_, _) => await GoForward(Continuum);
         bar.SecondaryCommands.Add(continuum);
         return bar;
     }
@@ -132,7 +129,10 @@ public partial class PagePage : UserControl
         base.OnDetachedFromVisualTree(e);
     }
 
-    /// <summary>Back a page while there is one, even mid-transition (the press is the page's, not the shell's).</summary>
+    /// <summary>
+    /// Back a page while there is one. A press mid-transition is taken and dropped, as NavigationPage drops a navigation
+    /// asked for while one runs: it is the page's, not the shell's, so it doesn't leave the page.
+    /// </summary>
     private void OnBackRequested(object? sender, RoutedEventArgs e)
     {
         if (e.Handled || Navigation.StackDepth <= 1)

@@ -3,6 +3,8 @@ using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -370,6 +372,70 @@ public class PageTransitionTests
         AssertAtRest(from, to);
     }
 
+    [AvaloniaTheory]
+    [InlineData("PopAsync")]
+    [InlineData("Alt+Left")]
+    [InlineData("back request")]
+    public void The_Default_Going_Back_Plays_The_Transition_The_Page_Came_With(string how)
+    {
+        // As the phone's Frame.GoBack plays the reverse of the page's own transition: a page that came with the slide
+        // drops away, however NavigationPage is asked to go back.
+        var a = Sheet("A", Brushes.White);
+        var nav = new NavigationPage();
+        using var scene = new Scene(new PageNavigationHost { Page = nav });
+        _ = nav.PushAsync(a);
+        Dispatcher.UIThread.RunJobs();
+        using var clock = EmulatorClock();
+        var b = Sheet("B", Brushes.Blue);
+        _ = nav.PushAsync(b, new SlideTransition());
+        Dispatcher.UIThread.RunJobs();
+        AtTick(clock, 40);
+        Assert.Same(b, nav.CurrentPage);
+
+        switch (how)
+        {
+            case "PopAsync":
+                _ = nav.PopAsync();
+                break;
+            case "Alt+Left":
+                nav.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Left, KeyModifiers = KeyModifiers.Alt });
+                break;
+            default:
+                scene.Window.RaiseEvent(new RoutedEventArgs(TopLevel.BackRequestedEvent));
+                break;
+        }
+
+        Dispatcher.UIThread.RunJobs();
+        var from = PresenterOf(b);
+        var to = PresenterOf(a);
+        AtTick(clock, 41 + 6);
+        Assert.InRange(from.TranslatePoint(new Point(0, 0), nav)!.Value.Y, 1, 136);
+        Assert.Null(to.RenderTransform);
+        Assert.Equal(0, to.Opacity);
+        AtTick(clock, 80);
+        Assert.Same(a, nav.CurrentPage);
+        AssertAtRest(from, to);
+    }
+
+    [AvaloniaFact]
+    public void A_Transition_Asked_For_Going_Back_Is_Played_As_Asked()
+    {
+        var a = Sheet("A", Brushes.White);
+        var nav = Host(a, out var scene);
+        using var shown = scene;
+        using var clock = EmulatorClock();
+        var b = Sheet("B", Brushes.Blue);
+        _ = nav.PushAsync(b, new SlideTransition());
+        Dispatcher.UIThread.RunJobs();
+        AtTick(clock, 40);
+
+        _ = nav.PopAsync(new ContinuumTransition());
+        Dispatcher.UIThread.RunJobs();
+        AtTick(clock, 41 + 14);
+        // The continuum's back: past the slide, the page under it fading in.
+        Assert.InRange(PresenterOf(a).Opacity, 0.3, 0.99);
+    }
+
     [AvaloniaFact]
     public void A_Navigation_In_The_Middle_Of_A_Turn_Is_Ignored_And_The_Turn_Ends_At_Rest()
     {
@@ -459,7 +525,10 @@ public class PageTransitionTests
 
         var task = new TurnstileTransition().Start(from, to, true, cancel.Token);
         AtTick(clock, 3);
-        Task.Run(cancel.Cancel).Wait();
+        // A thread of its own: Task.Wait could run a task inline on this one.
+        var other = new Thread(cancel.Cancel);
+        other.Start();
+        other.Join();
         // Nothing is done on the other thread: the stop waits for the UI thread.
         Assert.False(task.IsCompleted);
         Assert.NotNull(to.RenderTransform);

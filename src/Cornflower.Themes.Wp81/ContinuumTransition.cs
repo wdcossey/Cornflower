@@ -62,6 +62,8 @@ public sealed class ContinuumTransition : IPageTransition
     {
         public static readonly Motion Instance = new();
 
+        public bool GoesBackAsThePageCame => false;
+
         public TimeSpan Length(bool forward) => forward ? FadeLength + GrowLength : SlideTransition.OutShownUntil + FadeInLength;
 
         public (PageLook From, PageLook To) LookAt(TimeSpan time, bool forward, Size size)

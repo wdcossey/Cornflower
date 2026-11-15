@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Controls.Presenters;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -44,6 +45,12 @@ internal interface IPhonePageMotion
     /// hidden.
     /// </summary>
     (PageLook From, PageLook To) LookAt(TimeSpan time, bool forward, Size size);
+
+    /// <summary>
+    /// Whether, run back, this transition gives way to the one the page going out came with: the default's, the
+    /// turnstile's, as the phone's <c>Frame.GoBack</c> plays the reverse of the page's own transition.
+    /// </summary>
+    bool GoesBackAsThePageCame { get; }
 }
 
 /// <summary>
@@ -133,8 +140,29 @@ internal sealed class PhonePageRun
             return Task.CompletedTask;
         }
 
+        if (forward)
+        {
+            // The page coming in remembers how it came, for its way back.
+            PageOf(to)?.SetValue(CameWithProperty, motion);
+        }
+        else if (motion.GoesBackAsThePageCame && PageOf(from)?.GetValue(CameWithProperty) is { } cameWith)
+        {
+            motion = cameWith;
+        }
+
         return new PhonePageRun(motion, from, to, forward, cancellationToken)._done.Task;
     }
+
+    /// <summary>
+    /// The transition a page came with, on the page: so the default going back (NavigationPage's <c>PopAsync()</c>, its
+    /// back button, Alt+Left, a back request through a <c>PageNavigationHost</c>) goes back as it came.
+    /// </summary>
+    internal static readonly AttachedProperty<IPhonePageMotion?> CameWithProperty =
+        AvaloniaProperty.RegisterAttached<PhonePageRun, AvaloniaObject, IPhonePageMotion?>("CameWith");
+
+    /// <summary>The page a transition moves: a presenter's content (NavigationPage's), or the visual itself.</summary>
+    private static AvaloniaObject? PageOf(Visual? visual) =>
+        visual is ContentPresenter { Content: AvaloniaObject content } ? content : visual;
 
     private Size Size
     {
@@ -248,10 +276,14 @@ internal sealed class PhonePageRun
                 _opacity?.Dispose();
                 _opacity = look.Opacity == 1 ? null : page.SetValue(Visual.OpacityProperty, look.Opacity, BindingPriority.Animation);
                 _opacityShown = look.Opacity;
-                _unhit?.Dispose();
-                _unhit = (goingOut || look.Opacity == 0) && page is InputElement input
-                    ? input.SetValue(InputElement.IsHitTestVisibleProperty, false, BindingPriority.Animation)
-                    : null;
+                var takesNoInput = goingOut || look.Opacity == 0;
+                if (takesNoInput != _unhit is not null)
+                {
+                    _unhit?.Dispose();
+                    _unhit = takesNoInput && page is InputElement input
+                        ? input.SetValue(InputElement.IsHitTestVisibleProperty, false, BindingPriority.Animation)
+                        : null;
+                }
             }
 
             if (look.Transform is { } matrix)

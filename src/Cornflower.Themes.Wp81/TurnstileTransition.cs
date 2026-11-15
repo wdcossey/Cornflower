@@ -85,6 +85,8 @@ public sealed class TurnstileTransition : IPageTransition
     {
         public static readonly Motion Instance = new();
 
+        public bool GoesBackAsThePageCame => true;
+
         public TimeSpan Length(bool forward) => forward ? ForwardLength : BackLength;
 
         public (PageLook From, PageLook To) LookAt(TimeSpan time, bool forward, Size size) =>

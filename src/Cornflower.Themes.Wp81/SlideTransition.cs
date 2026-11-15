@@ -53,6 +53,8 @@ public sealed class SlideTransition : IPageTransition
     {
         public static readonly Motion Instance = new();
 
+        public bool GoesBackAsThePageCame => false;
+
         public TimeSpan Length(bool forward) => forward ? InLength : OutShownUntil;
 
         public (PageLook From, PageLook To) LookAt(TimeSpan time, bool forward, Size size) => forward
