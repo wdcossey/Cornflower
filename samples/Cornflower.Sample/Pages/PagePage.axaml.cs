@@ -15,8 +15,11 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("page", Order = 120)]
 public partial class PagePage : UserControl
 {
-    /// <summary>The transition each page on the stack came with, to go back with: null for the theme's turnstile.</summary>
-    private readonly Stack<IPageTransition?> _cameWith = new();
+    /// <summary>
+    /// The transition each page came with, to go back with: none for the theme's turnstile. Kept by page, not as a stack
+    /// beside Avalonia's, as NavigationPage also goes back on its own (Alt+Left on desktop).
+    /// </summary>
+    private readonly Dictionary<Page, IPageTransition> _cameWith = new();
 
     private TopLevel? _top;
 
@@ -32,18 +35,23 @@ public partial class PagePage : UserControl
     /// <summary>Goes forward to a new page with <paramref name="transition"/>, or the theme's turnstile when it is null.</summary>
     internal async Task GoForward(IPageTransition? transition)
     {
-        var depth = Navigation.StackDepth;
-        await (transition is null ? Navigation.PushAsync(MakePage(depth + 1)) : Navigation.PushAsync(MakePage(depth + 1), transition));
-        if (Navigation.StackDepth > depth)
-            _cameWith.Push(transition);
+        // NavigationPage drops a navigation asked for while one runs: don't make a page for nothing.
+        if (Navigation.IsNavigating)
+            return;
+        var page = MakePage(Navigation.StackDepth + 1);
+        if (transition is not null)
+            _cameWith[page] = transition;
+        await (transition is null ? Navigation.PushAsync(page) : Navigation.PushAsync(page, transition));
+        if (!ReferenceEquals(Navigation.CurrentPage, page))
+            _cameWith.Remove(page);
     }
 
-    /// <summary>Goes back a page, with the transition it came with; false on the first page.</summary>
+    /// <summary>Goes back a page, with the transition it came with; false on the first page or mid-transition.</summary>
     internal bool GoBack()
     {
-        if (Navigation.StackDepth <= 1 || Navigation.IsNavigating || !_cameWith.TryPop(out var transition))
+        if (Navigation.StackDepth <= 1 || Navigation.IsNavigating || Navigation.CurrentPage is not { } current)
             return false;
-        _ = transition is null ? Navigation.PopAsync() : Navigation.PopAsync(transition);
+        _ = _cameWith.Remove(current, out var transition) ? Navigation.PopAsync(transition) : Navigation.PopAsync();
         return true;
     }
 

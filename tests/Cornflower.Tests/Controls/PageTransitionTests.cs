@@ -53,10 +53,12 @@ public class PageTransitionTests
     {
         var (width, height) = size is { } s ? (s.Width, s.Height) : (450, 800);
         var r = degrees * Math.PI / 180;
-        double ax = Turnstile.AxisX * width / 450, u = point.X - ax, depth = -Turnstile.AxisZ;
+        // Wider than the reference, the whole turn is the reference's scaled: the axis's depth and the eye too.
+        var wider = Math.Max(1, width / 450);
+        double ax = Turnstile.AxisX * width / 450, u = point.X - ax, axisZ = Turnstile.AxisZ * wider, depth = -axisZ, eye = Turnstile.Eye * wider;
         var x = ax + u * Math.Cos(r) - depth * Math.Sin(r);
-        var z = Turnstile.AxisZ + u * Math.Sin(r) + depth * Math.Cos(r);
-        var k = Turnstile.Eye / (Turnstile.Eye - z);
+        var z = axisZ + u * Math.Sin(r) + depth * Math.Cos(r);
+        var k = eye / (eye - z);
         return new Point(width / 2 + (x - width / 2) * k, height / 2 + (point.Y - height / 2) * k);
     }
 
@@ -184,6 +186,9 @@ public class PageTransitionTests
         var to = PresenterOf(a);
 
         Assert.Equal(0, from.Opacity);
+        // Hidden on top of the page coming in, the page going out takes no input.
+        Assert.False(from.IsHitTestVisible);
+        Assert.True(to.IsHitTestVisible);
         for (var tick = 0; tick * Tick < Turnstile.BackMs; tick++)
         {
             AtTick(clock, tick);
@@ -208,6 +213,26 @@ public class PageTransitionTests
         foreach (var point in new[] { new Point(0, 0), new Point(900, 0), new Point(450, 600) })
             AssertNear(Turned(-30, point, size), matrix.Transform(point), 0.001, $"{point}");
         Assert.Equal(new Point(900, 600), TurnstileTransition.ToMatrix(0, size).Transform(new Point(900, 600)));
+
+        // Narrower than the reference (the Pixel's 411.43), only the axis's place moves with the width.
+        var narrow = new Size(411.43, 800);
+        AssertNear(Turned(30, new Point(411.43, 0), narrow), TurnstileTransition.ToMatrix(30, narrow).Transform(new Point(411.43, 0)), 0.001, "narrow");
+    }
+
+    [AvaloniaFact]
+    public void On_A_Wide_Host_The_Back_Turn_Is_The_References_Scaled_And_Never_Reaches_The_Eye()
+    {
+        // With the eye fixed at 1,000 px a page 1,400 px wide would bring its near edge to the eye at +42°.
+        var size = new Size(1800, 900);
+        var matrix = TurnstileTransition.ToMatrix(Turnstile.BackFrom, size);
+        var reference = TurnstileTransition.ToMatrix(Turnstile.BackFrom, new Size(450, 225));
+        foreach (var point in new[] { new Point(0, 0), new Point(1800, 0), new Point(1800, 900), new Point(0, 900) })
+        {
+            var w = point.X * matrix.M13 + point.Y * matrix.M23 + matrix.M33;
+            Assert.True(w > 0, $"{point}: the perspective divides by {w}");
+            var scaled = reference.Transform(new Point(point.X / 4, point.Y / 4));
+            AssertNear(new Point(scaled.X * 4, scaled.Y * 4), matrix.Transform(point), 0.001, $"{point}");
+        }
     }
 
     [AvaloniaFact]
@@ -390,6 +415,31 @@ public class PageTransitionTests
         Dispatcher.UIThread.RunJobs();
         AssertAtRest(from, to);
         Assert.Equal(0, clock.Pending);
+    }
+
+    [AvaloniaFact]
+    public void A_Pop_Given_Up_Mid_Turn_Leaves_The_Page_Going_Out_Hidden_Not_Over_The_Current_Page()
+    {
+        var a = Sheet("A", Brushes.White);
+        var nav = Host(a, out var scene);
+        using var shown = scene;
+        var b = Sheet("B", Brushes.Blue);
+        _ = nav.PushAsync(b, null);
+        Dispatcher.UIThread.RunJobs();
+        using var clock = EmulatorClock();
+
+        _ = nav.PopAsync();
+        Dispatcher.UIThread.RunJobs();
+        AtTick(clock, 5);
+        var from = PresenterOf(b);
+        var to = PresenterOf(a);
+        scene.Window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(from.IsVisible);
+        Assert.True(to.IsVisible);
+        AssertAtRest(from, to);
+        Assert.True(from.IsHitTestVisible);
     }
 
     private static List<ContentPresenter> Presenters(NavigationPage nav) => nav.GetVisualDescendants().OfType<ContentPresenter>()

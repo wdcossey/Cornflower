@@ -82,7 +82,12 @@ turn does nothing.
   centre over 359 ms; back the slide's back, then the page under it fades in from 0.39 over 344 ms.
 - Each transition's time 0 is its first frame, which shows its first value, as the emulator's did. Its looks are set at
   animation priority on the page presenters and taken away at its end, or at once if it is cancelled (Avalonia cancels
-  it when the NavigationPage leaves its window), so no page is left turned, moved or hidden.
+  it when the NavigationPage leaves its window), so no page is left turned, moved or faded. A page it hides takes no
+  input meanwhile. At its end, or cancelled, the page going out is hidden, as Avalonia's own transitions leave it.
+- **No edge swipe**: the theme turns `IsGestureEnabled` off, as the phone's Frame has none. Avalonia's Alt+Left on
+  desktop stays.
+- **On a host wider than the reference's 450**, the turnstile is the reference's scaled: the axis's depth and the
+  camera's distance grow with the width, so the near edge never reaches the eye.
 - **The page and its content** as in the section above.
 - **No navigation bar** on a ContentPage; one turned back on is in the phone's chrome (extension, below).
 

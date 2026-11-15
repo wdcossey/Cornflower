@@ -44,6 +44,9 @@ public sealed class TurnstileTransition : IPageTransition
     /// <summary>The axis's distance behind the screen, in view px.</summary>
     internal const double AxisZ = -99;
 
+    /// <summary>The reference's page width, in view px: wider, the axis's depth and the camera's distance grow with the width.</summary>
+    internal const double ReferenceWidth = 450;
+
     /// <summary>The camera's distance in front of the screen, in view px, as the turnstile's angles were solved with it.</summary>
     internal const double EyeDistance = 1000;
 
@@ -61,14 +64,17 @@ public sealed class TurnstileTransition : IPageTransition
     {
         var r = degrees * Math.PI / 180;
         double cos = Math.Cos(r), sin = Math.Sin(r);
-        double ax = AxisX * size.Width, depth = -AxisZ, d = EyeDistance;
+        // Wider than the reference's 450, the axis's depth and the camera's distance grow with the width, so the turn is
+        // the reference's turn scaled: with them fixed, a page about 1,400 px wide would bring its near edge to the eye.
+        var wider = Math.Max(1, size.Width / ReferenceWidth);
+        double ax = AxisX * size.Width, axisZ = AxisZ * wider, depth = -axisZ, d = EyeDistance * wider;
         double ex = size.Width / 2, ey = size.Height / 2;
 
         // A point (x, y) of the page is u = x − ax from the axis and `depth` in front of it. Turned, it is at
-        // X = ax + u cos − depth sin, Z = AxisZ + u sin + depth cos, and is drawn at eye + (P − eye) × d / (d − Z).
+        // X = ax + u cos − depth sin, Z = axisZ + u sin + depth cos, and is drawn at eye + (P − eye) × d / (d − Z).
         // With W = (d − Z) / d, the drawn point times W is eye × W + P − eye: linear in x and y.
         var wx = -sin / d;
-        var w0 = (d - AxisZ - depth * cos + ax * sin) / d;
+        var w0 = (d - axisZ - depth * cos + ax * sin) / d;
         return new Matrix(
             ex * wx + cos, ey * wx, wx,
             0, 1, 0,

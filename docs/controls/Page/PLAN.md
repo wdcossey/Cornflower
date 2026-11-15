@@ -169,6 +169,9 @@ Each with its evidence and its test (`tests/Cornflower.Tests/Controls/PageTests.
 | The continuum's black left out | The same gap shows before the turnstile's and the slide's new pages, whose curves start on their first frame | Start `ScaleAt` later by up to 94 ms |
 | The continuum's fade out linear over 62.5 ms | Two recorded frames; its curve isn't measurable at 31 ms a frame | — |
 | The camera for the turnstile 1,000 px | The published angles were solved with it | 999, as the tilt's |
+| Wider than 450, the turnstile's axis depth and camera distance grow with the width | Fixed, a page about 1,400 px wide brings its near edge to the eye at +42°; the phone was never that wide | `ReferenceWidth` in `TurnstileTransition` |
+| No edge swipe (`IsGestureEnabled` off) | The phone's Frame has none; back is the hardware button, the app's | Drop the setter |
+| A page a transition hides takes no input; a cancelled transition hides the page going out | Avalonia's hit test ignores opacity, and a pop's page going out is on top; NavigationPage doesn't hide it after a cancel | — |
 
 ## Dependencies and captures
 

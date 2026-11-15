@@ -181,6 +181,8 @@ public class PageTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(NavigationPage.GetHasNavigationBar(page));
+        // Nor an edge swipe: the phone's back is the hardware button.
+        Assert.False(nav.IsGestureEnabled);
         Assert.False(nav.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "PART_NavigationBar").IsEffectivelyVisible);
         AssertRect(new Rect(0, 0, 450, 800), BoundsIn(page, nav), "the page");
         AssertRect(new Rect(0, Bounds.TrayHeight, 450, 800 - Bounds.TrayHeight), BoundsIn(content, nav), "the content");
