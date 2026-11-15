@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ContentControl: the default style of the 8.1 Update 1 runtime (contentcontrol.json, which
+    equals the SDK's generic.xaml), re-expressed as an Avalonia ControlTheme. docs/controls/ContentControl/PLAN.md
+    has the values and their sources.
+
+    The phone's style sets two values, HorizontalContentAlignment Left and VerticalContentAlignment Top, and a
+    template of one part: a ContentPresenter placed by them, so the content sits at the top left at its own size,
+    inside the control's Padding (the presenter's Margin). The template draws nothing of its own: no Background, no
+    BorderBrush, no BorderThickness, so a ContentControl given them draws none, as on the phone. It has no states.
+
+    The text Avalonia's presenter makes of data gets the phone's 1.33 em line (PhoneHeaderLine): a WinRT
+    ContentControl doesn't recognise access keys, and nor does this one.
+
+    Keyed, not by type, for now: a template or an app sets it.
+
+      <ContentControl Theme="{DynamicResource Wp81ContentControlTheme}" />
+
+    Keyed by type it would also reach the ContentControls in the templates of controls Wp81 doesn't theme yet (Simple's
+    ComboBox, DataValidationErrors, MenuItem's icons and others), which HoleParts can't yet give back Avalonia's own,
+    and every app's ContentControl used as a page host, which the phone's Frame stretches and this doesn't.
+    docs/controls/ContentControl/README.md says what turning it on by type takes.
+  -->
+  <ControlTheme x:Key="Wp81ContentControlTheme" TargetType="ContentControl">
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Margin="{TemplateBinding Padding}"
+                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                          Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                          wp81:PhoneHeaderLine.IsEnabled="True" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
