@@ -16,7 +16,7 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The Buttons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme under Wp81: with
 /// Simple then Wp81, each is laid out as with Simple alone, and none is Wp81's Button. In Avalonia 12.1.4, Simple's
-/// templates for CalendarItem (in Calendar), CalendarDatePicker, CommandBar, NavigationPage, PipsPager and the managed
+/// templates for CalendarItem (in Calendar), CalendarDatePicker, NavigationPage, PipsPager and the managed
 /// file dialogs hold plain Buttons with no theme of their own (read from each of Simple's templates, built on its own).
 /// </summary>
 public class HolePartsTests
@@ -70,9 +70,8 @@ public class HolePartsTests
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.True(holes.Count > 40, $"only {holes.Count} holes shown");
         Assert.True(withButtons >= 5, $"only {withButtons} holes showed plain Buttons");
-        // Calendar's three, CalendarDatePicker's, CommandBar's overflow, NavigationPage's back, PipsPager's two, the dialogs'.
+        // Calendar's three, CalendarDatePicker's, NavigationPage's back, PipsPager's two, the dialogs'.
         Assert.Contains("Calendar.PART_HeaderButton", fellBack);
-        Assert.Contains("CommandBar.PART_OverflowButton", fellBack);
         Assert.Contains("NavigationPage.PART_BackButton", fellBack);
         Assert.Contains("PipsPager.PART_NextButton", fellBack);
     }

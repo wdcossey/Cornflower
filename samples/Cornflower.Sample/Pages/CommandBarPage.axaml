@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.CommandBarPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 page's app bar, as an 8.1 page writes one: a CommandBar at the page's foot, with the reference app's
+    commands: add, favorite (a toggle, checked) and delete (disabled), and two secondary commands. Tap the ellipsis to
+    open the bar and see the labels and the secondary commands; tap above the bar to close it. The switches make the
+    closed bar minimal and the page light. The page lays the bar over its content and keeps the closed bar's height
+    free at the foot, as the phone's page does, so the open bar covers the page.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <ScrollViewer x:Name="Body">
+        <StackPanel Margin="19,12,19,24">
+          <sample:SamplePageHeader x:Name="Header" />
+
+          <TextBlock Text="last command" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+          <TextBlock x:Name="State" Text="none" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+          <ToggleSwitch x:Name="Minimal" cf:ControlHeader.Header="minimal bar" IsCheckedChanged="OnMinimalChanged" Margin="0,12,0,0" />
+          <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" />
+        </StackPanel>
+      </ScrollViewer>
+
+      <CommandBar x:Name="Bar">
+        <CommandBarButton x:Name="Add" Label="add" Click="OnCommand">
+          <CommandBarButton.Icon>
+            <cf:LucideIcon Kind="Plus" />
+          </CommandBarButton.Icon>
+        </CommandBarButton>
+        <CommandBarToggleButton x:Name="Favorite" Label="favorite" IsChecked="True" Click="OnCommand">
+          <CommandBarToggleButton.Icon>
+            <cf:LucideIcon Kind="Star" />
+          </CommandBarToggleButton.Icon>
+        </CommandBarToggleButton>
+        <CommandBarButton x:Name="Delete" Label="delete" IsEnabled="False" Click="OnCommand">
+          <CommandBarButton.Icon>
+            <cf:LucideIcon Kind="Trash" />
+          </CommandBarButton.Icon>
+        </CommandBarButton>
+        <CommandBar.SecondaryCommands>
+          <CommandBarButton x:Name="First" Label="first menu item" Click="OnCommand" />
+          <CommandBarButton x:Name="Second" Label="second menu item" Click="OnCommand" />
+        </CommandBar.SecondaryCommands>
+      </CommandBar>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>
