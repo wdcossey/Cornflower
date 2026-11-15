@@ -50,7 +50,7 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 | `scroll.py` | a `-Probe scroll` run (#113) | each flick's inertia: its distance and time, `FinalView` against the end, and an exponential, a constant deceleration and a deceleration `a + c v²` fitted to its frames; a table of every flick; with `--shared`, one `a` and `c` for all (about 30 s, and 15 s more with it); and when the indicator's `IndicatorMode` changes |
 | `scrollend.py` | a `-Probe scrollend -Record` run (#113) | the end-of-content squash frame by frame (the bars' spacing over their rest spacing), its limit and the point it scales about; the indicator's size, colour and fades. It reads two strips of the recording, which `--decode` makes with ffmpeg |
 | `listpress.py` | a `-Probe listpress` run (#113) | each touch's states, `ItemClick` and gestures, the item's tilt held beside the Button's model, and its return frame by frame |
-| `pivot.py` | a `-Probe pivot` or `-Probe hub` run (#114) | Pivot: each touch's selection time, the header strip against the offset (px a px, beside the header's pitch over 450) and the new item's slide in, frame by frame, with fits; Hub: the header against the offset |
+| `pivot.py` | a `-Probe pivot`, `pivotwide`, `pivottwo` or `hub` run (#114, #136) | Pivot: each touch's selection time, the header strip against the offset (px a px, beside the header's pitch over 450) and the new item's slide in, frame by frame, with fits; Hub: the header against the offset |
 | `clock.py` | any probe run that logs its frames | the frames' mean spacing by the stopwatch (`motionlib.frame_spacing`), and the factor, 15.625 ms over it, that takes the run's stopwatch durations to animation time |
 | `motionlib.py` | | what they share: the run, the frame measurements, the projection, the easing curves and the fits |
 | `selftest.py` | nothing | checks the measurements and fits on synthetic data with known answers |
@@ -84,7 +84,7 @@ ticks (and a true median ratio), the exponential, ExponentialEase and KeySpline 
 grid) and the turnstile's angle and axis, the knob's missing-tick check, the arguments, and reading a run folder; and
 for #113 the deceleration fits, the inertia taken after the press, the squash and the indicator read off synthetic
 strips, and a list item's held tilt and return; and for #114 a torn frame and a value between two steps, and Pivot's
-header strip and slide and Hub's header.
+header strip and slide and Hub's header; and for #136 a header wider than the screen, faster than 100 px a frame.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
 logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.

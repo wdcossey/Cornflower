@@ -86,20 +86,26 @@ def pivot(rows, segs):
         # The header selected at the start, against the offset, until the panel is laid out again.
         h = names[start[3]] if start[3] < len(names) else None
         # The header items are put in a new order once the new item is chosen, the selected one first: the frames
-        # before this header's left edge jumps (by over 100 px).
+        # before this header's left edge jumps (by over 100 px) the way the offset went. Against the offset it can move
+        # faster than that: a header wider than the screen moves 1.65 px a px (#136).
         span = []
         for f in [start] + [f for f in moving if f is not start]:
-            if f[4] != start[4] or h not in f[6] or (span and abs(f[6][h] - span[-1][6][h]) > 100):
+            if f[4] != start[4] or h not in f[6]:
                 break
+            if span:
+                dh, doff = f[6][h] - span[-1][6][h], f[2] - span[-1][2]
+                if abs(dh) > 100 and dh * doff > 0:
+                    break
             span.append(f)
         if h is not None and len(span) >= 3:
             xs = [f[2] - start[2] for f in span]
             ys = [f[6][h] for f in span]
             a, b = ml.linfit(xs, ys)
             worst = max(abs(y - (a + b * x)) for x, y in zip(xs, ys))
-            # The pitch to the next header at rest; the last one's next is the first, which isn't after it at rest.
-            nxt = names[start[3] + 1] if start[3] + 1 < len(names) else None
-            pitch = start[6][nxt] - start[6][h] if nxt in start[6] else float('nan')
+            # The pitch to the next header at rest: the nearest left edge after this one's. The panel puts the selected
+            # header first and the rest after it in order, wrapping, so the last item's next is the first (#136).
+            after = [x for k, x in start[6].items() if k != h and x > start[6][h]]
+            pitch = min(after) - start[6][h] if after else float('nan')
             print('  header "%s" moves %.5f px a px of offset, against it, over %d frames (worst %.3f px); its pitch %.3f over 450 is %.5f'
                   % (h, -b, len(span), worst, pitch, pitch / 450 if pitch == pitch else float('nan')))
         # The new item's slide in, from the selection change.

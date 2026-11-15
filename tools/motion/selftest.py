@@ -605,6 +605,25 @@ def pivot_header_and_slide():
     assert 'header "one" moves 0.23706 px a px of offset' in out, out
     assert 'slides in from 450.00 px: at 0 after 406.' in out and '16:0.8526 31:0.7266' in out, out
     assert 'offset +450.00' in out, out  # from the frame at rest, logged before the step
+    # A header wider than the screen (#136): its pitch is 744.58, so it moves 1.6546 px a px, over 100 px a frame
+    # here; then it jumps to the end, the way the offset went.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            line = '%.1f\tframe\trt %g offset %g index %d panel [p] items [translate %g 0] itemsAt %g | wide %g op 1 cp none | one %g op 1 cp none\n'
+            f.write('0.0\tlayout\titems wide one\n')
+            f.write(line % (50.0, 1000, 1000, 0, 1000, 0, 15.84, 760.42))
+            f.write('100.0\tstep\tswipe left\n')
+            f.write('200.0\tpressed\tpivot 380 450 ts 1\n')
+            f.write('210.0\tcapturelost\tpivot 380 450 ts 1\n')
+            for k in range(1, 6):
+                off = 1000 + 70 * k
+                d = 1.6546 * (off - 1000)
+                f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - d, 760.42 - d))
+            f.write('290.0\tselection\tindex 1\n')
+            f.write(line % (300.0, 1093.75, 1450, 1, 1450, 0, 15.84 - 1.6546 * 450 + 1200, 15.84))
+        code, out = run_script('pivot.py', run)
+    assert code == 0, out
+    assert 'header "wide" moves 1.65460 px a px of offset, against it, over 6 frames' in out, out
     with tempfile.TemporaryDirectory() as run:
         with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
             for k in range(40):

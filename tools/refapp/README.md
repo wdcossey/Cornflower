@@ -431,7 +431,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -853,7 +853,7 @@ to about a frame.
 | The ProgressRing clock's own numbers (`Completed` 3,856.5 ms after `Begin()` and the like) | the stopwatch, and said so | the storyboard's own time is read beside them |
 | The tilt press's first frame, 30 to 40 ms after the press | the stopwatch | about 31 to 42 ms (× 1.0405 on `20261109-2307-dev11`); a press is a jump, so there is no duration to build |
 | The turnstile's forward ease, 425 ms (#114) | frames: distinct values one a 15.625 ms step | as given |
-| Pivot's header strip and the new item's 400 ms slide, Hub's header (#114) | frames: `RenderingTime` | as given; the selection's times are the stopwatch's |
+| Pivot's header strip and the new item's 400 ms slide, Hub's header (#114); the same with wide headers and two items, and the offset's settle times (#136) | frames: `RenderingTime` | as given; the selection's times are the stopwatch's |
 | The turnstile's tick-0 times (#114) | the recording against the log, by the turns' median lag | only forward against back is used |
 | The ScrollViewer's inertia (#113): each flick's time, 812 to 2,156 ms, and the fits' constants | frames: `RenderingTime`, which steps by 15.625 ms a frame | as given |
 | The indicator's `IndicatorMode` changes and the ListView's press and release times (#113) | the stopwatch, between input events and states | left as read, as the tap limit is |
@@ -1014,6 +1014,42 @@ earlier than the log has them (checked on the first swipe, header and content).
   and 516 to 531 ms after a tap (900 px for "three", two pages).
   A drag of 100 px held 300 ms and let go goes back: the offset returns to where it was.
 - Clocks: the per-frame values are on `RenderingTime` (15.625 ms a step); the selection times are the stopwatch's.
+
+### Pivot: wide headers, two items, and a tap on a header cut by the edge (2026-11-15, device 11, #136)
+
+For #121. `20261115-2339-dev11` (`-Probe pivotwide -Record`): four items, headers "favourites", "everything", "recent" and
+"supercalifragilisticexpialidocious", which come to 1,346 px against the 450 px view, the last one 728.75 wide on its
+own. Swipes left from each item (the last wraps), a swipe right from the first, and taps on the headers the right edge
+cuts. `20261115-2343-dev11` (`-Probe pivottwo -Record`): two items, "one" and "two", swiped left and right from each, and
+each header tapped from the other item. Before the touches, the probe selects each item from code and logs every
+header's place at rest (the `rest` lines). `tools/motion/pivot.py` prints the numbers below.
+
+- **Wide headers follow the same rule.** Each header is laid out at its full width; nothing is trimmed or wrapped. At
+  rest the selected header is at 15.84, and the rest follow it in item order, 15.83 apart, wrapping round (with
+  "recent" selected: recent 15.84, supercal… 177.09, favourites 921.67, everything 1162.5). A header the edge cuts is
+  simply cut, as is one wider than the screen (the recording shows "supercalifragilisticex" running off the right).
+- **The strip still moves at the selected header's pitch over 450.** Pitch is the next header's left edge less this
+  one's. "favourites" 0.53518 px a px (pitch 240.83), "everything" 0.58428 (262.92), "recent" 0.35835 (161.25). The
+  wide header moves 1.65462 px a px (pitch 744.58): faster than the content, about 42 px a frame. Going right from
+  "favourites", the strip moves at 1.65463, the pitch of the wide header coming in. Worst residual 0.011 px.
+- **The header that leaves still goes to the end** once the new item is chosen, wide or not (the wide one jumps from
+  −424 to 949).
+- **A tap on a header the edge cuts selects it**, as a tap on any other header does: "everything" (on screen from 256.67
+  to 450, tapped at 352.8) from item 0, and the wide header (tapped at 313) from "recent". The selection changes at
+  the release, 68 to 72 ms after the press. The offset then travels 450 px and settles 531 ms (rt) after the first
+  frame after the press. That is the same as a tap on a header fully on screen.
+- **A tap on the selected header does nothing**, even when the header runs off the screen. It raises `Tapped`, but the
+  selection, the offset and the strip don't change.
+- **A two-item Pivot still wraps, both ways.** A swipe left from "two" goes to "one", and a swipe right from "one" to
+  "two". Each moves the offset 450 px and slides the new item in, as with four items. The strip holds only the two
+  headers, with no copies. Going left, the header that leaves goes after the other one, as with four. Going right
+  from "one", "one" moves right at "two"'s pitch (0.23056 px a px). "two" stays to the right of it until the selection
+  changes, then jumps to the left (−41.9) and slides in to 15.83. Until then nothing is drawn left of "one".
+- **The new item's slide is the same** in both runs, to four places: one frame at 450 px, then `ExponentialEase` 4
+  over 400 ms (rms 0.003). The selection changes 200 to 235 ms into a swipe left and 152 to 172 ms into a swipe right
+  (stopwatch). The offset settles 625 to 656 ms (rt) after the first frame after the press.
+- Clocks: the per-frame places and the settle times are on `RenderingTime` (15.625 ms a step). The selection times are
+  the stopwatch's.
 
 ### Hub's header (2026-11-15, device 11, #114)
 

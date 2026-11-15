@@ -128,6 +128,13 @@ namespace RefApp
             list.Add(BottomAppBar("minimal", AppBarClosedDisplayMode.Minimal, false));
             list.Add(BottomAppBar("minimal-open", AppBarClosedDisplayMode.Minimal, true));
 
+            // The open bar with other numbers of secondary commands (#136, for #133): none, one, four, and ten, more than
+            // the room.
+            list.Add(BottomAppBar("compact-open-0-secondary", AppBarClosedDisplayMode.Compact, true, 0));
+            list.Add(BottomAppBar("compact-open-1-secondary", AppBarClosedDisplayMode.Compact, true, 1));
+            list.Add(BottomAppBar("compact-open-4-secondary", AppBarClosedDisplayMode.Compact, true, 4));
+            list.Add(BottomAppBar("compact-open-10-secondary", AppBarClosedDisplayMode.Compact, true, 10));
+
             // Every count from 3, which opens inline, to 10, which opens the full-screen picker: where it flips (#25).
             for (var count = 3; count <= 10; count++)
             {
@@ -261,10 +268,11 @@ namespace RefApp
 
         /// <summary>
         /// A CommandBar as the page's BottomAppBar, with three primary commands (one disabled, one a checked toggle) and
-        /// two secondary ones, set on the page that holds the stage and taken off again on close. The shell draws it,
-        /// so only -Grab sees its pixels.
+        /// two secondary ones (or <paramref name="secondary"/>: "first menu item", "second menu item", then "menu item
+        /// 3" and on), set on the page that holds the stage and taken off again on close. The shell draws it, so only
+        /// -Grab sees its pixels.
         /// </summary>
-        private static PopupSpecimen BottomAppBar(string variant, AppBarClosedDisplayMode mode, bool open)
+        private static PopupSpecimen BottomAppBar(string variant, AppBarClosedDisplayMode mode, bool open, int secondary = 2)
         {
             return new PopupSpecimen
             {
@@ -278,8 +286,11 @@ namespace RefApp
                     bar.PrimaryCommands.Add(new AppBarButton { Label = "add", Icon = new SymbolIcon(Symbol.Add) });
                     bar.PrimaryCommands.Add(new AppBarToggleButton { Label = "favorite", Icon = new SymbolIcon(Symbol.Favorite), IsChecked = true });
                     bar.PrimaryCommands.Add(new AppBarButton { Label = "delete", Icon = new SymbolIcon(Symbol.Delete), IsEnabled = false });
-                    bar.SecondaryCommands.Add(new AppBarButton { Label = "first menu item" });
-                    bar.SecondaryCommands.Add(new AppBarButton { Label = "second menu item" });
+                    for (var i = 1; i <= secondary; i++)
+                    {
+                        bar.SecondaryCommands.Add(new AppBarButton { Label = i == 1 ? "first menu item" : i == 2 ? "second menu item" : "menu item " + i });
+                    }
+
                     bar.RequestedTheme = ThemeOf(host);
                     var h = new AppBarHandle { Page = CurrentPage(), Bar = bar, WantOpen = open };
                     bar.Opened += (s, e) => h.Opened = true;

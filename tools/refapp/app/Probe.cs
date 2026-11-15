@@ -86,14 +86,29 @@ namespace RefApp
                 case "listpress":
                     await probe.ListPress(host);
                     break;
+                case "listcheck":
+                    await probe.ListCheck(host);
+                    break;
                 case "turnstile":
                     await probe.Turnstile(host);
                     break;
                 case "pivot":
                     await probe.PivotProbe(host);
                     break;
+                case "pivotwide":
+                    await probe.PivotWideProbe(host);
+                    break;
+                case "pivottwo":
+                    await probe.PivotTwoProbe(host);
+                    break;
                 case "hub":
                     await probe.HubProbe(host);
+                    break;
+                case "hubimage":
+                    await probe.HubProbe(host, true);
+                    break;
+                case "appbar":
+                    await probe.AppBarProbe(host);
                     break;
                 default:
                     await probe.Finish("unknown probe " + name);
