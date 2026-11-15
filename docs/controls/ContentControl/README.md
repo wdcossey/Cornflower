@@ -1,6 +1,6 @@
 # ContentControl and ContentPresenter
 
-Status: done, keyed (turning it on by type waits on the roll-up, [below](#turning-it-on-by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done, keyed (turning it on by type waits on the roll-up, [below](#turning-it-on-by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page contentcontrol` on `main` at `c5ee6fb`: cold 762 ms, the page opened in 252 ms, every specimen drawn) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the contentcontrol page opened in 8 ms with 53 elements)
 
 The Windows Phone 8.1 ContentControl: Avalonia's `ContentControl` in `Wp81ContentControlTheme`, the phone's default
 style and template, in `src/Cornflower.Themes.Wp81/Controls/ContentControl.axaml`. The bare `ContentPresenter` keeps
