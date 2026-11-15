@@ -69,6 +69,11 @@ Two things follow from the phone's tree: the presenter lies under the indicators
 not beside it; and the Padding is the presenter's Margin, so what scrolls is clipped inside it (Simple's binds it to
 the presenter's Padding, which scrolls).
 
+The presenter has a transparent `Background` of its own (the Grid draws the ScrollViewer's), so a press anywhere on it,
+between the content's parts too, reaches its gesture recogniser. On the phone DirectManipulation takes a touch anywhere
+in the ScrollViewer. A press in the `Padding`, outside the presenter, isn't the presenter's, so it doesn't pan: a gap,
+in Avalonia's design (the recogniser is the presenter's), seen only with a `Padding` set.
+
 ### The visual states
 
 `ScrollingIndicatorStates`, on the Border:
@@ -177,13 +182,17 @@ WinRT's ScrollViewer code (`ScrollViewer_Partial.cpp`) decides the state; the te
 1. **On a scroll.** Any change of the offset, once the ScrollViewer is loaded, shows the indicators (`ShowIndicators`
    on a view change; not during initialisation, `m_isLoaded`).
 2. **On a mouse or a pen.** A pointer that isn't a touch entering or moving over the ScrollViewer shows them, and sets
-   `m_preferMouseIndicators`; a touch manipulation starting or a key going down clears it. While it is set, the state
+   `m_preferMouseIndicators`; a touch manipulation starting or a key going down clears it. The move and the key are
+   WinRT's `OnPointerMoved` and `OnKeyDown` overrides, which see only what reaches the ScrollViewer unhandled; a move
+   bubbles, so an outer ScrollViewer shows its own indicator too. While it is set, the state
    is `MouseIndicator`; otherwise `TouchIndicator`. A touch shows nothing by itself: only the scroll it makes does.
 3. **For how long.** The state's storyboard runs; when it completes, WinRT goes to `NoIndicator`
    (`IndicatorStateStoryboardCompleted`), through the transition. The phone's `TouchIndicator` storyboard lasts 0.1 s and
    the transition sets `None` at 0.05 s. Going to the state it is in does nothing, so the storyboard isn't restarted by
-   a second scroll; a scroll in the transition goes back to `TouchIndicator`, a new 0.1 s. So while a scroll moves at
-   least every 50 ms, the indicator stays; it goes 50 to 150 ms after the last move, then fades.
+   a second scroll; a scroll in the transition goes back to `TouchIndicator`, a new 0.1 s. So while a scroll moves more
+   often than every 50 ms, the indicator stays; it goes 50 to 150 ms after the last move, then fades. A finger held
+   still mid-pan moves nothing, so the indicator goes then too, by this reading; whether the phone keeps it for the
+   whole manipulation is for #113's recording.
 
 `PhoneScrollIndicators`, internal to the theme, turned on by the ScrollViewer theme's setter, does this on
 `CornflowerClock`, and sets the attached `PhoneScrollIndicators.IndicatorMode` on the ScrollViewer: its state. The
@@ -279,6 +288,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
     from its title, its scroll shown (`Sample/ScrollViewerPageTests.cs`).
 27. **The ContentTemplate is the ScrollViewer's**, in both themes, as the phone's template binds it.
     `The_ContentTemplate_Is_The_ScrollViewers`.
+28. **A drag between the content's parts pans it**, in both themes. `A_Drag_Between_The_Contents_Parts_Pans_It`.
+29. **A move the content handles shows nothing.** `A_Move_The_Content_Handles_Shows_Nothing`.
+30. **A new theme mid-scroll comes in whole.** `A_New_Theme_Mid_Scroll_Comes_In_Whole`.
 
 ## Decided on the user's behalf
 

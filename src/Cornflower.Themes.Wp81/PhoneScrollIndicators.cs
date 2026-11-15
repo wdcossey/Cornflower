@@ -35,11 +35,12 @@ internal enum PhoneIndicatorMode
 /// <c>NoIndicator</c>, unless the content scrolled or the mouse moved in between: the phone's template runs the
 /// <c>TouchIndicator</c> storyboard for 0.1 s, and its transition to <c>NoIndicator</c> sets <c>None</c> at 0.05 s,
 /// and WinRT goes to <c>NoIndicator</c> when the state's storyboard completes. Showing the state it is already in
-/// changes nothing, as in WinRT's visual state manager, so during a scroll that changes the offset at least every
+/// changes nothing, as in WinRT's visual state manager, so during a scroll that changes the offset more often than every
 /// 50 ms the indicator stays, and it goes 50 to 150 ms after the last change.</para>
-/// <para><b>Which.</b> The mouse's, once a mouse or a pen has entered or moved over the ScrollViewer, until a touch
-/// presses or a key goes down on it; the touch's otherwise (WinRT's <c>m_preferMouseIndicators</c>). A touch never
-/// shows an indicator by itself: only the scroll it makes does.</para>
+/// <para><b>Which.</b> The mouse's, once a mouse or a pen has entered the ScrollViewer or moved over it (a move that
+/// reaches it unhandled, so an outer ScrollViewer shows its own too, as WinRT's routed <c>PointerMoved</c> does), until
+/// a touch presses or a key goes down on it; the touch's otherwise (WinRT's <c>m_preferMouseIndicators</c>). A touch
+/// never shows an indicator by itself: only the scroll it makes does.</para>
 /// <para>The mouse's is a deliberate difference. The phone's ScrollViewer template sets nothing in its
 /// <c>MouseIndicator</c> state, so on the phone a mouse would see no indicator at all. Ours passes the state on, so the
 /// ScrollBar draws its own <c>MouseIndicator</c> look, and lasts as the touch's does, as the template gives the mouse
@@ -74,12 +75,23 @@ internal static class PhoneScrollIndicators
         {
             if (Watched.TryGetValue(viewer, out var old))
             {
-                old.Dispose();
                 Watched.Remove(viewer);
+                old.Dispose();
+
+                // A theme going unsets its values one by one, and a handler that takes away a value the store has yet
+                // to reach stops it (spike 6). IndicatorMode is registered after IsEnabled (above), so its value is
+                // never one still to unset: taking it away here, inside that pass, is safe.
+                old.Hide();
             }
 
             if (change.GetNewValue<bool>())
                 Watched.Add(viewer, new Indicators(viewer));
+        });
+
+        ScrollViewer.OffsetProperty.Changed.AddClassHandler<ScrollViewer>((viewer, _) =>
+        {
+            if (Watched.TryGetValue(viewer, out var indicators))
+                indicators.OnScrolled();
         });
     }
 
@@ -102,30 +114,33 @@ internal static class PhoneScrollIndicators
         public Indicators(ScrollViewer viewer)
         {
             _viewer = viewer;
-            viewer.PropertyChanged += OnPropertyChanged;
-            viewer.AddHandler(InputElement.PointerEnteredEvent, OnPointer, handledEventsToo: true);
-            viewer.AddHandler(InputElement.PointerMovedEvent, OnPointer, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+            // As WinRT's ScrollViewer overrides: the pointer entering it, and a move or a key that reaches it unhandled.
+            // A touch press counts wherever it lands, as WinRT's manipulation starting does.
+            viewer.AddHandler(InputElement.PointerEnteredEvent, OnPointer);
+            viewer.AddHandler(InputElement.PointerMovedEvent, OnPointer);
             viewer.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-            viewer.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+            viewer.AddHandler(InputElement.KeyDownEvent, OnKeyDown);
             viewer.DetachedFromVisualTree += OnDetached;
         }
 
         private PhoneIndicatorMode Mode => _viewer.GetValue(IndicatorModeProperty);
 
+        /// <summary>Stops following the ScrollViewer. Its state's value stays until <see cref="Hide"/>.</summary>
         public void Dispose()
         {
-            _viewer.PropertyChanged -= OnPropertyChanged;
             _viewer.RemoveHandler(InputElement.PointerEnteredEvent, OnPointer);
             _viewer.RemoveHandler(InputElement.PointerMovedEvent, OnPointer);
             _viewer.RemoveHandler(InputElement.PointerPressedEvent, OnPressed);
             _viewer.RemoveHandler(InputElement.KeyDownEvent, OnKeyDown);
             _viewer.DetachedFromVisualTree -= OnDetached;
-            Hide();
+            _timer?.Dispose();
+            _timer = null;
         }
 
-        private void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        public void OnScrolled()
         {
-            if (e.Property == ScrollViewer.OffsetProperty && _viewer.IsLoaded)
+            if (_viewer.IsLoaded)
                 Show(_preferMouse ? PhoneIndicatorMode.MouseIndicator : PhoneIndicatorMode.TouchIndicator);
         }
 
@@ -169,7 +184,8 @@ internal static class PhoneScrollIndicators
             _timer = CornflowerClock.Schedule(Hide, HideKeyTime);
         }
 
-        private void Hide()
+        /// <summary>The state is <c>NoIndicator</c>: the value goes.</summary>
+        public void Hide()
         {
             _timer?.Dispose();
             _timer = null;

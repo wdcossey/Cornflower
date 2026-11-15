@@ -330,7 +330,7 @@ public class ScrollViewerTests
     }
 
     // Showing the state it is in changes nothing; a scroll in the 50 ms of the transition shows it again. So a scroll
-    // that moves at least every 40 ms keeps the indicator, and it goes within 150 ms of the last move.
+    // that moves every 40 ms (more often than every 50) keeps the indicator, and it goes within 150 ms of the last move.
     [AvaloniaFact]
     public void A_Scroll_That_Keeps_Moving_Keeps_The_Indicator()
     {
@@ -395,6 +395,77 @@ public class ScrollViewerTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(stage.Viewer.Offset.Y > 0, "a drag on the indicator didn't scroll");
+    }
+
+    // The presenter takes a press anywhere on it, between the content's parts too, so its gesture recogniser sees the
+    // drag: in both themes.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_Drag_Between_The_Contents_Parts_Pans_It(bool scrollbarless)
+    {
+        using var clock = new TestClock();
+        var viewer = new ScrollViewer();
+        if (scrollbarless)
+            viewer.Bind(StyledElement.ThemeProperty, viewer.GetResourceObservable("Wp81ScrollViewerScrollBarlessTheme"));
+        var lines = new StackPanel { Spacing = 100 };
+        for (var i = 0; i < 20; i++)
+            lines.Children.Add(new Border { Height = 20, Background = Brushes.Gray });
+        using var stage = new Stage(viewer: viewer, content: lines);
+
+        var start = new Point(200, 360 + 60);
+        Assert.DoesNotContain(lines.Children, line => stage.InWindow(line).Contains(start));
+        var touch = stage.Window.TouchBegin(start);
+        for (var step = 1; step <= 10; step++)
+        {
+            stage.Window.TouchMove(touch, start - new Point(0, 30 * step));
+            Dispatcher.UIThread.RunJobs();
+        }
+        stage.Window.TouchEnd(touch, start - new Point(0, 300));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(viewer.Offset.Y > 0, "a drag between the lines didn't scroll");
+    }
+
+    // A move a control in the content handles doesn't reach the ScrollViewer, as in WinRT, whose ScrollViewer sees it in
+    // its PointerMoved override only unhandled.
+    [AvaloniaFact]
+    public void A_Move_The_Content_Handles_Shows_Nothing()
+    {
+        using var clock = new TestClock();
+        var handler = new Border { Height = 2000, Background = Brushes.Transparent };
+        handler.PointerMoved += (_, e) => e.Handled = true;
+        using var stage = new Stage(content: handler);
+
+        stage.Window.MouseMove(new Point(200, 300));
+        Assert.Equal(PhoneIndicatorMode.MouseIndicator, ModeOf(stage.Viewer));
+        clock.At(150);
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+
+        stage.Window.MouseMove(new Point(210, 320));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+    }
+
+    // A theme change mid-scroll goes cleanly. Turning the indicators off takes the state's value away inside the old
+    // theme's unsetting, which can stop it (spike 6); IndicatorMode is registered after IsEnabled, so it doesn't, and
+    // the new theme's template and values all come in.
+    [AvaloniaFact]
+    public void A_New_Theme_Mid_Scroll_Comes_In_Whole()
+    {
+        using var clock = new TestClock();
+        using var stage = new Stage();
+        stage.ScrollTo(100);
+        Assert.Equal(PhoneIndicatorMode.TouchIndicator, ModeOf(stage.Viewer));
+
+        stage.Viewer.Bind(StyledElement.ThemeProperty, stage.Viewer.GetResourceObservable("Wp81ScrollViewerScrollBarlessTheme"));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(PhoneScrollIndicators.GetIsEnabled(stage.Viewer));
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+        Assert.Equal(ScrollBarVisibility.Auto, stage.Viewer.VerticalScrollBarVisibility);
+        Assert.Empty(stage.Viewer.GetVisualDescendants().OfType<ScrollBar>());
+        Assert.Equal(0, clock.Pending);
     }
 
     // The pointer type picks the indicator, as WinRT's ScrollViewer picks it: a mouse moving over the ScrollViewer

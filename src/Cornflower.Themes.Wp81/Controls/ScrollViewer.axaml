@@ -12,7 +12,9 @@
       the second of each as wide or as tall as its ScrollBar.
     - PART_ContentPresenter is the phone's ScrollContentPresenter: over all four cells, so the indicators lie over the
       content, the ScrollViewer's Padding round it as its Margin, so what scrolls is clipped inside the Padding, and
-      its ContentTemplate bound, as the phone's is (Avalonia's presenter takes the Content itself, not the template). Its
+      its ContentTemplate bound, as the phone's is (Avalonia's presenter takes the Content itself, not the template). It
+      has a transparent Background of its own, so a press anywhere on it, between the content's parts too, reaches its
+      gesture recogniser; the Grid draws the ScrollViewer's. Its
       gesture recogniser and its snap point and inertia bindings are Avalonia's, as in Simple's template. The scroll
       physics are #113's (PLAN.md, "Scroll physics": pending).
     - PART_VerticalScrollBar, in the second column at the right, and PART_HorizontalScrollBar, in the second row: the
@@ -41,6 +43,7 @@
                                     Grid.ColumnSpan="2"
                                     Margin="{TemplateBinding Padding}"
                                     ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    Background="Transparent"
                                     HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
                                     VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
                                     HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"
@@ -90,6 +93,7 @@
           <ScrollContentPresenter x:Name="PART_ContentPresenter"
                                   Margin="{TemplateBinding Padding}"
                                   ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Background="Transparent"
                                   HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
                                   VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
                                   HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"

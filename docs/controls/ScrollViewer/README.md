@@ -35,7 +35,8 @@ scroll; it goes 50 to 150 ms after the scroll stops. A touch on it pans the cont
 - **The indicator**: the bar 7 wide (`ScrollBarMinThemeWidth`), its thumb 2.4 (`ScrollBarPanningThumbThemeWidth`)
   centred in it, as long as the viewport is to the extent and at least 7, placed by the offset, in
   `ScrollBarPanningBackgroundThemeBrush`; hidden when there is nothing to scroll.
-- **When**: on a scroll, once loaded, and while a mouse or a pen moves over the ScrollViewer. It lasts the template's
+- **When**: on a scroll, once loaded, and while a mouse or a pen moves over the ScrollViewer (a move the content
+  handles doesn't count, as in WinRT). It lasts the template's
   0.1 s, and goes 0.05 s into the transition, unless the scroll moved again.
 - **Which**: the touch's, unless a mouse or a pen was last over it (then the mouse's, until a touch presses or a key
   goes down). The phone's template shows a mouse nothing; ours shows the same thin indicator: a deliberate difference.
@@ -93,4 +94,8 @@ part class (rung 3) or a recorded deviation. No type is substituted.
 - **The fades**: the phone fades the indicator in and out; ours shows and hides it at once until the fades' durations
   are measured.
 - **The physics**: Avalonia's, pending #113.
+- **A press in the `Padding`** doesn't pan: Avalonia's gesture recogniser is the presenter's, and the `Padding` is
+  outside it. The phone's pans from anywhere in the ScrollViewer.
+- **A finger held still mid-pan**: the indicator goes 50 to 150 ms after the last move, as the template reads; whether
+  the phone keeps it while the finger is down is for #113's recording.
 - **Zoom, rails and scroll modes**: WinRT's, which Avalonia's ScrollViewer lacks.
