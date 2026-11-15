@@ -15,10 +15,6 @@ Carousel
 CarouselPage
 ComboBox
 ComboBoxItem
-CommandBar
-CommandBarButton
-CommandBarSeparator
-CommandBarToggleButton
 ContextMenu
 DataValidationErrors
 DatePicker
@@ -33,8 +29,6 @@ GroupBox
 HeaderedContentControl
 ItemsControl
 Label
-ListBox
-ListBoxItem
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
 Menu

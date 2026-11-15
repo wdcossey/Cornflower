@@ -67,7 +67,9 @@ turn does nothing.
   height there, as the phone's app bar is taken off `VisibleBounds` (62.92 for a compact bar, 26.25 for a minimal one,
   on the reference: the CommandBar theme's closed heights, `Wp81CommandBarCompactHeight` and
   `Wp81CommandBarMinimalHeight`, #118). Open, the bar grows up over the content, which keeps the closed height free and
-  doesn't move, as on the phone (`PhonePageBars`, internal). A bar that isn't a `CommandBar` is always closed.
+  doesn't move, as on the phone (`PhonePageBars`, internal). The closed height is the bar's own laid-out height while
+  closed; a bar open before it was laid out closed in its `CommandBarOptions.ClosedDisplayMode` takes the theme's
+  height for that mode. A bar that isn't a `CommandBar` is always closed.
   `TopCommandBar` sits at the head the same way; the phone has none.
 - `NavigationPage.BottomCommandBar`, set on a page, is the NavigationPage's: docked below the pages and outside the
   transition, as the phone's shell draws its app bar apart from the page.

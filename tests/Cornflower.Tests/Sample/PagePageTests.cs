@@ -104,4 +104,28 @@ public class PagePageTests
         scene.Window.RaiseEvent(last);
         Assert.False(last.Handled);
     }
+
+    [AvaloniaFact]
+    public void Each_Page_Keeps_Its_App_Bars_Closed_Height_Free_Compact_Then_Minimal_Open_Or_Closed()
+    {
+        var page = new PagePage();
+        using var scene = new Scene(page);
+        using var clock = new TestClock();
+        var nav = page.FindControl<NavigationPage>("Navigation")!;
+
+        foreach (var barTop in new[] { 737.08, 773.75 })
+        {
+            var current = (ContentPage)nav.CurrentPage!;
+            var bar = Assert.IsType<CommandBar>(current.BottomCommandBar);
+            var content = (Control)current.Content!;
+            Assert.Equal(barTop, content.TranslatePoint(new Point(0, content.Bounds.Height), nav)!.Value.Y + content.Margin.Bottom, 0.5);
+            bar.IsOpen = true;
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(barTop, content.TranslatePoint(new Point(0, content.Bounds.Height), nav)!.Value.Y + content.Margin.Bottom, 0.5);
+            bar.IsOpen = false;
+            Dispatcher.UIThread.RunJobs();
+            Click(ButtonOn(nav, "turnstile"));
+            Settle(clock, 1000);
+        }
+    }
 }

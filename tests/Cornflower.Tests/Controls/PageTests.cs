@@ -179,6 +179,51 @@ public class PageTests
         AssertRect(new Rect(0, 0, 450, Bounds.MinimalBarTop), BoundsIn(content, page), "the content, minimal");
     }
 
+    [AvaloniaTheory]
+    [InlineData(AppBarClosedDisplayMode.Compact, Bounds.CompactBarTop)]
+    [InlineData(AppBarClosedDisplayMode.Minimal, Bounds.MinimalBarTop)]
+    public void With_The_Themes_CommandBar_In_A_NavigationPage_The_Content_Ends_Where_VisibleBounds_Does_Closed_Or_Open(
+        AppBarClosedDisplayMode mode, double barTop)
+    {
+        // The phone's VisibleBounds ends at 737.08 with a compact app bar and 773.75 with a minimal one, closed or open.
+        var bar = new CommandBar();
+        CommandBarOptions.SetClosedDisplayMode(bar, mode);
+        bar.PrimaryCommands.Add(new CommandBarButton { Label = "add", Icon = new LucideIcon { Kind = LucideIconKind.Plus } });
+        bar.SecondaryCommands.Add(new CommandBarButton { Label = "first menu item" });
+        bar.SecondaryCommands.Add(new CommandBarButton { Label = "second menu item" });
+        var page = Page(out var content);
+        page.BottomCommandBar = bar;
+        var nav = new NavigationPage();
+        using var scene = new Scene(nav);
+        _ = nav.PushAsync(page);
+        Dispatcher.UIThread.RunJobs();
+
+        AssertRect(new Rect(0, barTop, 450, 800 - barTop), BoundsIn(bar, nav), "the closed bar");
+        AssertRect(new Rect(0, 0, 450, barTop), BoundsIn(content, nav), "the content, closed");
+
+        bar.IsOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(BoundsIn(bar, nav).Top < barTop - 100, $"the open bar's top at {BoundsIn(bar, nav).Top}");
+        AssertRect(new Rect(0, 0, 450, barTop), BoundsIn(content, nav), "the content, open");
+
+        bar.IsOpen = false;
+        Dispatcher.UIThread.RunJobs();
+        AssertRect(new Rect(0, 0, 450, barTop), BoundsIn(content, nav), "the content, closed again");
+    }
+
+    [AvaloniaFact]
+    public void A_CommandBar_Open_Before_It_Was_Ever_Laid_Out_Closed_Keeps_The_Themes_Closed_Height_Free()
+    {
+        var bar = new CommandBar { IsOpen = true };
+        CommandBarOptions.SetClosedDisplayMode(bar, AppBarClosedDisplayMode.Minimal);
+        bar.SecondaryCommands.Add(new CommandBarButton { Label = "first menu item" });
+        var page = Page(out var content);
+        page.BottomCommandBar = bar;
+        using var scene = new Scene(page);
+
+        AssertRect(new Rect(0, 0, 450, Bounds.MinimalBarTop), BoundsIn(content, page), "the content");
+    }
+
     [AvaloniaFact]
     public void A_Top_Bar_Sits_Below_The_Tray()
     {

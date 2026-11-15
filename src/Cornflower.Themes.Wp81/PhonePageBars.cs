@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
 
@@ -10,9 +11,10 @@ namespace Cornflower.Themes.Wp81;
 /// <c>PART_BottomCommandBar</c> in one cell. The content gives up each bar's closed height, at its foot (or head), and
 /// keeps giving up that height while the bar is open: the phone's <c>VisibleBounds</c> ends 62.92 above the screen's
 /// foot with a compact app bar and 26.25 with a minimal one, open or closed, and the open bar is drawn over the page
-/// (<c>tools/refapp/README.md</c>, "The page's app bar"). A bar's closed height is its theme's (the CommandBar theme lays
-/// a closed compact bar out 62.92 tall, a minimal one 26.25); a bar that isn't a <see cref="CommandBar"/> is always
-/// closed.
+/// (<c>tools/refapp/README.md</c>, "The page's app bar"). A bar's closed height is its laid-out height while closed: the
+/// CommandBar theme's <c>Wp81CommandBarCompactHeight</c> (62.9166) or <c>Wp81CommandBarMinimalHeight</c> (26.25) by its
+/// <c>CommandBarOptions.ClosedDisplayMode</c>, or an app's own. A bar open before it was laid out closed in its
+/// mode takes the theme's height for the mode. A bar that isn't a <see cref="CommandBar"/> is always closed.
 /// </summary>
 internal static class PhonePageBars
 {
@@ -20,8 +22,11 @@ internal static class PhonePageBars
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<Panel, bool>("IsEnabled", typeof(PhonePageBars));
 
-    /// <summary>The key a CommandBar theme gives a closed compact bar's height, for a bar that is open before it was ever laid out closed.</summary>
+    /// <summary>The CommandBar theme's closed compact height (62.9166), for a bar open before it was laid out closed in its mode.</summary>
     internal const string CompactHeightKey = "Wp81CommandBarCompactHeight";
+
+    /// <summary>The CommandBar theme's closed minimal height (26.25), the same way.</summary>
+    internal const string MinimalHeightKey = "Wp81CommandBarMinimalHeight";
 
     private static readonly AttachedProperty<Reserve?> ReserveProperty =
         AvaloniaProperty.RegisterAttached<Panel, Reserve?>("Reserve", typeof(PhonePageBars));
@@ -101,6 +106,7 @@ internal static class PhonePageBars
         private ContentPresenter? _presenter;
         private CommandBar? _commandBar;
         private double? _closed;
+        private AppBarClosedDisplayMode _closedMode;
 
         /// <summary>The height the content gives up for this bar: none while it isn't shown; its closed height.</summary>
         public double Height
@@ -112,12 +118,18 @@ internal static class PhonePageBars
                     return 0;
                 }
 
-                if (_commandBar is { IsOpen: true })
+                if (_commandBar is { IsOpen: true } open)
                 {
-                    return _closed ?? OpenFirstHeight(presenter);
+                    var mode = CommandBarOptions.GetClosedDisplayMode(open);
+                    return _closed is { } closed && _closedMode == mode ? closed : ThemeHeight(presenter, mode);
                 }
 
                 _closed = presenter.Bounds.Height;
+                if (_commandBar is { } bar)
+                {
+                    _closedMode = CommandBarOptions.GetClosedDisplayMode(bar);
+                }
+
                 return _closed.Value;
             }
         }
@@ -178,14 +190,19 @@ internal static class PhonePageBars
 
         private void OnBarChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.Property == CommandBar.IsOpenProperty)
+            if (e.Property == CommandBar.IsOpenProperty || e.Property == CommandBarOptions.ClosedDisplayModeProperty)
             {
                 reserve.Update();
             }
         }
 
-        /// <summary>A bar open before it was laid out closed: the CommandBar theme's compact height, or its height now.</summary>
-        private static double OpenFirstHeight(ContentPresenter presenter) =>
-            presenter.TryFindResource(CompactHeightKey, out var value) && value is double height ? height : presenter.Bounds.Height;
+        /// <summary>
+        /// A bar open before it was laid out closed in its mode: the CommandBar theme's closed height for the mode, or,
+        /// without that theme, the bar's height now.
+        /// </summary>
+        private static double ThemeHeight(ContentPresenter presenter, AppBarClosedDisplayMode mode) =>
+            presenter.TryFindResource(mode == AppBarClosedDisplayMode.Minimal ? MinimalHeightKey : CompactHeightKey, out var value) && value is double height
+                ? height
+                : presenter.Bounds.Height;
     }
 }

@@ -44,8 +44,9 @@ measured. Avalonia's own.
   the bar's closed height (`PhonePageBars`): the content ends where `VisibleBounds` does. How tall the closed bar is
   (62.92 compact, 26.25 minimal) is the CommandBar theme's (#118). Open, the bar grows up over the content (285.42 from
   514.58 on the phone) and the content keeps the closed height free, as `VisibleBounds` doesn't change on opening. A bar
-  that isn't a `CommandBar` is always closed; one open before it was ever laid out closed takes the CommandBar theme's
-  `Wp81CommandBarCompactHeight`, looked up by name. The top command bar the same way at the head: the phone has no top
+  that isn't a `CommandBar` is always closed; one open before it was laid out closed in its
+  `CommandBarOptions.ClosedDisplayMode` takes the CommandBar theme's `Wp81CommandBarCompactHeight` or
+  `Wp81CommandBarMinimalHeight` (#118). The top command bar the same way at the head: the phone has no top
   app bar to measure.
 - **A ContentPage in a NavigationPage has no navigation bar**, so the NavigationPage gives it the whole safe area
   (Avalonia gives the top of it to the bar when the bar shows).
@@ -127,7 +128,7 @@ Each with its evidence and its test (`tests/Cornflower.Tests/Controls/PageTests.
 | No safe area applied: the content fills the window | "Visible bounds", `UseCoreWindow` | `With_The_Safe_Area_Not_Applied_The_Content_Fills_The_Window_As_Under_UseCoreWindow` |
 | A bottom bar takes its height off the content, at 737.08 and 773.75, tray shown or not | "The page's app bar" | `A_Bottom_Bar_Takes_Its_Height_Off_The_Content_…` (both heights) |
 | The bars draw over the content | "The page's app bar": the open bar is drawn over the page | `A_Bar_Drawn_Past_Its_Place_Draws_Over_The_Content` |
-| An open bar grows over the content, which keeps the closed height free | "The page's app bar": `VisibleBounds` stays as closed | `An_Open_Bar_Grows_Up_Over_The_Content_Which_Keeps_Its_Closed_Height_Free` |
+| An open bar grows over the content, which keeps the closed height free | "The page's app bar": `VisibleBounds` stays as closed | `An_Open_Bar_Grows_Up_Over_The_Content_Which_Keeps_Its_Closed_Height_Free`; with #118's CommandBar in a NavigationPage, compact and minimal, closed and open: `With_The_Themes_CommandBar_In_A_NavigationPage_…`, `A_CommandBar_Open_Before_It_Was_Ever_Laid_Out_Closed_…` |
 | The top bar below the tray | chosen: no phone reading | `A_Top_Bar_Sits_Below_The_Tray` |
 | No navigation bar; the page gets the whole safe area | the phone has none | `In_A_NavigationPage_A_ContentPage_Has_No_Navigation_Bar_And_Gets_The_Whole_Safe_Area` |
 | A page that turns the bar on gets the header, a back arrow in its own theme, `PhoneChromeBrush` | an extension, no phone reading | `A_Page_That_Turns_The_Bar_Back_On_…` |

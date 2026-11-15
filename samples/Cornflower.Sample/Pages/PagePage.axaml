@@ -5,8 +5,9 @@
     The 8.1 page and Frame, as Avalonia writes them: a NavigationPage (the Frame) of ContentPages (the pages), with
     no style and no size. Each page's buttons go forward to a new page with one of the phone's three transitions: the
     turnstile (the theme's own, so the push names none), the slide and the continuum. Back, or the platform's back
-    request, goes back with the transition the page came with, as the phone's Frame.GoBack does. The pages are made in
-    code, each headed as every sample page is.
+    request, goes back with the transition the page came with, as the phone's Frame.GoBack does. Each page has an app
+    bar, compact on odd pages and minimal on even ones, which the content keeps free of, open or closed. The pages
+    are made in code, each headed as every sample page is.
   -->
   <NavigationPage x:Name="Navigation" />
 </UserControl>

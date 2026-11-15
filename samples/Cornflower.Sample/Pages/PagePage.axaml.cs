@@ -4,6 +4,7 @@ using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Cornflower.Controls;
 using Cornflower.Themes.Wp81;
 
 namespace Cornflower.Sample.Pages;
@@ -84,7 +85,28 @@ public partial class PagePage : UserControl
                 Margin = new(19, 12, 19, 24),
                 Children = { new SamplePageHeader(), heading, note, buttons },
             },
+            BottomCommandBar = AppBar(number),
         };
+    }
+
+    /// <summary>
+    /// The page's app bar: compact on odd pages, minimal on even ones, so the content gives up 62.92 or 26.25 at its
+    /// foot, and keeps it free while the bar is open. Its commands go forward too.
+    /// </summary>
+    private CommandBar AppBar(int number)
+    {
+        var bar = new CommandBar();
+        CommandBarOptions.SetClosedDisplayMode(bar, number % 2 == 0 ? AppBarClosedDisplayMode.Minimal : AppBarClosedDisplayMode.Compact);
+        var add = new CommandBarButton { Label = "new page", Icon = new LucideIcon { Kind = LucideIconKind.Plus } };
+        add.Click += async (_, _) => await GoForward(null);
+        bar.PrimaryCommands.Add(add);
+        var slide = new CommandBarButton { Label = "slide to a new page" };
+        slide.Click += async (_, _) => await GoForward(new SlideTransition());
+        bar.SecondaryCommands.Add(slide);
+        var continuum = new CommandBarButton { Label = "continuum to a new page" };
+        continuum.Click += async (_, _) => await GoForward(new ContinuumTransition());
+        bar.SecondaryCommands.Add(continuum);
+        return bar;
     }
 
     private Button Forward(string name, IPageTransition? transition)

@@ -1,0 +1,427 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 page's app bar: Avalonia's CommandBar, CommandBarButton, CommandBarToggleButton and
+    CommandBarSeparator, themed as the phone draws a CommandBar set as a page's BottomAppBar.
+
+    On the phone the shell draws that bar, not the CommandBar's template (commandbar.json: a Grid and two
+    ItemsControls, MaxHeight 57.5), so the shell's screenshots are the reference (#59; refapp runs
+    20261109-2124-dev11 and 20261109-2130-dev11, the same to the pixel row; ref/wp81/CommandBar/). Every size
+    below is read from them, in view pixels (raw / 2.4), and docs/controls/CommandBar/PLAN.md has each reading.
+    The colours are the phone's keys, by DynamicResource; the shell's own sizes are literals, as a template's
+    sizes are. A size is written to four decimals, rounded down, where its raw pixels are whole (62.9166 is
+    151 raw px): layout rounds a size up to the raw grid, and the full fraction would round it a pixel over.
+
+    The bar, closed: compact 62.9166 tall (151 raw), the commands' circles and the ellipsis; minimal 26.25 (63 raw),
+    the ellipsis alone, by CommandBarOptions.ClosedDisplayMode. Open, in either mode, the bar is as tall as what it
+    shows and grows upwards from its bottom: the circles where they were, their labels under them, then the
+    secondary commands as a list of words. A page lays the bar over its content, so the open bar covers the page
+    as the shell's does (docs/controls/CommandBar/README.md, "On a page").
+  -->
+
+  <!--
+    The closed bar's height, compact and minimal: the shell's drawing, and what the phone's VisibleBounds keeps off
+    the page (62.92 and 26.25 of 800, run 20261115-2050-dev11). A page that lays the bar over its content keeps this
+    much free at the content's foot (docs/controls/CommandBar/README.md, "On a page").
+  -->
+  <x:Double x:Key="Wp81CommandBarCompactHeight">62.9166</x:Double>
+  <x:Double x:Key="Wp81CommandBarMinimalHeight">26.25</x:Double>
+
+  <!-- The bar's ItemsControls: a presenter and the panel, so no theme keyed by ItemsControl reaches them (Wp81 has
+       none, and without one an ItemsControl shows nothing). -->
+  <ControlTheme x:Key="Wp81CommandBarItemsTheme" TargetType="ItemsControl">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!-- The ellipsis: the bar's own Button, which no theme keyed by Button reaches. The shell draws no pressed state. -->
+  <ControlTheme x:Key="Wp81CommandBarEllipsisButtonTheme" TargetType="Button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          Content="{TemplateBinding Content}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    The bar. CommandBarBackgroundThemeBrush (PhoneChromeColor: #FF1F1F1F dark, #FFDDDDDD light) behind it, and
+    CommandBarForegroundThemeBrush (PhoneTextHighColor) for its words and the ellipsis's dots: #FF1D1D1D on the
+    light bar in the screenshots, #DE000000 over #FFDDDDDD.
+
+    The phone always shows the ellipsis, which opens the bar to show the labels, so OverflowButtonVisibility is
+    Visible, where Avalonia's Auto hides it without secondary commands. The labels show while the bar is open:
+    DefaultLabelPosition is Collapsed closed and Bottom open, and Avalonia's CommandBar sets each command's
+    IsCompact from it (an app that sets DefaultLabelPosition gets that position, open or closed).
+
+    PART_OverflowPopup holds nothing: the open bar is drawn in the bar itself, and the popup is the light dismiss,
+    Avalonia's own, while the bar is open (Avalonia's CommandBar turns it on unless IsSticky): a press anywhere
+    outside the bar closes it, and the bar itself (OverlayInputPassThroughElement) takes its own presses.
+  -->
+  <ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar">
+    <Setter Property="Background" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource CommandBarForegroundThemeBrush}" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Height" Value="{StaticResource Wp81CommandBarCompactHeight}" />
+    <Setter Property="OverflowButtonVisibility" Value="Visible" />
+    <Setter Property="DefaultLabelPosition" Value="Collapsed" />
+    <!--
+      Each command's slot, for dynamic overflow, whatever the label's place: the shell's slots are 73.75 wide. The
+      template draws no Padding: only Avalonia's dynamic overflow reads it, as room the commands can't have, beside the
+      48 it keeps for the ellipsis. The commands are centred and the ellipsis is 63.68 wide, so a row fits while it is
+      no wider than the bar less twice 64.5133 (the ellipsis and the row's 0.8333 shift left): 81.0333 more than
+      Avalonia's 48. Four commands fit on the 450-wide view, the phone's most.
+    -->
+    <Setter Property="Padding" Value="0,0,81.0333,0" />
+    <Setter Property="ItemWidthBottom" Value="73.75" />
+    <Setter Property="ItemWidthRight" Value="73.75" />
+    <Setter Property="ItemWidthCollapsed" Value="73.75" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="wp81:PhoneAppBarClose.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="LayoutRoot" Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
+          <!-- Avalonia's Content, at the left. The phone's bar has none. -->
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Content="{TemplateBinding Content}" />
+          <!--
+            The primary commands, centred, each in a 73.75 slot: the circles' centres are 177 raw px apart, the
+            middle one at 538 raw px with three, and 538.5 with the pickers' two (20261108-2254-dev11), 2 raw px left
+            of the bar's centre. The right margin, 4 raw px, puts the group there.
+          -->
+          <ItemsControl x:Name="PART_PrimaryCommands"
+                        Theme="{StaticResource Wp81CommandBarItemsTheme}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,0,1.6666,0"
+                        ItemsSource="{Binding VisiblePrimaryCommands, RelativeSource={RelativeSource TemplatedParent}}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+          <!--
+            The ellipsis, Wp81.Glyph.AppBarEllipsis: its dots' tops 10.49 below the bar's top and the last dot's
+            right 20.59 from the bar's right, open or closed, compact or minimal. The button takes the bar's height
+            at the right, 20.59 either side of the dots.
+          -->
+          <Button x:Name="PART_OverflowButton"
+                  Theme="{StaticResource Wp81CommandBarEllipsisButtonTheme}"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Top"
+                  Width="63.68"
+                  Height="{StaticResource Wp81CommandBarCompactHeight}"
+                  IsVisible="{TemplateBinding IsOverflowButtonVisible}">
+            <Path x:Name="Ellipsis"
+                  Data="{DynamicResource Wp81.Glyph.AppBarEllipsis}"
+                  Fill="{TemplateBinding Foreground}"
+                  Width="22.5"
+                  Height="4.64"
+                  Margin="0,10.49,20.59,0"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Top"
+                  UseLayoutRounding="False" />
+          </Button>
+          <!--
+            The secondary commands, open: a list of words under the labels, and the bar's foot under it, 81.7467,
+            which puts the bar's top where the shell's is with two. In a ScrollViewer in the row that takes what is
+            left, so a list taller than the bar's room scrolls rather than pushing the bar off the top.
+          -->
+          <ScrollViewer x:Name="OverflowScrollViewer"
+                        Grid.Row="1"
+                        IsVisible="False"
+                        HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl x:Name="PART_OverflowPresenter"
+                          Theme="{StaticResource Wp81CommandBarItemsTheme}"
+                          ItemsSource="{Binding OverflowItems, RelativeSource={RelativeSource TemplatedParent}}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </ScrollViewer>
+          <Popup x:Name="PART_OverflowPopup"
+                 IsOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
+                 PlacementTarget="{Binding #LayoutRoot}"
+                 ShouldUseOverlayLayer="True"
+                 OverlayInputPassThroughElement="{Binding RelativeSource={RelativeSource TemplatedParent}}">
+            <Panel />
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Open, compact or minimal: as tall as what it shows, the labels and the secondary commands with it. -->
+    <Style Selector="^[IsOpen=True]">
+      <Setter Property="DefaultLabelPosition" Value="Bottom" />
+      <Style Selector="^ /template/ ScrollViewer#OverflowScrollViewer">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+
+    <Style Selector="^ /template/ ItemsControl#PART_OverflowPresenter">
+      <Setter Property="Margin" Value="0,0,0,81.7467" />
+    </Style>
+
+    <!-- With no secondary commands, no list and no foot under the labels (not read on the phone). -->
+    <Style Selector="^[HasSecondaryCommands=False] /template/ ScrollViewer#OverflowScrollViewer">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- The labels shown, open or by an app's DefaultLabelPosition: the bar as tall as what it shows. -->
+    <Style Selector="^[DefaultLabelPosition=Bottom], ^[DefaultLabelPosition=Right]">
+      <Setter Property="Height" Value="NaN" />
+    </Style>
+
+    <!-- Minimal and closed: a thin bar, the ellipsis alone. -->
+    <Style Selector="^[IsOpen=False][(cf|CommandBarOptions.ClosedDisplayMode)=Minimal]">
+      <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
+      <Style Selector="^ /template/ ItemsControl#PART_PrimaryCommands">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ Button#PART_OverflowButton">
+        <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <!--
+    A command on the bar: a circle 40.75 across (97.8 raw px), its ring 2.68 wide (6.44 raw), its top 10.45 below
+    the bar's top, centred in a slot 73.75 wide; the icon in the middle; the label under it while the bar is open,
+    its baseline 71.25 below the bar's top. The shell draws the circle larger than the phone's own AppBarButton
+    template does (38.5, its ring 2.5, inside the circle; ref/wp81/AppBarButton/): the bar is the shell's.
+
+    The ring is AppBarItemForegroundThemeBrush (PhoneForegroundColor: #FF000000 on the light bar); the icon and the
+    label the command's Foreground, CommandBarForegroundThemeBrush (#FF1D1D1D there), as the shell draws them.
+
+    In the secondary commands' list (IsInOverflow), only the label, as a line of the list: PhoneFontFamilySemiLight
+    at 27.92 (an x-height of 33.5 raw px), a line 59.1666 tall (142 raw), 20.8333 from the bar's left (50 raw px,
+    which puts Selawik's first letter's ink at 51, where the shell's is).
+
+    The states, as the phone's template has them, with the shell's colours where its screenshots show them:
+    - Pressed: the circle filled with the ring's colour and the icon in the bar's, as the checked one is drawn
+      (the shell's screenshots show no pressed command; the template's AppBarItemPressedForegroundThemeBrush is the
+      page's colour, the colour behind the circle on its page, as the bar's is on the bar).
+    - Disabled: the command at 0.451 (0x73 / 0xFF), drawn as one layer: the ring #FF848484 on the dark bar and
+      #FF797979 on the light, the icon and label #FF848484 and #FF868686. The template's
+      AppBarItemDisabledForegroundThemeBrush (PhoneDisabledColor, 0x66) is 11 levels off on the bar.
+  -->
+  <ControlTheme x:Key="{x:Type CommandBarButton}" TargetType="CommandBarButton">
+    <Setter Property="Foreground" Value="{DynamicResource CommandBarForegroundThemeBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Width" Value="73.75" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel x:Name="PART_Root" Background="{TemplateBinding Background}" RenderOptions.RequiresFullOpacityHandling="True">
+          <Panel x:Name="PART_Ink">
+            <StackPanel x:Name="PART_LayoutRoot">
+              <Panel x:Name="PART_ContentRoot"
+                     Width="40.75"
+                     Height="40.75"
+                     Margin="0,10.45,0,0"
+                     HorizontalAlignment="Center">
+                <Ellipse x:Name="PART_Ellipse"
+                         UseLayoutRounding="False"
+                         Fill="{DynamicResource AppBarItemBackgroundThemeBrush}"
+                         Stroke="{DynamicResource AppBarItemForegroundThemeBrush}"
+                         StrokeThickness="2.68" />
+                <ContentPresenter x:Name="PART_Content"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding Icon}"
+                                  Foreground="{TemplateBinding Foreground}" />
+              </Panel>
+              <TextBlock x:Name="PART_TextLabel"
+                         Margin="0,8.5,0,11.63"
+                         Text="{TemplateBinding Label}"
+                         FontFamily="{TemplateBinding FontFamily}"
+                         FontSize="11.67"
+                         FontWeight="SemiBold"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock x:Name="PART_MenuText"
+                       IsVisible="False"
+                       Margin="20.8333,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{TemplateBinding Label}"
+                       FontFamily="{DynamicResource PhoneFontFamilySemiLight}"
+                       FontSize="27.92"
+                       TextTrimming="CharacterEllipsis" />
+          </Panel>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[IsCompact=True] /template/ TextBlock#PART_TextLabel">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[IsInOverflow=True]">
+      <Setter Property="Width" Value="NaN" />
+      <Setter Property="Height" Value="59.1666" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Style Selector="^ /template/ StackPanel#PART_LayoutRoot">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_MenuText">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Ellipse#PART_Ellipse">
+        <Setter Property="Fill" Value="{DynamicResource AppBarItemForegroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_Content">
+        <Setter Property="Foreground" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled /template/ Panel#PART_Ink">
+      <Setter Property="Opacity" Value="0.451" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    A toggle command: the same, and its checked states. Checked: the circle filled, AppBarToggleButtonCheckedBorder-
+    and BackgroundThemeBrush, and the icon in the bar's colour (the shell's screenshots; the template's
+    AppBarToggleButtonCheckedForegroundThemeBrush is the page's). CheckedPressed: the ring alone, as the template's
+    keys set it. CheckedDisabled: the checked look at 0.451, as the shell dims a command. Indeterminate looks
+    unchecked: the phone's toggle has no third state.
+  -->
+  <ControlTheme x:Key="{x:Type CommandBarToggleButton}" TargetType="CommandBarToggleButton">
+    <Setter Property="Foreground" Value="{DynamicResource CommandBarForegroundThemeBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Width" Value="73.75" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel x:Name="PART_Root" Background="{TemplateBinding Background}" RenderOptions.RequiresFullOpacityHandling="True">
+          <Panel x:Name="PART_Ink">
+            <StackPanel x:Name="PART_LayoutRoot">
+              <Panel x:Name="PART_ContentRoot"
+                     Width="40.75"
+                     Height="40.75"
+                     Margin="0,10.45,0,0"
+                     HorizontalAlignment="Center">
+                <Ellipse x:Name="PART_Ellipse"
+                         UseLayoutRounding="False"
+                         Fill="{DynamicResource AppBarItemBackgroundThemeBrush}"
+                         Stroke="{DynamicResource AppBarItemForegroundThemeBrush}"
+                         StrokeThickness="2.68" />
+                <ContentPresenter x:Name="PART_Content"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding Icon}"
+                                  Foreground="{TemplateBinding Foreground}" />
+              </Panel>
+              <TextBlock x:Name="PART_TextLabel"
+                         Margin="0,8.5,0,11.63"
+                         Text="{TemplateBinding Label}"
+                         FontFamily="{TemplateBinding FontFamily}"
+                         FontSize="11.67"
+                         FontWeight="SemiBold"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock x:Name="PART_MenuText"
+                       IsVisible="False"
+                       Margin="20.8333,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{TemplateBinding Label}"
+                       FontFamily="{DynamicResource PhoneFontFamilySemiLight}"
+                       FontSize="27.92"
+                       TextTrimming="CharacterEllipsis" />
+          </Panel>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[IsCompact=True] /template/ TextBlock#PART_TextLabel">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[IsInOverflow=True]">
+      <Setter Property="Width" Value="NaN" />
+      <Setter Property="Height" Value="59.1666" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Style Selector="^ /template/ StackPanel#PART_LayoutRoot">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_MenuText">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Ellipse#PART_Ellipse">
+        <Setter Property="Fill" Value="{DynamicResource AppBarItemForegroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_Content">
+        <Setter Property="Foreground" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:checked">
+      <Style Selector="^ /template/ Ellipse#PART_Ellipse">
+        <Setter Property="Stroke" Value="{DynamicResource AppBarToggleButtonCheckedBorderThemeBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource AppBarToggleButtonCheckedBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_Content">
+        <Setter Property="Foreground" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:checked:pressed">
+      <Style Selector="^ /template/ Ellipse#PART_Ellipse">
+        <Setter Property="Stroke" Value="{DynamicResource AppBarToggleButtonCheckedPressedBorderThemeBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource AppBarToggleButtonCheckedPressedBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_Content">
+        <Setter Property="Foreground" Value="{DynamicResource AppBarToggleButtonCheckedPressedForegroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled /template/ Panel#PART_Ink">
+      <Setter Property="Opacity" Value="0.451" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    The phone has no default style for AppBarSeparator (generic.xaml has none), so one on the phone has no template
+    and draws nothing, taking no room. So does this: no template, and nothing set.
+  -->
+  <ControlTheme x:Key="{x:Type CommandBarSeparator}" TargetType="CommandBarSeparator">
+    <Setter Property="Focusable" Value="False" />
+  </ControlTheme>
+</ResourceDictionary>
