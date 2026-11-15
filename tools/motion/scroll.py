@@ -38,21 +38,6 @@ FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: root ([-\d.]+) bar ([-\d.]+
 CHANGING = re.compile(r'next ([-\d.]+) final ([-\d.]+) inertial (True|False)')
 
 
-def segments(rows):
-    """The log cut at each `step` line: (label, rows from that step to the next)."""
-    out, label, cur = [], None, []
-    for r in rows:
-        if r[1] == 'step':
-            if label is not None:
-                out.append((label, cur))
-            label, cur = r[2], []
-        elif label is not None:
-            cur.append(r)
-    if label is not None:
-        out.append((label, cur))
-    return out
-
-
 def frames(seg):
     """(stopwatch ms, rt ms, offset, indicator or None) for every frame line; the indicator is (root opacity, bar opacity,
     thumb x, y, w, h, mode)."""
@@ -83,7 +68,9 @@ def changing(seg):
 
 def inertia(seg):
     """The touch's inertia, or None: (rt of its first frame, [(t, offset)] with t in ms of rt from it, the first inertial
-    FinalView, the stopwatch time of its last frame)."""
+    FinalView, the stopwatch time of its last frame). Its first frame is the one before the first inertial frame (the
+    frame logged with or after the first inertial ViewChanging), one tick earlier: the release's frame. A frame is logged
+    only when something changed, so its offset is the last one logged before it."""
     # The setup's ChangeView, before the press, raises an inertial ViewChanging too: only what follows the press counts.
     press = next((r[0] for r in seg if r[1] == 'pressed'), None)
     if press is None:
@@ -97,13 +84,13 @@ def inertia(seg):
     after = [f for f in fr if f[0] >= first[0]]
     if not before or len(after) < 3:
         return None
-    pts = [before[-1]] + after
+    pts = [(None, after[0][1] - ml.TICK, before[-1][2], None)] + after
     end = pts[-1][2]
     # Up to the first frame at the end: later frames only log the indicator.
     last = next(i for i, p in enumerate(pts) if p[2] == end)
     pts = pts[:last + 1]
     rt0 = pts[0][1]
-    return rt0, [(p[1] - rt0, p[2]) for p in pts], first[2], pts[-1][0]
+    return rt0, [(p[1] - rt0, p[2]) for p in pts], first[2], pts[-1][0] if pts[-1][0] is not None else first[0]
 
 
 def linfit(xs, ys):
@@ -119,10 +106,11 @@ def fit_exponential_decay(pts):
     """offset = end - d0 e^(-t / tau), the end the last offset; tau from a straight line through ln(remaining) over the
     points more than 1 px short of the end. (tau ms, d0, rms px), or None."""
     end = pts[-1][1]
-    use = [(t, end - x) for t, x in pts if abs(end - x) > 1]
+    sgn = 1 if end >= pts[0][1] else -1
+    # Only the points short of the end: one past it (an overshoot) has no logarithm.
+    use = [(t, end - x) for t, x in pts if sgn * (end - x) > 1]
     if len(use) < 3:
         return None
-    sgn = 1 if use[0][1] > 0 else -1
     a, b = linfit([t for t, _ in use], [math.log(sgn * r) for _, r in use])
     if b >= 0:
         return None
@@ -148,8 +136,8 @@ def solve3(m, r):
 
 
 def fit_constant_deceleration(pts):
-    """offset = x0 + v0 t - a t^2 / 2, by least squares over the points (to the first at the end). (v0 px/ms,
-    a px/ms^2, rms px, the stop's t), or None."""
+    """offset = x0 + v0 t - a t^2 / 2, by least squares over the points (to the first at the end). (v0 px/ms, a px/ms^2,
+    rms px, the stop's t), or None; v0 and a are given as sizes, whichever way the offset moves."""
     ts, xs = [p[0] for p in pts], [p[1] for p in pts]
     s = [sum(t ** k for t in ts) for k in range(5)]
     r = [sum(x * t ** k for t, x in zip(ts, xs)) for k in range(3)]
@@ -159,7 +147,7 @@ def fit_constant_deceleration(pts):
     c0, c1, c2 = c
     stop = -c1 / (2 * c2)
     model = lambda t: c0 + c1 * min(t, stop) + c2 * min(t, stop) ** 2
-    return c1, -2 * c2, ml.rms([x - model(t) for t, x in pts]), stop
+    return abs(c1), abs(2 * c2), ml.rms([x - model(t) for t, x in pts]), stop
 
 
 def drag_distance(t, v0, a, c):
@@ -187,13 +175,20 @@ def drag_v0(pts, a, c, sign=1):
         d = [x - sign * drag_distance(t, v0, a, c) for t, x in pts]
         x0 = sum(d) / len(d)
         return sum((r - x0) ** 2 for r in d), x0
+    g = (math.sqrt(5) - 1) / 2
     lo, hi = 0.005, 40.0
+    m1, m2 = hi - g * (hi - lo), lo + g * (hi - lo)
+    f1, f2 = sse(m1)[0], sse(m2)[0]
     for _ in range(70):
-        m1, m2 = lo + (hi - lo) * 0.382, lo + (hi - lo) * 0.618
-        if sse(m1)[0] < sse(m2)[0]:
-            hi = m2
+        # Each step keeps one of the two inner points and its value, so it costs one evaluation.
+        if f1 < f2:
+            hi, m2, f2 = m2, m1, f1
+            m1 = hi - g * (hi - lo)
+            f1 = sse(m1)[0]
         else:
-            lo = m1
+            lo, m1, f1 = m1, m2, f2
+            m2 = lo + g * (hi - lo)
+            f2 = sse(m2)[0]
     v0 = (lo + hi) / 2
     e, x0 = sse(v0)
     return v0, x0, e
@@ -237,7 +232,7 @@ def indicator_modes(seg):
 
 def main():
     (run,), opts = ml.parse_args(__doc__, options=('--csv',), flags=('--shared',))
-    segs = segments(ml.probe(run))
+    segs = ml.step_segments(ml.probe(run))
     table, csv, timing = [], [], []
     print('%s: %d touches' % (run, len(segs)))
     for label, seg in segs:

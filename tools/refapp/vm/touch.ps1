@@ -131,7 +131,8 @@ $steps = New-Object System.Collections.Generic.List[string]
 if ($Mode -eq 'real') { [XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
 Log "playing $($lines.Count - 1) lines"
 # The system timer ticks every 15.6 ms unless asked for 1 ms, and a sleep of 1 ms lasts a tick: without it the steps of
-# a fast flick, 10 ms apart, bunched up (2026-11-15). Within 20 ms of a step the loop spins instead of sleeping.
+# a fast flick, 10 ms apart, bunched up (2026-11-15). With it a 1 ms sleep is about 1 ms, so the loop sleeps until 2 ms
+# before each step and spins only then, leaving the emulator the CPU.
 [void][XdeMouse]::timeBeginPeriod(1)
 $clock = [Diagnostics.Stopwatch]::StartNew()
 $at = 0.0
@@ -139,7 +140,7 @@ foreach ($line in $lines[1..($lines.Count - 1)]) {
     $parts = $line -split ' '
     if ($parts[0] -eq 'wait') { $at += [double]::Parse($parts[1], $inv); continue }
     while ($clock.Elapsed.TotalMilliseconds -lt $at) {
-        if ($at - $clock.Elapsed.TotalMilliseconds -gt 20) { Start-Sleep -Milliseconds 5 }
+        if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
     }
 
     $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)

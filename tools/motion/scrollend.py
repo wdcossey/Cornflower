@@ -37,11 +37,10 @@ BARS = (12, 150)  # strip width and left edge, in recording px
 EDGE = 24  # the right strip's width
 HEADER = 60.0  # view px: the header band, above the ScrollViewer
 PITCH = 100.0  # view px between the bars
-VIEW_W = 450.0
 
 
 def decode(run, exe):
-    w, h = ml.Recording._size(run)
+    w, h = ml.recording_size(run)
     out = os.path.join(run, 'analysis')
     os.makedirs(out, exist_ok=True)
     for vf, fmt, name in (('crop=%d:%d:%d:0,format=gray' % (BARS[0], h, BARS[1]), 'rawvideo', 'bars.gray'),
@@ -52,10 +51,9 @@ def decode(run, exe):
 
 class Strips:
     def __init__(self, run):
-        with open(os.path.join(run, 'frames.csv')) as f:
-            self.times = [float(l.strip().rstrip(',')) for l in f if l.strip()]
-        self.w, self.h = ml.Recording._size(run)
-        self.scale = self.w / VIEW_W  # recording px a view px
+        self.times = ml.frame_times(run)
+        self.w, self.h = ml.recording_size(run)
+        self.scale = self.w / ml.VIEW_W  # recording px a view px
         n = len(self.times)
         self.bars_path = os.path.join(run, 'analysis', 'bars.gray')
         self.edge_path = os.path.join(run, 'analysis', 'edge.rgb')
@@ -78,8 +76,8 @@ class Strips:
 
 
 def bars(profile, top, thr=50):
-    """The bars' centres (brightness-weighted) below `top`, in recording px."""
-    out, y, n = [], int(top) + 1, len(profile)
+    """The bars' centres (brightness-weighted) from row `top` down, in recording px."""
+    out, y, n = [], int(top), len(profile)
     while y < n:
         if profile[y] > thr:
             s = y
@@ -114,23 +112,25 @@ def fixed_point(rest, now, s):
     return (now - s * rest) / (1 - s) if s < 1 else float('nan')
 
 
-def indicator(st, i, light):
-    """The indicator in a frame of the edge strip: (first row, last row, columns, brightest-or-darkest value), or None.
-    On a dark page it is brighter than 20; on a light one darker than 240."""
+def indicator(st, i):
+    """The indicator in a frame of the edge strip: (first row, last row, columns, brightest-or-darkest value, light), or
+    None. The page's own colour is the strip's first column, which the indicator never reaches: on a dark page the
+    indicator is brighter than 20, on a light one darker than 240. Judged a frame at a time, from its pixels, as the page
+    turns light a frame or more after the app's step."""
     b = st.edge(i)
     top = int(HEADER * st.scale)
-    hit = []
+    light = b[(top * EDGE) * 3] > 128
+    ys, xs, best = [], set(), None
     for y in range(top, st.h):
-        for x in range(EDGE):
-            v = b[(y * EDGE + x) * 3]
-            if (v < 240) if light else (v > 20):
-                hit.append((y, x, v))
-    if not hit:
+        row = b[y * EDGE * 3:(y + 1) * EDGE * 3:3]  # the red channel; the strip is grey
+        v = min(row) if light else max(row)
+        if (v < 240) if light else (v > 20):
+            ys.append(y)
+            xs.update(x for x, c in enumerate(row) if ((c < 240) if light else (c > 20)))
+            best = v if best is None else (min(best, v) if light else max(best, v))
+    if not ys:
         return None
-    ys = [h[0] for h in hit]
-    xs = sorted(set(h[1] for h in hit))
-    v = (min if light else max)(h[2] for h in hit)
-    return min(ys), max(ys), xs, v
+    return ys[0], ys[-1], sorted(xs), best, light
 
 
 def main():
@@ -148,10 +148,10 @@ def main():
     lag = flash / 1000 - flash_time(st)  # app s - recording s
     print('%s: %d frames, %.2f recording px a view px; the flash pairs app time %.1f ms with recording %.3f s'
           % (run, len(st.times), st.scale, flash, flash / 1000 - lag))
-    steps = [(t, d) for t, w, d in rows if w == 'step']
+    # The touches' steps; the first runs logged a snapshot taken during a touch as a step too (as step_segments).
+    steps = [(t, d) for t, w, d in rows if w == 'step' and not d.startswith('snapshot ')]
     ends = [t for t, _ in steps[1:]] + [rows[-1][0] + 1000]
     states = [(t, d.split()[-1]) for t, w, d in rows if w == 'state' and d.startswith('VerticalScrollBar ScrollingIndicatorStates')]
-    themes = [(t, 'light' in d) for t, d in steps if d.startswith('held drag')]
     top = HEADER * st.scale
 
     print('\nCompression (s: the bars\' spacing over their rest spacing; moves in view px; times in ms from the press)')
@@ -198,12 +198,15 @@ def main():
     ep, cur = [], None
     for i, t in enumerate(st.times):
         app = (t + lag) * 1000
-        light = any(app >= tt for tt, lt in themes if lt)
-        r = indicator(st, i, light)
+        r = indicator(st, i)
+        if r and cur is not None and r[4] != cur[-1][2]:
+            # The page changed theme mid-episode: a new one.
+            ep.append(cur)
+            cur = None
         if r and cur is None:
-            cur = [(app, r, light)]
+            cur = [(app, r, r[4])]
         elif r:
-            cur.append((app, r, light))
+            cur.append((app, r, r[4]))
         elif cur is not None:
             ep.append(cur)
             cur = None

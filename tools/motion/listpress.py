@@ -7,7 +7,7 @@ watches the first seven items' `TiltContainer` (the template's `Pressed` state r
 it): its projection and transform every frame they change, and each item's visual states. Each touch's `step` line,
 1.2 s before its press, starts its segment. For each touch it prints, in ms by the app's stopwatch from the press:
 
-- the item's state changes, ItemClick, SelectionChanged and the gesture events, and the release (or capture lost);
+- the item pressed (the one whose state goes to `Pressed` with the press), its state changes, ItemClick, SelectionChanged and the gesture events, and the release (or capture lost);
 - the first and the last frame the projection changes, and the projection held 120 ms after the press (or at the
   release, if that is sooner): RotationX,
   RotationY and GlobalOffsetZ, beside what the Button's tilt model (README, "Tilt: the model") gives for the press
@@ -28,22 +28,9 @@ MAX = 17.19
 
 
 def g(d):
-    """The Button's tilt angle for a press at fraction d from the centre (README, "Tilt: the model")."""
+    """The Button's tilt angle for a press at fraction d from the centre (README, "Tilt: the model"; tiltcurve.py fits
+    it, and its g is this one)."""
     return MAX * d * (1 + 0.08 * abs(d))
-
-
-def segments(rows):
-    out, label, cur = [], None, []
-    for r in rows:
-        if r[1] == 'step':
-            if label is not None:
-                out.append((label, cur))
-            label, cur = r[2], []
-        elif label is not None:
-            cur.append(r)
-    if label is not None:
-        out.append((label, cur))
-    return out
 
 
 def layout(rows):
@@ -71,7 +58,7 @@ def main():
     rows = ml.probe(run)
     boxes = layout(rows)
     print('%s: TiltContainers %s' % (run, ', '.join('%s %s' % (k, ' '.join('%g' % v for v in b)) for k, b in sorted(boxes.items()))))
-    for label, seg in segments(rows):
+    for label, seg in ml.step_segments(rows):
         press = next((r for r in seg if r[1] == 'pressed'), None)
         print('\n%s' % label)
         if press is None:
@@ -85,13 +72,18 @@ def main():
         for t, what, d in seg:
             if what in ('state', 'itemclick', 'selection', 'gesture') or (what == 'released' and t != t0):
                 print('  %+8.1f ms  %s %s' % (t - t0, what, d))
-        projs = [(t, ) + projection(d) for t, what, d in seg if what == 'value' and d.startswith('projection')]
-        projs = [x for x in projs if x[1] is not None]
-        if not projs:
-            print('  no projection changed')
+        # The item is the one whose state went to Pressed with this press. A touch's segment starts 1.2 s before its
+        # press, so it can hold the end of the last touch's return, on another item: only what follows the press counts.
+        pressed = next((d.split()[0] for t, what, d in seg if what == 'state' and t >= t0 and d.endswith('> Pressed')), None)
+        if pressed is None:
+            print('  no item went to Pressed')
             continue
-        item = projs[0][1]
-        mine = [(t, v) for t, i, v in projs if i == item]
+        item = pressed
+        mine = [(t, v) for t, i, v in ((t, ) + projection(d) for t, what, d in seg if what == 'value' and d.startswith('projection'))
+                if i == item and t >= t0]
+        if not mine:
+            print('  %s: no projection changed' % item)
+            continue
         print('  %s: projection first changes at %+.1f ms, last at %+.1f ms, %d changes'
               % (item, mine[0][0] - t0, mine[-1][0] - t0, len(mine)))
         rel = end[0] if end else None

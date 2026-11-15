@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.Graphics.Imaging;
-using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -13,7 +10,6 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Markup;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Shapes;
 
 namespace RefApp
@@ -43,6 +39,9 @@ namespace RefApp
             public double At;
             public string Label;
             public Func<Task> Action;
+
+            /// <summary>A touch's setup, logged as a "step" (which the scripts cut the log at); else an "action" during one.</summary>
+            public bool Touch;
         }
 
         private readonly List<Scheduled> _schedule = new List<Scheduled>();
@@ -58,9 +57,8 @@ namespace RefApp
         /// </summary>
         private async Task Scroll(Grid host)
         {
-            var grid = Bars(1000, false);
+            var sv = ScrollPage(1000);
             var stack = Bars(1000, true);
-            var sv = new ScrollViewer { Name = "scroll", Margin = new Thickness(0, HeaderHeight, 0, 0), Content = grid };
             var header = Header();
             var page = await Page(host, header, sv);
             if (!await WatchScroll(sv))
@@ -89,10 +87,13 @@ namespace RefApp
                 await toStack();
             };
             var first = true;
-            foreach (var flick in new[] { new[] { 240.0, 120 }, new[] { 240.0, 120 }, new[] { 240.0, 400 }, new[] { 240.0, 400 } })
+            foreach (var flick in new[] { new[] { 240.0, 120 }, new[] { 240.0, 400 } })
             {
-                Drag(sv, "stackpanel flick " + Num(flick[0]) + " px in " + Num(flick[1]) + " ms", first ? swap : toStack, x, 650, 650 - flick[0], flick[1], 0, 7000);
-                first = false;
+                for (var i = 0; i < 2; i++)
+                {
+                    Drag(sv, "stackpanel flick " + Num(flick[0]) + " px in " + Num(flick[1]) + " ms, " + (i + 1), first ? swap : toStack, x, 650, 650 - flick[0], flick[1], 0, 7000);
+                    first = false;
+                }
             }
 
             await RunScheduled(page, header);
@@ -358,7 +359,7 @@ namespace RefApp
         {
             _touches++;
             var at = _plannedMs;
-            _schedule.Add(new Scheduled { At = at - 1200, Label = label, Action = setup });
+            _schedule.Add(new Scheduled { At = at - 1200, Label = label, Action = setup, Touch = true });
             Step("down", x, y, target);
             if (stillMs > 0)
             {
@@ -526,7 +527,7 @@ namespace RefApp
                     await Task.Delay(TimeSpan.FromMilliseconds(wait));
                 }
 
-                Log("step", item.Label);
+                Log(item.Touch ? "step" : "action", item.Label);
                 try
                 {
                     await item.Action();
@@ -549,17 +550,7 @@ namespace RefApp
         /// <summary>Renders the page to &lt;name&gt;.png and writes the ScrollViewer's tree, relative to the page, to &lt;name&gt;.json.</summary>
         private async Task Snapshot(Grid page, ScrollViewer sv, string name)
         {
-            var rtb = new RenderTargetBitmap();
-            await rtb.RenderAsync(page);
-            var pixels = (await rtb.GetPixelsAsync()).ToArray();
-            var png = await _out.CreateFileAsync(name + ".png", CreationCollisionOption.ReplaceExisting);
-            using (var stream = await png.OpenAsync(FileAccessMode.ReadWrite))
-            {
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, 96, 96, pixels);
-                await encoder.FlushAsync();
-            }
-
+            var rtb = await TreeDump.RenderPngAsync(_out, name + ".png", page);
             var j = new Json().Obj();
             j.Prop("file", name + ".png");
             j.Key("pixels").Arr().Val(rtb.PixelWidth).Val(rtb.PixelHeight).EndArr();

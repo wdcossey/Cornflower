@@ -85,8 +85,7 @@ for #113 the deceleration fits, the inertia taken after the press, the squash an
 strips, and a list item's held tilt and return.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
-logged and a MenuFlyout rise cut off by the end of the log. It is not run by CI, which builds and tests the .NET
-solution only.
+logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.
 
 ## What they reproduce
 

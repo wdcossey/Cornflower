@@ -624,15 +624,16 @@ and the app sets its starting offset from code 1.2 s before it is due. Every fra
 `20261115-1938-dev11` (`-Probe scroll`). A ScrollViewer 740 view px tall over 100,000 px of content, flicked up from
 offset 2,000: the finger moved 240 px in 60, 80, 120, 200 and 400 ms and 120 px in 400 ms, three times each. The content
 is a Grid of bars, which has no snap points. Times are in ms of animation time, from the frame before the first inertial
-`ViewChanging` (the release's frame) to the first frame at the end.
+frame (the release's frame) to the first frame at the end. A frame is logged only when something on it changed, so the
+release's frame is taken as one tick before the first inertial one, at the offset last logged.
 
 | Flick | Speed at the start (px/ms) | Distance (view px) | Time (ms) |
 |---|---|---|---|
-| 240 px in 60 ms (2 of 3) | 3.27 to 3.29 | 2,219.7 and 2,219.8 | 2,125 to 2,156 |
+| 240 px in 60 ms (2 of 3) | 3.27 | 2,219.7 and 2,219.8 | 2,125 and 2,141 |
 | 240 px in 80 ms | 3.40 to 3.54 | 1,934 to 2,055 | 2,141 |
-| 240 px in 120 ms | 1.88 to 2.27 | 1,141 to 1,385 | 2,094 |
+| 240 px in 120 ms | 1.88 to 2.27 | 1,141 to 1,385 | 2,062 to 2,094 |
 | 240 px in 200 ms | 0.90 to 1.05 | 549 to 647 | 1,609 to 1,719 |
-| 240 px in 400 ms | 0.53 to 0.55 | 307 to 311 | 1,281 to 1,297 |
+| 240 px in 400 ms | 0.54 to 0.55 | 307 to 311 | 1,281 |
 | 120 px in 400 ms | 0.30 to 0.33 | 123 to 146 | 812 to 891 |
 
 The speed at the start is the `a + c v²` fit's (below).
@@ -641,16 +642,15 @@ The speed at the start is the `a + c v²` fit's (below).
   exactly the offset it ends on.
 - **It slows smoothly to a stop**, with no overshoot and no bounce.
 - **Time levels off at about 2.1 s, and distance at about 2,220 px.** Every flick that travelled more than about
-  1,100 px took 2,094 to 2,156 ms. Both 60 ms flicks went 2,219.7 px, as if the start speed were capped.
+  1,100 px took 2,062 to 2,141 ms. Both 60 ms flicks went 2,219.7 px, as if the start speed were capped.
 - **No one simple law fits every speed:**
   - An exponential decay (`offset = end − d e^(−t/τ)`) fits none: rms 19 to 500 view px.
   - A constant deceleration fits the slow flicks. For 120 px in 400 ms: 0.000363 px/ms² (363 view px/s²), rms 0.29 to
-    0.40 px. For 240 px in 400 ms: 0.00040 px/ms², rms 1.3 to 1.5 px. It gets worse as the flick gets faster: rms 5.7
-    to 7.9 px at 200 ms, 20 to 26 px at 120 ms, 35 to 44 px at 60 and 80 ms. A fast flick sheds more speed early on.
-  - A constant deceleration plus a quadratic drag (`dv/dt = −a − c v²`) fits each flick on its own: rms 0.2 to 4.7 px,
-    all but one under 3.6 px. But its constants move with the speed: `a` from 0.00029 to 0.0007 px/ms², `c` from 0 (the
-    slowest flicks) to 0.0019 /px. One `a` and `c` for every flick (0.000531 px/ms² and 0.000675 /px; `scroll.py
-    --shared`) is out by rms 11.6 px over them all, and by up to 20 px rms on a fast one.
+    0.40 px. For 240 px in 400 ms: 0.00040 px/ms², rms 1.5 px. It gets worse as the flick gets faster: rms 5.7 to
+    7.9 px at 200 ms, 21 to 26 px at 120 ms, 36 to 44 px at 60 and 80 ms. A fast flick sheds more speed early on.
+  - A constant deceleration plus a quadratic drag (`dv/dt = −a − c v²`) fits each flick on its own: rms 0.2 to 3.6 px. But its constants move with the speed: `a` from 0.00029 to 0.0007 px/ms², `c` from 0 (the
+    slowest flicks) to 0.0019 /px. One `a` and `c` for every flick (0.000529 px/ms² and 0.000679 /px; `scroll.py
+    --shared`) is out by rms 11.3 px over them all, and by up to 20 px rms on a fast one.
   - So the inertia is close to a constant deceleration of about 0.00036 px/ms² for slow flicks. Faster flicks stop
     sooner than that would give, and the curve's shape changes with the speed. The table and the per-flick fits are
     what to build or test against. Whether to build it as a part or record a deviation is #116's call.
@@ -672,11 +672,11 @@ past the bottom; flicked (240 px in 60 ms) into the top and into the bottom, twi
   indicator state change. DirectManipulation draws it. `scrollend.py` reads it off the recording: the bars' spacing and
   positions in a 12 px strip of each frame, paired with the log by the header's flash.
 - **The content is squashed along the scroll axis, about a point about 1,550 view px past the pulled edge.** Each frame
-  is the content at rest scaled by `s` about that point: 1,519 to 1,553 view px past the edge in all 9 touches, top and
+  is the content at rest scaled by `s` about that point: 1,528 to 1,557 view px past the edge in all 9 touches, top and
   bottom. So the edge moves in by (1 − s) × 1,550 px. What sets 1,550 isn't read: it is neither the content's length
   nor the viewport's (740).
 - **The squash has a limit, `s` = 0.910**, with the edge 139 view px in. A pull of 100 px held still reached `s` 0.959
-  (the edge 62.3 px in), 200 px 0.913 (134.6 px), and 300 and 400 px 0.910 (138.7 px). The bottom pull of 200 px reached
+  (the edge 62.7 px in), 200 px 0.913 (135.0 px), and 300 and 400 px 0.910 (139.1 px). The bottom pull of 200 px reached
   0.913. Every flick into either end reached 0.910.
 - **Let go, it springs back in about 200 ms**: a held pull is at rest 185 to 240 ms after its release. A flick into the
   end squashes to 0.910 in about 130 ms, holds about 100 ms, and is back in about 130 ms more: at rest 570 to 680 ms
