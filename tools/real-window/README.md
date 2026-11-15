@@ -19,8 +19,11 @@ pwsh -NoProfile -File tools/real-window/drive.ps1 -Only 'toggleswitch*,slider*'
 Automation. It is written for PowerShell 7 (`pwsh`, [`tools/README.md`](../README.md#powershell))
 and Windows PowerShell 5.1 alike. Both have run it end to end: 5.1 since #68, and `pwsh` 7.7 on
 2026-11-12, first on `main` at `49e2311` (56 of 56 checks over the ten pages), last at `3bcf02e` (71 of 71 over
-thirteen). The touch, drag and wheel sections (#115) are **owed their first run**: until then, only
-`selftest.ps1` and `RealWindowTests` (below) have checked them.
+thirteen). The touch, drag and wheel sections (#115) first ran on 2026-11-15 under `pwsh`, Debug,
+at `8f9e45a`: 45 of 45 with `-Only` on them, then 115 of 115 for the whole script. Under a held
+touch on the desktop, `:pointerover` is **not set** (Back's corner stays `FF000000`; the mouse
+makes it `FF737373`), as `PhonePress`'s note says from the headless tests. That is the desktop's
+answer, not the phone's.
 
 It builds the sample first, from the repo so that `global.json` picks the SDK, as
 `tools/android/run.ps1` does: a stale build runs the old code, and fails checks the new code passes.
