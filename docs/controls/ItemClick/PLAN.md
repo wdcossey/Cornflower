@@ -98,7 +98,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
    `Without_Multiple_A_Tap_Clicks`.
 9. **The mouse clicks on the left button's release and selects nothing**; the right button clicks nothing.
    `A_Mouse_Clicks_On_The_Left_Buttons_Release_And_Selects_Nothing`; let go off the item, nothing,
-   `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`.
+   `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
+   release, neither button selects, `With_Hold_On_The_Mouse_Neither_Button_Selects`.
 10. **Space and Enter click the focused item.** `Space_And_Enter_Click_The_Focused_Item`.
 11. **A Button in an item takes its own tap.** `A_Button_In_An_Item_Takes_Its_Own_Tap`.
 12. **A list in an item clicks its own item alone**; the event bubbles to the outer list with the inner as its

@@ -70,7 +70,6 @@ public static class ListBoxOptions
 
     public static void SetIsItemClickEnabled(ListBox list, bool value) => list.SetValue(IsItemClickEnabledProperty, value);
 
-
     private static void OnBelowItem(Interactive root, RoutedEventArgs e)
     {
         if (root.GetVisualParent() is ListBoxItem item)

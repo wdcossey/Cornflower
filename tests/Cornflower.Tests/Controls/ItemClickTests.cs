@@ -316,6 +316,27 @@ public class ItemClickTests
         Assert.Equal(0, page.SelectionChanges);
     }
 
+    // With hold on the mouse (Avalonia's IsHoldWithMouseEnabled), Avalonia's item selects on a button's release, not
+    // its press; neither the left button's nor the right's selects, and the left's clicks.
+    [AvaloniaFact]
+    public void With_Hold_On_The_Mouse_Neither_Button_Selects()
+    {
+        using var page = new ClickPage();
+        foreach (var item in page.List.GetRealizedContainers())
+        {
+            InputElement.SetIsHoldWithMouseEnabled(item, true);
+        }
+
+        page.Window.MouseDown(page.On(3), MouseButton.Right);
+        page.Window.MouseUp(page.On(3), MouseButton.Right);
+        page.Window.MouseDown(page.On(2), MouseButton.Left);
+        page.Window.MouseUp(page.On(2), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["item 2"], page.Clicked);
+        Assert.Equal(0, page.SelectionChanges);
+    }
+
     // Space and Enter, which select the focused item in Avalonia's ListBox, click it instead.
     [AvaloniaTheory]
     [InlineData(Key.Enter, PhysicalKey.Enter)]
