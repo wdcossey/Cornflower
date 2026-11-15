@@ -16,7 +16,7 @@
       has a transparent Background of its own, so a press anywhere on it, between the content's parts too, reaches its
       gesture recogniser; the Grid draws the ScrollViewer's. Its
       gesture recogniser and its snap point and inertia bindings are Avalonia's, as in Simple's template. The scroll
-      physics are #113's (PLAN.md, "Scroll physics": pending).
+      physics are Avalonia's, a recorded deviation (PLAN.md, "Scroll physics").
     - PART_VerticalScrollBar, in the second column at the right, and PART_HorizontalScrollBar, in the second row: the
       phone's thin indicators (Controls/ScrollBar.axaml), taking no pointer (styles below).
 

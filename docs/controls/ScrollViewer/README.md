@@ -1,12 +1,12 @@
 # ScrollViewer, ScrollBar and Thumb
 
-Status: in progress (draft) · [#116](https://github.com/wdcossey/CornflowerUI/issues/116) · Compare pending [#113](https://github.com/wdcossey/CornflowerUI/issues/113) (captures, the indicator's recording, the physics) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done · [#116](https://github.com/wdcossey/CornflowerUI/issues/116) · compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s captures, probes and recording (runs `20261115-1921-dev11`, `-1938-`, `-1946-`) · the scroll physics a recorded deviation · owed: the device run on the Pixel 8 · owed: the real-window run (`drive.ps1`'s touch, drag and wheel, #124)
 
 The Windows Phone 8.1 ScrollViewer and its thin scroll indicators: Avalonia's `ScrollViewer`, `ScrollBar` and `Thumb`,
 themed by `Wp81Theme` with the phone's default styles and templates, in
 `src/Cornflower.Themes.Wp81/Controls/ScrollViewer.axaml`, `ScrollBar.axaml` and `Thumb.axaml`, and the indicators shown
 and hidden as WinRT's ScrollViewer shows them, by `PhoneScrollIndicators`, internal to the theme. The plan, with every
-value and its source, is [PLAN.md](PLAN.md); our frames, and the phone's when #113 brings them, are in
+value and its source, is [PLAN.md](PLAN.md); the phone's captures and measurements beside ours are in
 [COMPARISON.md](COMPARISON.md).
 
 ## Usage
@@ -22,7 +22,9 @@ As on the phone: a `ScrollViewer` with no style is the phone's.
 It scrolls up and down; set `HorizontalScrollBarVisibility` to `Auto` or `Visible` to scroll sideways too, as on the
 phone. Nothing is drawn at rest. While the content scrolls, a thin indicator, 2.4 wide in `PhoneBaseLowColor`, shows
 at the right edge (or the bottom), over the content, as long as the view is to the content and as far down as the
-scroll; it goes 50 to 150 ms after the scroll stops. A touch on it pans the content: nothing drags it.
+scroll. It fades in over 370 ms as the scroll starts, and out over 340 ms from 50 to 150 ms after the scroll stops,
+from wherever it had got to, as the phone's does. A touch on it pans the content: nothing drags it. The scrolling
+itself, its inertia and the ends, is Avalonia's: a recorded deviation (PLAN.md, "Scroll physics").
 
 - `Padding` insets what scrolls, and clips it there, as the phone's does.
 - `AllowAutoHide="False"`, Avalonia's, keeps the indicator shown.
@@ -63,7 +65,7 @@ Every later Tier 2 control (ListView, Pivot, Hub, Page) holds this ScrollViewer.
   snap points and visibilities on the ScrollViewer, as the phone's do (Pivot: `HorizontalSnapPointsType`
   `MandatorySingle`, `HorizontalSnapPointsAlignment` `Center`). The bar-less theme binds them to its presenter.
 - **The parts**, in both: `PART_ContentPresenter`, the `ScrollContentPresenter`, with Avalonia's gesture recogniser;
-  where #113's physics would go if they become a part class, so a control holding the ScrollViewer gets them with no
+  where scroll physics of our own would go if they become a part class, so a control holding the ScrollViewer gets them with no
   change. In the indicator theme only: `PART_VerticalScrollBar` and `PART_HorizontalScrollBar`.
 - **Don't** style the ScrollBars from the control's theme: the indicator's state comes from the ScrollViewer
   (`PhoneScrollIndicators.IndicatorMode`, internal), passed to its bars by the ScrollViewer theme.
@@ -86,18 +88,16 @@ indicator's `Thumb`).
 
 ## The ladder
 
-Rung 1, the themes; rung 2, `PhoneScrollIndicators`, set by the ScrollViewer theme. The physics are pending #113: a
-part class (rung 3) or a recorded deviation. No type is substituted.
+Rung 1, the themes; rung 2, `PhoneScrollIndicators`, set by the ScrollViewer theme, and `PhoneIndicatorFade`, set by
+the ScrollBar theme. The physics are a recorded deviation: Avalonia's inertia, no snap points by default, no squash at
+the ends (PLAN.md has the phone's numbers beside Avalonia's, and a part class as the way back). No type is
+substituted.
 
 ## Known gaps
 
-- **No capture yet**: the geometry and colours are the templates' and WinRT's sums, checked against nothing on the
-  phone until #113's captures come.
-- **The fades**: the phone fades the indicator in and out; ours shows and hides it at once until the fades' durations
-  are measured.
-- **The physics**: Avalonia's, pending #113.
+- **The physics**: Avalonia's inertia, with a long tail (2.2 to 3.4 s where the phone's stops in 0.8 to 2.1), no snap
+  points by default (the phone's flick ends on a StackPanel's child), and no squash at the ends: a recorded deviation.
+- **One raw pixel** here and there: the thumb's length, its centring, a slot's width (ADR 0003's rounding).
 - **A press in the `Padding`** doesn't pan: Avalonia's gesture recogniser is the presenter's, and the `Padding` is
   outside it. The phone's pans from anywhere in the ScrollViewer.
-- **A finger held still mid-pan**: the indicator goes 50 to 150 ms after the last move, as the template reads; whether
-  the phone keeps it while the finger is down is for #113's recording.
 - **Zoom, rails and scroll modes**: WinRT's, which Avalonia's ScrollViewer lacks.

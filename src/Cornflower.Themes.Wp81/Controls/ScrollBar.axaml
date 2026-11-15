@@ -22,9 +22,9 @@
 
     The states:
     - ScrollingIndicatorStates, from wp81:PhoneScrollIndicators.IndicatorMode, which the ScrollViewer theme sets from
-      its own state: NoIndicator hides the panning roots, TouchIndicator and MouseIndicator show them. The phone fades
-      them (FadeInThemeAnimation, FadeOutThemeAnimation); the fades' durations aren't measured yet, so ours show and
-      hide at once (a gap: COMPARISON.md).
+      its own state: NoIndicator fades the panning roots out (340 ms), TouchIndicator fades them in (370 ms),
+      MouseIndicator shows them at once, as the phone's do (FadeOutThemeAnimation, FadeInThemeAnimation, measured),
+      by wp81:PhoneIndicatorFade.
     - AllowAutoHide false, Avalonia's, which WinRT lacks, keeps them shown.
     - Disabled draws the root at 0.5. PointerOver changes nothing.
   -->
@@ -87,12 +87,14 @@
       <Setter Property="IsVisible" Value="False" />
     </Style>
 
-    <!-- NoIndicator: hidden. TouchIndicator and MouseIndicator: shown. -->
+    <!--
+      ScrollingIndicatorStates, frame by frame on CornflowerClock (wp81:PhoneIndicatorFade): NoIndicator fades the panning
+      roots out over 340 ms (FadeOutThemeAnimation), TouchIndicator fades them in over 370 ms (FadeInThemeAnimation),
+      each from wherever the other had got to; MouseIndicator, and AllowAutoHide off, show them at once, as the phone's
+      MouseIndicator state runs no animation. Run 20261115-1946-dev11's recording (tools/refapp/README.md).
+    -->
     <Style Selector="^ /template/ Track">
-      <Setter Property="Opacity" Value="0" />
-    </Style>
-    <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=TouchIndicator] /template/ Track, ^[(wp81|PhoneScrollIndicators.IndicatorMode)=MouseIndicator] /template/ Track, ^[AllowAutoHide=False] /template/ Track">
-      <Setter Property="Opacity" Value="1" />
+      <Setter Property="wp81:PhoneIndicatorFade.IsEnabled" Value="True" />
     </Style>
 
     <!-- Disabled: the root at 0.5. -->
