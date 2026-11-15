@@ -34,8 +34,6 @@ GroupBox
 HeaderedContentControl
 ItemsControl
 Label
-ListBox
-ListBoxItem
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
 Menu

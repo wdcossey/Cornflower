@@ -1,0 +1,225 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ListView and ListViewItem, on Avalonia's ListBox and ListBoxItem: the default styles of the
+    8.1 Update 1 runtime (listview.json and listviewitem.json, which equal the SDK's generic.xaml), re-expressed as
+    Avalonia ControlThemes. Every value is the phone's resource key, by DynamicResource, so it follows the theme
+    variant and an app can override it by its key, but for the check mode's two offsets (below).
+    docs/controls/ListView/PLAN.md has the values and their sources.
+
+    The ListView's look is the ListBox's own: the list 8.1 apps write is a ListView, and the phone's ListBox, kept for
+    8.0's apps, is a later tier's, which can take a key of its own.
+
+    ListView: the phone's Border round a ScrollViewer round an ItemsPresenter. The ScrollViewer is a plain one, the
+    phone's with its thin indicators (Controls/ScrollViewer.axaml), named as Avalonia's ListBox looks for it, its
+    values bound from the ListBox's attached ScrollViewer values as the phone's are (docs/controls/ScrollViewer,
+    "How a later control holds it"). The phone's ItemsStackPanel is Avalonia's VirtualizingStackPanel.
+
+    ListViewItem, part for part, with Avalonia's PART_ContentPresenter for the phone's contentPresenter:
+    - OuterContainer, untilted; ReorderHintContent, its Grid, with a transparent background, takes the hits across
+      the item, so a press at its very edge still selects (as the Button's Root).
+    - CheckboxTiltContainer, at the top left inside ListViewItemMultiselectCheckBoxMargin, holds the check box: a
+      25.5 Rectangle in CheckBox's brushes and the tick (Wp81.Glyph.CheckMark at its own size, as CheckBox's), in
+      CheckboxContainer, which sits 40.5 to the left, clipped away by CheckboxOuterContainer's 25.5 square, until the
+      list is in the check mode.
+    - ContentContainer and TiltContainer, the part the phone's PointerDownThemeAnimation targets, so it is marked
+      Tilt.IsTarget: the whole content tilts, the check box doesn't; ContentBorder draws the item's Background,
+      BorderBrush and BorderThickness, and slides 40.5 to the right in the check mode.
+    - SelectedBorder and SelectedCheckMark, at nought opacity: a ListView item never shows them (only GridMultiSelect,
+      a GridView's state, does), but they make an item at least 2.5 + 34 + 2.5 tall, 39.17 once laid out at 2.4,
+      as the phone's are. So the earmark and its tick, which draw only in GridMultiSelect, are left out: they are
+      GridViewItem's.
+    - Left out: the placeholder TextBlock and Rectangle (DataPlaceholder: Avalonia has no data virtualisation), the
+      ScaleTransform and the reorder states (reorder is deferred).
+
+    The visual states: Pressed (Avalonia's :pressed, at once on a press, as the phone's) runs the tilt on
+    TiltContainer; in the check mode, CheckboxPressed fills the box with the accent and draws the tick over it, and
+    the tilt runs on the check box instead. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
+    Update 1 runtime's 0.4) and the box and tick to their disabled brushes. Selected (:selected) shows the tick, which
+    shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme sets
+    on a list whose SelectionMode has Multiple (with Toggle, WinRT's Multiple; without, its Extended, whose selection
+    would otherwise draw nothing), and its items inherit: the box comes in and the content goes over, both over
+    the phone's 0.15 s, linear. Its two offsets are ListViewItemContentOffsetX (-40.5) and
+    ListViewItemContentTranslateX (40.5), written here as literals: a transform transition takes a TransformOperations,
+    which a resource double can't make. PointerOver, focus and SelectedUnfocused change nothing; FocusAdorner is
+    cleared.
+  -->
+
+  <ControlTheme x:Key="{x:Type ListBox}" TargetType="ListBox">
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
+    <Setter Property="ScrollViewer.BringIntoViewOnFocusChange" Value="True" />
+    <!-- Not set by the phone's style: what its ListView inherits from the page. -->
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Out of the check mode, unless the style below says so: set, not inherited, so a list in an item of a list in the
+         check mode has its own. -->
+    <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="False" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <VirtualizingStackPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{TemplateBinding BorderBrush}"
+                Background="{TemplateBinding Background}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}">
+            <ItemsPresenter x:Name="PART_ItemsPresenter"
+                            ItemsPanel="{TemplateBinding ItemsPanel}"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top" />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!--
+      The check mode: any SelectionMode with Multiple (1), alone or with Toggle (2) and AlwaysSelected (4), by value, as a
+      selector's comma can't sit in a flags value. Its items inherit it.
+    -->
+    <Style Selector="^[SelectionMode=1], ^[SelectionMode=3], ^[SelectionMode=5], ^[SelectionMode=7]">
+      <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type ListBoxItem}" TargetType="ListBoxItem">
+    <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
+    <Setter Property="Margin" Value="{DynamicResource ListViewItemMargin}" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Not set by the phone's style: WinRT's own default, which Avalonia's ContentControl's is not. The tilted content
+         draws past the item's edges, as the phone's does, and the check box's own clip hides it at rest. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="OuterContainer">
+          <Grid x:Name="ReorderHintContent" Background="Transparent">
+            <Border x:Name="CheckboxTiltContainer"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="{DynamicResource ListViewItemMultiselectCheckBoxMargin}">
+              <Border x:Name="CheckboxOuterContainer">
+                <Border.Clip>
+                  <RectangleGeometry Rect="0,0,25.5,25.5" />
+                </Border.Clip>
+                <Grid x:Name="CheckboxContainer" RenderTransform="translateX(-40.5px)">
+                  <Grid.Transitions>
+                    <Transitions>
+                      <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+                    </Transitions>
+                  </Grid.Transitions>
+                  <Rectangle x:Name="NormalRectangle"
+                             Width="25.5"
+                             Height="25.5"
+                             Fill="{DynamicResource CheckBoxBackgroundThemeBrush}"
+                             Stroke="{DynamicResource CheckBoxBorderThemeBrush}"
+                             StrokeThickness="{DynamicResource CheckBoxBorderThemeThickness}" />
+                  <Path x:Name="CheckGlyph"
+                        IsHitTestVisible="False"
+                        Opacity="0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Fill="{DynamicResource CheckBoxForegroundThemeBrush}"
+                        Data="{DynamicResource Wp81.Glyph.CheckMark}" />
+                </Grid>
+              </Border>
+            </Border>
+            <Border x:Name="ContentContainer">
+              <Border x:Name="TiltContainer" cf:Tilt.IsTarget="True">
+                <Border x:Name="ContentBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        RenderTransform="none">
+                  <Border.Transitions>
+                    <Transitions>
+                      <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+                    </Transitions>
+                  </Border.Transitions>
+                  <ContentPresenter x:Name="PART_ContentPresenter"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    wp81:PhoneHeaderLine.IsEnabled="True" />
+                </Border>
+              </Border>
+            </Border>
+            <Border x:Name="SelectedBorder"
+                    IsHitTestVisible="False"
+                    Opacity="0"
+                    BorderBrush="{DynamicResource ListViewItemSelectedBackgroundThemeBrush}"
+                    BorderThickness="{DynamicResource GridViewItemMultiselectBorderThickness}">
+              <Panel x:Name="SelectedCheckMark"
+                     Width="34"
+                     Height="34"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Top" />
+            </Border>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:selected /template/ Path#CheckGlyph">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <!-- ListMultiSelect: the box comes in, the content goes over, and a press tilts the box (CheckboxPressed). -->
+    <Style Selector="^[(wp81|PhoneListMultiSelect.IsOn)=True]">
+      <Style Selector="^ /template/ Grid#CheckboxContainer">
+        <Setter Property="RenderTransform" Value="translateX(0px)" />
+      </Style>
+      <Style Selector="^ /template/ Border#ContentBorder">
+        <Setter Property="RenderTransform" Value="translateX(40.5px)" />
+      </Style>
+      <Style Selector="^ /template/ Border#CheckboxTiltContainer">
+        <Setter Property="cf:Tilt.IsTarget" Value="True" />
+      </Style>
+      <Style Selector="^ /template/ Border#TiltContainer">
+        <Setter Property="cf:Tilt.IsTarget" Value="False" />
+      </Style>
+      <Style Selector="^:pressed /template/ Rectangle#NormalRectangle">
+        <Setter Property="Fill" Value="{DynamicResource CheckBoxPressedBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^:pressed /template/ Path#CheckGlyph">
+        <Setter Property="Fill" Value="{DynamicResource CheckBoxPressedForegroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Opacity" Value="{DynamicResource ListViewItemDisabledThemeOpacity}" />
+      </Style>
+      <Style Selector="^ /template/ Rectangle#NormalRectangle">
+        <Setter Property="Stroke" Value="{DynamicResource CheckBoxDisabledBorderThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ Path#CheckGlyph">
+        <Setter Property="Fill" Value="{DynamicResource CheckBoxDisabledForegroundThemeBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
