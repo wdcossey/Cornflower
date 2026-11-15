@@ -507,6 +507,21 @@ def linfit(xs, ys):
     return my - b * mx, b
 
 
+def tick0_times(turns, vals, ticks, tol=0.3):
+    """When each turn's tick 0 was on the screen, in ms after its step: (times, how many turns were left out). A turn is
+    (its first frame's time after its step, ms; its first frame's value). Its first frame is on the tick of the ladder
+    value (vals, ticks) it equals, within tol, and tick 0 is that many 15.625 ms steps earlier. A turn whose first value
+    is on no step (one caught between two, or left out of the ladder) is left out: its tick isn't known."""
+    out, left = [], 0
+    for t, v in turns:
+        i = min(range(len(vals)), key=lambda j: abs(vals[j] - v))
+        if abs(vals[i] - v) > tol:
+            left += 1
+            continue
+        out.append(t - ticks[i] * TICK)
+    return out, left
+
+
 def off_ladder(vals, tol=0.03):
     """The distinct values that sit between two others a step apart (their ratio within tol of the median step), so
     are no step of their own: a recorded frame caught between two steps, or drawn while the screen was grabbed. It

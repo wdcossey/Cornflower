@@ -985,7 +985,8 @@ same.
 
 ### Pivot's header strip (2026-11-15, device 11, #114)
 
-`20261115-2056-dev11` (`-Probe pivot -Record`, `tools/motion/pivot.py`): a Pivot of four items, headers "one" to "four",
+`20261115-2056-dev11` (`-Probe pivot -Record`, `tools/motion/pivot.py`; again without the recording after review,
+`20261115-2136-dev11`, every number the same or in the ranges given): a Pivot of four items, headers "one" to "four",
 below the header band. Swipes left (200 px in 150 ms) from each item, twice round (the swipe from "four" wraps to "one");
 a swipe right from "one" (it wraps to "four"); a tap on the header "two" and on "three" from "one"; a drag of 100 px
 held and let go. The Pivot's ScrollViewer reads DirectManipulation's offset, and the header items' and the
@@ -997,18 +998,20 @@ earlier than the log has them (checked on the first swipe, header and content).
   "two", 0.30462 for "three", 0.24909 for "four". Each is that header's pitch over the page's 450 px: the next header's
   left edge less its own (106.67, 103.75, 137.08), which is its width plus 15.83. So when the content has moved a page,
   the next header has come to where this one was. Going right, from "one", it moves at "four"'s 0.24907: the pitch of
-  the header coming in. On the wrap the strip goes on the same way; "four"'s pitch to the "one" after it is 112.1.
+  the header coming in. On the wrap the strip goes on the same way: "four" moves 0.24909 px a px, a pitch of 112.1 (0.24909 × 450) to
+  the "one" after it.
 - **Once the new item is chosen, the header that left goes to the end.** On the frame the new item jumps in, the
   header that was selected, by then partly off the left edge (its left edge at −52), moves to after the last (402); the
   others keep their places. The header panel's translate is reset when the offset settles, with no move on the screen.
-- **The selection changes during the swipe**, 209 to 237 ms after the press (stopwatch), once the inertia is under way,
-  and at the release of a header tap (49 and 71 ms after its press).
+- **The selection changes during the swipe**, 188 to 241 ms after the press (stopwatch; 168 and 174 ms swiping right),
+  once the inertia is under way, and at the release of a header tap (49 to 74 ms after its press).
 - **The content isn't the offset's.** The old item goes with the finger and the offset. When the selection changes,
   the ItemsPresenter's translate jumps to put the new item 450 px beyond it, and the new item then slides in on its own:
   one frame at 450, then an `ExponentialEase` (exponent 4) over 400 ms to 0, the same fractions a frame on every swipe,
   wrap and tap to four places (0.8526, 0.7266, 0.6188, 0.5266, …; exponent 4 over 400 ms fits all 25 distinct
   fractions to rms 0.003, 1.4 px of 450). A tap on "three", two pages on, does the same, from 450 px.
-- **The offset settles** 625 to 672 ms (rt) after the first frame after a swipe's press, and 516 to 531 ms after a tap.
+- **The offset travels exactly 450 px a swipe and settles** 609 to 672 ms (rt) after the first frame after the press,
+  and 516 to 531 ms after a tap (900 px for "three", two pages).
   A drag of 100 px held 300 ms and let go goes back: the offset returns to where it was.
 - Clocks: the per-frame values are on `RenderingTime` (15.625 ms a step); the selection times are the stopwatch's.
 

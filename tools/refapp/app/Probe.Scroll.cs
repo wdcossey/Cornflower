@@ -423,22 +423,19 @@ namespace RefApp
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.VerticalOffset) + " final " + Num(e.FinalView.VerticalOffset) + " inertial " + e.IsInertial + (e.NextView.ZoomFactor != 1 ? " zoom " + Num(e.NextView.ZoomFactor) : ""));
             sv.ViewChanged += (s, e) => Log("viewchanged", Num(sv.VerticalOffset) + " intermediate " + e.IsIntermediate);
 
-            // The values are compared as they are read, every frame; the line is built only when one changed.
-            double[] now = null;
+            // The values are compared as they are read, every frame; the line is built from them only when one changed.
             WatchFrames(() =>
             {
                 try
                 {
                     var tb = Bounds(thumb);
-                    now = new[] { sv.VerticalOffset, root.Opacity, bar.Opacity, tb.X, tb.Y, tb.Width, tb.Height, (int)bar.IndicatorMode };
+                    return new[] { sv.VerticalOffset, root.Opacity, bar.Opacity, tb.X, tb.Y, tb.Width, tb.Height, (int)bar.IndicatorMode };
                 }
                 catch (ArgumentException)
                 {
-                    now = new[] { sv.VerticalOffset };
+                    return new[] { sv.VerticalOffset };
                 }
-
-                return now;
-            }, () => "offset " + Num(now[0]) + (now.Length == 1 ? " thumb not in the tree" : " root " + Num(now[1]) + " bar " + Num(now[2]) + " thumb " + Num(now[3]) + " " + Num(now[4]) + " " + Num(now[5]) + " " + Num(now[6]) + " mode " + (ScrollingIndicatorMode)(int)now[7]));
+            }, now => "offset " + Num(now[0]) + (now.Length == 1 ? " thumb not in the tree" : " root " + Num(now[1]) + " bar " + Num(now[2]) + " thumb " + Num(now[3]) + " " + Num(now[4]) + " " + Num(now[5]) + " " + Num(now[6]) + " mode " + (ScrollingIndicatorMode)(int)now[7]));
             return true;
         }
 

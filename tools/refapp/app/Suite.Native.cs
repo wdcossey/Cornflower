@@ -266,7 +266,8 @@ namespace RefApp
                             bar.IsOpen = true;
                             return Task.FromResult(true);
                         });
-                        if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
+                        var didOpen = await Task.WhenAny(opened.Task, Task.Delay(3000)) == opened.Task;
+                        if (!didOpen)
                         {
                             _errors.Add(what + ": Opened never came");
                         }
@@ -281,7 +282,8 @@ namespace RefApp
                             bar.IsOpen = false;
                             return Task.FromResult(true);
                         });
-                        if (await Task.WhenAny(closed.Task, Task.Delay(3000)) != closed.Task)
+                        // A bar that never opened has nothing to close: no Closed comes, and nothing animates.
+                        if (didOpen && await Task.WhenAny(closed.Task, Task.Delay(3000)) != closed.Task)
                         {
                             // Never take a popup away mid-animation (README): leave this bar, and stop the app bar readings.
                             _errors.Add(what + ": Closed never came; the bar is left on the page and the app bar readings stop");

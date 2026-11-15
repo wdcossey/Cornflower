@@ -573,6 +573,9 @@ def torn_frames_and_off_ladder():
     extra = vals[:11] + [-6.5] + vals[11:]
     assert ml.off_ladder(vals) == [], ml.off_ladder(vals)
     assert ml.off_ladder(extra) == [-6.5], ml.off_ladder(extra)
+    # Each turn's tick 0: its first frame's time less its tick's steps; a first value on no step is left out.
+    times, left = ml.tick0_times([(10.0, -53.8), (5.0, -67.0), (40.0, -43.12), (3.0, -60.0)], [-67.0, -53.8, -43.1], [0, 1, 2])
+    assert left == 1 and [round(t, 3) for t in times] == [-5.625, 5.0, 8.75], (times, left)
 
 
 @check
@@ -584,8 +587,10 @@ def pivot_header_and_slide():
     with tempfile.TemporaryDirectory() as run:
         with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
             line = '%.1f\tframe\trt %g offset %g index %d panel [p] items [translate %g 0] itemsAt %g | one %g op 1 cp none | two %g op 1 cp none\n'
+            f.write('0.0\tlayout\theader one 15.84 115.4 90.83 82.5\n0.0\tlayout\theader two 122.51 115.4 87.92 82.5\n')
+            # As in a real run, the frame at rest is logged before the touch's step, not in its segment.
+            f.write(line % (50.0, 1000, 1000, 0, 1000, 0, 15.84, 122.51))
             f.write('100.0\tstep\tswipe left\n')
-            f.write(line % (110.0, 1000, 1000, 0, 1000, 0, 15.84, 122.51))
             f.write('200.0\tpressed\tpivot 380 450 ts 1\n')
             f.write('210.0\tcapturelost\tpivot 380 450 ts 1\n')
             for k in range(1, 9):
@@ -599,6 +604,7 @@ def pivot_header_and_slide():
     assert code == 0, out
     assert 'header "one" moves 0.23706 px a px of offset' in out, out
     assert 'slides in from 450.00 px: at 0 after 406.' in out and '16:0.8526 31:0.7266' in out, out
+    assert 'offset +450.00' in out, out  # from the frame at rest, logged before the step
     with tempfile.TemporaryDirectory() as run:
         with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
             for k in range(40):

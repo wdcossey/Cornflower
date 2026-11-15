@@ -45,9 +45,9 @@ with ml.Recording(run, opts['--gray']) as rec:
 segs = ml.segments(rows)
 turns = [(t, d) for t, d in ml.steps(run) if d.split()[1] in ('default', 'CommonNavigationTransitionInfo')]
 lag, pairs, lags = ml.match_steps([s[0][1] for s in segs], [t / 1000 for t, d in turns], what='turnstile turns')
-forward = [segs[j] for j, (t, d) in zip(pairs, turns) if d.startswith('forward')]
-back = [segs[j] for j, (t, d) in zip(pairs, turns) if d.startswith('back')]
-steps_of = {id(segs[j]): t / 1000 for j, (t, d) in zip(pairs, turns)}
+# Each turn as (its step's time in s, its frames).
+forward = [(t / 1000, segs[j]) for j, (t, d) in zip(pairs, turns) if d.startswith('forward')]
+back = [(t / 1000, segs[j]) for j, (t, d) in zip(pairs, turns) if d.startswith('back')]
 print('%d turns in the log, %d forward and %d back in the recording; each starts %.3f to %.3f s after its step '
       '(recording time - app time)' % (len(turns), len(forward), len(back), min(lags), max(lags)))
 
@@ -69,12 +69,10 @@ def untorn(seg):
     return out
 
 
-step_at = {}
-for group in (forward, back):
-    for i, sg in enumerate(group):
-        clean = untorn(sg)
-        step_at[id(clean)] = steps_of[id(sg)]
-        group[i] = clean
+forward = [(st, untorn(sg)) for st, sg in forward]
+back = [(st, untorn(sg)) for st, sg in back]
+forward_steps, forward = [st for st, _ in forward], [sg for _, sg in forward]
+back_steps, back = [st for st, _ in back], [sg for _, sg in back]
 print('%d frames left out that no rotation about the axis fits within %.0f px (torn: grabbed mid-draw)%s'
       % (len(torn), TORN, ': ' + ', '.join('%.1f (%.1f px)' % a for a in torn[:12]) if torn else ''))
 
@@ -102,7 +100,7 @@ for a in fwd:
 print('forward, the first angle shown: %s' % ', '.join('%.1f in %d' % (v, n) for v, n in sorted(firsts.items(), key=lambda x: -x[1])))
 
 first_tick = {}
-for name, runs, segs_ in (('forward', fwd, forward), ('back', bk, back)):
+for name, runs, segs_, steps_ in (('forward', fwd, forward, forward_steps), ('back', bk, back, back_steps)):
     vals = ml.distinct([v for a in runs for _, v in a], decimals=1, tol=0.25, min_abs=0.9)
     off = ml.off_ladder(vals)
     if off:
@@ -113,28 +111,18 @@ for name, runs, segs_ in (('forward', fwd, forward), ('back', bk, back)):
     print('  ticks %s (median ratio %.4f)' % (ticks, r0))
     ml.print_fits(vals, ticks, (('ExponentialEase 6', ml.expo_out(6)), ('ExponentialEase 5', ml.expo_out(5))), ' deg')
     # The same ease starting on the first value shown (tick 0), its start and duration free.
-    f6 = ml.expo_out(6)
-    best = None
-    for dur in range(300, 601, 5):
-        g = [1 - f6(min(1.0, k * ml.TICK / dur)) for k in ticks]
-        a = sum(v * x for v, x in zip(vals, g)) / sum(x * x for x in g)
-        rms = math.sqrt(sum((v - a * x) ** 2 for v, x in zip(vals, g)) / len(vals))
-        if best is None or rms < best[0]:
-            best = (rms, dur, a)
-    print('  ExponentialEase 6 from tick 0: from %.2f over %d ms, rms %.3f deg' % (best[2], best[1], best[0]))
-    # When each turn's first step (tick 0, the largest angle) is on the screen: the first frame's time after its step,
-    # less the steps it is past tick 0 at 15.625 ms each.
-    t0s = []
-    for a, seg in zip(runs, segs_):
-        if not a:
-            continue
-        # The tick of the distinct value the first frame is nearest: the ease's ratio a step drifts along it.
-        k = ticks[min(range(len(vals)), key=lambda i: abs(vals[i] - a[0][1]))]
-        t0s.append((seg[0][1] - (step_at[id(seg)] + lag)) * 1000 - k * ml.TICK)
+    rms6, dur6, _, a6 = ml.fit_scaled(vals, ticks, ml.expo_out(6), durations=range(300, 601, 5), phases=[0])
+    print('  ExponentialEase 6 from tick 0: from %.2f over %d ms, rms %.3f deg' % (a6, dur6, rms6))
+    # When each turn's tick 0 was on the screen (motionlib.tick0_times).
+    turns_ = [((seg[0][1] - (st + lag)) * 1000, a[0][1]) for a, seg, st in zip(runs, segs_, steps_) if a and seg]
+    t0s, left = ml.tick0_times(turns_, vals, ticks)
     first_tick[name] = t0s
-    print('  tick 0 on the screen %.1f ms after the step (the mean; sd %.1f, %d turns; recording time against the log, paired by the lag above)'
-          % (statistics.mean(t0s), statistics.stdev(t0s), len(t0s)))
-if first_tick.get('forward') and first_tick.get('back'):
+    if len(t0s) >= 2:
+        print('  tick 0 on the screen %.1f ms after the step (the mean; sd %.1f, %d turns%s; recording time against the log, paired by the lag above)'
+              % (statistics.mean(t0s), statistics.stdev(t0s), len(t0s), ', %d left out, their first value on no step' % left if left else ''))
+    else:
+        print('  tick 0: too few turns to time (%d)' % len(t0s))
+if len(first_tick.get('forward', [])) >= 2 and len(first_tick.get('back', [])) >= 2:
     f, b = first_tick['forward'], first_tick['back']
     err = math.sqrt(statistics.variance(f) / len(f) + statistics.variance(b) / len(b))
     print('forward against back: tick 0 %+.1f ms later (standard error %.1f); a hidden step before the first one shown would make it %.1f'

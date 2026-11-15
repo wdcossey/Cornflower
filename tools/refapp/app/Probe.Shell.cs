@@ -60,6 +60,7 @@ namespace RefApp
                 Log("layout", "header " + (item.Content ?? "?") + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height));
             }
 
+            Log("layout", "items " + string.Join(" ", pivot.Items.OfType<PivotItem>().Select(i => i.Header)));
             var ib = Bounds(items);
             Log("layout", "items " + Num(ib.X) + " " + Num(ib.Y) + " " + Num(ib.Width) + " " + Num(ib.Height) + " scroll extent " + Num(sv.ExtentWidth) + " viewport " + Num(sv.ViewportWidth));
             var presenters = new Dictionary<PivotHeaderItem, FrameworkElement>();
@@ -68,8 +69,12 @@ namespace RefApp
                 FrameworkElement p;
                 if (!presenters.TryGetValue(item, out p))
                 {
+                    // Kept only once found: an item not yet templated is looked at again next frame.
                     p = Find(item, "ContentPresenter");
-                    presenters[item] = p;
+                    if (p != null)
+                    {
+                        presenters[item] = p;
+                    }
                 }
 
                 return p;
@@ -88,7 +93,7 @@ namespace RefApp
                 }
 
                 return key.ToArray();
-            }, () =>
+            }, key =>
             {
                 var text = new StringBuilder();
                 text.Append("offset ").Append(Num(sv.HorizontalOffset)).Append(" index ").Append(pivot.SelectedIndex);
@@ -186,7 +191,7 @@ namespace RefApp
                 }
 
                 return key.ToArray();
-            }, () =>
+            }, key =>
             {
                 var text = new StringBuilder();
                 text.Append("offset ").Append(Num(sv.HorizontalOffset));
@@ -234,74 +239,6 @@ namespace RefApp
                     yield return item;
                 }
             }
-        }
-
-        /// <summary>The element's left edge in the window, or NaN when it isn't in the tree.</summary>
-        private static double Left(FrameworkElement element)
-        {
-            try
-            {
-                return element.TransformToVisual(null).TransformPoint(new Point(0, 0)).X;
-            }
-            catch (ArgumentException)
-            {
-                return double.NaN;
-            }
-        }
-
-        /// <summary>A transform's values, "none" for none or the identity (<see cref="AnyTransform"/>).</summary>
-        private static string Value(Transform transform)
-        {
-            var t = AnyTransform(transform);
-            return t.Length > 0 ? "[" + t + "]" : "none";
-        }
-
-        /// <summary>
-        /// Every frame, from CompositionTarget.Rendering, reads <paramref name="key"/>, the raw values a frame's line shows,
-        /// and only when one has changed since the last frame builds the line with <paramref name="format"/> and logs it
-        /// with the frame's RenderingTime: the work on a frame where nothing moved is the key alone. Stops when the run
-        /// finishes. The scroll probes and the shell probes share it.
-        /// </summary>
-        private void WatchFrames(Func<double[]> key, Func<string> format)
-        {
-            double[] last = null;
-            EventHandler<object> frame = null;
-            frame = (s, e) =>
-            {
-                if (_finished)
-                {
-                    CompositionTarget.Rendering -= frame;
-                    return;
-                }
-
-                var now = key();
-                if (last != null && last.SequenceEqual(now))
-                {
-                    return;
-                }
-
-                last = now;
-                var args = e as RenderingEventArgs;
-                Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + format());
-            };
-            CompositionTarget.Rendering += frame;
-        }
-
-        /// <summary>A transform's effect as numbers, for a frame's key: where it takes (0, 0) and (1, 1); NaN for none.</summary>
-        private static void AddKey(List<double> key, Transform transform)
-        {
-            if (transform == null)
-            {
-                key.Add(double.NaN);
-                return;
-            }
-
-            var a = transform.TransformPoint(new Point(0, 0));
-            var b = transform.TransformPoint(new Point(1, 1));
-            key.Add(a.X);
-            key.Add(a.Y);
-            key.Add(b.X);
-            key.Add(b.Y);
         }
     }
 }

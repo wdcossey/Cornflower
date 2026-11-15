@@ -32,7 +32,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
-PIVOT = re.compile(r'rt ([\d.]+) offset ([-\d.]+) index (\d+) panel (\S+|\[[^\]]*\]) items (\[translate ([-\d.]+) [-\d.]+\]|\S+) itemsAt ([-\d.]+|NaN)(.*)$')
+PIVOT = re.compile(r'rt ([\d.]+) offset ([-\d.]+) index (-?\d+) panel (.*?) items (.*?) itemsAt ([-\d.]+|NaN)( \|.*)?$')
+TRANSLATE = re.compile(r'^\[translate ([-\d.]+) [-\d.]+\]$')
 HEADER = re.compile(r'\| (\S+) ([-\d.]+|NaN) op')
 HUB = re.compile(r'rt ([\d.]+) offset ([-\d.]+) header ([-\d.]+)')
 
@@ -48,15 +49,22 @@ def pivot_frames(seg):
         m = PIVOT.match(d)
         if not m:
             raise SystemExit('a frame line this script can\'t read, at %.1f ms: %s' % (t, d))
-        items = float(m.group(6)) if m.group(6) is not None else 0.0 if m.group(5) == 'none' else float('nan')
-        heads = {h: float(x) for h, x in HEADER.findall(m.group(8))}
+        tr = TRANSLATE.match(m.group(5))
+        items = float(tr.group(1)) if tr else 0.0 if m.group(5) == 'none' else float('nan')
+        heads = {h: float(x) for h, x in HEADER.findall(m.group(7) or '')}
         out.append((t, float(m.group(1)), float(m.group(2)), int(m.group(3)), m.group(4), items, heads))
     return out
 
 
 def pivot(rows, segs):
-    names = None
+    # The items' headers in their order, which SelectedIndex counts in: the probe's "layout items" line, or, in the
+    # first runs, the "layout header" lines, logged in the panel's order at rest with item 0 selected.
+    listed = next((d.split()[1:] for t, w, d in rows if w == 'layout' and d.startswith('items ') and ' scroll ' not in d), None)
+    names = listed or [d.split()[1] for t, w, d in rows if w == 'layout' and d.startswith('header ')]
     slides = []
+    first_step = next((t for t, w, d in rows if w == 'step'), None)
+    before = pivot_frames([r for r in rows if first_step is None or r[0] < first_step])
+    last = before[-1] if before else None
     for label, seg in segs:
         fr = pivot_frames(seg)
         press = next((t for t, w, d in seg if w == 'pressed'), None)
@@ -66,11 +74,12 @@ def pivot(rows, segs):
         if not fr or not moving:
             continue
         print('\n%s' % label)
+        # A frame is logged only when something changed, so between touches there is often none: the last frame before
+        # the press is then the last one logged before this segment.
         rest = [f for f in fr if press is None or f[0] < press]
-        start = rest[-1] if rest else fr[0]
+        start = rest[-1] if rest else last if last is not None else fr[0]
+        last = fr[-1]
         end = fr[-1]
-        if names is None:
-            names = list(start[6].keys())
         print('  pressed at %.1f; %s at %+.1f; selection %s at %+.1f ms (stopwatch); offset %+.2f, to its end at rt %+.1f from the first frame after the press'
               % (press, 'released' if release is not None else '-', (release - press) if release is not None else float('nan'),
                  end[3], (sel - press) if sel is not None else float('nan'), end[2] - start[2], end[1] - moving[0][1]))
@@ -88,8 +97,9 @@ def pivot(rows, segs):
             ys = [f[6][h] for f in span]
             a, b = ml.linfit(xs, ys)
             worst = max(abs(y - (a + b * x)) for x, y in zip(xs, ys))
-            nxt = names[(start[3] + 1) % len(names)]
-            pitch = start[6][nxt] - start[6][h] if start[3] + 1 < len(names) and nxt in start[6] else float('nan')
+            # The pitch to the next header at rest; the last one's next is the first, which isn't after it at rest.
+            nxt = names[start[3] + 1] if start[3] + 1 < len(names) else None
+            pitch = start[6][nxt] - start[6][h] if nxt in start[6] else float('nan')
             print('  header "%s" moves %.5f px a px of offset, against it, over %d frames (worst %.3f px); its pitch %.3f over 450 is %.5f'
                   % (h, -b, len(span), worst, pitch, pitch / 450 if pitch == pitch else float('nan')))
         # The new item's slide in, from the selection change.
@@ -104,12 +114,13 @@ def pivot(rows, segs):
             first = after[0][5] - final
             vals = [(f[1] - after[0][1], (f[5] - final) / first) for f in after if first]
             vals = vals[:next((i for i, v in enumerate(vals) if v[1] <= 0), len(vals) - 1) + 1]
-            if not vals:
-                print('  no slide in: the translate is at the final offset from the selection on')
+            if not vals or vals[0][1] != vals[0][1]:
+                print('  no slide in read: the translate is at the final offset from the selection on, or is not a translate')
                 continue
+            reached = vals[-1][1] <= 0
             ratios = [(b / a) ** (ml.TICK / (tb - ta)) for (ta, a), (tb, b) in zip(vals, vals[1:]) if a > 0.05 and b > 0 and tb > ta]
-            print('  the new item slides in from %.2f px: at 0 after %.1f ms of rt; %s; a tick: %s'
-                  % (first, vals[-1][0], ' '.join('%.0f:%.4f' % v for v in vals[:8]) + ' ...',
+            print('  the new item slides in from %.2f px: %s %.1f ms of rt; %s; a tick: %s'
+                  % (first, 'at 0 after' if reached else 'not at 0 by the end of the log,', vals[-1][0], ' '.join('%.0f:%.4f' % v for v in vals[:8]) + ' ...',
                      'median %.4f' % ml.median(ratios) if ratios else '-'))
             slides.extend(v for _, v in vals if v > 0.001)
     if slides:
