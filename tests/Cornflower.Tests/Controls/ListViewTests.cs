@@ -192,7 +192,8 @@ public class ListViewTests
         Assert.Equal(Foreground(variant == "Dark"), ColourOf(list.Foreground));
         Assert.Null(list.FocusAdorner);
         Assert.IsType<VirtualizingStackPanel>(list.ItemsPanelRoot);
-        Assert.True(PhoneListMultiSelect.GetIsEnabled(list));
+        list.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Assert.True(PhoneListMultiSelect.GetIsOn(list));
     }
 
     // The phone's template holds a plain ScrollViewer, with the thin indicators, its values bound from the ListView's
@@ -208,6 +209,9 @@ public class ListViewTests
         ScrollViewer.SetIsDeferredScrollingEnabled(list, true);
         ScrollViewer.SetBringIntoViewOnFocusChange(list, false);
         ScrollViewer.SetAllowAutoHide(list, false);
+        ScrollViewer.SetIsScrollInertiaEnabled(list, false);
+        ScrollViewer.SetVerticalSnapPointsType(list, SnapPointsType.MandatorySingle);
+        ScrollViewer.SetHorizontalSnapPointsType(list, SnapPointsType.Mandatory);
         Dispatcher.UIThread.RunJobs();
 
         var viewer = Part<ScrollViewer>(list, "PART_ScrollViewer");
@@ -219,6 +223,9 @@ public class ListViewTests
         Assert.True(viewer.IsDeferredScrollingEnabled);
         Assert.False(viewer.BringIntoViewOnFocusChange);
         Assert.False(viewer.AllowAutoHide);
+        Assert.False(viewer.IsScrollInertiaEnabled);
+        Assert.Equal(SnapPointsType.MandatorySingle, viewer.VerticalSnapPointsType);
+        Assert.Equal(SnapPointsType.Mandatory, viewer.HorizontalSnapPointsType);
     }
 
     // ----- The item's style and template -----
@@ -429,6 +436,18 @@ public class ListViewTests
         Assert.True(IsOn(first));
     }
 
+    // The mode is the list's, inherited by its items, and a list in an item of a list in the check mode has its own.
+    [AvaloniaFact]
+    public void A_List_In_An_Item_Has_Its_Own_Mode()
+    {
+        var inner = new ListBox { ItemsSource = new[] { "a", "b" } };
+        var outer = new ListBox { SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle, Items = { new ListBoxItem { Content = inner } } };
+        using var scene = new Scene(outer);
+
+        Assert.True(IsOn((ListBoxItem)outer.ContainerFromIndex(0)!));
+        Assert.All(inner.GetRealizedContainers().Cast<ListBoxItem>(), i => Assert.False(IsOn(i)));
+    }
+
     // An item outside a list is never in the check mode, and a list in a theme of the app's own lets its items go.
     [AvaloniaFact]
     public void An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode()
@@ -445,7 +464,7 @@ public class ListViewTests
             ? (ControlTheme)simple!
             : throw new InvalidOperationException("No ListBox theme in Simple.");
         Dispatcher.UIThread.RunJobs();
-        Assert.False(PhoneListMultiSelect.GetIsEnabled(list.List));
+        Assert.False(PhoneListMultiSelect.GetIsOn(list.List));
         Assert.All(list.List.GetRealizedContainers().Cast<ListBoxItem>(), i => Assert.False(IsOn(i)));
     }
 

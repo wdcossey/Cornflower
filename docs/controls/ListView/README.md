@@ -4,7 +4,7 @@ Status: done · [#119](https://github.com/wdcossey/CornflowerUI/issues/119) · p
 
 The Windows Phone 8.1 ListView and ListViewItem: Avalonia's `ListBox` and `ListBoxItem`, themed by `Wp81Theme` with the
 phone's default styles and the item's template, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`; the phone's
-check mode by `PhoneListMultiSelect`, internal to the theme; the press the Button's tilt. The plan, with every value and
+check mode by `PhoneListMultiSelect.IsOn`, internal to the theme, which the list sets and its items inherit; the press the Button's tilt. The plan, with every value and
 its source, is [PLAN.md](PLAN.md); the phone's captures and measurements beside ours are in
 [COMPARISON.md](COMPARISON.md).
 
@@ -81,8 +81,8 @@ ScrollViewer is Avalonia's `PART_ScrollViewer`, its presenter `PART_ItemsPresent
 
 ## The ladder
 
-Rung 1, the themes; rung 2, `PhoneListMultiSelect` (the check mode, set by the ListView theme on each item as it is
-prepared) and `Tilt` (the press). No type is substituted: an app's `ListBox` is the ListView.
+Rung 1, the themes, with `PhoneListMultiSelect.IsOn` (the check mode, an inherited attached property of the theme's
+own, set on the list by its theme from `SelectionMode`); rung 2, `Tilt` (the press). No type is substituted: an app's `ListBox` is the ListView.
 
 ## Extensions
 

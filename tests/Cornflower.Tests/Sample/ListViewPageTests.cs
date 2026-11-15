@@ -31,7 +31,7 @@ public class ListViewPageTests
 
         var lists = page.GetVisualDescendants().OfType<ListBox>().ToList();
         Assert.Equal(4, lists.Count);
-        Assert.All(lists, list => Assert.True(PhoneListMultiSelect.GetIsEnabled(list)));
+        Assert.All(lists, list => Assert.Equal(list.Name != "Default" && list.Name != "Strings", PhoneListMultiSelect.GetIsOn(list)));
         Assert.All(lists.SelectMany(l => l.GetRealizedContainers()), item => Assert.True(Cornflower.Controls.Tilt.GetIsEnabled(item)));
         Assert.False(page.FindControl<ListBox>("Disabled")!.IsEnabled);
         Assert.All(page.FindControl<ListBox>("Light")!.GetRealizedContainers(), item => Assert.True(item.GetValue(PhoneListMultiSelect.IsOnProperty)));

@@ -38,9 +38,9 @@
     TiltContainer; in the check mode, CheckboxPressed fills the box with the accent and draws the tick over it, and
     the tilt runs on the check box instead. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
     Update 1 runtime's 0.4) and the box and tick to their disabled brushes. Selected (:selected) shows the tick, which
-    shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme turns
-    on for a list whose SelectionMode has Multiple (with Toggle, WinRT's Multiple; without, its Extended, whose selection
-    would otherwise draw nothing): the box comes in and the content goes over, both over
+    shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme sets
+    on a list whose SelectionMode has Multiple (with Toggle, WinRT's Multiple; without, its Extended, whose selection
+    would otherwise draw nothing), and its items inherit: the box comes in and the content goes over, both over
     the phone's 0.15 s, linear. Its two offsets are ListViewItemContentOffsetX (-40.5) and
     ListViewItemContentTranslateX (40.5), written here as literals: a transform transition takes a TransformOperations,
     which a resource double can't make. PointerOver, focus and SelectedUnfocused change nothing; FocusAdorner is
@@ -57,7 +57,9 @@
     <!-- Not set by the phone's style: what its ListView inherits from the page. -->
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
-    <Setter Property="wp81:PhoneListMultiSelect.IsEnabled" Value="True" />
+    <!-- Out of the check mode, unless the style below says so: set, not inherited, so a list in an item of a list in the
+         check mode has its own. -->
+    <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="False" />
     <Setter Property="ItemsPanel">
       <ItemsPanelTemplate>
         <VirtualizingStackPanel />
@@ -74,7 +76,10 @@
                         IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
                         IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
                         BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
-                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}">
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}">
             <ItemsPresenter x:Name="PART_ItemsPresenter"
                             ItemsPanel="{TemplateBinding ItemsPanel}"
                             Margin="{TemplateBinding Padding}"
@@ -84,6 +89,14 @@
         </Border>
       </ControlTemplate>
     </Setter>
+
+    <!--
+      The check mode: any SelectionMode with Multiple (1), alone or with Toggle (2) and AlwaysSelected (4), by value, as a
+      selector's comma can't sit in a flags value. Its items inherit it.
+    -->
+    <Style Selector="^[SelectionMode=1], ^[SelectionMode=3], ^[SelectionMode=5], ^[SelectionMode=7]">
+      <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="True" />
+    </Style>
   </ControlTheme>
 
   <ControlTheme x:Key="{x:Type ListBoxItem}" TargetType="ListBoxItem">

@@ -42,8 +42,8 @@ The template: a `Border` (`BorderBrush`, `Background`, `BorderThickness` bound) 
 `ScrollViewer`, its scroll values bound from the ListView's attached ones, round an `ItemsPresenter` with the
 ListView's `Header`, `Footer` and `Padding`. Ours is the same, with the ScrollViewer named `PART_ScrollViewer`, as
 Avalonia's ListBox looks for it, a plain one, so it is the phone's with its thin indicators
-([ScrollViewer README](../ScrollViewer/README.md), "How a later control holds it"); Avalonia's `IsScrollChainingEnabled`
-and `AllowAutoHide` are bound too. `Header` and `Footer` have nothing in Avalonia to bind (a gap).
+([ScrollViewer README](../ScrollViewer/README.md), "How a later control holds it"); Avalonia's `IsScrollChainingEnabled`,
+`AllowAutoHide`, `IsScrollInertiaEnabled` and the two snap point types are bound too. `Header` and `Footer` have nothing in Avalonia to bind (a gap).
 
 The style sets no `Foreground`; the dump reads `PhoneForegroundColor`, inherited from the page. As the CheckBox's,
 ours sets it, as Wp81 doesn't theme `Window`.
@@ -148,7 +148,7 @@ item's text tilts the box as far as it goes; where the phone's goes is the probe
 | A pan | the ScrollViewer takes the pointer about 50 ms into the move; the press is cancelled, no `ItemClick` | the `ScrollGestureRecognizer` takes it once the move passes its threshold; the item loses capture, `:pressed` goes, nothing is selected (tested) | 1 |
 | Dragged off where the list can't pan | the tilt follows on the item, returns about 190 ms after the finger leaves; no `ItemClick` | `Tilt` holds 182.6 ms and returns; Avalonia selects nothing on a release off the item (tested) | 1 |
 | Single | tap selects one | `SelectionMode.Single` | 1 |
-| Multiple | the check boxes come in; a tap checks or unchecks | `Multiple` and `Toggle` together toggle on a tap; the check mode by `PhoneListMultiSelect` | 2, a behaviour |
+| Multiple | the check boxes come in; a tap checks or unchecks | `Multiple` and `Toggle` together toggle on a tap; the check mode `PhoneListMultiSelect.IsOn`, set on the list by its theme and inherited by its items | 1, the theme |
 | Extended | modifier keys | `SelectionMode.Multiple` (Ctrl and Shift), with the check boxes | 2, as Multiple |
 | None | no selection | no such mode | recorded gap |
 | `ItemClick`, `IsItemClickEnabled` | yes | none | recorded gap |
@@ -199,11 +199,12 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
    light, as the Catalog's capture shows. `A_Single_Selection_Draws_Nothing`.
 7. **The check mode is any mode with `Multiple`** (`Multiple, Toggle`, WinRT's Multiple; `Multiple`, its Extended),
    and nothing else (six modes). `The_Check_Mode_Is_Multiple`.
-8. **Every item follows the list's mode**: the realised ones when it changes, those made or recycled as the list
-   scrolls, an item that is its own container, `Every_Item_Follows_The_Lists_Mode`; and one the list recycled while
+8. **Every item follows the list's mode**, inherited: the realised ones when it changes, those made or recycled as the
+   list scrolls, an item that is its own container, `Every_Item_Follows_The_Lists_Mode`; one the list recycled while
    the mode changed comes back in the new mode with no slide,
-   `A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide`; and the focused one the panel keeps out of view,
-   `A_Focused_Item_Scrolled_Away_Follows_The_Lists_Mode`.
+   `A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide`; the focused one the panel keeps out of view,
+   `A_Focused_Item_Scrolled_Away_Follows_The_Lists_Mode`; and a list in an item has its own,
+   `A_List_In_An_Item_Has_Its_Own_Mode`.
 9. **Outside a list, or in a list in an app's own theme, an item isn't in the check mode**, an item that is its own
    container included. `An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode`,
    `Own_Items_Lose_The_Check_Mode_With_The_Lists_Theme`.
@@ -247,7 +248,7 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 - **WinRT's `Multiple` is Avalonia's `Multiple, Toggle`; `Extended` is `Multiple`**, chosen with the modifier keys,
   **and both show the check boxes.** The phone's `Extended` wasn't probed; a ListView item draws its selection only in
   the check mode, so without the boxes a selection of several would be invisible (the first review's finding). To
-  reverse: make `PhoneListMultiSelect.IsCheckMode` ask for `Toggle` too.
+  reverse: drop `1` and `5` from the ListBox theme's check-mode selector.
 - **`IsHoldingEnabled="False"` isn't set.** In Avalonia a hold is how a touch opens an item's `ContextFlyout`; turning
   it off on the item would take that from apps. To reverse: add the setter.
 - **Holes keep Wp81's list.** Simple's `AutoCompleteBox` and the managed file dialog hold a plain `ListBox`, which now
@@ -563,7 +564,7 @@ _none_
 | [x] | `DataVirtualizationStates` | `DataAvailable` | nothing | the theme's plain setters | Themed: always |
 | [-] | `DataVirtualizationStates` | `DataPlaceholder` | `PlaceholderTextBlock.Visibility = Visible`<br>`PlaceholderRect.Visibility = Visible` | none | not applicable: no data virtualisation |
 | [x] | `MultiSelectStates` | `NoMultiSelect` | nothing | the theme's plain setters | Themed |
-| [x] | `MultiSelectStates` | `ListMultiSelect` | `CheckboxContainerTranslateTransform.X: DoubleAnimation To=0 Duration=0`<br>`ContentBorderTranslateTransform.X: DoubleAnimation To={ThemeResource ListViewItemContentTranslateX} Duration=0` | `^[(wp81|PhoneListMultiSelect.IsOn)=True]` | Themed, set by `PhoneListMultiSelect` (rung 2) |
+| [x] | `MultiSelectStates` | `ListMultiSelect` | `CheckboxContainerTranslateTransform.X: DoubleAnimation To=0 Duration=0`<br>`ContentBorderTranslateTransform.X: DoubleAnimation To={ThemeResource ListViewItemContentTranslateX} Duration=0` | `^[(wp81|PhoneListMultiSelect.IsOn)=True]` | Themed: set on the list by the ListView theme, inherited |
 | [-] | `MultiSelectStates` | `GridMultiSelect` | `SelectedBorder.Opacity: DoubleAnimation Duration=0 To=1` | none | not applicable: a GridView's state (Tier 4) |
 | [-] | `ReorderModeStates` | `ReorderEnabled` | `DropTargetItemThemeAnimation on OuterContainer` | none | deferred: reorder |
 | [-] | `ReorderModeStates` | `Reorderable` | `ContentScaleTransform.ScaleX: DoubleAnimationUsingKeyFrames 00:00:00.075 → 1.05, 00:00:00.2 → 1.0`<br>`ContentScaleTransform.ScaleY: DoubleAnimationUsingKeyFrames 00:00:00.075 → 1.05, 00:00:00.2 → 1.0` | none | deferred: reorder |
