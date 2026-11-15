@@ -84,6 +84,28 @@ public class HoleContentControlPartsTests
         Assert.All(parts, c => Assert.True(IsOwn(c.Theme)));
     }
 
+    // The two flags in either order in the theme: whichever comes in last does the check, so the part falls back.
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Either_Order_Of_The_Two_Setters_Falls_Back(bool fallBackFirst)
+    {
+        var wp81 = new Wp81Theme();
+        Assert.True(wp81.TryGetResource("Wp81ContentControlTheme", null, out var keyed));
+        Setter fallBack = new(HoleParts.FallBackProperty, true), own = new(HoleParts.FallBackToOwnProperty, true);
+        var theme = new ControlTheme(typeof(ContentControl)) { BasedOn = (ControlTheme)keyed! };
+        theme.Setters.Add(fallBackFirst ? fallBack : own);
+        theme.Setters.Add(fallBackFirst ? own : fallBack);
+        wp81.Resources[typeof(ContentControl)] = theme;
+
+        var errors = new DataValidationErrors { Content = "content" };
+        using var scene = new Scene(errors, themes: [new SimpleTheme(), wp81]);
+
+        var parts = Plain(errors);
+        Assert.NotEmpty(parts);
+        Assert.All(parts, c => Assert.True(IsOwn(c.Theme)));
+    }
+
     // A ContentControl in a template from under Wp81, where that theme has its own theme for ContentControl: it takes
     // that one, as a Button takes the Button theme under Wp81.
     [AvaloniaFact]
