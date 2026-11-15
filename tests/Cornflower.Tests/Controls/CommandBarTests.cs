@@ -193,9 +193,22 @@ public class CommandBarTests
             Expect(misses, frame, x, barTop + CircleTopBelowBar + 3, ring, tolerance, $"circle {i}'s ring, top");
             Expect(misses, frame, x, barTop + CircleTopBelowBar + 2 * CircleRadius - 4, ring, tolerance, $"circle {i}'s ring, bottom");
             Expect(misses, frame, x - CircleRadius + 11, centreY, inside, 0, $"circle {i}, inside its ring");
+            // The ring's outer edges on its middle row, to the raw pixel: ink from the box's first column to its last.
+            ExpectEdge(misses, frame, x - CircleRadius, x - CircleRadius - 1, centreY, Bar(dark), $"circle {i}'s left edge");
+            ExpectEdge(misses, frame, x + CircleRadius - 1, x + CircleRadius, centreY, Bar(dark), $"circle {i}'s right edge");
             Expect(misses, frame, x - CircleRadius - 3, centreY, Bar(dark), 0, $"circle {i}, outside it");
             Expect(misses, frame, x + CircleRadius + 3, centreY, Bar(dark), 0, $"circle {i}, outside it");
         }
+    }
+
+    /// <summary>Ink (more than 12 levels off the bar) at <paramref name="inked"/> and the bar at <paramref name="clear"/>.</summary>
+    private static void ExpectEdge(List<string> misses, WriteableBitmap frame, int inked, int clear, int y, Color bar, string what)
+    {
+        static int Off(Color a, Color b) => Math.Max(Math.Abs(a.R - b.R), Math.Max(Math.Abs(a.G - b.G), Math.Abs(a.B - b.B)));
+        if (Off(Frames.PixelAt(frame, inked, y), bar) <= 12)
+            misses.Add($"{what}: no ink at ({inked}, {y}), where the phone's is");
+        if (Off(Frames.PixelAt(frame, clear, y), bar) > 12)
+            misses.Add($"{what}: ink at ({clear}, {y}), where the phone has the bar");
     }
 
     /// <summary>The ellipsis's three dots, 25 raw px below the bar's top, in the words' colour.</summary>

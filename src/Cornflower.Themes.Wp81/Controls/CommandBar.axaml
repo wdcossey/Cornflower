@@ -55,8 +55,8 @@
     IsCompact from it (an app that sets DefaultLabelPosition gets that position, open or closed).
 
     PART_OverflowPopup holds nothing: the open bar is drawn in the bar itself, and the popup is the light dismiss,
-    Avalonia's own, while the bar is open (IsSticky turns it off): a press anywhere outside the bar closes it, and
-    the bar itself (OverlayInputPassThroughElement) takes its own presses.
+    Avalonia's own, while the bar is open (Avalonia's CommandBar turns it on unless IsSticky): a press anywhere
+    outside the bar closes it, and the bar itself (OverlayInputPassThroughElement) takes its own presses.
   -->
   <ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar">
     <Setter Property="Background" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
@@ -137,7 +137,6 @@
                  IsOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
                  PlacementTarget="{Binding #LayoutRoot}"
                  ShouldUseOverlayLayer="True"
-                 IsLightDismissEnabled="True"
                  OverlayInputPassThroughElement="{Binding RelativeSource={RelativeSource TemplatedParent}}">
             <Panel />
           </Popup>
