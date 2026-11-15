@@ -43,10 +43,6 @@ internal static class PhoneAppBarClose
             return;
         if (!bar.PrimaryCommands.Contains(command) && !bar.SecondaryCommands.Contains(command))
             return;
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (!bar.IsSticky)
-                bar.SetCurrentValue(CommandBar.IsOpenProperty, false);
-        });
+        Dispatcher.UIThread.Post(() => bar.SetCurrentValue(CommandBar.IsOpenProperty, false));
     }
 }

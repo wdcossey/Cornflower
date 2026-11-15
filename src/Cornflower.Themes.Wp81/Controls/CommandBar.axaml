@@ -168,7 +168,6 @@
 
     <!-- Open, compact or minimal: as tall as what it shows, the labels and the secondary commands with it. -->
     <Style Selector="^[IsOpen=True]">
-      <Setter Property="Height" Value="NaN" />
       <Setter Property="DefaultLabelPosition" Value="Bottom" />
       <Style Selector="^ /template/ ScrollViewer#OverflowScrollViewer">
         <Setter Property="IsVisible" Value="True" />
@@ -184,7 +183,7 @@
       <Setter Property="IsVisible" Value="False" />
     </Style>
 
-    <!-- An app's DefaultLabelPosition that shows the labels closed: the bar as tall as its commands. -->
+    <!-- The labels shown, open or by an app's DefaultLabelPosition: the bar as tall as what it shows. -->
     <Style Selector="^[DefaultLabelPosition=Bottom], ^[DefaultLabelPosition=Right]">
       <Setter Property="Height" Value="NaN" />
     </Style>
