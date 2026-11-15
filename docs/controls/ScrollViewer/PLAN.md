@@ -214,7 +214,9 @@ WinRT's ScrollViewer code (`ScrollViewer_Partial.cpp`) decides the state; the te
    `m_preferMouseIndicators`; a touch manipulation starting or a key going down clears it. The move is WinRT's
    `OnPointerMoved` override, which sees only what reaches the ScrollViewer unhandled; a move bubbles, so an outer
    ScrollViewer shows its own indicator too. The key is `OnKeyDown`, which clears the preference before it scrolls for
-   PageUp or PageDown; ours takes the key as it tunnels, before Avalonia's ScrollViewer scrolls for it. While it is set, the state
+   PageUp or PageDown; ours takes the key as it tunnels, before Avalonia's ScrollViewer scrolls for it. A move while
+   a control in the content holds the pointer (a mouse dragging a Slider) doesn't count: it isn't the mouse over the
+   ScrollViewer, and the page's indicator would stay for the whole drag. While it is set, the state
    is `MouseIndicator`; otherwise `TouchIndicator`. A touch shows nothing by itself: only the scroll it makes does.
 3. **For how long.** The state's storyboard runs; when it completes, WinRT goes to `NoIndicator`
    (`IndicatorStateStoryboardCompleted`), through the transition. The phone's `TouchIndicator` storyboard lasts 0.1 s and
@@ -244,7 +246,7 @@ gives the mouse none: a desktop user sees where they are. To reverse it, delete 
 `ScrollViewer.axaml`.
 
 **`AllowAutoHide`**, Avalonia's, which WinRT lacks: Avalonia's own themes keep a full bar while it is false. Ours
-keeps the indicator shown (the ScrollBar theme's `[AllowAutoHide=False]` style), so an app that wants the position
+keeps the indicator shown (`PhoneIndicatorFade` shows it at once while it is false), so an app that wants the position
 always visible gets the phone's indicator, shown. Avalonia's `IsExpanded`, `ShowDelay` and `HideDelay` follow the
 pointer over the ScrollBar, which takes no pointer here: they stay at rest and draw nothing.
 
@@ -374,6 +376,7 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 35. **The standalone ScrollBars against the captures**: the thumb's raw pixels (one pixel shorter vertically, one lower
     horizontally) and greys, dark, light and disabled. `The_ScrollBars_Thumb_Is_Where_The_Captures_Draw_It`.
 36. **Set to `None`, a ScrollBar draws nothing**, as the phone's `no-indicator`. `A_ScrollBar_Set_To_None_Draws_Nothing_As_The_Phones_Does`.
+38. **A mouse dragging a control in the content shows nothing.** `A_Mouse_Drag_A_Control_Holds_Shows_Nothing`.
 37. **The ScrollViewer specimen**: its bounds, and its thumb 140 long, 100 down at 200 of 280, as the dump has them.
     `The_ScrollViewer_Specimen_Is_The_Dumps`.
 
@@ -382,8 +385,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 - **The mouse shows the thin indicator.** The phone's template would show a mouse nothing. Reason: a desktop user
   would otherwise have no sign of where they are. Reverse: delete the `MouseIndicator` style in `ScrollViewer.axaml`.
 - **`AllowAutoHide` false keeps the indicator shown**, rather than doing nothing. Reason: it is Avalonia's switch for
-  "always show the position", and no phone value contradicts it. Reverse: delete `^[AllowAutoHide=False]` from the
-  ScrollBar theme's shown style.
+  "always show the position", and no phone value contradicts it. Reverse: drop the `AllowAutoHide` check in
+  `PhoneIndicatorFade`'s `Goal`.
 - **The holes' ScrollViewers take this theme.** Simple's templates for ListBox, ComboBox, TextBox (in the holes),
   TreeView and the rest hold ScrollViewers with no theme of their own, so they now scroll with the phone's indicator,
   as the phone's lists do. Their content runs under the indicator (up to 7 wider, where Simple's bar stood), and a

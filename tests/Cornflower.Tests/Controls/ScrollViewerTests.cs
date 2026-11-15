@@ -627,6 +627,30 @@ public class ScrollViewerTests
         Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
     }
 
+    // A mouse dragging a control in the content (here a Thumb, which holds the pointer) isn't the mouse over the
+    // ScrollViewer: the page's indicator doesn't stay for the whole drag.
+    [AvaloniaFact]
+    public void A_Mouse_Drag_A_Control_Holds_Shows_Nothing()
+    {
+        using var clock = new TestClock();
+        var thumb = new Thumb { Width = 100, Height = 100, HorizontalAlignment = HorizontalAlignment.Left };
+        using var stage = new Stage(content: new StackPanel { Children = { thumb, new Border { Height = 2000 } } });
+
+        var at = thumb.TranslatePoint(new Point(50, 50), stage.Window)!.Value;
+        stage.Window.MouseMove(at);
+        clock.At(150);
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+
+        stage.Window.MouseDown(at, MouseButton.Left);
+        for (var step = 1; step <= 5; step++)
+        {
+            stage.Window.MouseMove(at + new Point(10 * step, 0));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+        }
+        stage.Window.MouseUp(at + new Point(50, 0), MouseButton.Left);
+    }
+
     // A theme change mid-scroll goes cleanly. Turning the indicators off takes the state's value away inside the old
     // theme's unsetting, which can stop it (spike 6); IndicatorMode is registered after IsEnabled, so it doesn't, and
     // the new theme's template and values all come in.

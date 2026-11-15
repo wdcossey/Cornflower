@@ -93,7 +93,7 @@
       each from wherever the other had got to; MouseIndicator, and AllowAutoHide off, show them at once, as the phone's
       MouseIndicator state runs no animation. Run 20261115-1946-dev11's recording (tools/refapp/README.md).
     -->
-    <Style Selector="^ /template/ Track">
+    <Style Selector="^:vertical /template/ Track#VerticalPanningRoot, ^:horizontal /template/ Track#HorizontalPanningRoot">
       <Setter Property="wp81:PhoneIndicatorFade.IsEnabled" Value="True" />
     </Style>
 

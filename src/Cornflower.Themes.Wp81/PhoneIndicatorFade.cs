@@ -39,6 +39,9 @@ internal static class PhoneIndicatorFade
 
     private static readonly ConditionalWeakTable<Track, Fader> Faders = new();
 
+    /// <summary>Each ScrollBar's fading root: the one of its orientation, which the theme turns on.</summary>
+    private static readonly ConditionalWeakTable<ScrollBar, Fader> ByBar = new();
+
     static PhoneIndicatorFade()
     {
         IsEnabledProperty.Changed.AddClassHandler<Track>((track, change) =>
@@ -46,12 +49,19 @@ internal static class PhoneIndicatorFade
             if (Faders.TryGetValue(track, out var old))
             {
                 Faders.Remove(track);
+                if (track.TemplatedParent is ScrollBar oldBar && ByBar.TryGetValue(oldBar, out var held) && held == old)
+                    ByBar.Remove(oldBar);
                 old.Dispose();
                 track.SetValue(Visual.OpacityProperty, 1d);
             }
 
             if (change.GetNewValue<bool>())
-                Faders.Add(track, new Fader(track));
+            {
+                var fader = new Fader(track);
+                Faders.Add(track, fader);
+                if (track.TemplatedParent is ScrollBar bar)
+                    ByBar.AddOrUpdate(bar, fader);
+            }
         });
 
         PhoneScrollIndicators.IndicatorModeProperty.Changed.AddClassHandler<ScrollBar>((bar, _) => Retarget(bar));
@@ -64,11 +74,8 @@ internal static class PhoneIndicatorFade
 
     private static void Retarget(ScrollBar bar)
     {
-        foreach (var track in bar.GetVisualDescendants().OfType<Track>())
-        {
-            if (track.TemplatedParent == bar && Faders.TryGetValue(track, out var fader))
-                fader.Retarget(animate: true);
-        }
+        if (ByBar.TryGetValue(bar, out var fader))
+            fader.Retarget(animate: true);
     }
 
     /// <summary>One panning root's fade.</summary>

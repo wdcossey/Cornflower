@@ -153,7 +153,9 @@ internal static class PhoneScrollIndicators
 
         private void OnPointer(object? sender, PointerEventArgs e)
         {
-            if (e.Pointer.Type == PointerType.Touch)
+            // A move while a control holds the pointer (a mouse dragging a Slider in the content) isn't the mouse over
+            // the ScrollViewer: it would keep the page's indicator for the whole drag.
+            if (e.Pointer.Type == PointerType.Touch || e.Pointer.Captured is not null)
                 return;
             _preferMouse = true;
             Show(PhoneIndicatorMode.MouseIndicator);
