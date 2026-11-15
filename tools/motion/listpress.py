@@ -2,7 +2,8 @@
 
 Usage: python -I listpress.py <run folder>
 
-The probe (tools/refapp/app/Probe.Scroll.cs, ListPress) lays out a ListView of 12 items with IsItemClickEnabled and
+The probe (tools/refapp/app/Probe.Scroll.cs, ListPress) lays out a ListView of 40 items (12 in its first run,
+20261115-1941-dev11, which couldn't pan) with IsItemClickEnabled and
 watches the first seven items' `TiltContainer` (the template's `Pressed` state runs a `PointerDownThemeAnimation` on
 it): its projection and transform every frame they change, and each item's visual states. Each touch's `step` line,
 1.2 s before its press, starts its segment. For each touch it prints, in ms by the app's stopwatch from the press:

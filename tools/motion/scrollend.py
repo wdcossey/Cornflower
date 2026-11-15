@@ -148,17 +148,16 @@ def main():
     lag = flash / 1000 - flash_time(st)  # app s - recording s
     print('%s: %d frames, %.2f recording px a view px; the flash pairs app time %.1f ms with recording %.3f s'
           % (run, len(st.times), st.scale, flash, flash / 1000 - lag))
-    # The touches' steps; the first runs logged a snapshot taken during a touch as a step too (as step_segments).
-    steps = [(t, d) for t, w, d in rows if w == 'step' and not d.startswith('snapshot ')]
-    ends = [t for t, _ in steps[1:]] + [rows[-1][0] + 1000]
+    segs = ml.step_segments(rows, times=True)
     states = [(t, d.split()[-1]) for t, w, d in rows if w == 'state' and d.startswith('VerticalScrollBar ScrollingIndicatorStates')]
     top = HEADER * st.scale
 
     print('\nCompression (s: the bars\' spacing over their rest spacing; moves in view px; times in ms from the press)')
-    for (t0, label), t1 in zip(steps, ends):
+    for label, t0, t1, seg in segs:
         if not (label.startswith('pull') or label.startswith('flick')):
             continue
-        press = next((t for t, w, d in rows if w == 'pressed' and t0 < t < t1), None)
+        t1 = t1 if t1 is not None else rows[-1][0] + 1000
+        press = next((t for t, w, d in seg if w == 'pressed'), None)
         if press is None:
             continue
         idx = [i for i, t in enumerate(st.times) if t0 / 1000 - lag <= t < t1 / 1000 - lag]

@@ -442,6 +442,7 @@ def scroll_fits():
     pts = [(t, 2500 - 400 * math.exp(-t / 300)) for t in ts] + [(ts[-1] + 15.625, 2500)]
     e = scroll.fit_exponential_decay(pts)
     near(e[0], 300, 1, 'exponential tau')
+    near(e[2], 2500, 0.5, 'exponential end')
 
 
 @check

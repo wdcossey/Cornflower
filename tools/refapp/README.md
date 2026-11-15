@@ -644,7 +644,9 @@ The speed at the start is the `a + c v²` fit's (below).
 - **Time levels off at about 2.1 s, and distance at about 2,220 px.** Every flick that travelled more than about
   1,100 px took 2,062 to 2,141 ms. Both 60 ms flicks went 2,219.7 px, as if the start speed were capped.
 - **No one simple law fits every speed:**
-  - An exponential decay (`offset = end − d e^(−t/τ)`) fits none: rms 19 to 500 view px.
+  - An exponential decay (`offset = end − d e^(−t/τ)`, its end fitted too) is out by rms 1.9 to 3.2 px on the slow
+    flicks and 6 to 13 px on the fast ones, with τ from 440 to 760 ms, longer the faster. Its end lies 30 to 185 px
+    past where the scroll really stops: the phone's comes to a stop, and an exponential never does.
   - A constant deceleration fits the slow flicks. For 120 px in 400 ms: 0.000363 px/ms² (363 view px/s²), rms 0.29 to
     0.40 px. For 240 px in 400 ms: 0.00040 px/ms², rms 1.5 px. It gets worse as the flick gets faster: rms 5.7 to
     7.9 px at 200 ms, 21 to 26 px at 120 ms, 36 to 44 px at 60 and 80 ms. A fast flick sheds more speed early on.

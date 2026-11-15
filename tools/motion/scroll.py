@@ -12,7 +12,8 @@ the press (the release's frame) to the first frame at the final offset. Times ar
 For each touch that ends in inertia it prints:
 - where the inertia starts and ends, its distance and its time, and FinalView at the first inertial ViewChanging
   against the end;
-- three fits to its frames, each with its rms in view px: an exponential decay to the end (offset = end - d0 e^(-t/tau));
+- three fits to its frames, each with its rms in view px: an exponential decay (offset = end - d0 e^(-t/tau), its end
+  fitted too);
   a constant deceleration a (a parabola, until it stops); and a deceleration a + c v^2 (a constant one and a quadratic
   drag), whose speed v0 at the start, a and c are fitted (`drag`).
 
@@ -103,19 +104,33 @@ def linfit(xs, ys):
 
 
 def fit_exponential_decay(pts):
-    """offset = end - d0 e^(-t / tau), the end the last offset; tau from a straight line through ln(remaining) over the
-    points more than 1 px short of the end. (tau ms, d0, rms px), or None."""
-    end = pts[-1][1]
-    sgn = 1 if end >= pts[0][1] else -1
-    # Only the points short of the end: one past it (an overshoot) has no logarithm.
-    use = [(t, end - x) for t, x in pts if sgn * (end - x) > 1]
-    if len(use) < 3:
+    """offset = end - d0 e^(-t / tau), by least squares in px: for each tau, end and d0 are a straight-line fit (they
+    enter linearly), and tau is a golden-section search over its logarithm from 10 ms to 100 s. (tau ms, d0, end,
+    rms px), or None when there are too few points."""
+    if len(pts) < 4:
         return None
-    a, b = linfit([t for t, _ in use], [math.log(sgn * r) for _, r in use])
-    if b >= 0:
-        return None
-    tau, d0 = -1 / b, sgn * math.exp(a)
-    return tau, d0, ml.rms([x - (end - d0 * math.exp(-t / tau)) for t, x in pts])
+
+    def fit(tau):
+        e = [math.exp(-t / tau) for t, _ in pts]
+        end, slope = linfit(e, [x for _, x in pts])
+        return sum((x - end - slope * ei) ** 2 for (_, x), ei in zip(pts, e)), end, -slope
+
+    g = (math.sqrt(5) - 1) / 2
+    lo, hi = math.log(10.0), math.log(100000.0)
+    m1, m2 = hi - g * (hi - lo), lo + g * (hi - lo)
+    f1, f2 = fit(math.exp(m1))[0], fit(math.exp(m2))[0]
+    for _ in range(60):
+        if f1 < f2:
+            hi, m2, f2 = m2, m1, f1
+            m1 = hi - g * (hi - lo)
+            f1 = fit(math.exp(m1))[0]
+        else:
+            lo, m1, f1 = m1, m2, f2
+            m2 = lo + g * (hi - lo)
+            f2 = fit(math.exp(m2))[0]
+    tau = math.exp((lo + hi) / 2)
+    sse, end, d0 = fit(tau)
+    return tau, d0, end, math.sqrt(sse / len(pts))
 
 
 def solve3(m, r):
@@ -255,7 +270,7 @@ def main():
         e = fit_exponential_decay(pts)
         q = fit_constant_deceleration(pts)
         d = fit_drag(pts)
-        print('  exponential: %s' % ('tau %.1f ms, rms %.2f px' % (e[0], e[2]) if e else 'no fit'))
+        print('  exponential: %s' % ('tau %.1f ms, its end %.1f, rms %.2f px' % (e[0], e[2], e[3]) if e else 'no fit'))
         print('  constant deceleration: %s' % ('%.6f px/ms^2, stops at %.0f ms, rms %.2f px' % (q[1], q[3], q[2]) if q else 'no fit'))
         print('  a + c v^2: v0 %.3f px/ms, a %.6f px/ms^2, c %.6f /px, stops at %.0f ms, rms %.2f px' % (d[0], d[1], d[2], d[4], d[3]))
         table.append((label, d, dist, pts[-1][0], pts))

@@ -33,6 +33,12 @@ namespace RefApp
         /// <summary>The header band the start tap lands on, above the probe's control.</summary>
         private const double HeaderHeight = 60;
 
+        /// <summary>
+        /// The gap after a list press or tap: the next touch's step comes 1.2 s before its press, so this leaves 800 ms
+        /// for the tilt's return (352 to 371 ms) to end before the step cuts the log.
+        /// </summary>
+        private const double ListGap = 2000;
+
         /// <summary>What runs at a time after the start tap: a touch's setup, or something during a touch.</summary>
         private sealed class Scheduled
         {
@@ -239,25 +245,25 @@ namespace RefApp
             for (var i = 1; i <= 3; i++)
             {
                 var p = at(i, 0.5, 0.5);
-                Drag(items[i], "hold item" + i + " centre", top, p.X, p.Y, p.Y, 0, 600, 1500);
+                Drag(items[i], "hold item" + i + " centre", top, p.X, p.Y, p.Y, 0, 600, ListGap);
             }
 
             foreach (var f in new[] { new[] { 0.05, 0.5 }, new[] { 0.25, 0.5 }, new[] { 0.75, 0.5 }, new[] { 0.95, 0.5 }, new[] { 0.5, 0.1 }, new[] { 0.5, 0.9 } })
             {
                 var p = at(2, f[0], f[1]);
-                Drag(items[2], "hold item2 at " + Num(f[0]) + " " + Num(f[1]), top, p.X, p.Y, p.Y, 0, 600, 1500);
+                Drag(items[2], "hold item2 at " + Num(f[0]) + " " + Num(f[1]), top, p.X, p.Y, p.Y, 0, 600, ListGap);
             }
 
             for (var i = 0; i < 3; i++)
             {
                 var p = at(4, 0.5, 0.5);
-                Drag(items[4], "tap item4 80 ms, " + (i + 1), top, p.X, p.Y, p.Y, 0, 80, 1500);
+                Drag(items[4], "tap item4 80 ms, " + (i + 1), top, p.X, p.Y, p.Y, 0, 80, ListGap);
             }
 
             for (var i = 0; i < 2; i++)
             {
                 var p = at(4, 0.5, 0.5);
-                Drag(items[4], "tap item4 150 ms, " + (i + 1), top, p.X, p.Y, p.Y, 0, 150, 1500);
+                Drag(items[4], "tap item4 150 ms, " + (i + 1), top, p.X, p.Y, p.Y, 0, 150, ListGap);
             }
 
             for (var i = 0; i < 2; i++)
@@ -328,7 +334,10 @@ namespace RefApp
             return new Border { Name = "header", Height = HeaderHeight, VerticalAlignment = VerticalAlignment.Top, Background = new SolidColorBrush(Colors.Black) };
         }
 
-        /// <summary>A setup that sets the offset from code at once, clamped to the content: double.MaxValue for the end, less <paramref name="less"/>.</summary>
+        /// <summary>
+        /// A setup that sets the offset from code at once: the offset clamped to the content (double.MaxValue for the end),
+        /// plus <paramref name="less"/>, so a negative one starts that far short of it.
+        /// </summary>
         private Func<Task> Offset(ScrollViewer sv, double offset, double less = 0)
         {
             return () =>
@@ -414,7 +423,7 @@ namespace RefApp
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.VerticalOffset) + " final " + Num(e.FinalView.VerticalOffset) + " inertial " + e.IsInertial + (e.NextView.ZoomFactor != 1 ? " zoom " + Num(e.NextView.ZoomFactor) : ""));
             sv.ViewChanged += (s, e) => Log("viewchanged", Num(sv.VerticalOffset) + " intermediate " + e.IsIntermediate);
 
-            string last = null;
+            double[] last = null;
             EventHandler<object> frame = null;
             frame = (s, e) =>
             {
@@ -424,23 +433,27 @@ namespace RefApp
                     return;
                 }
 
-                var args = e as RenderingEventArgs;
-                string text;
+                // The values are compared as they are read, every frame; the line is built only when one changed.
+                double[] now;
                 try
                 {
                     var tb = Bounds(thumb);
-                    text = "offset " + Num(sv.VerticalOffset) + " root " + Num(root.Opacity) + " bar " + Num(bar.Opacity) + " thumb " + Num(tb.X) + " " + Num(tb.Y) + " " + Num(tb.Width) + " " + Num(tb.Height) + " mode " + bar.IndicatorMode;
+                    now = new[] { sv.VerticalOffset, root.Opacity, bar.Opacity, tb.X, tb.Y, tb.Width, tb.Height, (int)bar.IndicatorMode };
                 }
                 catch (ArgumentException)
                 {
-                    text = "offset " + Num(sv.VerticalOffset) + " thumb not in the tree";
+                    now = new[] { sv.VerticalOffset };
                 }
 
-                if (text != last)
+                if (last != null && last.SequenceEqual(now))
                 {
-                    last = text;
-                    Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + text);
+                    return;
                 }
+
+                last = now;
+                var text = "offset " + Num(now[0]) + (now.Length == 1 ? " thumb not in the tree" : " root " + Num(now[1]) + " bar " + Num(now[2]) + " thumb " + Num(now[3]) + " " + Num(now[4]) + " " + Num(now[5]) + " " + Num(now[6]) + " mode " + (ScrollingIndicatorMode)(int)now[7]);
+                var args = e as RenderingEventArgs;
+                Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + text);
             };
             CompositionTarget.Rendering += frame;
             return true;

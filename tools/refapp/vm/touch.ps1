@@ -136,32 +136,37 @@ Log "playing $($lines.Count - 1) lines"
 [void][XdeMouse]::timeBeginPeriod(1)
 $clock = [Diagnostics.Stopwatch]::StartNew()
 $at = 0.0
-foreach ($line in $lines[1..($lines.Count - 1)]) {
-    $parts = $line -split ' '
-    if ($parts[0] -eq 'wait') { $at += [double]::Parse($parts[1], $inv); continue }
-    while ($clock.Elapsed.TotalMilliseconds -lt $at) {
-        if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
-    }
-
-    $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
-    $y = [int][Math]::Round([double]::Parse($parts[2], $inv) * $sy)
-    if ($Mode -eq 'post') {
-        switch ($parts[0]) {
-            'down' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostDown($window, $x, $y) }
-            'move' { [XdeMouse]::PostMove($window, $x, $y) }
-            'up' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostUp($window, $x, $y) }
+try {
+    foreach ($line in $lines[1..($lines.Count - 1)]) {
+        $parts = $line -split ' '
+        if ($parts[0] -eq 'wait') { $at += [double]::Parse($parts[1], $inv); continue }
+        while ($clock.Elapsed.TotalMilliseconds -lt $at) {
+            if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
         }
-    }
-    else {
-        if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
-        [XdeMouse]::RealMove($left + $x, $top + $y)
-        if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
-        elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }
-    }
 
-    $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2} -> {3},{4}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $x, $y))
+        $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
+        $y = [int][Math]::Round([double]::Parse($parts[2], $inv) * $sy)
+        if ($Mode -eq 'post') {
+            switch ($parts[0]) {
+                'down' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostDown($window, $x, $y) }
+                'move' { [XdeMouse]::PostMove($window, $x, $y) }
+                'up' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostUp($window, $x, $y) }
+            }
+        }
+        else {
+            if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
+            [XdeMouse]::RealMove($left + $x, $top + $y)
+            if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
+            elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }
+        }
+
+        $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2} -> {3},{4}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $x, $y))
+    }
+}
+finally {
+    # Also when a step throws: the timer goes back, and the steps played so far reach the log.
+    [void][XdeMouse]::timeEndPeriod(1)
+    Add-Content $Log $steps
 }
 
-[void][XdeMouse]::timeEndPeriod(1)
-Add-Content $Log $steps
 Log 'done'
