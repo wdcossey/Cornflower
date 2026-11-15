@@ -39,7 +39,8 @@
     the tilt runs on the check box instead. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
     Update 1 runtime's 0.4) and the box and tick to their disabled brushes. Selected (:selected) shows the tick, which
     shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme turns
-    on for a list whose SelectionMode has Multiple and Toggle: the box comes in and the content goes over, both over
+    on for a list whose SelectionMode has Multiple (with Toggle, WinRT's Multiple; without, its Extended, whose selection
+    would otherwise draw nothing): the box comes in and the content goes over, both over
     the phone's 0.15 s, linear. Its two offsets are ListViewItemContentOffsetX (-40.5) and
     ListViewItemContentTranslateX (40.5), written here as literals: a transform transition takes a TransformOperations,
     which a resource double can't make. PointerOver, focus and SelectedUnfocused change nothing; FocusAdorner is
@@ -94,6 +95,9 @@
     <Setter Property="HorizontalContentAlignment" Value="Left" />
     <Setter Property="VerticalContentAlignment" Value="Top" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Not set by the phone's style: WinRT's own default, which Avalonia's ContentControl's is not. The tilted content
+         draws past the item's edges, as the phone's does, and the check box's own clip hides it at rest. -->
+    <Setter Property="ClipToBounds" Value="False" />
     <Setter Property="cf:Tilt.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
@@ -181,6 +185,9 @@
       </Style>
       <Style Selector="^ /template/ Border#CheckboxTiltContainer">
         <Setter Property="cf:Tilt.IsTarget" Value="True" />
+      </Style>
+      <Style Selector="^ /template/ Border#TiltContainer">
+        <Setter Property="cf:Tilt.IsTarget" Value="False" />
       </Style>
       <Style Selector="^:pressed /template/ Rectangle#NormalRectangle">
         <Setter Property="Fill" Value="{DynamicResource CheckBoxPressedBackgroundThemeBrush}" />

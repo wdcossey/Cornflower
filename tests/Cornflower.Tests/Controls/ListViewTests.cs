@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -129,7 +128,7 @@ public class ListViewTests
 
     private static Color ColourOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
 
-    private static string Hex(Color c) => string.Create(CultureInfo.InvariantCulture, $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}");
+    private static string Hex(Color c) => Tokens.Token.Hex(c);
 
     public static TheoryData<string> Variants => ["Dark", "Light"];
 
@@ -240,6 +239,7 @@ public class ListViewTests
         Assert.Equal(HorizontalAlignment.Left, item.HorizontalContentAlignment);
         Assert.Equal(VerticalAlignment.Top, item.VerticalContentAlignment);
         Assert.Null(item.FocusAdorner);
+        Assert.False(item.ClipToBounds);
 
         Assert.Equal(CheckBoxMargin, Part<Border>(item, "CheckboxTiltContainer").Margin);
         Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
@@ -334,16 +334,16 @@ public class ListViewTests
         Assert.True(Frames.SameAs(a, b), "the selected item is drawn differently");
     }
 
-    // WinRT's Multiple is Avalonia's Multiple and Toggle together: only that is the check mode. Multiple alone is WinRT's
-    // Extended, Toggle alone a toggled single selection.
+    // WinRT's Multiple is Avalonia's Multiple and Toggle together; Multiple alone, WinRT's Extended, shows the boxes too,
+    // or its selection would draw nothing. Toggle alone is a toggled single selection, with none.
     [AvaloniaTheory]
     [InlineData(SelectionMode.Single, false)]
-    [InlineData(SelectionMode.Multiple, false)]
+    [InlineData(SelectionMode.Multiple, true)]
     [InlineData(SelectionMode.Toggle, false)]
     [InlineData(SelectionMode.Single | SelectionMode.AlwaysSelected, false)]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle, true)]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle | SelectionMode.AlwaysSelected, true)]
-    public void The_Check_Mode_Is_Multiple_And_Toggle(SelectionMode mode, bool on)
+    public void The_Check_Mode_Is_Multiple(SelectionMode mode, bool on)
     {
         using var stage = new ListStage();
         stage.List.SelectionMode = mode;
@@ -404,6 +404,31 @@ public class ListViewTests
         Assert.Equal(0, ShiftOf(Part<Border>(first, "ContentBorder")), 0.001);
     }
 
+    // A virtualising panel keeps the focused container when it scrolls out of view, outside the realised ones, and hands
+    // it back without preparing it again: it follows a change of mode made meanwhile.
+    [AvaloniaFact]
+    public void A_Focused_Item_Scrolled_Away_Follows_The_Lists_Mode()
+    {
+        using var page = new ProbePage(60);
+        var list = page.List;
+        list.Height = 400;
+        Dispatcher.UIThread.RunJobs();
+        var first = (ListBoxItem)list.ContainerFromIndex(0)!;
+        first.Focus();
+        list.ScrollIntoView(55);
+        Dispatcher.UIThread.RunJobs();
+        Assert.DoesNotContain(first, list.GetRealizedContainers());
+
+        list.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(IsOn(first));
+
+        list.ScrollIntoView(0);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(first, list.ContainerFromIndex(0));
+        Assert.True(IsOn(first));
+    }
+
     // An item outside a list is never in the check mode, and a list in a theme of the app's own lets its items go.
     [AvaloniaFact]
     public void An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode()
@@ -422,6 +447,23 @@ public class ListViewTests
         Dispatcher.UIThread.RunJobs();
         Assert.False(PhoneListMultiSelect.GetIsEnabled(list.List));
         Assert.All(list.List.GetRealizedContainers().Cast<ListBoxItem>(), i => Assert.False(IsOn(i)));
+    }
+
+    // Items that are their own containers are the same objects under the app's theme: they are unmarked as it comes.
+    [AvaloniaFact]
+    public void Own_Items_Lose_The_Check_Mode_With_The_Lists_Theme()
+    {
+        var mine = new ListBoxItem { Content = "own" };
+        var list = new ListBox { SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle, Items = { mine } };
+        using var scene = new Scene(list);
+        Assert.True(IsOn(mine));
+
+        list.Theme = new SimpleTheme().TryGetResource(typeof(ListBox), ThemeVariant.Dark, out var simple)
+            ? (ControlTheme)simple!
+            : throw new InvalidOperationException("No ListBox theme in Simple.");
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(IsOn(mine));
     }
 
     // ListMultiSelect: the CheckboxContainer comes from -40.5 to 0 and the ContentBorder goes 40.5 to the right, both over
@@ -466,9 +508,9 @@ public class ListViewTests
         var dark = variant == "Dark";
         foreach (var isSelected in new[] { false, true })
         {
-            using var stage = new ItemStage(VariantOf(variant), new ListBoxItem { Content = "list view item", IsSelected = isSelected });
-            stage.Item.SetValue(PhoneListMultiSelect.IsOnProperty, true);
-            Settle(stage.Item);
+            var item = new ListBoxItem { Content = "list view item", IsSelected = isSelected };
+            item.SetValue(PhoneListMultiSelect.IsOnProperty, true);         // before it is shown, as a forced state: no slide
+            using var stage = new ItemStage(VariantOf(variant), item);
             using var frame = stage.Capture();
 
             foreach (var x in LeftColumns.Concat(RightColumns))
@@ -481,8 +523,9 @@ public class ListViewTests
         }
     }
 
-    // At rest the box is 40.5 to the left of its 25.5 clip: the base capture draws nothing left of the item, which here,
-    // on its own, has no list round it to clip it.
+    // At rest the box is 40.5 to the left of its own 25.5 clip: the base capture draws nothing left of the item. The
+    // item doesn't clip to its bounds, as the phone's doesn't, and this one, on its own, has no list round it: the box's
+    // own clip is all that hides it.
     [AvaloniaTheory]
     [MemberData(nameof(Variants))]
     public void At_Rest_The_Box_Is_Clipped_Away(string variant)
@@ -585,6 +628,7 @@ public class ListViewTests
         Assert.Equal(Accent, ColourOf(BoxOf(item).Fill));
         Assert.Equal(OverAccent, ColourOf(TickOf(item).Fill));
         Assert.Same(Part<Border>(item, "CheckboxTiltContainer"), CfTilt.TargetOf(item));
+        Assert.False(CfTilt.GetIsTarget(Part<Border>(item, "TiltContainer")));
         Assert.Null(Part<Border>(item, "TiltContainer").RenderTransform);
         Assert.NotEqual(TiltState.Rest, CfTilt.Current(item));
     }

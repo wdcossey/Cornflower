@@ -31,7 +31,7 @@ An 8.1 page's ListView is Avalonia's `ListBox`, with no style:
   |---|---|---|
   | `Single` (the default) | `Single` (the default) | a tap selects one; the phone draws no selection |
   | `Multiple` | `SelectionMode="Multiple,Toggle"` | the check mode: a check box slides in by each item over 0.15 s, and a tap checks or unchecks it |
-  | `Extended` | `Multiple` | Ctrl and Shift choose several; no check boxes |
+  | `Extended` | `Multiple` | Ctrl and Shift choose several; the check boxes show them (the phone's wasn't read) |
   | `None` | none | a gap: in Single mode the selection draws nothing anyway |
 
 - A string with no template is drawn small, 12 px, as the phone draws one. Give items a template in the phone's list
@@ -51,7 +51,7 @@ An 8.1 page's ListView is Avalonia's `ListBox`, with no style:
   pointer from the item: the tilt returns and nothing is selected. A finger dragged off the item lets the tilt return.
 - **Selected** turns on the tick, which only the check mode shows: in Single mode a selected item looks like the
   others, as on the phone.
-- **The check mode** (`Multiple,Toggle`): the box, `CheckBox`'s brushes and the `Wp81.Glyph.CheckMark` tick, comes in
+- **The check mode** (any mode with `Multiple`): the box, `CheckBox`'s brushes and the `Wp81.Glyph.CheckMark` tick, comes in
   from 40.5 to the left and the content moves 40.5 to the right, over 0.15 s each way; pressed, the box fills with the
   accent and tilts, instead of the content.
 - **Disabled**: the content at 0.4 (Update 1's `ListViewItemDisabledThemeOpacity`), the box and tick in
@@ -101,6 +101,10 @@ None.
 - **A selection set in code scrolls the item into view**: Avalonia's `AutoScrollToSelectedItem`, on by default, and its
   request reaches a page's ScrollViewer round the list too. WinRT's ListView is believed not to (an app calls
   `ScrollIntoView`), but it wasn't probed, so the theme leaves Avalonia's. Set it off where that matters.
+- **In Simple's AutoCompleteBox and file dialog**, which now hold this list, a selection made with the keyboard or the
+  mouse draws nothing, until those controls get themes of their own.
+- **The check mode's press away from the box** tilts the box as far as it goes (`Tilt` clamps to its target); the
+  phone's wasn't read.
 - **The scroll physics** are Avalonia's (the ScrollViewer's recorded deviation).
 - **One raw pixel** here and there (ADR 0003).
 

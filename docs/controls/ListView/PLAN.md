@@ -51,7 +51,8 @@ ours sets it, as Wp81 doesn't theme `Window`.
 ## The phone's ListViewItem
 
 `listviewitem.json`: one unkeyed style, eight setters and a template. (`ListViewBaseItem`'s implicit style, in the
-runtime alone, sets the same five but `IsHoldingEnabled`; ListViewItem's own style replaces it.)
+runtime alone, sets the font from other keys, the background, `TabNavigation` and `IsHoldingEnabled` True;
+ListViewItem's own style replaces it.)
 
 | Setter | Value | Resource value | Dump |
 |---|---|---|---|
@@ -132,7 +133,9 @@ Catalog's list, with "two" selected, draws all three alike, and the item's `sele
 byte for byte, but in ListMultiSelect and GridMultiSelect.
 
 **CheckboxPressed** is from the template: WinRT goes there instead of Pressed when the item is in the check mode. #113
-probed the press in Single mode only, so the check mode's press is the template's reading (owed: a probe).
+probed the press in Single mode only, so the check mode's press is the template's reading (owed: a probe). `Tilt`
+measures a press against its target, the 25.5 box, and clamps one away from it to the box's edge, so a press on the
+item's text tilts the box as far as it goes; where the phone's goes is the probe's question.
 
 ## Avalonia's ListBox against the phone's ListView
 
@@ -146,7 +149,7 @@ probed the press in Single mode only, so the check mode's press is the template'
 | Dragged off where the list can't pan | the tilt follows on the item, returns about 190 ms after the finger leaves; no `ItemClick` | `Tilt` holds 182.6 ms and returns; Avalonia selects nothing on a release off the item (tested) | 1 |
 | Single | tap selects one | `SelectionMode.Single` | 1 |
 | Multiple | the check boxes come in; a tap checks or unchecks | `Multiple` and `Toggle` together toggle on a tap; the check mode by `PhoneListMultiSelect` | 2, a behaviour |
-| Extended | modifier keys | `SelectionMode.Multiple` (Ctrl and Shift) | 1, no check boxes |
+| Extended | modifier keys | `SelectionMode.Multiple` (Ctrl and Shift), with the check boxes | 2, as Multiple |
 | None | no selection | no such mode | recorded gap |
 | `ItemClick`, `IsItemClickEnabled` | yes | none | recorded gap |
 | `Header`, `Footer` | scroll with the items | none | recorded gap |
@@ -194,14 +197,16 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
    `A_Strings_Line_Is_The_Phones_And_An_Underscore_Is_Drawn`.
 6. **A single selection draws nothing**: a list with "two" selected is the same frame as one with none, dark and
    light, as the Catalog's capture shows. `A_Single_Selection_Draws_Nothing`.
-7. **The check mode is `Multiple` and `Toggle`**, and nothing else (six modes).
-   `The_Check_Mode_Is_Multiple_And_Toggle`.
+7. **The check mode is any mode with `Multiple`** (`Multiple, Toggle`, WinRT's Multiple; `Multiple`, its Extended),
+   and nothing else (six modes). `The_Check_Mode_Is_Multiple`.
 8. **Every item follows the list's mode**: the realised ones when it changes, those made or recycled as the list
    scrolls, an item that is its own container, `Every_Item_Follows_The_Lists_Mode`; and one the list recycled while
    the mode changed comes back in the new mode with no slide,
-   `A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide`.
-9. **Outside a list, or in a list in an app's own theme, an item isn't in the check mode.**
-   `An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode`.
+   `A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide`; and the focused one the panel keeps out of view,
+   `A_Focused_Item_Scrolled_Away_Follows_The_Lists_Mode`.
+9. **Outside a list, or in a list in an app's own theme, an item isn't in the check mode**, an item that is its own
+   container included. `An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode`,
+   `Own_Items_Lose_The_Check_Mode_With_The_Lists_Theme`.
 10. **In the check mode the box comes in and the content goes over**, -40.5 to 0 and 0 to 40.5, the tokens' values,
     by 0.15 s linear transitions, and back. `In_The_Check_Mode_The_Box_Comes_In_And_The_Content_Goes_Over`.
 11. **The box is drawn where the phone draws it** in the check mode, against the ListMultiSelect PNGs, dark and light,
@@ -239,16 +244,19 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
   take the key `ListBox` by name, as the mapping rules do for a WinRT control Avalonia has under another name. To
   reverse: key these themes `ListView` and `ListViewItem`, set `ItemContainerTheme` in the first, and give `ListBox` the
   phone's ListBox look.
-- **WinRT's `Multiple` is Avalonia's `Multiple, Toggle`**, the only mode that shows the check boxes; **`Extended` is
-  `Multiple`**, with no check boxes, as it is chosen with the modifier keys. The phone's `Extended` wasn't probed. To
-  reverse: widen `PhoneListMultiSelect`'s `CheckMode` test.
+- **WinRT's `Multiple` is Avalonia's `Multiple, Toggle`; `Extended` is `Multiple`**, chosen with the modifier keys,
+  **and both show the check boxes.** The phone's `Extended` wasn't probed; a ListView item draws its selection only in
+  the check mode, so without the boxes a selection of several would be invisible (the first review's finding). To
+  reverse: make `PhoneListMultiSelect.IsCheckMode` ask for `Toggle` too.
 - **`IsHoldingEnabled="False"` isn't set.** In Avalonia a hold is how a touch opens an item's `ContextFlyout`; turning
   it off on the item would take that from apps. To reverse: add the setter.
 - **Holes keep Wp81's list.** Simple's `AutoCompleteBox` and the managed file dialog hold a plain `ListBox`, which now
   takes the phone's look, as the theme sets no `HoleParts.FallBack`. The phone's own AutoSuggestBox shows its
   suggestions in a ListView (`AutoSuggestListViewItemMargin`), so the phone's list there is the nearer. To reverse:
   set `wp81:HoleParts.FallBack` on the `ListBox` theme (its items would still be Wp81's: `HoleParts` follows template
-  parts, and items have no templated parent).
+  parts, and items have no templated parent). Cost, from the first review: there, a selection made with the keyboard
+  or the mouse draws nothing, as a ListView item's doesn't outside the check mode, until those holes get themes of
+  their own (AutoCompleteBox is Tier 3's AutoSuggestBox, whose suggestions the phone doesn't select either).
 - **ListViewHeaderItem and GroupItem are deferred** with grouping (above). To reverse: build grouping first.
 - **The check mode's two offsets are literals** in the theme (above), held to the keys by a test.
 
@@ -316,7 +324,7 @@ _none_
 | [-] | `DataFetchSize` | `Double` | none | not applicable: incremental loading |
 | [-] | `CanReorderItems` | `Boolean` | none | deferred: reorder |
 | [-] | `CanDragItems` | `Boolean` | none | deferred: with reorder |
-| [x] | `SelectionMode` | `ListViewSelectionMode` | `SelectionMode` (flags) | Mapped: Single is `Single`; Multiple is `Multiple, Toggle`, the check mode (`PhoneListMultiSelect`); Extended is `Multiple`; None has no mode (a gap) |
+| [x] | `SelectionMode` | `ListViewSelectionMode` | `SelectionMode` (flags) | Mapped: Single is `Single`; Multiple is `Multiple, Toggle`, the check mode (`PhoneListMultiSelect`); Extended is `Multiple`, with the check boxes too; None has no mode (a gap) |
 | [x] | `SelectedItems` (read-only) (not a dependency property) | `IList<Object>` | `SelectedItems` | Avalonia's API stands |
 | [-] | `ReorderMode` | `ListViewReorderMode` | none | deferred: with reorder |
 

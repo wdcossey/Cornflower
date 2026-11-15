@@ -88,6 +88,7 @@ of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half
 | 10 px sideways | a tap; `RotationY` −0.42° at 10 px | a tap; the tilt follows | match |
 | Single selection | draws nothing | draws nothing | match |
 | Multiple | the check boxes; a tap toggles | `Multiple, Toggle`: the same | match |
+| Extended | not read | `Multiple`: the check boxes, Ctrl and Shift | unread: a selection of several must show |
 | CheckboxPressed | the template's: the box in the accent, the tick over it, the tilt on the box | the same | from the template; not probed |
 
 ## Gaps and deliberate differences
