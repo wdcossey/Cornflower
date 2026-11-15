@@ -39,22 +39,31 @@ public class ContentControlTests
         public const double PresenterWidth = 119.5833;    // "CORNFLOWER" in Segoe WP Semibold: not compared (the font differs)
     }
 
-    private static ContentControl Themed(object? content = null) =>
-        new() { Theme = ThemeIn(), Content = content };
-
-    private static ControlTheme? _theme;
-
-    /// <summary>The keyed theme, read once from a fresh Wp81Theme (a <c>DynamicResource</c> would need a tree).</summary>
-    private static ControlTheme ThemeIn()
+    /// <summary>A ContentControl given the theme by its key, as an app or a template gives it: from the scene's Wp81Theme.</summary>
+    private static ContentControl Themed(object? content = null)
     {
-        if (_theme is null)
-        {
-            Assert.True(new Wp81Theme().TryGetResource(Key, ThemeVariant.Dark, out var found), Key);
-            _theme = Assert.IsType<ControlTheme>(found);
-        }
-
-        return _theme;
+        var control = new ContentControl { Content = content };
+        control.Bind(StyledElement.ThemeProperty, control.GetResourceObservable(Key));
+        return control;
     }
+
+    /// <summary>
+    /// Pivot's title as the dump has it: "CORNFLOWER" in <c>PivotTitleContentControlStyle</c>'s font, 19,38 from the
+    /// stage's corner, in the theme. <c>ContentControlFrames</c> draws the same.
+    /// </summary>
+    internal static ContentControl PivotTitle()
+    {
+        var control = Themed("CORNFLOWER");
+        control.Margin = new Thickness(19, 38, 0, 0);
+        control.FontWeight = FontWeight.SemiBold;
+        control.Bind(TemplatedControl.FontFamilyProperty, control.GetResourceObservable("PhoneFontFamilyNormal"));
+        control.Bind(TemplatedControl.FontSizeProperty, control.GetResourceObservable("TextStyleLargeFontSize"));
+        return control;
+    }
+
+    /// <summary>Whether the scene's themes have a theme for <paramref name="type"/> by type, dark or light.</summary>
+    private static bool ThemedByType(Scene scene, Type type) =>
+        new[] { ThemeVariant.Dark, ThemeVariant.Light }.Any(variant => scene.Window.TryFindResource(type, variant, out var found) && found is ControlTheme);
 
     private static ContentPresenter PresenterOf(ContentControl control) =>
         Assert.IsType<ContentPresenter>(control.Presenter);
@@ -76,7 +85,9 @@ public class ContentControlTests
         var control = Themed("content");
         using var scene = new Scene(control);
 
-        Assert.Equal(typeof(ContentControl), ThemeIn().TargetType);
+        var theme = Assert.IsType<ControlTheme>(scene.Window.FindResource(Key));
+        Assert.Same(theme, control.Theme);
+        Assert.Equal(typeof(ContentControl), theme.TargetType);
         Assert.Equal(HorizontalAlignment.Left, control.HorizontalContentAlignment);
         Assert.Equal(VerticalAlignment.Top, control.VerticalContentAlignment);
         var presenter = PresenterOf(control);
@@ -125,18 +136,12 @@ public class ContentControlTests
 
     // Pivot's title, a ContentControl the phone's default style lays out: stretched across the stage, its presenter at
     // its top left, as tall as the text's line, 1.33 em of 18.14, and only as wide as the text.
-    [AvaloniaTheory]
-    [InlineData("dark")]
-    [InlineData("light")]
-    public void Pivots_Title_Is_Laid_Out_As_The_Dump(string variant)
+    // The light dump reads the same: the theme has no brush, so dark alone is laid out here.
+    [AvaloniaFact]
+    public void Pivots_Title_Is_Laid_Out_As_The_Dump()
     {
-        var control = Themed("CORNFLOWER");
-        control.Margin = new Thickness(19, 38, 0, 0);
-        control.FontWeight = FontWeight.SemiBold;
-        control.Bind(TemplatedControl.FontFamilyProperty, control.GetResourceObservable("PhoneFontFamilyNormal"));
-        control.Bind(TemplatedControl.FontSizeProperty, control.GetResourceObservable("TextStyleLargeFontSize"));
-        using var scene = new Scene(new StackPanel { Width = 450, Children = { control } },
-            variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
+        var control = PivotTitle();
+        using var scene = new Scene(new StackPanel { Width = 450, Children = { control } });
 
         Assert.Equal(18.14, control.FontSize);
         Assert.Equal(TitleReading.ControlWidth, control.Bounds.Width, 3);
@@ -158,8 +163,7 @@ public class ContentControlTests
         control.FontSize = 30;
         using var scene = new Scene(control);
 
-        var text = Assert.IsType<TextBlock>(PresenterOf(control).Child);
-        Assert.IsNotType<AccessText>(text);
+        var text = Assert.IsType<TextBlock>(PresenterOf(control).Child);     // exactly a TextBlock: not an AccessText
         Assert.Equal("_open", text.Text);
         Assert.True(PhoneHeaderLine.GetIsEnabled(PresenterOf(control)));
         AssertLine(30 * 1.33, text.Bounds.Height);
@@ -223,7 +227,7 @@ public class ContentControlTests
         using var scene = new Scene(new Canvas { Children = { control } });
 
         Assert.Null(control.Theme);
-        Assert.False(new Wp81Theme().TryGetResource(typeof(ContentControl), ThemeVariant.Dark, out _));
+        Assert.False(ThemedByType(scene, typeof(ContentControl)));
         Assert.Equal(HorizontalAlignment.Stretch, control.HorizontalContentAlignment);
         Assert.Equal(new Rect(0, 0, 200, 100), BoundsIn(PresenterOf(control), control));
     }
@@ -235,9 +239,7 @@ public class ContentControlTests
     [AvaloniaFact]
     public void A_Template_Presenter_With_Nothing_Set_Fills_Its_Slot_As_The_Phones_Do()
     {
-        var curtain = new Rectangle { Width = 64 };
-        var bounds = new ContentPresenter { Name = "SwitchCurtainBounds" };
-        var clip = new ContentPresenter { Name = "SwitchCurtainClip", Content = curtain };
+        var presenters = new List<ContentPresenter>();
         var host = new ContentControl
         {
             Theme = new ControlTheme(typeof(ContentControl))
@@ -246,7 +248,10 @@ public class ContentControlTests
                 {
                     new Setter(TemplatedControl.TemplateProperty, new FuncControlTemplate<ContentControl>((_, _) =>
                     {
-                        bounds.Content = clip;
+                        presenters.Clear();
+                        var clip = new ContentPresenter { Name = "SwitchCurtainClip", Content = new Rectangle { Width = 64 } };
+                        var bounds = new ContentPresenter { Name = "SwitchCurtainBounds", Content = clip };
+                        presenters.AddRange([bounds, clip]);
                         return new Border { Name = "InnerBorder", Width = 159 / Scene.ReferenceScaling, Height = 52 / Scene.ReferenceScaling, BorderThickness = new Thickness(2.5), Child = bounds };
                     })),
                 },
@@ -254,8 +259,9 @@ public class ContentControlTests
         };
         using var scene = new Scene(new Canvas { Children = { host } });
 
-        Assert.False(new Wp81Theme().TryGetResource(typeof(ContentPresenter), ThemeVariant.Dark, out _));
-        foreach (var presenter in new[] { bounds, clip })
+        Assert.False(ThemedByType(scene, typeof(ContentPresenter)));
+        Assert.Equal(2, presenters.Count);
+        foreach (var presenter in presenters)
         {
             Assert.Equal(HorizontalAlignment.Stretch, presenter.HorizontalAlignment);
             Assert.Equal(VerticalAlignment.Stretch, presenter.VerticalAlignment);
@@ -264,20 +270,21 @@ public class ContentControlTests
         }
     }
 
-    // The theme goes cleanly: the presenter's text loses the phone's line with it.
+    // A ContentTemplate set after a string, that doesn't match it, leaves the presenter's TextBlock in place (Avalonia's
+    // default template recycles it): the line comes off that same text, as an app's template now decides it.
     [AvaloniaFact]
-    public void The_Line_Comes_Off_With_The_Theme()
+    public void A_ContentTemplate_Set_Later_Takes_The_Line_Off_The_Same_Text()
     {
         var control = Themed("data");
         control.FontSize = 30;
         using var scene = new Scene(new StackPanel { Children = { control } });
-        AssertLine(30 * 1.33, Assert.IsType<TextBlock>(PresenterOf(control).Child).Bounds.Height);
+        var text = Assert.IsType<TextBlock>(PresenterOf(control).Child);
+        Assert.Equal(30 * 1.33, text.LineHeight, 0.01);
 
-        control.Theme = new ControlTheme(typeof(ContentControl));
+        control.ContentTemplate = new FuncDataTemplate<int>((value, _) => new TextBlock { Text = value.ToString() });
         Dispatcher.UIThread.RunJobs();
-        scene.Capture().Dispose();
 
-        var text = Assert.IsAssignableFrom<TextBlock>(PresenterOf(control).Child);
-        Assert.True(text.Bounds.Height < 30 * 1.3, $"the phone's line stayed: {text.Bounds.Height}");
+        Assert.Same(text, PresenterOf(control).Child);
+        Assert.True(double.IsNaN(text.LineHeight), $"the phone's line stayed: {text.LineHeight}");
     }
 }

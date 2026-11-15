@@ -130,11 +130,11 @@ where an Avalonia app doesn't expect it.
 | The two setters and one presenter, `PART_ContentPresenter` | `contentcontrol.json` | `The_Theme_Sets_The_Phones_Two_Values_And_One_Presenter` |
 | The content placed by the content alignments: at Left and Top, the top left at its own size | the template; the dump's presenter at the control's corner | `The_Content_Is_Placed_By_The_Content_Alignments` (four cases) |
 | The Padding is the presenter's margin | the template | `The_Padding_Is_The_Presenters_Margin` |
-| Pivot's title laid out as the dump: the control stretched, 430.83 × 24.17, the presenter at its corner, 24.17 tall, the text 1.33 em | the dump, dark and light | `Pivots_Title_Is_Laid_Out_As_The_Dump` (two cases) |
+| Pivot's title laid out as the dump: the control stretched, 430.83 × 24.17, the presenter at its corner, 24.17 tall, the text 1.33 em | the dump (dark; light reads the same) | `Pivots_Title_Is_Laid_Out_As_The_Dump` |
 | A string's text has the phone's line and no access key | ADR 0003; the template (a WinRT ContentControl has none) | `A_Strings_Text_Has_The_Phones_Line_And_No_Access_Key` |
 | An app's `ContentTemplate` is used and keeps its own line | the template | `An_Apps_ContentTemplate_Is_Used_And_Keeps_Its_Own_Line` |
 | Background and border not drawn; the padding takes no hits | the template binds none | `Background_And_Border_Draw_Nothing_And_The_Padding_Takes_No_Hits` (two cases) |
-| The line comes off with the theme | `PhoneHeaderLine` | `The_Line_Comes_Off_With_The_Theme` |
+| A `ContentTemplate` set later takes the line off the same, recycled text | `PhoneHeaderLine` | `A_ContentTemplate_Set_Later_Takes_The_Line_Off_The_Same_Text` |
 | A bare ContentControl keeps Avalonia's own (the decision above) | the holes' and the shell's frames | `A_Bare_ContentControl_Keeps_Avalonias_Own` |
 | A template's presenter with nothing set fills its slot, as the phone's do | the curtain presenters' dump | `A_Template_Presenter_With_Nothing_Set_Fills_Its_Slot_As_The_Phones_Do` |
 

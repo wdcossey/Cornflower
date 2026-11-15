@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
@@ -42,7 +43,7 @@ public class ContentControlPageTests
     {
         var page = new ContentControlPage();
         using var scene = new Scene(page);
-        var theme = scene.Window.FindResource("Wp81ContentControlTheme");
+        var theme = Assert.IsType<ControlTheme>(scene.Window.FindResource("Wp81ContentControlTheme"));
 
         var specimens = page.GetVisualDescendants().OfType<ContentControl>().Where(c => c.Classes.Contains("specimen")).ToList();
         Assert.Equal(6, specimens.Count);
@@ -80,7 +81,7 @@ public class ContentControlPageTests
         };
         foreach (var point in points)
         {
-            Assert.True(point.Y < Scene.ReferenceHeight, $"{point} is off the view");
+            Assert.True(point.X is >= 0 and < Scene.ReferenceWidth && point.Y is >= 0 and < Scene.ReferenceHeight, $"{point} is off the view");
             var pixel = Frames.PixelAt(frame, (int)(point.X * Scene.ReferenceScaling), (int)(point.Y * Scene.ReferenceScaling));
             Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(page.Background).Color, pixel);
         }     // ApplicationPageBackgroundThemeBrush

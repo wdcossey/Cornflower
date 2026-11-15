@@ -28,10 +28,7 @@ public class ContentControlFrames
         Directory.CreateDirectory(folder);
         foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
         {
-            var title = new ContentControl { Content = "CORNFLOWER", Margin = new Thickness(19, 38, 0, 0), FontWeight = FontWeight.SemiBold };
-            title.Bind(StyledElement.ThemeProperty, title.GetResourceObservable("Wp81ContentControlTheme"));
-            title.Bind(TemplatedControl.FontFamilyProperty, title.GetResourceObservable("PhoneFontFamilyNormal"));
-            title.Bind(TemplatedControl.FontSizeProperty, title.GetResourceObservable("TextStyleLargeFontSize"));
+            var title = ContentControlTests.PivotTitle();
             title.Bind(TemplatedControl.ForegroundProperty, title.GetResourceObservable("PhoneForegroundBrush"));
             var stage = new Panel { Children = { title } };
             stage.Bind(Panel.BackgroundProperty, stage.GetResourceObservable("ApplicationPageBackgroundThemeBrush"));
