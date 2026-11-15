@@ -77,6 +77,7 @@ public class ContentControlPageTests
         var points = new[]
         {
             specimen.TranslatePoint(new Point(specimen.Bounds.Width - 10, specimen.Bounds.Height - 10), scene.Window)!.Value,
+            specimen.TranslatePoint(new Point(specimen.Bounds.Width - 1, specimen.Bounds.Height / 2), scene.Window)!.Value,   // where its 2 border would be
             presenter.TranslatePoint(new Point(presenter.Bounds.Width / 2, presenter.Bounds.Height - 0.5), scene.Window)!.Value,
         };
         foreach (var point in points)

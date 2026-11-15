@@ -35,8 +35,10 @@ public class ContentControlTests
         public const double ControlWidth = 430.8333;      // the stage's 450 less the 19 margin, rounded to the raw grid
         public const double ControlHeight = 24.1667;      // 58 raw pixels: the line
         public const double PresenterHeight = 24.1667;    // the presenter at the control's top left, its content's height
-        public const double TextHeight = 24.1267;         // 1.33 × 18.14: Segoe WP's line (ADR 0003)
-        public const double PresenterWidth = 119.5833;    // "CORNFLOWER" in Segoe WP Semibold: not compared (the font differs)
+        public const double Left = 19.1667;               // 46 raw pixels: the 19 margin
+        public const double Top = 37.9167;                // 91 raw pixels: the 38 margin
+        public const double TextHeight = 24.1267;         // Segoe WP's line, 1.33 em (ADR 0003): 1.33 × 18.14 is 24.1262
+        public const double PresenterWidth = 119.5833;    // "CORNFLOWER" in Segoe WP Semibold: compared within 10% (Selawik is wider)
     }
 
     /// <summary>A ContentControl given the theme by its key, as an app or a template gives it: from the scene's Wp81Theme.</summary>
@@ -92,6 +94,7 @@ public class ContentControlTests
         Assert.Equal(VerticalAlignment.Top, control.VerticalContentAlignment);
         var presenter = PresenterOf(control);
         Assert.Equal("PART_ContentPresenter", presenter.Name);
+        Assert.Null(control.FocusAdorner);      // none, as the phone (no focus states): Simple and Avalonia set none for a ContentControl
         Assert.Single(control.GetVisualChildren());
     }
 
@@ -144,6 +147,8 @@ public class ContentControlTests
         using var scene = new Scene(new StackPanel { Width = 450, Children = { control } });
 
         Assert.Equal(18.14, control.FontSize);
+        Assert.Equal(TitleReading.Left, control.Bounds.X, 3);
+        Assert.Equal(TitleReading.Top, control.Bounds.Y, 3);
         Assert.Equal(TitleReading.ControlWidth, control.Bounds.Width, 3);
         Assert.Equal(TitleReading.ControlHeight, control.Bounds.Height, 3);
         var presenter = PresenterOf(control);
@@ -271,7 +276,9 @@ public class ContentControlTests
     }
 
     // A ContentTemplate set after a string, that doesn't match it, leaves the presenter's TextBlock in place (Avalonia's
-    // default template recycles it): the line comes off that same text, as an app's template now decides it.
+    // default template recycles it): the line comes off that same text, as an app's template now decides it. This is
+    // PhoneHeaderLine's rule (#111), held here on this presenter; the phone has no such case, as a WinRT ContentTemplate
+    // applies to any content.
     [AvaloniaFact]
     public void A_ContentTemplate_Set_Later_Takes_The_Line_Off_The_Same_Text()
     {

@@ -27,7 +27,8 @@ A ContentControl with no theme is Avalonia's own, as with Simple alone.
   the phone.
 - **The padding** is the presenter's margin.
 - **Nothing of its own is drawn**: a `Background`, `BorderBrush` or `BorderThickness` given to it draws nothing and the
-  padding takes no hits, as the phone's template binds none.
+  padding takes no hits, as the phone's template binds none. Focused (an app can make it focusable), it draws no focus
+  rectangle, as on the phone (neither Avalonia nor Simple gives a ContentControl one, so the theme needs no setter).
 - **A string's line** is the phone's 1.33 em, through `PhoneHeaderLine`; an app's `ContentTemplate` keeps its own. No
   access keys, as on the phone.
 - **The bare ContentPresenter** is Avalonia's: in a template, one with nothing set fills its slot, as the phone's do.

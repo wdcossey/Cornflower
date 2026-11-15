@@ -127,7 +127,7 @@ where an Avalonia app doesn't expect it.
 
 | Behaviour | Evidence | Test |
 |---|---|---|
-| The two setters and one presenter, `PART_ContentPresenter` | `contentcontrol.json` | `The_Theme_Sets_The_Phones_Two_Values_And_One_Presenter` |
+| The two setters and one presenter, `PART_ContentPresenter`; no focus adorner | `contentcontrol.json` (no focus states) | `The_Theme_Sets_The_Phones_Two_Values_And_One_Presenter` |
 | The content placed by the content alignments: at Left and Top, the top left at its own size | the template; the dump's presenter at the control's corner | `The_Content_Is_Placed_By_The_Content_Alignments` (four cases) |
 | The Padding is the presenter's margin | the template | `The_Padding_Is_The_Presenters_Margin` |
 | Pivot's title laid out as the dump: the control stretched, 430.83 × 24.17, the presenter at its corner, 24.17 tall, the text 1.33 em | the dump (dark; light reads the same) | `Pivots_Title_Is_Laid_Out_As_The_Dump` |

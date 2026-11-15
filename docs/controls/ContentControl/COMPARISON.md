@@ -19,7 +19,7 @@ title's content, font and margin, and nothing else (the Pivot's headers and item
 | The ContentControl | 19.1667, 37.9167, 430.8333 × 24.1667 | 19.1667, 37.9167, 430.8333 × 24.1667 in a row its own height (the test); in the frame's stage it runs on down, drawing nothing | **match** |
 | Its content alignment | Left, Top | Left, Top | **match** |
 | The presenter, in the control | 0, 0, 119.5833 × 24.1667 | 0, 0, 121.6667 × 24.1667 | **match** in place and height; Selawik Semibold is 1.7% wider (ADR 0001), so the width is asserted within 10% |
-| The text's line | 24.1267 (1.33 × 18.14) | 24.1667: 1.33 × 18.14, rounded up to the raw pixel | **match** |
+| The text's line | 24.1267 (Segoe WP's 1.33 em; 1.33 × 18.14 is 24.1262) | 24.1667: 1.33 × 18.14, rounded up to the raw pixel | **match** |
 | The title's ink, raw pixels | x 47 to 332, y 106 to 138 | x 47 to 337, y 106 to 137 | **match** at the left and top; 5 px wider (Selawik Semibold, ADR 0001's 1.5 to 1.8%), its bottom 1 px higher |
 | A background, a border | not drawn (the template binds none) | not drawn: the slot's pixels are the page's, dark and light | **match** (tested: `Background_And_Border_Draw_Nothing_And_The_Padding_Takes_No_Hits`) |
 | The padding | the presenter's margin | the presenter's margin | **match** |
