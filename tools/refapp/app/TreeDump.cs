@@ -1,10 +1,15 @@
 using System;
 using System.Globalization;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
 using Windows.Foundation;
 using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Shapes;
 
 namespace RefApp
@@ -163,6 +168,26 @@ namespace RefApp
             {
                 // Not in the same tree, or not laid out: leave the bounds out rather than guess.
             }
+        }
+
+        /// <summary>
+        /// Renders the element with RenderTargetBitmap and writes it to the folder as a PNG (BGRA, premultiplied, 96 dpi),
+        /// as the suite's captures and the probes' snapshots both are. Returns the bitmap, for its size.
+        /// </summary>
+        public static async Task<RenderTargetBitmap> RenderPngAsync(StorageFolder folder, string file, UIElement element)
+        {
+            var rtb = new RenderTargetBitmap();
+            await rtb.RenderAsync(element);
+            var pixels = (await rtb.GetPixelsAsync()).ToArray();
+            var png = await folder.CreateFileAsync(file, CreationCollisionOption.ReplaceExisting);
+            using (var stream = await png.OpenAsync(FileAccessMode.ReadWrite))
+            {
+                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, 96, 96, pixels);
+                await encoder.FlushAsync();
+            }
+
+            return rtb;
         }
 
         public static string Colour(Color c) =>

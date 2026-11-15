@@ -47,6 +47,9 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 | `toggle.py` | `-Probe toggleswitch`, `toggletap` and `togglehalf` runs | each press (with its last pointer event, its gesture events and, from #33, its pointer timestamps), the tap limits, and the knob positions either side of the halfway line |
 | `tiltcurve.py` | a `-Probe tiltgrid` run | #60's tilt curve against each press |
 | `tiltrelease.py` | `-Probe tilt`, `tiltedge` and `tiltgrid` runs | the tilt's release frame by frame, which frame after the release it starts on, and its hold and return in animation time: a sine and a `KeySpline` fitted; #60's stopwatch fit beside them. A few seconds a run |
+| `scroll.py` | a `-Probe scroll` run (#113) | each flick's inertia: its distance and time, `FinalView` against the end, and an exponential, a constant deceleration and a deceleration `a + c v²` fitted to its frames; a table of every flick; with `--shared`, one `a` and `c` for all (about 30 s, and 15 s more with it); and when the indicator's `IndicatorMode` changes |
+| `scrollend.py` | a `-Probe scrollend -Record` run (#113) | the end-of-content squash frame by frame (the bars' spacing over their rest spacing), its limit and the point it scales about; the indicator's size, colour and fades. It reads two strips of the recording, which `--decode` makes with ffmpeg |
+| `listpress.py` | a `-Probe listpress` run (#113) | each touch's states, `ItemClick` and gestures, the item's tilt held beside the Button's model, and its return frame by frame |
 | `clock.py` | any probe run that logs its frames | the frames' mean spacing by the stopwatch (`motionlib.frame_spacing`), and the factor, 15.625 ms over it, that takes the run's stopwatch durations to animation time |
 | `motionlib.py` | | what they share: the run, the frame measurements, the projection, the easing curves and the fits |
 | `selftest.py` | nothing | checks the measurements and fits on synthetic data with known answers |
@@ -77,11 +80,12 @@ python -I tools/motion/selftest.py
 It builds data from known curves, a known camera and a known outline, runs the code the scripts use on it, and
 asserts the answer comes back: the edge crossings, the sheet's outline, the easings, the distinct values and their
 ticks (and a true median ratio), the exponential, ExponentialEase and KeySpline fits, the camera fit (on and off its
-grid) and the turnstile's angle and axis, the knob's missing-tick check, the arguments, and reading a run folder.
+grid) and the turnstile's angle and axis, the knob's missing-tick check, the arguments, and reading a run folder; and
+for #113 the deceleration fits, the inertia taken after the press, the squash and the indicator read off synthetic
+strips, and a list item's held tilt and return.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
-logged and a MenuFlyout rise cut off by the end of the log. It is not run by CI, which builds and tests the .NET
-solution only.
+logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.
 
 ## What they reproduce
 
