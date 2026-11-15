@@ -11,8 +11,8 @@ $SwitchColumn = 77
 $SwitchKnob = 20.5
 $SwitchBelow = 9.5
 $SwitchHeight = 36
-# How far drive.ps1's presses on the knob move: a tap that moves (under PhoneToggleSwitch's 17.86), a drag short of half
-# the travel, and a drag past it.
+# How far drive.ps1's presses on the knob move: a tap that moves (under PhoneToggleSwitch.TapDistance, 17.85), a drag short
+# of half the travel, and a drag past it. RealWindowTests checks them against TapDistance itself.
 $SwitchTapMove = 10
 $SwitchShortDrag = 24
 $SwitchLongDrag = 45
@@ -23,6 +23,12 @@ $SwitchHeaderIn = 10
 # and the thumb's width, which the thumb's middle travels the track less.
 $SliderTrackAbove = 35
 $SliderThumb = 9.5
+
+# A check's line, counted in the script that dot-sources this: drive.ps1 and selftest.ps1 print the same.
+function Check($name, [bool]$ok, $detail = '') {
+    $script:checks++
+    if ($ok) { "  ok    $name" } else { $script:failures++; "  FAIL  $name $detail" }
+}
 
 # A section runs when its title is like -Only, as -like matches, or like one of its comma-separated parts: so a title with a
 # comma in it is still selected by itself, which selftest.ps1 checks for each.

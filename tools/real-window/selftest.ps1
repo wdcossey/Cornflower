@@ -9,10 +9,6 @@ $ErrorActionPreference = 'Stop'
 
 $script:failures = 0
 $script:checks = 0
-function Check($name, [bool]$ok, $detail = '') {
-    $script:checks++
-    if ($ok) { "  ok    $name" } else { $script:failures++; "  FAIL  $name $detail" }
-}
 
 '== the helpers'
 $line = 'CORNFLOWER ready open=212ms scaling=1.25 view=490x800 raw=612x1000 safe=0,0,0,0 page=449.6x800 title=a page, with spaces'
@@ -48,8 +44,9 @@ Check 'KnobAt off is half a knob in from the column''s left' ($ox -eq (1000 - 4 
 Check 'KnobAt on is half a knob in from the right' ($nx -eq (1000 - 4 * $SwitchKnob / 2)) "$nx"
 Check 'the knob travels the column less its width' (($nx - $ox) -eq (4 * ($SwitchColumn - $SwitchKnob))) "$($nx - $ox)"
 Check 'KnobAt is the switch''s middle, above the row below it' (($oy -eq $ny) -and ($oy -eq (500 - 4 * ($SwitchBelow + $SwitchHeight / 2)))) "$oy"
-Check 'the presses fall either side of the limits: a tap''s move under 17.86, the short drag over it and short of half the travel, the long one past it' (
-    ($SwitchTapMove -lt 17.86) -and ($SwitchShortDrag -gt 17.86) -and ($SwitchShortDrag -lt ($SwitchColumn - $SwitchKnob) / 2) -and
+# Against the tap distance: RealWindowTests, which reads PhoneToggleSwitch's own.
+Check 'the drags fall either side of half the travel, the short one short of it and the long one past it, within the travel' (
+    ($SwitchTapMove -lt $SwitchShortDrag) -and ($SwitchShortDrag -lt ($SwitchColumn - $SwitchKnob) / 2) -and
     ($SwitchLongDrag -gt ($SwitchColumn - $SwitchKnob) / 2) -and ($SwitchLongDrag -le ($SwitchColumn - $SwitchKnob)))
 
 # A Slider 400 view px longer than its thumb, so that each value is a whole number of view px along.
@@ -102,9 +99,23 @@ Check 'the sample has pages' ($pages.Count -gt 0)
 foreach ($title in @(ArgumentsOf 'Open' | Sort-Object -Unique)) {
     Check "the page it opens, '$title', is in the sample" ($pages -ccontains $title)
 }
-foreach ($id in @((ArgumentsOf 'ById') + (ArgumentsOf 'TextOf') | Sort-Object -Unique)) {
+foreach ($id in @((ArgumentsOf 'ById') + (ArgumentsOf 'ReadOut') | Sort-Object -Unique)) {
     Check "the control it finds as '$id' is named in the sample" ($names -ccontains $id)
 }
+# RealWindowTests finds the same names with a pattern, which sees only a quoted name: so every call outside the two
+# functions' own definitions names its control in single quotes.
+function InsideFinder($node) {
+    for ($up = $node.Parent; $up; $up = $up.Parent) {
+        if ($up -is [System.Management.Automation.Language.FunctionDefinitionAst]) { return $up.Name -in 'ById', 'ReadOut' }
+    }
+    $false
+}
+$unquoted = @($ast.FindAll({ param($n)
+            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'ById', 'ReadOut' -and
+            -not ($n.CommandElements[1] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                $n.CommandElements[1].StringConstantType -eq 'SingleQuoted') -and -not (InsideFinder $n)
+        }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
+Check 'every control it finds by name is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
 
 "$($script:checks - $script:failures) of $($script:checks) checks passed"
 if ($script:failures -gt 0) { exit 1 }

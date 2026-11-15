@@ -52,7 +52,16 @@ public partial class RealWindowTests
             timeout.CancelAfter(TimeSpan.FromMinutes(2));
             var output = process.StandardOutput.ReadToEndAsync(timeout.Token);
             var errors = process.StandardError.ReadToEndAsync(timeout.Token);
-            await process.WaitForExitAsync(timeout.Token);
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                process.Kill(entireProcessTree: true);
+                throw;
+            }
+
             var said = $"{await output}\n{await errors}";
             Assert.True(process.ExitCode == 0, $"selftest.ps1 exited {process.ExitCode}:\n{said}");
             Assert.Contains(" checks passed", said);
@@ -124,7 +133,7 @@ public partial class RealWindowTests
     }
 
     /// <summary>
-    /// Every control drive.ps1 finds by its x:Name (<c>ById</c>, <c>TextOf</c>) is on a sample page, and Avalonia's peer
+    /// Every control drive.ps1 finds by its x:Name (<c>ById</c>, <c>ReadOut</c>) is on a sample page, and Avalonia's peer
     /// for it gives UI Automation that name as its AutomationId, as a control element; a TextBlock it reads gives its text
     /// as its name.
     /// </summary>
@@ -145,7 +154,7 @@ public partial class RealWindowTests
                 var peer = ControlAutomationPeer.CreatePeerForElement(control);
                 Assert.Equal(id, peer.GetAutomationId());
                 Assert.True(peer.IsControlElement(), $"{id} isn't a control element");
-                if (way == "TextOf")
+                if (way == "ReadOut")
                     Assert.Equal(Assert.IsType<TextBlock>(control).Text, peer.GetName());
             }
         }
@@ -188,6 +197,6 @@ public partial class RealWindowTests
     [GeneratedRegex(@"^\$(\w+) = ([\d.]+)\r?$", RegexOptions.Multiline)]
     private static partial Regex Constant();
 
-    [GeneratedRegex(@"\b(ById|TextOf) '([^']+)'")]
+    [GeneratedRegex(@"\b(ById|ReadOut) '([^']+)'")]
     private static partial Regex FindsByName();
 }

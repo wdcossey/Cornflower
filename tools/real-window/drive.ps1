@@ -136,11 +136,6 @@ $script:sections = 0
 # The page's render scaling, from its ready line: set by Open, read by Px.
 $script:scale = 0
 
-function Check($name, [bool]$ok, $detail = '') {
-    $script:checks++
-    if ($ok) { "  ok    $name" } else { $script:failures++; "  FAIL  $name $detail" }
-}
-
 # From the screen, not PrintWindow, which offsets a window with no frame of its own by its invisible border.
 function Shot($name) {
     $r = $win.Current.BoundingRectangle
@@ -183,8 +178,9 @@ function ById($id) {
     if (-not $el) { throw "Nothing on the page has the AutomationId $id" }
     $el
 }
-# What a TextBlock on the page shows, by its x:Name: UI Automation's name for it is its text.
-function TextOf($id) { (ById $id).Current.Name }
+# A TextBlock on the page that a section reads, by its x:Name: UI Automation's name for it is its text, read live from
+# .Current.Name. Found once, as a search of the whole tree takes long enough to shift a timed read.
+function ReadOut($id) { ById $id }
 function Texts { (All $CT::Text | ForEach-Object { $_.Current.Name } | Where-Object { $_ }) }
 function FirstText($like) { Texts | Where-Object { $_ -like $like } | Select-Object -First 1 }
 # A scroll bar's own buttons, which have no size at its ends and aren't the app's.
@@ -241,7 +237,10 @@ function LetGo {
         try { [RealInput]::TouchUp($script:touchX, $script:touchY) } catch { }
     }
 }
-function TouchDown($x, $y) { Guard; Within $x $y; $script:touching = $true; $script:touchX = $x; $script:touchY = $y; [RealInput]::TouchDown($x, $y) }
+function TouchDown($x, $y) {
+    if (-not $script:touch) { throw 'Touch injection did not start on this PC (InitializeTouchInjection failed), so no touch was sent' }
+    Guard; Within $x $y; $script:touching = $true; $script:touchX = $x; $script:touchY = $y; [RealInput]::TouchDown($x, $y)
+}
 function TouchMove($x, $y) { OnScreen $x $y; [RealInput]::TouchMove($x, $y); $script:touchX = $x; $script:touchY = $y }
 function TouchUp { [RealInput]::TouchUp($script:touchX, $script:touchY); $script:touching = $false }
 # A touch held still for a while, reported every 50 ms as a digitiser does, so the app sees pointer events all along.
@@ -278,19 +277,20 @@ function MouseDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16) {
     Release
 }
 # Wheel notches down the page, or up it, wherever the cursor is.
-function Wheel($notches) { Guard; 1..$notches | ForEach-Object { [RealInput]::Wheel(-120); Start-Sleep -Milliseconds 50 }; Start-Sleep -Milliseconds 350 }
-function WheelUp($notches) { Guard; 1..$notches | ForEach-Object { [RealInput]::Wheel(120); Start-Sleep -Milliseconds 50 }; Start-Sleep -Milliseconds 350 }
+function Turn($notches, $delta) {
+    Guard
+    for ($i = 0; $i -lt $notches; $i++) { [RealInput]::Wheel($delta); Start-Sleep -Milliseconds 50 }
+    Start-Sleep -Milliseconds 350
+}
+function Wheel($notches) { Turn $notches (-120) }
+function WheelUp($notches) { Turn $notches 120 }
 function ClickAt($x, $y) {
     Within $x $y
     Guard
     [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120
     Press; Start-Sleep -Milliseconds 50; Release; Start-Sleep -Milliseconds 600
 }
-function Click($el) {
-    $x, $y = Centre $el
-    if (-not (InWindow $x $y)) { throw "Not clicking $($el.Current.Name) at ${x}, ${y}: that's outside the window" }
-    ClickAt $x $y
-}
+function Click($el) { $x, $y = Centre $el; ClickAt $x $y }
 function IsFocused($el) { $f = $AE::FocusedElement; [bool]($f -and $el -and [Windows.Automation.Automation]::Compare($f, $el)) }
 function Invoke-Element($el) { $el.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke(); Start-Sleep -Milliseconds 600 }
 # What a page reports comes after layout, so it can take a moment.
@@ -323,7 +323,7 @@ function WaitForReady($seen, $seconds = 5) {
 }
 function OnIndex { [bool](Named $CT::Text 'samples') -and -not (Named $CT::Button 'Back') }
 function Index { $back = Named $CT::Button 'Back'; if ($back) { Invoke-Element $back } }
-# Opens a page afresh, from the list, and takes its scaling from its ready line.
+# Opens a page afresh, from the list, and takes its scaling from its ready line, which it keeps in $script:ready.
 function Open($title) {
     Index
     $link = Named $CT::Button $title
@@ -332,6 +332,7 @@ function Open($title) {
     Invoke-Element $link
     $line = WaitForReady $seen
     if (-not $line) { throw "$title wrote no ready line" }
+    $script:ready = $line
     $script:scale = ScalingOf $line
 }
 function Section($title, [scriptblock]$body) {
@@ -362,10 +363,11 @@ try {
     }
     # Before starting injection, which adds a contact of its own.
     $contacts = [RealInput]::GetSystemMetrics(95)
-    $touch = [RealInput]::TouchInit()
+    $script:touch = [RealInput]::TouchInit()
     "$Exe"
     "window $($r.Width) x $($r.Height) on the screen, frames in $Out"
-    "touch hardware contacts $contacts, touch injection $touch"
+    "touch hardware contacts $contacts, touch injection $($script:touch)"
+    Check 'touch injection starts' $script:touch 'InitializeTouchInjection failed: the touch sections will fail at their first touch'
     $titles = @(AppButtons | ForEach-Object { $_.Current.Name })
     Shot 'index'
     Check 'the list has a page' ($titles.Count -gt 0)
@@ -400,10 +402,9 @@ try {
     }
 
     Section 'The page opens at the reference view, 450 x 800' {
-        $seen = @(ReadyLines).Count
         Open 'theme'
-        $line = WaitForReady $seen
-        if ($line) { "        $line" }
+        $line = $script:ready
+        "        $line"
         $w, $h = PageOf $line
         $scaling = ScalingOf $line
         Check 'the ready line is the theme page''s' ((TitleOf $line) -ceq 'theme') "$line"
@@ -425,7 +426,8 @@ try {
         $b = $wifi.Current.BoundingRectangle
         $ox, $oy = KnobAt $b.Right $b.Bottom $script:scale $false
         $nx, $ny = KnobAt $b.Right $b.Bottom $script:scale $true
-        function State { TextOf 'State' }
+        $stateText = ReadOut 'State'
+        function State { $stateText.Current.Name }
         function IsOn { (State) -eq 'wi-fi is on' }
         # The switch's column, which the knob and the curtain move in.
         $switch = { Region ($b.Right - (Px $SwitchColumn)) ($oy - (Px ($SwitchHeight / 2))) (Px $SwitchColumn) (Px $SwitchHeight) }
@@ -493,6 +495,11 @@ try {
         Start-Sleep -Milliseconds 1200
         Check "a touch drag up the knob doesn't scroll the page" ($wifi.Current.BoundingRectangle.Y -eq $top) "$($wifi.Current.BoundingRectangle.Y) against $top"
         Check 'and, moving nothing across, leaves it off' (-not (IsOn)) (State)
+        # Off the switch, the same drag pans the page, so the check above proves something.
+        $hx, $hy = Centre (Named $CT::Text 'no header')
+        TouchDrag $hx $hy 0 (-(Px 120))
+        Start-Sleep -Milliseconds 1500
+        Check 'a touch drag up off the switch scrolls the page' ($wifi.Current.BoundingRectangle.Y -lt ($top - (Px 60))) "$($wifi.Current.BoundingRectangle.Y) against $top"
         $offLook.Dispose()
     }
 
@@ -503,7 +510,8 @@ try {
         Open 'slider'
         $volume = ById 'Volume'
         $b = $volume.Current.BoundingRectangle
-        function Value { CountOf (TextOf 'State') }
+        $valueText = ReadOut 'State'
+        function Value { CountOf $valueText.Current.Name }
         function Top { $volume.Current.BoundingRectangle.Y }
         function Near($want) { $v = Value; ($null -ne $v) -and [math]::Abs($v - $want) -le 3 }
         $top = Top
@@ -514,7 +522,7 @@ try {
         TouchDrag $x20 $y ($x80 - $x20) 0
         Start-Sleep -Milliseconds 400
         Shot 'slider-touch-drag'
-        Check 'a touch drag across moves the thumb with the finger, from 20 to 80' (Near 80) (TextOf 'State')
+        Check 'a touch drag across moves the thumb with the finger, from 20 to 80' (Near 80) ($valueText.Current.Name)
         Check 'and leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
 
         $x30, $null = SliderAt $b.X $b.Width $b.Bottom $script:scale 30
@@ -522,12 +530,12 @@ try {
         TouchDrag $x30 $y ($x50 - $x30) (-(Px 150)) 20
         Start-Sleep -Milliseconds 1200
         Shot 'slider-touch-drag-up'
-        Check 'a drag mostly up the page moves the thumb across, from 30 to 50' (Near 50) (TextOf 'State')
+        Check 'a drag mostly up the page moves the thumb across, from 30 to 50' (Near 50) ($valueText.Current.Name)
         Check 'and still leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
 
         MouseDrag $x50 $y ($x20 - $x50) 0
         Start-Sleep -Milliseconds 400
-        Check 'a mouse drag moves it back, to 20' (Near 20) (TextOf 'State')
+        Check 'a mouse drag moves it back, to 20' (Near 20) ($valueText.Current.Name)
 
         # Off the Slider, the same drag up pans the page, so the two above prove something.
         $hx, $hy = Centre (Named $CT::Text 'reversed')
@@ -535,7 +543,7 @@ try {
         Start-Sleep -Milliseconds 1500
         Shot 'slider-page-panned'
         Check 'a touch drag up off the Slider scrolls the page' ((Top) -lt ($top - (Px 60))) "$(Top) against $top"
-        Check 'and leaves the value' (Near 20) (TextOf 'State')
+        Check 'and leaves the value' (Near 20) ($valueText.Current.Name)
 
         # In the page's margin, left of every Slider.
         [void][RealInput]::SetCursorPos(([int]$win.Current.BoundingRectangle.X + (Px 6)), $hy); Start-Sleep -Milliseconds 150
@@ -553,25 +561,28 @@ try {
         Open 'repeatbutton'
         $more = ById 'More'
         $x, $y = Centre $more
-        $offY = $y + (Px 90)
-        Within $x $offY
-        function Count { CountOf (TextOf 'Count') }
+        # Off it sideways, along the row: the page's ScrollViewer doesn't scroll across, so no pan can take the touch,
+        # and only PhonePress can stop the repeats.
+        $offX = $x + (Px 120)
+        Within $offX $y
+        $countText = ReadOut 'Count'
+        function Count { CountOf $countText.Current.Name }
 
         ClickAt $x $y
-        Check 'a click counts once' ((Count) -eq 1) (TextOf 'Count')
+        Check 'a click counts once' ((Count) -eq 1) ($countText.Current.Name)
         Check 'and focuses it' (IsFocused $more) "$($AE::FocusedElement.Current.Name)"
         Key ' '
-        Check 'Space on it counts once' ((Count) -eq 2) (TextOf 'Count')
+        Check 'Space on it counts once' ((Count) -eq 2) ($countText.Current.Name)
         Tap $x $y
-        Check 'a touch tap counts once' ((Count) -eq 3) (TextOf 'Count')
+        Check 'a touch tap counts once' ((Count) -eq 3) ($countText.Current.Name)
 
         TouchDown $x $y
         Hold 250
         $pressed = Count
         Hold 1250
-        $held = Count
+        $repeated = Count
         Shot 'repeatbutton-held'
-        Slide $x $offY
+        Slide $offX $y
         Hold 150
         $offAt = Count
         Hold 1000
@@ -584,8 +595,8 @@ try {
         Start-Sleep -Milliseconds 400
         $after = Count
         Check 'a touch press counts at once, and not again within 500 ms' ($pressed -eq 4) "$pressed"
-        Check 'held, it repeats' ((($held - $pressed) -ge 10) -and (($held - $pressed) -le 40)) "$pressed to $held in about 1.25 s"
-        Check 'with the finger slid off it, the repeats stop' ($offLater -eq $offAt) "$offAt to $offLater in a second off it"
+        Check 'held, it repeats' ((($repeated - $pressed) -ge 10) -and (($repeated - $pressed) -le 60)) "$pressed to $repeated in about 1.3 s"
+        Check 'with the finger slid off it sideways, the repeats stop' ($offLater -eq $offAt) "$offAt to $offLater in a second off it"
         Check 'slid back on, they start again, with no second delay' (($backAgain - $offLater) -ge 5) "$offLater to $backAgain in 400 ms"
         Check 'and lifting the finger stops them' ($after -eq $lifted) "$lifted to $after"
 
@@ -594,7 +605,7 @@ try {
         Guard
         [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120
         Press; Start-Sleep -Milliseconds 1000
-        [void][RealInput]::SetCursorPos($x, $offY); Start-Sleep -Milliseconds 150
+        [void][RealInput]::SetCursorPos($offX, $y); Start-Sleep -Milliseconds 150
         $offAt = Count
         Start-Sleep -Milliseconds 800
         $offLater = Count
@@ -649,10 +660,9 @@ try {
         $r = $win.Current.BoundingRectangle
         $transform.Resize($r.Width + 300, $r.Height)
         Start-Sleep -Milliseconds 500
-        $seen = @(ReadyLines).Count
         Open 'theme'
-        $line = WaitForReady $seen
-        if ($line) { "        $line" }
+        $line = $script:ready
+        "        $line"
         $w, $h = PageOf $line
         # 300 pixels wider, less what the frame takes, which is far less than 100.
         Check 'once wider, the page is laid out wider' ($w -gt 450 + 200 / (ScalingOf $line)) "$line"

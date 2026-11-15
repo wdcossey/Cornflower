@@ -67,17 +67,18 @@ shows under its first control.
   it was; a press that moves 10 view px is still a tap, a drag of 24 (short of half the travel) goes
   back, one of 45 goes over, and back; the knob follows the finger while it is down; a still press held
   1.3 s is a hold and does nothing; a tap on the header, off the thumb, does nothing; the same by a
-  mouse click and a mouse drag; and a drag up the knob doesn't scroll the page. The limits are the
-  probes' (`tools/refapp/README.md`, "Probes").
+  mouse click and a mouse drag; and a drag up the knob doesn't scroll the page, where the same drag
+  off the switch does. The limits are the probes' (`tools/refapp/README.md`, "Probes").
 - **slider** (`PhoneNoManipulation`): in the page's ScrollViewer, a touch drag across moves the thumb
   from 20 to 80 and leaves the page; a drag mostly up the page, 150 view px up and 20 across, still
   moves the thumb, from 30 to 50, and still leaves the page; a mouse drag moves it back; a touch drag
   up off the Slider does scroll the page, so the first two prove something; and the wheel scrolls it
   back to the top and down again.
 - **repeatbutton** (`PhonePress`): a click counts once and focuses it, Space counts once, a touch
-  tap once; a touch press counts at once and not again within 500 ms, then repeats; slid 90 view px
-  off it the repeats stop, slid back they start again with no second delay, and they stop at the lift;
-  and the same with the mouse. Real time on Avalonia's own timer, so the bounds are loose.
+  tap once; a touch press counts at once and not again within 500 ms, then repeats; slid 120 view px
+  off it sideways (along the row, as the page's ScrollViewer doesn't scroll across, so no pan can take
+  the touch) the repeats stop, slid back they start again with no second delay, and they stop at the
+  lift; and the same with the mouse. Real time on Avalonia's own timer, so the bounds are loose.
 - **pointerover under a held touch**: whether Avalonia sets `:pointerover` under a real touch, which
   `PhonePress`'s note says the headless tests found it doesn't. The rail's Back draws `PhoneLowBrush`
   behind its arrow only under `:pointerover`, and a press dims it to 0.6, so a pixel in its corner is
@@ -98,7 +99,8 @@ from the Wp81 templates, in `helpers.ps1`.
 points, where the knob and the Slider's thumb are, and the `:pointerover` verdict. `selftest.ps1`
 checks them on known answers, and the script as parsed: that it parses, that each section's title
 selects it alone, and that every page it opens and every control it finds by name is in the sample.
-It takes no input and opens no window, so it runs on any OS, under pwsh 7 or Windows PowerShell 5.1:
+It takes no input and opens no window, so it runs on any OS, under pwsh 7 as the repo's tools do (and
+under Windows PowerShell 5.1, as `helpers.ps1` has to, since `drive.ps1` loads it under both):
 
 ```powershell
 pwsh -NoProfile -File tools/real-window/selftest.ps1
