@@ -48,6 +48,8 @@ public static class XdeMouse {
     [DllImport("user32.dll")] static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint ms);
+    [DllImport("winmm.dll")] public static extern uint timeEndPeriod(uint ms);
 
     const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004;
     const uint WM_MOUSEMOVE = 0x0200, WM_LBUTTONDOWN = 0x0201, WM_LBUTTONUP = 0x0202;
@@ -128,33 +130,43 @@ Log ("display window at {0},{1}, {2} x {3}; view {4} x {5}; {6:0.####} x {7:0.##
 $steps = New-Object System.Collections.Generic.List[string]
 if ($Mode -eq 'real') { [XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
 Log "playing $($lines.Count - 1) lines"
+# The system timer ticks every 15.6 ms unless asked for 1 ms, and a sleep of 1 ms lasts a tick: without it the steps of
+# a fast flick, 10 ms apart, bunched up (2026-11-15). With it a 1 ms sleep is about 1 ms, so the loop sleeps until 2 ms
+# before each step and spins only then, leaving the emulator the CPU.
+[void][XdeMouse]::timeBeginPeriod(1)
 $clock = [Diagnostics.Stopwatch]::StartNew()
 $at = 0.0
-foreach ($line in $lines[1..($lines.Count - 1)]) {
-    $parts = $line -split ' '
-    if ($parts[0] -eq 'wait') { $at += [double]$parts[1]; continue }
-    while ($clock.Elapsed.TotalMilliseconds -lt $at) {
-        if ($at - $clock.Elapsed.TotalMilliseconds -gt 3) { Start-Sleep -Milliseconds 1 }
-    }
-
-    $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
-    $y = [int][Math]::Round([double]::Parse($parts[2], $inv) * $sy)
-    if ($Mode -eq 'post') {
-        switch ($parts[0]) {
-            'down' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostDown($window, $x, $y) }
-            'move' { [XdeMouse]::PostMove($window, $x, $y) }
-            'up' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostUp($window, $x, $y) }
+try {
+    foreach ($line in $lines[1..($lines.Count - 1)]) {
+        $parts = $line -split ' '
+        if ($parts[0] -eq 'wait') { $at += [double]::Parse($parts[1], $inv); continue }
+        while ($clock.Elapsed.TotalMilliseconds -lt $at) {
+            if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
         }
-    }
-    else {
-        if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
-        [XdeMouse]::RealMove($left + $x, $top + $y)
-        if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
-        elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }
-    }
 
-    $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2} -> {3},{4}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $x, $y))
+        $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
+        $y = [int][Math]::Round([double]::Parse($parts[2], $inv) * $sy)
+        if ($Mode -eq 'post') {
+            switch ($parts[0]) {
+                'down' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostDown($window, $x, $y) }
+                'move' { [XdeMouse]::PostMove($window, $x, $y) }
+                'up' { [XdeMouse]::PostMove($window, $x, $y); [XdeMouse]::PostUp($window, $x, $y) }
+            }
+        }
+        else {
+            if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
+            [XdeMouse]::RealMove($left + $x, $top + $y)
+            if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
+            elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }
+        }
+
+        $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2} -> {3},{4}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $x, $y))
+    }
+}
+finally {
+    # Also when a step throws: the timer goes back, and the steps played so far reach the log.
+    [void][XdeMouse]::timeEndPeriod(1)
+    Add-Content $Log $steps
 }
 
-Add-Content $Log $steps
 Log 'done'

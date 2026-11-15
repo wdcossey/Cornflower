@@ -141,16 +141,7 @@ namespace RefApp
         private async Task RenderStage(ElementTheme theme, Specimen s, Stage stage, int popupCount)
         {
             var name = Id(theme, s, "stage");
-            var rtb = new RenderTargetBitmap();
-            await rtb.RenderAsync(stage.Outer);
-            var pixels = (await rtb.GetPixelsAsync()).ToArray();
-            var png = await _out.CreateFileAsync(name + ".png", CreationCollisionOption.ReplaceExisting);
-            using (var stream = await png.OpenAsync(FileAccessMode.ReadWrite))
-            {
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, 96, 96, pixels);
-                await encoder.FlushAsync();
-            }
+            var rtb = await TreeDump.RenderPngAsync(_out, name + ".png", stage.Outer);
 
             _count++;
             var j = new Json().Obj();

@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ContentControlPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 ContentControl, in the phone's theme (Wp81ContentControlTheme, set by key: Wp81 doesn't give it to every
+    ContentControl yet). Each is 100 tall in a slot drawn round it in PhoneLowBrush, so where its content sits shows:
+    at the top left, at its own size. Text, an element, a padding, a background that isn't drawn (the phone's template
+    draws none), the content alignments set by the page, and the light theme. The section headings are the type
+    ramp's, by their keys.
+  -->
+  <UserControl.Styles>
+    <Style Selector="Border.slot">
+      <Setter Property="BorderBrush" Value="{DynamicResource PhoneLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ContentControl.specimen">
+      <Setter Property="Theme" Value="{DynamicResource Wp81ContentControlTheme}" />
+      <Setter Property="Height" Value="100" />
+    </Style>
+  </UserControl.Styles>
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="text" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <Border Classes="slot">
+        <ContentControl x:Name="Text" Classes="specimen" Content="content control" />
+      </Border>
+
+      <TextBlock Text="an element" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Border Classes="slot">
+        <ContentControl x:Name="Element" Classes="specimen">
+          <Border Width="60" Height="40" Background="{DynamicResource PhoneAccentBrush}" />
+        </ContentControl>
+      </Border>
+
+      <TextBlock Text="padding 19,12" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Border Classes="slot">
+        <ContentControl x:Name="Padded" Classes="specimen" Padding="19,12" Content="content control" />
+      </Border>
+
+      <TextBlock Text="a background, not drawn" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Border Classes="slot">
+        <ContentControl x:Name="Unpainted" Classes="specimen" Content="content control"
+                        Background="{DynamicResource PhoneAccentBrush}" BorderBrush="{DynamicResource PhoneForegroundBrush}"
+                        BorderThickness="2" />
+      </Border>
+
+      <TextBlock Text="centred by the page" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Border Classes="slot">
+        <ContentControl x:Name="Centred" Classes="specimen" Content="content control"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+      </Border>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <Border Classes="slot">
+              <ContentControl x:Name="Light" Classes="specimen" Content="content control"
+                              Foreground="{DynamicResource PhoneForegroundBrush}" />
+            </Border>
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

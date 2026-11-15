@@ -39,6 +39,40 @@ def steps(run):
     return [(t, d) for t, w, d in probe(run) if w == 'step']
 
 
+def step_segments(rows, ignore=('snapshot ',), times=False):
+    """The log cut at each `step` line: (label, rows from that step to the next), or with `times` (label, the step's ms,
+    the next step's or None, rows). A label that comes again gets " (2)", " (3)" and so on, so that every touch's is its
+    own. Steps whose label starts with one of `ignore` don't cut the log: the scroll probes' first runs logged a snapshot
+    taken during a touch as a step."""
+    out, label, start, cur, seen = [], None, None, [], {}
+    for r in rows:
+        if r[1] == 'step' and not r[2].startswith(ignore):
+            if label is not None:
+                out.append((label, start, r[0], cur))
+            seen[r[2]] = seen.get(r[2], 0) + 1
+            label, start, cur = r[2] + (' (%d)' % seen[r[2]] if seen[r[2]] > 1 else ''), r[0], []
+        elif label is not None:
+            cur.append(r)
+    if label is not None:
+        out.append((label, start, None, cur))
+    return out if times else [(l, c) for l, _, _, c in out]
+
+
+def frame_times(run):
+    """Each recorded frame's time, in seconds from the start of the recording (frames.csv)."""
+    with open(os.path.join(run, 'frames.csv')) as f:
+        return [float(l.strip().rstrip(',')) for l in f if l.strip()]
+
+
+def recording_size(run):
+    """The recording's width and height: the emulator's display window, from rect.log ("... display window at 994,186,
+    540 x 960")."""
+    with open(os.path.join(run, 'rect.log')) as f:
+        last = [l for l in f if ' x ' in l][-1]
+    w, h = last.rsplit(',', 1)[1].split(' x ')
+    return int(w), int(h)
+
+
 def parse_args(doc, options=(), flags=(), nargs=(1, 1)):
     """The script's arguments: options that take a value (None when not given), flags (False when not given), and the
     positional arguments, between nargs[0] and nargs[1] of them. Exits with the script's docstring on anything else.
@@ -67,9 +101,8 @@ class Recording:
 
     def __init__(self, run, gray=None, view_w=VIEW_W):
         self.run = run
-        with open(os.path.join(run, 'frames.csv')) as f:
-            self.times = [float(l.strip().rstrip(',')) for l in f if l.strip()]
-        self.w, self.h = self._size(run)
+        self.times = frame_times(run)
+        self.w, self.h = recording_size(run)
         self.s = view_w / self.w
         size = self.w * self.h * len(self.times)
         if gray is None:
@@ -82,14 +115,6 @@ class Recording:
             raise SystemExit('%s is %d bytes, not %d x %d x %d frames' % (gray, os.path.getsize(gray), self.w, self.h, len(self.times)))
         self.gray = gray
         self._f = open(gray, 'rb')
-
-    @staticmethod
-    def _size(run):
-        # rect.log: "... display window at 994,186, 540 x 960"
-        with open(os.path.join(run, 'rect.log')) as f:
-            last = [l for l in f if ' x ' in l][-1]
-        w, h = last.rsplit(',', 1)[1].split(' x ')
-        return int(w), int(h)
 
     def close(self):
         self._f.close()

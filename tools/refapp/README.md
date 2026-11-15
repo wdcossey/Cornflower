@@ -23,6 +23,7 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Popups only -Grab               # th
 pwsh -NoProfile -File tools/refapp/run.ps1 -Demo                            # the demo page, left open in the emulator
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe tilt                        # one probe, with real touches (see Probes)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pages -Record               # a probe, with a recording of the screen (see Motion)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe scrollend -Record           # the end of the content and the indicator (see Probes)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
 
@@ -155,7 +156,8 @@ accepted.
 Captures per control, both themes: TextBlock styles 28, Button 10, HyperlinkButton 10,
 RepeatButton 10, ToggleButton 52, CheckBox 54, RadioButton 36, ToggleSwitch 60, Slider 6,
 ProgressBar 24, ProgressRing 10, TextBox 16, PasswordBox 14, ComboBox 22, DatePicker 2,
-TimePicker 2, AppBarButton 12, AppBarToggleButton 36, ListViewItem 84, ListView 2, Pivot 6, Hub 8.
+TimePicker 2, AppBarButton 12, AppBarToggleButton 36, ListViewItem 84, ListView 2, Pivot 6, Hub 8. Since #113 the
+catalogue also has ScrollViewer 16 and ScrollBar 42 ([the panning indicator](#scrollviewer-and-scrollbar-the-panning-indicator-2026-11-15-device-11-113-for-116)).
 
 **What it doesn't reach yet:**
 - **States on inner parts.** DatePicker, TimePicker and ListView declare no states on their own
@@ -411,7 +413,8 @@ last touch has settled. `touch.log` says where each step landed on the VM's scre
 
 Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tiltedge` and `tiltgrid` (#22), and for #24 `motion`, `pages`,
 `projections` and `ring` ([Motion](#motion-2026-11-10-device-11-24)), and `ringsize` for #28 (B6:
-[the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)). Each frame's value is read on the UI thread in
+[the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
+`listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -594,6 +597,184 @@ centre as a fraction of its width and height (−0.5 to 0.5):
   screen (A −0.72° and D +0.35°, both on `RotationX`): #65 can check
   whether its eye distance scales with the screen.
 
+### Scrolling: how the scroll probes run (2026-11-15, device 11, #113)
+
+`scroll`, `scrollend` and `listpress` (`app\Probe.Scroll.cs`; gap register B8) read what scrolling does. A ScrollViewer
+takes a touch over once it pans: the touch's pointer events end in `PointerCaptureLost`, not `PointerReleased`, so these
+probes don't count releases. They run on a schedule. The first touch is a tap on a 60 px header band, which flashes
+white for 250 ms (the mark that pairs a recording with the log). Each later touch is planned at a known time after it,
+and the app sets its starting offset from code 1.2 s before it is due. Every frame the log has the frame's
+`RenderingTime` with the ScrollViewer's `VerticalOffset` and its ScrollBar's indicator, and each `ViewChanging`
+(`NextView`, `FinalView`, `IsInertial`) and `ViewChanged`. [`tools/motion`](../motion/README.md)'s `scroll.py`,
+`scrollend.py` and `listpress.py` print every number below from the runs.
+
+- **`RenderingTime` is the animation clock.** It moves by whole 15.625 ms steps from frame to frame, so the inertia
+  below is timed in animation time, frames counted ([the clock](#progressring-the-size-threshold-and-the-clock)).
+- **`touch.ps1` now asks Windows for a 1 ms timer.** Its waits were sleeps of a 15.6 ms tick, so a flick's moves, 10 ms
+  apart, bunched up. Since then each step lands within about a millisecond of its plan.
+- **The fastest flicks don't arrive.** A 240 px drag in 40 ms reached the phone as a press and a release (a tap) in 2 of
+  3 tries, and in 60 ms in 1 of 3: the emulator passes the mouse's moves on 15 to 30 ms apart. 60 ms is the fastest
+  flick read.
+- **The emulator can lose its VM.** On the first try the touches never arrived: XDE showed "The connection to the
+  virtual machine is lost". Turning the emulator off and booting it again cured it. Look at the VM's desktop when a
+  probe's start tap never comes.
+
+### ScrollViewer: deceleration (2026-11-15, device 11, #113)
+
+`20261115-1938-dev11` (`-Probe scroll`). A ScrollViewer 740 view px tall over 100,000 px of content, flicked up from
+offset 2,000: the finger moved 240 px in 60, 80, 120, 200 and 400 ms and 120 px in 400 ms, three times each. The content
+is a Grid of bars, which has no snap points. Times are in ms of animation time, from the frame before the first inertial
+frame (the release's frame) to the first frame at the end. A frame is logged only when something on it changed, so the
+release's frame is taken as one tick before the first inertial one, at the offset last logged.
+
+| Flick | Speed at the start (px/ms) | Distance (view px) | Time (ms) |
+|---|---|---|---|
+| 240 px in 60 ms (2 of 3) | 3.27 | 2,219.7 and 2,219.8 | 2,125 and 2,141 |
+| 240 px in 80 ms | 3.40 to 3.54 | 1,934 to 2,055 | 2,141 |
+| 240 px in 120 ms | 1.88 to 2.27 | 1,141 to 1,385 | 2,062 to 2,094 |
+| 240 px in 200 ms | 0.90 to 1.05 | 549 to 647 | 1,609 to 1,719 |
+| 240 px in 400 ms | 0.54 to 0.55 | 307 to 311 | 1,281 |
+| 120 px in 400 ms | 0.30 to 0.33 | 123 to 146 | 812 to 891 |
+
+The speed at the start is the `a + c v²` fit's (below).
+
+- **Where it stops is decided at the release.** In every flick the first inertial `ViewChanging`'s `FinalView` is
+  exactly the offset it ends on.
+- **It slows smoothly to a stop**, with no overshoot and no bounce.
+- **Time levels off at about 2.1 s, and distance at about 2,220 px.** Every flick that travelled more than about
+  1,100 px took 2,062 to 2,141 ms. Both 60 ms flicks went 2,219.7 px, as if the start speed were capped.
+- **No one simple law fits every speed:**
+  - An exponential decay (`offset = end − d e^(−t/τ)`, its end fitted too) is out by rms 1.9 to 3.2 px on the slow
+    flicks and 6 to 13 px on the fast ones, with τ from 440 to 760 ms, longer the faster. Its end lies 30 to 185 px
+    past where the scroll really stops: the phone's comes to a stop, and an exponential never does.
+  - A constant deceleration fits the slow flicks. For 120 px in 400 ms: 0.000363 px/ms² (363 view px/s²), rms 0.29 to
+    0.40 px. For 240 px in 400 ms: 0.00040 px/ms², rms 1.5 px. It gets worse as the flick gets faster: rms 5.7 to
+    7.9 px at 200 ms, 21 to 26 px at 120 ms, 36 to 44 px at 60 and 80 ms. A fast flick sheds more speed early on.
+  - A constant deceleration plus a quadratic drag (`dv/dt = −a − c v²`) fits each flick on its own: rms 0.2 to 3.6 px. But its constants move with the speed: `a` from 0.00029 to 0.0007 px/ms², `c` from 0 (the
+    slowest flicks) to 0.0019 /px. One `a` and `c` for every flick (0.000529 px/ms² and 0.000679 /px; `scroll.py
+    --shared`) is out by rms 11.3 px over them all, and by up to 20 px rms on a fast one.
+  - So the inertia is close to a constant deceleration of about 0.00036 px/ms² for slow flicks. Faster flicks stop
+    sooner than that would give, and the curve's shape changes with the speed. The table and the per-flick fits are
+    what to build or test against. Whether to build it as a part or record a deviation is #116's call.
+- **Snap points.** The phone's ScrollViewer reads `VerticalSnapPointsType` `Optional` and `VerticalSnapPointsAlignment`
+  `Near` (the property defaults; the style sets neither). A StackPanel gives snap points at its children. The first run,
+  `20261115-1933-dev11`, scrolled a StackPanel of 100 px rows, and every flick ended on a multiple of 100. The last four
+  flicks of `20261115-1938-dev11` are on a StackPanel again: they ended on 3,600, 3,500, 2,600 and 2,500, and otherwise
+  moved as on the Grid (the 120 ms flicks went 1,383 and 1,296 px in 2,094 ms). On the Grid, flicks ended anywhere
+  (4,322, 4,382, 2,753 and so on).
+- A drag held still for 500 ms before the release raises an inertial `ViewChanging` too, but moves 0.04 px.
+
+### ScrollViewer: the end of the content (2026-11-15, device 11, #113)
+
+`20261115-1946-dev11` (`-Probe scrollend -Record`): the same ScrollViewer over 2,000 px of bars 100 view px apart
+(1,260 px of scrolling). Pulled past the top by 100, 200, 300 and 400 px in 500 ms and held there 1.5 s; pulled 200 px
+past the bottom; flicked (240 px in 60 ms) into the top and into the bottom, twice each.
+
+- **The app sees nothing of it.** During a pull past the end there is no `ViewChanging`, no change of offset, and no
+  indicator state change. DirectManipulation draws it. `scrollend.py` reads it off the recording: the bars' spacing and
+  positions in a 12 px strip of each frame, paired with the log by the header's flash.
+- **The content is squashed along the scroll axis, about a point about 1,550 view px past the pulled edge.** Each frame
+  is the content at rest scaled by `s` about that point: 1,528 to 1,557 view px past the edge in all 9 touches, top and
+  bottom. So the edge moves in by (1 − s) × 1,550 px. What sets 1,550 isn't read: it is neither the content's length
+  nor the viewport's (740).
+- **The squash has a limit, `s` = 0.910**, with the edge 139 view px in. A pull of 100 px held still reached `s` 0.959
+  (the edge 62.7 px in), 200 px 0.913 (135.0 px), and 300 and 400 px 0.910 (139.1 px). The bottom pull of 200 px reached
+  0.913. Every flick into either end reached 0.910.
+- **Let go, it springs back in about 200 ms**: a held pull is at rest 185 to 240 ms after its release. A flick into the
+  end squashes to 0.910 in about 130 ms, holds about 100 ms, and is back in about 130 ms more: at rest 570 to 680 ms
+  after the press.
+- These times are by the recording's clock (frames about 33 ms apart), paired with the log by the flash, so each is good
+  to about 35 ms. Which clock they are on is open, as for the other recordings
+  ([Motion](#motion-2026-11-10-device-11-24)).
+- In the app, a flick into the top ends with `ViewChanging` at 0. `ViewChanged` with `IsIntermediate` false comes
+  about 400 ms (stopwatch) later, as the squash ends.
+
+### ScrollViewer and ScrollBar: the panning indicator (2026-11-15, device 11, #113, for #116)
+
+The catalogue now has `ScrollViewer` (`rest` and `offset-200`: 280 tall over 14 lines, 560 px) and `ScrollBar`
+(`vertical`, `horizontal` and `no-indicator`: 200 long, `Maximum` 100, `ViewportSize` 50, `Value` 25), each at rest and
+in every state its template declares, dark and light: `20261115-1921-dev11` (`-Only '^Scroll'`, 58 captures, 0 errors).
+The `scrollend` recording shows the indicator in a ScrollViewer, dark and light (`20261115-1946-dev11`).
+
+- **`RenderTargetBitmap` doesn't draw a ScrollViewer's own indicator**, in any state, though the dump has it at full
+  opacity. Forcing the ScrollViewer's `ScrollingIndicatorStates` to `TouchIndicator`, which sets the ScrollBar's
+  `IndicatorMode`, doesn't help. A standalone ScrollBar does draw: its PNGs are the indicator's pixels. The recording is
+  the ScrollViewer's.
+- **Size.** The thumb is a Rectangle with `Width` 2.4 (`ScrollBarPanningThumbThemeWidth`), which lays out as 2.5 view
+  px (6 raw px). It is centred in a ScrollBar 7.083 view px wide (`MinWidth` 7, so 17 raw px). The bar is flush with the
+  ScrollViewer's right edge, so the thumb is 2.083 px in from the bar's left and 2.5 px in from the right edge. The
+  recording agrees: 3 px at 1.2 a view px, its right edge 3 px from the screen's.
+  - The ScrollBar's code sets the thumb's `Height` to its length × viewport ÷ extent. The vertical ScrollBar: 200 × 50
+    ÷ 150 = 66.7, laid out 67.08 (161 raw px). The ScrollViewer: 280 × 280 ÷ 560 = 140. The recording: 740 × 740 ÷
+    2,000 = 273.8, recorded as 275 px.
+  - The code sets its `Margin`'s top to the offset ÷ the scrollable length × (the bar's length − the thumb's): 33.25 for
+    `Value` 25; 100 at offset 200.
+  - The thumb's `MinHeight` is 7 (`ScrollBarMinThemeHeight`), laid out 7.083: its length over 100,000 px of content.
+  - The horizontal ScrollBar is the same turned through 90°. The ends are square.
+- **Colour.** `ScrollBarPanningBackgroundThemeBrush` is `PhoneBaseLowColor`: `#73FFFFFF` dark, `#40000000` light. On
+  the stage it is 115 grey over black and 191 over white, in the standalone PNGs and the recordings alike. The
+  `Disabled` state halves the root's opacity (58 over black).
+- **When it shows.** The ScrollBar's `IndicatorMode`, and its `ScrollingIndicatorStates` with it, becomes
+  `TouchIndicator` 35 to 105 ms after the press (stopwatch), as the pan starts.
+  - It goes back to `None` 75 to 180 ms after the inertia ends (the median about 130). It also goes back while a finger
+    is held still: about 115 ms after the movement stops (the held drag's `None` at +515 ms, its moves ending at +400).
+  - A `ChangeView` from code, even with `disableAnimation`, shows it for about 180 ms.
+  - A pull past the end at offset 0 doesn't show it.
+  - The ScrollViewer's own `ScrollingIndicatorStates` goes back to `TouchIndicator` about every 135 ms while it
+    scrolls, and to `NoIndicator` about 50 ms after the ScrollBar's (the template's 0.05 s keyframe).
+- **The fades.** The ScrollBar's `TouchIndicator` and `NoIndicator` states run `FadeInThemeAnimation` and
+  `FadeOutThemeAnimation` on `VerticalPanningRoot`. The app reads its opacity as 1 throughout: the fades are only in the
+  recording.
+  - Fade in: the first frame shows it at 27% (31 of 115), about 100 ms after the state change by the log. It then
+    climbs almost evenly, a frame (33 ms) apart: 37, 42, 51, 60, 69, 81, 88, 94, 99 and 100%. That is about 2.7 a
+    second, so 0 to 1 in about 370 ms, starting at the state change.
+  - Fade out: it starts with the `NoIndicator` state, within the recording's 35 ms. It falls almost evenly: 80, 65, 51,
+    39 and 21% over 200 ms, about 2.95 a second, so about 340 ms from full to gone.
+  - Shown only briefly (a `ChangeView`, a flick into the end), it fades out from wherever it had got to: 55 to 65%.
+  - These are by the recording's clock, which is open, as above.
+- `ScrollViewer.VerticalSnapPointsType` is `Optional` (above); `IsScrollInertiaEnabled` and `IsVerticalRailEnabled` are
+  true.
+
+### ListView: an item's press (2026-11-15, device 11, #113)
+
+`20261115-1941-dev11` and `20261115-1948-dev11` (`-Probe listpress`): a ListView with `IsItemClickEnabled`, each item a
+TextBlock in `ListViewItemTextBlockStyle`. The second run has 40 items, so that the list pans. Each item is 412.08 ×
+39.17 view px. The template's `Pressed` state runs a `PointerDownThemeAnimation` on `TiltContainer`, and its `Pressed`
+to `Normal` transition a `PointerUpThemeAnimation`: the tilt.
+
+- **No delay.** `CommonStates` goes `Normal` > `Pressed` within 0.3 to 2.6 ms of `PointerPressed`, in the same input
+  dispatch, on every press. It doesn't wait to tell a tap from a pan.
+- **The press, frame by frame.** The first frame that changes, 30 to 45 ms after the press, shows the depth with almost
+  no angle: at the centre, `GlobalOffsetZ` −24.8 and `RotationX` −0.1 to +0.3°. The next frame shows the angle a little
+  past its held value (−2.38° where it holds −2.13°; −8.20° where it holds −8.11°). The one after settles.
+- **The tilt is the Button's** ([the model](#tilt-the-model-2026-11-09-device-11-for-22)):
+  - `RotationY`: +8.09 and −8.10° at 5% and 95% across, +4.40 and −4.42° at 25% and 75%, where the Button's rule gives
+    ±8.01° and ±4.37°.
+  - `GlobalOffsetZ` = −25 × (1 − (|`RotationX`| + |`RotationY`|) / 17.19°) exactly.
+  - `RotationX` carries the screen-position bias: −1.5 to −2.1° at the centres of items 1 to 3, which sit 119 to 236
+    view px down, well above the screen's centre. At 10% and 90% down item 2 it is −8.11° and +5.57°: ±6.84° about a bias
+    of −1.27°, against the rule's ±6.97°. The bias is larger than the Button's at the same height on screen because
+    the angle goes with the press's fraction of the item's height, and an item is short.
+  - `CenterOfRotation` is 0.5, 0.5. As on the Button, the press gives `TiltContainer` a `CompositeTransform`
+    translating it by 0.8 × (the screen's centre − the item's centre), with `GlobalOffsetX` and `GlobalOffsetY` the
+    opposite: item 3, centred at 225.2, 217.1, gets −0.167, 146.333.
+- **The release is the Button's, to four places.** After every release the tilt holds, then returns through the same
+  fractions of the held tilt, one a frame: 0.9412, 0.8039, 0.6885, 0.5832, 0.4845, 0.3913, 0.3030, 0.2210, 0.1431,
+  0.0737, 0.0163, then rest. The first change comes 182 to 190 ms after the release, and rest 352 to 371 ms after it,
+  by the stopwatch. In animation time that is the Button's hold of 182.6 ms, then a `KeySpline` over 167.0 ms
+  ([in frames](#tilt-the-model-2026-11-09-device-11-for-22)). `Pressed` > `Normal` comes at the end of the return.
+- **A tap** (80 or 150 ms) presses and returns the same way. `ItemClick` and `Tapped` come with the release.
+- **A pan cancels the press and runs the release.** A press held 300 ms and then dragged 80 px up (the list pans) or
+  down (past the top) loses its pointer capture about 50 ms after the move starts. The tilt holds where it was, then
+  returns as after a release, timed from the capture lost. There is no `ItemClick` and no `Tapped`. A flick loses capture
+  30 to 60 ms after the press, sometimes before the tilt has shown more than its first frame.
+- **Dragged off the item** where the list can't pan (the first run's 12 items), the tilt follows the finger while it is
+  on the item, and returns about 190 ms after the finger leaves it, with no `ItemClick`.
+- **A press moved 10 px sideways** is still a tap (`ItemClick`, `Tapped`). `RotationY` follows the finger a little
+  (−0.42° at 10 px).
+- Clocks: the press and release times are by the stopwatch, between input events. The return's fractions are the
+  Button's, which are on animation time.
+
 ## Motion (2026-11-10, device 11, #24)
 
 How the theme moves: the ToggleSwitch's slide, the flyouts and pickers opening and closing, the
@@ -654,6 +835,10 @@ to about a frame.
 | The ProgressRing's 4.132 s cycle; a dot hiding 3.090 s after it shows; the dots 164 ms apart (the median), 150 to 165 ms in the first cycle and 129 to 167 ms over nine | the stopwatch | 4,307.6 ms, 3,221.3 ms, 171 ms, 156 to 172 ms and 134 to 174 ms of animation time (× 1.0425 on `20261110-0829-dev11`), against the keyframes' 4,305 ms, 3,220 ms and 167 ms. The spacing is read on frames, so each is ±15 ms |
 | The ProgressRing clock's own numbers (`Completed` 3,856.5 ms after `Begin()` and the like) | the stopwatch, and said so | the storyboard's own time is read beside them |
 | The tilt press's first frame, 30 to 40 ms after the press | the stopwatch | about 31 to 42 ms (× 1.0405 on `20261109-2307-dev11`); a press is a jump, so there is no duration to build |
+| The ScrollViewer's inertia (#113): each flick's time, 812 to 2,156 ms, and the fits' constants | frames: `RenderingTime`, which steps by 15.625 ms a frame | as given |
+| The indicator's `IndicatorMode` changes and the ListView's press and release times (#113) | the stopwatch, between input events and states | left as read, as the tap limit is |
+| The ListView item's tilt return (#113) | frames: the same fractions a frame as the Button's | the Button's 182.6 ms hold and 167.0 ms `KeySpline` |
+| The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
 
 **A PlaneProjection's camera** (`-Probe projections`, `20261110-0756-dev11`): a full-window panel given

@@ -2,17 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Graphics.Display;
-using Windows.Graphics.Imaging;
 using Windows.Security.ExchangeActiveSyncProvisioning;
 using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Markup;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 
 namespace RefApp
 {
@@ -182,16 +179,7 @@ namespace RefApp
                     await Task.Delay(StateSettleMs);
                 }
 
-                var rtb = new RenderTargetBitmap();
-                await rtb.RenderAsync(stage.Outer);
-                var pixels = (await rtb.GetPixelsAsync()).ToArray();
-                var png = await _out.CreateFileAsync(name + ".png", CreationCollisionOption.ReplaceExisting);
-                using (var stream = await png.OpenAsync(FileAccessMode.ReadWrite))
-                {
-                    var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                    encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, 96, 96, pixels);
-                    await encoder.FlushAsync();
-                }
+                var rtb = await TreeDump.RenderPngAsync(_out, name + ".png", stage.Outer);
 
                 var j = new Json().Obj();
                 j.Prop("file", name + ".png");
