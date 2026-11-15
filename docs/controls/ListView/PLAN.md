@@ -197,7 +197,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 7. **The check mode is `Multiple` and `Toggle`**, and nothing else (six modes).
    `The_Check_Mode_Is_Multiple_And_Toggle`.
 8. **Every item follows the list's mode**: the realised ones when it changes, those made or recycled as the list
-   scrolls, an item that is its own container. `Every_Item_Follows_The_Lists_Mode`.
+   scrolls, an item that is its own container, `Every_Item_Follows_The_Lists_Mode`; and one the list recycled while
+   the mode changed comes back in the new mode with no slide,
+   `A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide`.
 9. **Outside a list, or in a list in an app's own theme, an item isn't in the check mode.**
    `An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode`.
 10. **In the check mode the box comes in and the content goes over**, -40.5 to 0 and 0 to 40.5, the tokens' values,

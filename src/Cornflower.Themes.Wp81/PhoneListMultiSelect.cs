@@ -1,6 +1,6 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 
 namespace Cornflower.Themes.Wp81;
 
@@ -15,12 +15,14 @@ namespace Cornflower.Themes.Wp81;
 /// <remarks>
 /// <para>Only both flags. <see cref="SelectionMode.Multiple"/> alone is WinRT's <c>Extended</c>, chosen with the
 /// modifier keys, which shows no check boxes here; <see cref="SelectionMode.Toggle"/> alone toggles one item.</para>
-/// <para>The list does the work, not each item: it marks each container as it is prepared, a recycled one again
-/// as it is reused, and every realised one when <see cref="ListBox.SelectionMode"/> changes. So it costs a list one
-/// handler and a container one property, and no global rule. An item outside a list is never in the mode; an item that
-/// is its own container keeps its mark when it is taken out of the list, until a list prepares it again. Turned off (a
-/// theme of the app's own on the list), it lets go: the new theme's template makes new containers, which it doesn't
-/// mark.</para>
+/// <para>The list does the work, not each item: it marks each container as it is prepared, and every one it has when
+/// <see cref="ListBox.SelectionMode"/> changes: the realised ones, and those its virtualising panel recycled, which it
+/// keeps out of the tree until it reuses them. Marked while out of the tree, where Avalonia runs no transition, a
+/// recycled one comes back already in the mode, so its box doesn't slide as it is shown. So it costs a list two
+/// handlers and a weak set, a container one property, and no global rule. An item outside a list is never in the
+/// mode; an item that is its own container keeps its mark when it is taken out of the list, until a list prepares it
+/// again. Turned off (a theme of the app's own on the list), it lets go: the new theme's template makes new
+/// containers, which it doesn't mark.</para>
 /// </remarks>
 internal static class PhoneListMultiSelect
 {
@@ -35,15 +37,25 @@ internal static class PhoneListMultiSelect
     /// <summary>The selection that is the check mode: WinRT's <c>Multiple</c>.</summary>
     private const SelectionMode CheckMode = SelectionMode.Multiple | SelectionMode.Toggle;
 
+    /// <summary>Each list's containers cleared and not yet prepared again: the ones its panel keeps to reuse.</summary>
+    private static readonly ConditionalWeakTable<ListBox, ConditionalWeakTable<Control, object?>> Recycled = new();
+
     static PhoneListMultiSelect()
     {
         IsEnabledProperty.Changed.AddClassHandler<ListBox>((list, e) =>
         {
             // A theme's setter comes before its template, so every container is prepared after this.
             if (e.GetNewValue<bool>())
+            {
                 list.ContainerPrepared += OnPrepared;
+                list.ContainerClearing += OnClearing;
+            }
             else
+            {
                 list.ContainerPrepared -= OnPrepared;
+                list.ContainerClearing -= OnClearing;
+                Recycled.Remove(list);
+            }
         });
         ListBox.SelectionModeProperty.Changed.AddClassHandler<ListBox>((list, _) =>
         {
@@ -64,8 +76,18 @@ internal static class PhoneListMultiSelect
 
     private static void OnPrepared(object? sender, ContainerPreparedEventArgs e)
     {
+        if (sender is not ListBox list)
+            return;
+
+        if (Recycled.TryGetValue(list, out var recycled))
+            recycled.Remove(e.Container);
+        Mark(e.Container, IsCheckMode(list));
+    }
+
+    private static void OnClearing(object? sender, ContainerClearingEventArgs e)
+    {
         if (sender is ListBox list)
-            Mark(e.Container, IsCheckMode(list));
+            Recycled.GetOrCreateValue(list).AddOrUpdate(e.Container, null);
     }
 
     private static void MarkAll(ListBox list)
@@ -73,6 +95,12 @@ internal static class PhoneListMultiSelect
         var on = IsCheckMode(list);
         foreach (var container in list.GetRealizedContainers())
             Mark(container, on);
+
+        if (Recycled.TryGetValue(list, out var recycled))
+        {
+            foreach (var (container, _) in (IEnumerable<KeyValuePair<Control, object?>>)recycled)
+                Mark(container, on);
+        }
     }
 
     private static void Mark(Control container, bool on)

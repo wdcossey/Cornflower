@@ -380,6 +380,30 @@ public class ListViewTests
         Assert.True(IsOn((ListBoxItem)own.Items[0]!));
     }
 
+    // A container the list recycled while the mode changed comes back in the new mode at once, with no slide: a list
+    // that left the check mode while scrolled doesn't show boxes sliding out of the items it brings back.
+    [AvaloniaFact]
+    public void A_Recycled_Item_Comes_Back_In_The_Lists_Mode_Without_A_Slide()
+    {
+        using var page = new ProbePage(60);
+        var list = page.List;
+        list.Height = 400;
+        list.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        list.ScrollIntoView(55);
+        Dispatcher.UIThread.RunJobs();
+
+        list.SelectionMode = SelectionMode.Single;
+        Dispatcher.UIThread.RunJobs();
+        list.ScrollIntoView(0);
+        Dispatcher.UIThread.RunJobs();
+
+        var first = (ListBoxItem)list.ContainerFromIndex(0)!;
+        Assert.False(IsOn(first));
+        Assert.Equal(ContentOffsetX, ShiftOf(Part<Grid>(first, "CheckboxContainer")), 0.001);
+        Assert.Equal(0, ShiftOf(Part<Border>(first, "ContentBorder")), 0.001);
+    }
+
     // An item outside a list is never in the check mode, and a list in a theme of the app's own lets its items go.
     [AvaloniaFact]
     public void An_Item_Outside_A_List_Or_In_Another_Theme_Isnt_In_The_Check_Mode()
