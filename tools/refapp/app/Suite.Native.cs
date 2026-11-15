@@ -252,7 +252,11 @@ namespace RefApp
                             continue;
                         }
 
-                        await Task.WhenAny(loaded.Task, Task.Delay(3000));
+                        if (await Task.WhenAny(loaded.Task, Task.Delay(3000)) != loaded.Task)
+                        {
+                            _errors.Add(what + ": Loaded never came; read anyway");
+                        }
+
                         settled = await SettleTray(() => bar.ActualHeight > 0);
                         Entry(into, what + " closed", e => AppBar(e, page, bar, mode.ToString(), tray, settled));
 
@@ -279,7 +283,9 @@ namespace RefApp
                         });
                         if (await Task.WhenAny(closed.Task, Task.Delay(3000)) != closed.Task)
                         {
-                            _errors.Add(what + ": Closed never came");
+                            // Never take a popup away mid-animation (README): leave this bar, and stop the app bar readings.
+                            _errors.Add(what + ": Closed never came; the bar is left on the page and the app bar readings stop");
+                            goto Restore;
                         }
 
                         await Task.Delay(800);
@@ -296,6 +302,7 @@ namespace RefApp
                 }
             }
 
+        Restore:
             await Step("appBar restore", async () =>
             {
                 view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseVisible);

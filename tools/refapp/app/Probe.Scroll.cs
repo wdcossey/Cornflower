@@ -423,18 +423,10 @@ namespace RefApp
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.VerticalOffset) + " final " + Num(e.FinalView.VerticalOffset) + " inertial " + e.IsInertial + (e.NextView.ZoomFactor != 1 ? " zoom " + Num(e.NextView.ZoomFactor) : ""));
             sv.ViewChanged += (s, e) => Log("viewchanged", Num(sv.VerticalOffset) + " intermediate " + e.IsIntermediate);
 
-            double[] last = null;
-            EventHandler<object> frame = null;
-            frame = (s, e) =>
+            // The values are compared as they are read, every frame; the line is built only when one changed.
+            double[] now = null;
+            WatchFrames(() =>
             {
-                if (_finished)
-                {
-                    CompositionTarget.Rendering -= frame;
-                    return;
-                }
-
-                // The values are compared as they are read, every frame; the line is built only when one changed.
-                double[] now;
                 try
                 {
                     var tb = Bounds(thumb);
@@ -445,17 +437,8 @@ namespace RefApp
                     now = new[] { sv.VerticalOffset };
                 }
 
-                if (last != null && last.SequenceEqual(now))
-                {
-                    return;
-                }
-
-                last = now;
-                var text = "offset " + Num(now[0]) + (now.Length == 1 ? " thumb not in the tree" : " root " + Num(now[1]) + " bar " + Num(now[2]) + " thumb " + Num(now[3]) + " " + Num(now[4]) + " " + Num(now[5]) + " " + Num(now[6]) + " mode " + (ScrollingIndicatorMode)(int)now[7]);
-                var args = e as RenderingEventArgs;
-                Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + text);
-            };
-            CompositionTarget.Rendering += frame;
+                return now;
+            }, () => "offset " + Num(now[0]) + (now.Length == 1 ? " thumb not in the tree" : " root " + Num(now[1]) + " bar " + Num(now[2]) + " thumb " + Num(now[3]) + " " + Num(now[4]) + " " + Num(now[5]) + " " + Num(now[6]) + " mode " + (ScrollingIndicatorMode)(int)now[7]));
             return true;
         }
 

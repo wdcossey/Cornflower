@@ -12,7 +12,7 @@ projections probe (1000 view px, vanishing point at the element's centre, 225, 4
 Prints:
 - the axis that fits every unclipped frame of the forward turns best (skipped with --no-search; it takes minutes),
   and the rms at the published axis, x -44 z -99 (or --axis);
-- how many frames it leaves out: those no rotation about the published axis fits within 2 px (torn: the recording
+- how many frames it leaves out: those no rotation about the published axis fits within 10 px (torn: the recording
   grabbed the screen while the emulator drew it). The axis search, its rms and the angles below are without them;
 - each forward turn's first angle;
 - the distinct angles of the forward and back turns (|angle| >= 0.9, to 0.1, within 0.25 taken as one), the tick of
@@ -52,8 +52,9 @@ print('%d turns in the log, %d forward and %d back in the recording; each starts
       '(recording time - app time)' % (len(turns), len(forward), len(back), min(lags), max(lags)))
 
 # A frame the recording grabbed while the emulator drew it shows two angles at once and fits no rotation: left out,
-# before the axis and the angles (the published axis, 2 px; see motionlib.torn_frame).
-TORN = 2.0
+# before the axis and the angles (see motionlib.torn_frame).
+TORN = 10.0  # px: real frames fit within about 0.25 px, a torn one by tens; loose enough that an axis a few px off
+              # (the search, --axis) doesn't throw real frames out
 torn = []
 
 
@@ -94,6 +95,8 @@ fwd = [angles(s) for s in forward]
 bk = [angles(s) for s in back]
 firsts = {}
 for a in fwd:
+    if not a:
+        continue
     v = round(a[0][1], 1)
     firsts[v] = firsts.get(v, 0) + 1
 print('forward, the first angle shown: %s' % ', '.join('%.1f in %d' % (v, n) for v, n in sorted(firsts.items(), key=lambda x: -x[1])))
@@ -125,13 +128,14 @@ for name, runs, segs_ in (('forward', fwd, forward), ('back', bk, back)):
     for a, seg in zip(runs, segs_):
         if not a:
             continue
-        k = max(0, round(math.log(a[0][1] / vals[0]) / math.log(r0)))
+        # The tick of the distinct value the first frame is nearest: the ease's ratio a step drifts along it.
+        k = ticks[min(range(len(vals)), key=lambda i: abs(vals[i] - a[0][1]))]
         t0s.append((seg[0][1] - (step_at[id(seg)] + lag)) * 1000 - k * ml.TICK)
     first_tick[name] = t0s
     print('  tick 0 on the screen %.1f ms after the step (the mean; sd %.1f, %d turns; recording time against the log, paired by the lag above)'
-          % (statistics.mean(t0s), statistics.pstdev(t0s), len(t0s)))
+          % (statistics.mean(t0s), statistics.stdev(t0s), len(t0s)))
 if first_tick.get('forward') and first_tick.get('back'):
     f, b = first_tick['forward'], first_tick['back']
-    err = math.sqrt(statistics.pvariance(f) / len(f) + statistics.pvariance(b) / len(b))
+    err = math.sqrt(statistics.variance(f) / len(f) + statistics.variance(b) / len(b))
     print('forward against back: tick 0 %+.1f ms later (standard error %.1f); a hidden step before the first one shown would make it %.1f'
           % (statistics.mean(f) - statistics.mean(b), err, ml.TICK))

@@ -569,8 +569,8 @@ def torn_frames_and_off_ladder():
     assert not ml.torn_frame([a[0], None, None, None], -44, -99, d, cx)[0]  # clipped: never torn
     # A ladder of steps a 0.8 ratio apart, with one value caught between two of them.
     vals = [-67.0 * 0.8 ** k for k in range(12)]
-    extra = vals[:7] + [-6.5 * 0.8 ** 0] + vals[7:]
-    extra = sorted(extra)
+    # -6.5 between steps 10 (-7.19) and 11 (-5.75), which are a step apart, in the order the list has them.
+    extra = vals[:11] + [-6.5] + vals[11:]
     assert ml.off_ladder(vals) == [], ml.off_ladder(vals)
     assert ml.off_ladder(extra) == [-6.5], ml.off_ladder(extra)
 

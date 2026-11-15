@@ -498,9 +498,20 @@ def distinct(vals, decimals=1, tol=0.25, min_abs=0.0):
     return out
 
 
+def linfit(xs, ys):
+    """Least squares y = a + b x: (a, b); b is 0 if the xs are all the same."""
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx if sxx else 0.0
+    return my - b * mx, b
+
+
 def off_ladder(vals, tol=0.03):
     """The distinct values that sit between two others a step apart (their ratio within tol of the median step), so
-    are no step of their own: a recorded frame caught between two steps, or drawn while the screen was grabbed."""
+    are no step of their own: a recorded frame caught between two steps, or drawn while the screen was grabbed. It
+    doesn't catch one at either end of the list, or one beside a step no run showed: an ease's ratio a step drifts
+    along the curve, so those can't be told from real steps. The scripts print the ladder, so such a value can be seen."""
     if len(vals) < 4:
         return []
     r0 = median([vals[i + 1] / vals[i] for i in range(len(vals) - 1)])

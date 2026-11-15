@@ -32,29 +32,25 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
-PIVOT = re.compile(r'rt ([\d.]+) offset ([-\d.]+) index (\d+) panel (\S+|\[[^\]]*\]) items \[translate ([-\d.]+) [-\d.]+\] itemsAt ([-\d.]+)(.*)$')
+PIVOT = re.compile(r'rt ([\d.]+) offset ([-\d.]+) index (\d+) panel (\S+|\[[^\]]*\]) items (\[translate ([-\d.]+) [-\d.]+\]|\S+) itemsAt ([-\d.]+|NaN)(.*)$')
 HEADER = re.compile(r'\| (\S+) ([-\d.]+|NaN) op')
 HUB = re.compile(r'rt ([\d.]+) offset ([-\d.]+) header ([-\d.]+)')
 
 
-def linfit(xs, ys):
-    n = len(xs)
-    mx, my = sum(xs) / n, sum(ys) / n
-    sxx = sum((x - mx) ** 2 for x in xs)
-    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx if sxx else 0.0
-    return my - b * mx, b
-
-
 def pivot_frames(seg):
-    """(stopwatch ms, rt, offset, index, panel text, items translate, {header: left edge}) for each frame line."""
+    """(stopwatch ms, rt, offset, index, panel text, items translate, {header: left edge}) for each frame line. The items'
+    translate is 0 when the log has "none" (no transform, or at rest), and NaN for any other kind. A frame line that
+    doesn't parse stops the script, naming it."""
     out = []
     for t, what, d in seg:
         if what != 'frame':
             continue
         m = PIVOT.match(d)
-        if m:
-            heads = {h: float(x) for h, x in HEADER.findall(m.group(7))}
-            out.append((t, float(m.group(1)), float(m.group(2)), int(m.group(3)), m.group(4), float(m.group(5)), heads))
+        if not m:
+            raise SystemExit('a frame line this script can\'t read, at %.1f ms: %s' % (t, d))
+        items = float(m.group(6)) if m.group(6) is not None else 0.0 if m.group(5) == 'none' else float('nan')
+        heads = {h: float(x) for h, x in HEADER.findall(m.group(8))}
+        out.append((t, float(m.group(1)), float(m.group(2)), int(m.group(3)), m.group(4), items, heads))
     return out
 
 
@@ -83,17 +79,17 @@ def pivot(rows, segs):
         # The header items are put in a new order once the new item is chosen, the selected one first: the frames
         # before this header's left edge jumps (by over 100 px).
         span = []
-        for f in [start] + moving:
+        for f in [start] + [f for f in moving if f is not start]:
             if f[4] != start[4] or h not in f[6] or (span and abs(f[6][h] - span[-1][6][h]) > 100):
                 break
             span.append(f)
         if h is not None and len(span) >= 3:
             xs = [f[2] - start[2] for f in span]
             ys = [f[6][h] for f in span]
-            a, b = linfit(xs, ys)
+            a, b = ml.linfit(xs, ys)
             worst = max(abs(y - (a + b * x)) for x, y in zip(xs, ys))
             nxt = names[(start[3] + 1) % len(names)]
-            pitch = start[6][nxt] - start[6][h] if start[3] + 1 < len(names) else float('nan')
+            pitch = start[6][nxt] - start[6][h] if start[3] + 1 < len(names) and nxt in start[6] else float('nan')
             print('  header "%s" moves %.5f px a px of offset, against it, over %d frames (worst %.3f px); its pitch %.3f over 450 is %.5f'
                   % (h, -b, len(span), worst, pitch, pitch / 450 if pitch == pitch else float('nan')))
         # The new item's slide in, from the selection change.
@@ -108,6 +104,9 @@ def pivot(rows, segs):
             first = after[0][5] - final
             vals = [(f[1] - after[0][1], (f[5] - final) / first) for f in after if first]
             vals = vals[:next((i for i, v in enumerate(vals) if v[1] <= 0), len(vals) - 1) + 1]
+            if not vals:
+                print('  no slide in: the translate is at the final offset from the selection on')
+                continue
             ratios = [(b / a) ** (ml.TICK / (tb - ta)) for (ta, a), (tb, b) in zip(vals, vals[1:]) if a > 0.05 and b > 0 and tb > ta]
             print('  the new item slides in from %.2f px: at 0 after %.1f ms of rt; %s; a tick: %s'
                   % (first, vals[-1][0], ' '.join('%.0f:%.4f' % v for v in vals[:8]) + ' ...',
@@ -115,7 +114,6 @@ def pivot(rows, segs):
             slides.extend(v for _, v in vals if v > 0.001)
     if slides:
         vals = ml.distinct(slides, decimals=3, tol=0.002, min_abs=0.002)
-        vals = sorted(vals, reverse=True)
         r0, ticks = ml.tick_numbers(vals)
         print('\nThe slide in over every touch: %d distinct fractions, %s' % (len(vals), ' '.join('%.3f' % v for v in vals[:12])))
         print('  ticks %s (median ratio %.4f)' % (ticks[:24], r0))
@@ -132,7 +130,7 @@ def hub(rows):
     use = [p for p in pts if p[0] > 20]
     if len(use) < 3:
         raise SystemExit('too few frames with the offset past 20 px')
-    a, b = linfit([p[0] for p in use], [p[1] for p in use])
+    a, b = ml.linfit([p[0] for p in use], [p[1] for p in use])
     worst = max(abs(y - (a + b * x)) for x, y in use)
     print('Hub: header = %.4f %+.6f x offset over %d frames, offsets %.0f to %.0f; worst %.4f px; 1 / slope = %.3f'
           % (a, b, len(use), min(p[0] for p in use), max(p[0] for p in use), worst, -1 / b if b else float('inf')))

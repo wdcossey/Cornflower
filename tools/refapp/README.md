@@ -429,7 +429,9 @@ last touch has settled. `touch.log` says where each step landed on the VM's scre
 Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tiltedge` and `tiltgrid` (#22), and for #24 `motion`, `pages`,
 `projections` and `ring` ([Motion](#motion-2026-11-10-device-11-24)), and `ringsize` for #28 (B6:
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
-`listpress`, and for #114 `turnstile`, `pivot` and `hub` ([the turnstile's start](#the-turnstiles-forward-start-2026-11-15-device-11-114)) ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)). Each frame's value is read on the UI thread in
+`listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
+([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -970,7 +972,7 @@ same.
 - **No step comes before −67.0°.** The back turn's first step, +42.0°, is its start (above). Each turn's tick 0 is
   timed as the first frame's time after its step in the log, less 15.625 ms for each tick it is past tick 0. Forward
   tick 0 reaches the screen 3.7 ms *earlier* than back's (standard error 3.4 ms; on the 2026-11-10 run 0.4 ms later,
-  ± 6.8). A step drawn before −67.0° would put forward's a tick, 15.6 ms, later. So −67.0° is the turn's first value,
+  ± 7.2). A step drawn before −67.0° would put forward's a tick, 15.6 ms, later. So −67.0° is the turn's first value,
   shown on the same frame as the back turn's +42.0°.
 - **Forward is the back turn's curve**: an `ExponentialEase` (exponent 6, ease-out) starting on tick 0 fits the 19
   distinct forward angles from −67.10° over 425 ms within 0.072° rms, and the back ones from +41.97° over 430 ms within

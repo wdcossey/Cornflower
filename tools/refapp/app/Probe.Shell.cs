@@ -62,7 +62,33 @@ namespace RefApp
 
             var ib = Bounds(items);
             Log("layout", "items " + Num(ib.X) + " " + Num(ib.Y) + " " + Num(ib.Width) + " " + Num(ib.Height) + " scroll extent " + Num(sv.ExtentWidth) + " viewport " + Num(sv.ViewportWidth));
+            var presenters = new Dictionary<PivotHeaderItem, FrameworkElement>();
+            Func<PivotHeaderItem, FrameworkElement> presenterOf = item =>
+            {
+                FrameworkElement p;
+                if (!presenters.TryGetValue(item, out p))
+                {
+                    p = Find(item, "ContentPresenter");
+                    presenters[item] = p;
+                }
+
+                return p;
+            };
             WatchFrames(() =>
+            {
+                var key = new List<double> { sv.HorizontalOffset, pivot.SelectedIndex, Left(items) };
+                AddKey(key, headerPanel.RenderTransform);
+                AddKey(key, items.RenderTransform);
+                foreach (var item in HeaderItems(headerPanel))
+                {
+                    key.Add(Left(item));
+                    key.Add(item.Opacity);
+                    var presenter = presenterOf(item);
+                    AddKey(key, presenter != null ? presenter.RenderTransform : null);
+                }
+
+                return key.ToArray();
+            }, () =>
             {
                 var text = new StringBuilder();
                 text.Append("offset ").Append(Num(sv.HorizontalOffset)).Append(" index ").Append(pivot.SelectedIndex);
@@ -70,7 +96,7 @@ namespace RefApp
                 text.Append(" itemsAt ").Append(Num(Left(items)));
                 foreach (var item in HeaderItems(headerPanel))
                 {
-                    var presenter = Find(item, "ContentPresenter");
+                    var presenter = presenterOf(item);
                     text.Append(" | ").Append(item.Content).Append(' ').Append(Num(Left(item))).Append(" op ").Append(Num(item.Opacity));
                     if (presenter != null)
                     {
@@ -93,11 +119,11 @@ namespace RefApp
             {
                 for (var i = 0; i < 4; i++)
                 {
-                    Swipe(pivot, "swipe left, round " + round + ", from " + i, i == 0 ? first : none, 380, y, 0, 0, 3000, -200, 150);
+                    Swipe(pivot, "swipe left, round " + round + ", from " + i, i == 0 ? first : none, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
                 }
             }
 
-            Swipe(pivot, "swipe right from 0", first, 70, y, 0, 0, 3000, 200, 150);
+            Swipe(pivot, "swipe right from 0", first, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
             var headers = HeaderItems(headerPanel).ToList();
             foreach (var k in new[] { 1, 2 })
             {
@@ -108,7 +134,7 @@ namespace RefApp
                 }
             }
 
-            Swipe(pivot, "drag 100 px left, held 300 ms", first, 300, y, 0, 300, 3000, -100, 400);
+            Swipe(pivot, "drag 100 px left, held 300 ms", first, 300, y, dx: -100, moveMs: 400, holdMs: 300, gapMs: 3000);
             await RunScheduled(page, header);
         }
 
@@ -152,6 +178,16 @@ namespace RefApp
 
             WatchFrames(() =>
             {
+                var key = new List<double> { sv.HorizontalOffset, Left(headerHost) };
+                AddKey(key, headerHost.RenderTransform);
+                foreach (var section in hub.Sections)
+                {
+                    key.Add(Left(section));
+                }
+
+                return key.ToArray();
+            }, () =>
+            {
                 var text = new StringBuilder();
                 text.Append("offset ").Append(Num(sv.HorizontalOffset));
                 text.Append(" header ").Append(Num(Left(headerHost))).Append(' ').Append(Value(headerHost.RenderTransform));
@@ -173,18 +209,18 @@ namespace RefApp
             Func<Task> none = () => Task.FromResult(true);
             for (var i = 0; i < 3; i++)
             {
-                Swipe(hub, "swipe left " + (i + 1), i == 0 ? start : none, 380, y, 0, 0, 3000, -200, 150);
+                Swipe(hub, "swipe left " + (i + 1), i == 0 ? start : none, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
             }
 
-            Swipe(hub, "swipe right", none, 70, y, 0, 0, 3000, 200, 150);
-            Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, 0, 300, 3000, -150, 500);
+            Swipe(hub, "swipe right", none, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
+            Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, dx: -150, moveMs: 500, holdMs: 300, gapMs: 3000);
             await RunScheduled(page, header);
         }
 
-        /// <summary>A horizontal touch: <see cref="Press"/> at (x, y), still for stillMs, moved by dx over moveMs, held holdMs and let go; gapMs before the next.</summary>
-        private void Swipe(UIElement target, string label, Func<Task> setup, double x, double y, double stillMs, double holdMs, double gapMs, double dx, double moveMs)
+        /// <summary>A horizontal touch: <see cref="Press"/> at (x, y), moved by dx over moveMs, held holdMs and let go; gapMs before the next. Its arguments are Press's, in Press's order, without the still time and dy.</summary>
+        private void Swipe(UIElement target, string label, Func<Task> setup, double x, double y, double dx, double moveMs, double holdMs, double gapMs)
         {
-            Press(target, label, setup, x, y, stillMs, dx, 0, moveMs, holdMs, gapMs);
+            Press(target, label, setup, x, y, 0, dx, 0, moveMs, holdMs, gapMs);
         }
 
         /// <summary>The Pivot's header items, in the panel's order.</summary>
@@ -220,10 +256,15 @@ namespace RefApp
             return t.Length > 0 ? "[" + t + "]" : "none";
         }
 
-        /// <summary>Logs, every frame its text changed, the frame's RenderingTime and the text; stops when the run finishes.</summary>
-        private void WatchFrames(Func<string> read)
+        /// <summary>
+        /// Every frame, from CompositionTarget.Rendering, reads <paramref name="key"/>, the raw values a frame's line shows,
+        /// and only when one has changed since the last frame builds the line with <paramref name="format"/> and logs it
+        /// with the frame's RenderingTime: the work on a frame where nothing moved is the key alone. Stops when the run
+        /// finishes. The scroll probes and the shell probes share it.
+        /// </summary>
+        private void WatchFrames(Func<double[]> key, Func<string> format)
         {
-            string last = null;
+            double[] last = null;
             EventHandler<object> frame = null;
             frame = (s, e) =>
             {
@@ -233,17 +274,34 @@ namespace RefApp
                     return;
                 }
 
-                var text = read();
-                if (text == last)
+                var now = key();
+                if (last != null && last.SequenceEqual(now))
                 {
                     return;
                 }
 
-                last = text;
+                last = now;
                 var args = e as RenderingEventArgs;
-                Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + text);
+                Log("frame", (args != null ? "rt " + args.RenderingTime.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture) + " " : "") + format());
             };
             CompositionTarget.Rendering += frame;
+        }
+
+        /// <summary>A transform's effect as numbers, for a frame's key: where it takes (0, 0) and (1, 1); NaN for none.</summary>
+        private static void AddKey(List<double> key, Transform transform)
+        {
+            if (transform == null)
+            {
+                key.Add(double.NaN);
+                return;
+            }
+
+            var a = transform.TransformPoint(new Point(0, 0));
+            var b = transform.TransformPoint(new Point(1, 1));
+            key.Add(a.X);
+            key.Add(a.Y);
+            key.Add(b.X);
+            key.Add(b.Y);
         }
     }
 }

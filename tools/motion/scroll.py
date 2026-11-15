@@ -95,15 +95,6 @@ def inertia(seg):
     return rt0, [(p[1] - rt0, p[2]) for p in pts], first[2], pts[-1][0] if pts[-1][0] is not None else first[0]
 
 
-def linfit(xs, ys):
-    """Least squares y = a + b x: (a, b)."""
-    n = len(xs)
-    mx, my = sum(xs) / n, sum(ys) / n
-    sxx = sum((x - mx) ** 2 for x in xs)
-    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx if sxx else 0.0
-    return my - b * mx, b
-
-
 def fit_exponential_decay(pts):
     """offset = end - d0 e^(-t / tau), by least squares in px: for each tau, end and d0 are a straight-line fit (they
     enter linearly), and tau is a golden-section search over its logarithm from 10 ms to 100 s. (tau ms, d0, end,
@@ -113,7 +104,7 @@ def fit_exponential_decay(pts):
 
     def fit(tau):
         e = [math.exp(-t / tau) for t, _ in pts]
-        end, slope = linfit(e, [x for _, x in pts])
+        end, slope = ml.linfit(e, [x for _, x in pts])
         return sum((x - end - slope * ei) ** 2 for (_, x), ei in zip(pts, e)), end, -slope
 
     g = (math.sqrt(5) - 1) / 2
