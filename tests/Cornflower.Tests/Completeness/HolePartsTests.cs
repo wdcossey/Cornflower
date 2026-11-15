@@ -70,10 +70,10 @@ public class HolePartsTests
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.True(holes.Count > 40, $"only {holes.Count} holes shown");
         Assert.True(withButtons >= 5, $"only {withButtons} holes showed plain Buttons");
-        // Calendar's three, CalendarDatePicker's, CommandBar's overflow, NavigationPage's back, PipsPager's two, the dialogs'.
+        // Calendar's three, CalendarDatePicker's, CommandBar's overflow, PipsPager's two, the dialogs'. (NavigationPage's back
+        // left with #120: Wp81 themes NavigationPage, and its back button has a theme of its own.)
         Assert.Contains("Calendar.PART_HeaderButton", fellBack);
         Assert.Contains("CommandBar.PART_OverflowButton", fellBack);
-        Assert.Contains("NavigationPage.PART_BackButton", fellBack);
         Assert.Contains("PipsPager.PART_NextButton", fellBack);
     }
 

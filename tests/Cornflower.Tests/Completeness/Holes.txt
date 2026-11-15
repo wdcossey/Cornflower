@@ -19,7 +19,6 @@ CommandBar
 CommandBarButton
 CommandBarSeparator
 CommandBarToggleButton
-ContentPage
 ContextMenu
 DataValidationErrors
 DatePicker
@@ -41,7 +40,6 @@ ManagedFileChooserOverwritePrompt
 Menu
 MenuFlyoutPresenter
 MenuItem
-NavigationPage
 NotificationCard
 NumericUpDown
 OverlayPopupHost

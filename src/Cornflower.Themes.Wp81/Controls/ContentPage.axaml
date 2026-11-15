@@ -1,0 +1,51 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The Windows Phone 8.1 page: Avalonia's ContentPage as the phone lays out a Page. docs/controls/Page/PLAN.md has the
+    values and their sources.
+
+    The phone's Page has no template (it is a UserControl): it fills its Frame, and so the window, tray shown or not,
+    and its own background reaches under the tray. What the view takes off, the tray at the top and the app bar at the
+    bottom (VisibleBounds), comes off its content: under UseVisible, the default, the content is laid out in what is
+    left; under UseCoreWindow it fills the window (tools/refapp/README.md, "Visible bounds" and "The page's app bar").
+    Here the safe area stands for the tray: AutomaticallyApplySafeAreaPadding (on by default) is UseVisible, off is
+    UseCoreWindow. Avalonia's ContentPage puts the safe area on PART_ContentPresenter's Padding, so that presenter is the
+    page's whole area here, drawing the background, and the command bars and the content sit inside it: the safe area
+    takes the tray off the top, then the bars and the content share the rest.
+
+    The bottom command bar is docked at the bottom of what is left and the content laid out above it, so the content
+    gives up the bar's height, as the phone's VisibleBounds gives up the app bar's (62.92 for a compact bar, 26.25 for
+    a minimal one, on the reference): how tall the bar is, the CommandBar's theme decides. The bars draw over the
+    content (an open bar reaches up over it, as the phone's does, without the content moving). The phone has no top
+    app bar to measure; the top command bar is docked at the top the same way.
+
+    The phone has no navigation bar: the title is the page's own content, and Back is the hardware button. So a
+    ContentPage in a NavigationPage has none (NavigationPage.HasNavigationBar off), and gets the whole safe area itself.
+    An app that wants Avalonia's bar sets it on the page.
+  -->
+  <ControlTheme x:Key="{x:Type ContentPage}" TargetType="ContentPage">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="NavigationPage.HasNavigationBar" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter" Background="{TemplateBinding Background}">
+          <DockPanel>
+            <!-- Shown and filled from code, by Avalonia's ContentPage, when the page has the bar. -->
+            <ContentPresenter x:Name="PART_TopCommandBar" DockPanel.Dock="Top" ZIndex="1"
+                              HorizontalContentAlignment="Stretch" IsVisible="False" />
+            <ContentPresenter x:Name="PART_BottomCommandBar" DockPanel.Dock="Bottom" ZIndex="1"
+                              HorizontalContentAlignment="Stretch" IsVisible="False" />
+            <!-- Inside PART_ContentPresenter's own content, so not the template's: bound to the page by ancestry. -->
+            <ContentPresenter x:Name="PART_Content"
+                              Content="{Binding Content, RelativeSource={RelativeSource AncestorType=ContentPage}}"
+                              ContentTemplate="{Binding ContentTemplate, RelativeSource={RelativeSource AncestorType=ContentPage}}"
+                              HorizontalContentAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType=ContentPage}}"
+                              VerticalContentAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType=ContentPage}}" />
+          </DockPanel>
+        </ContentPresenter>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
