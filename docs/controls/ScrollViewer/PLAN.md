@@ -376,9 +376,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 35. **The standalone ScrollBars against the captures**: the thumb's raw pixels (one pixel shorter vertically, one lower
     horizontally) and greys, dark, light and disabled. `The_ScrollBars_Thumb_Is_Where_The_Captures_Draw_It`.
 36. **Set to `None`, a ScrollBar draws nothing**, as the phone's `no-indicator`. `A_ScrollBar_Set_To_None_Draws_Nothing_As_The_Phones_Does`.
-38. **A mouse dragging a control in the content shows nothing.** `A_Mouse_Drag_A_Control_Holds_Shows_Nothing`.
 37. **The ScrollViewer specimen**: its bounds, and its thumb 140 long, 100 down at 200 of 280, as the dump has them.
     `The_ScrollViewer_Specimen_Is_The_Dumps`.
+38. **A mouse dragging a control in the content shows nothing.** `A_Mouse_Drag_A_Control_Holds_Shows_Nothing`.
 
 ## Decided on the user's behalf
 
