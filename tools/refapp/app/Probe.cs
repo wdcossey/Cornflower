@@ -77,6 +77,15 @@ namespace RefApp
                 case "ringsize":
                     await probe.RingSize(host);
                     break;
+                case "scroll":
+                    await probe.Scroll(host);
+                    break;
+                case "scrollend":
+                    await probe.ScrollEnd(host);
+                    break;
+                case "listpress":
+                    await probe.ListPress(host);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;

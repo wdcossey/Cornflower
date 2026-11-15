@@ -8,6 +8,7 @@ Prints one line a check and exits non-zero on the first failure. Takes about hal
 """
 import math
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -418,6 +419,124 @@ def tilt_release_in_frames():
     near(float(m.group(1)), 182.6, 0.3, 'hold')
     near(float(m.group(2)), 167.0, 0.5, 'return')
     assert float(m.group(3)) < 0.0002, out
+
+
+@check
+def scroll_fits():
+    # The three deceleration fits get their constants back from curves made with them, on the 15.625 ms frames.
+    import scroll
+    ts = [k * 15.625 for k in range(140)]
+    pts = [(t, 2000 + scroll.drag_distance(t, 0.4, 0.00036, 0.0)) for t in ts]
+    pts = pts[:next(i for i, p in enumerate(pts) if p[1] == pts[-1][1]) + 1]
+    q = scroll.fit_constant_deceleration(pts)
+    near(q[1], 0.00036, 1e-7, 'constant deceleration')
+    assert q[2] < 0.01, q
+    pts = [(t, 2000 + scroll.drag_distance(t, 3.3, 0.0007, 0.0005)) for t in ts]
+    pts = pts[:next(i for i, p in enumerate(pts) if p[1] == pts[-1][1]) + 1]
+    v0, a, c, r, stop = scroll.fit_drag(pts)
+    near(v0, 3.3, 0.01, 'drag v0')
+    near(a, 0.0007, 0.00001, 'drag a')
+    near(c, 0.0005, 0.00001, 'drag c')
+    assert r < 0.05, r
+    near(stop, scroll.drag_time(3.3, 0.0007, 0.0005), 1, 'drag stop')
+    pts = [(t, 2500 - 400 * math.exp(-t / 300)) for t in ts] + [(ts[-1] + 15.625, 2500)]
+    e = scroll.fit_exponential_decay(pts)
+    near(e[0], 300, 1, 'exponential tau')
+
+
+@check
+def scroll_inertia_after_the_press():
+    # The setup's ChangeView raises an inertial ViewChanging before the press: the inertia is the one after it.
+    import scroll
+    seg = [(0.0, 'viewchanging', 'next 2000 final 2000 inertial True'),
+           (1.0, 'frame', 'rt 100 offset 2000'),
+           (50.0, 'pressed', 'scroll 225 650 ts 1'),
+           (60.0, 'viewchanging', 'next 2010 final 2010 inertial False'),
+           (61.0, 'frame', 'rt 160 offset 2010')]
+    for k in range(1, 6):
+        seg.append((60.0 + 15 * k, 'viewchanging', 'next %d final 2050 inertial True' % (2010 + 10 * k)))
+        seg.append((61.0 + 15 * k, 'frame', 'rt %g offset %d' % (160 + 15.625 * k, 2010 + 10 * k)))
+    seg.append((200.0, 'frame', 'rt 300 offset 2050 root 1 bar 1 thumb 445 60 2.5 7 mode None'))
+    rt0, pts, final, _ = scroll.inertia(seg)
+    assert rt0 == 160 and final == 2050, (rt0, final)
+    assert pts[0] == (0, 2010) and pts[-1] == (4 * 15.625, 2050), pts
+
+
+def scrollend_run(run, s_min, light_at=None):
+    """A synthetic -Probe scrollend -Record run: the flash, a pull past the top that compresses the bars to s_min about a
+    point 1548 view px below the viewport's top and back, and an indicator that fades in and out."""
+    w, h, scale = 540, 960, 1.2
+    top = 60 * scale
+    with open(os.path.join(run, 'rect.log'), 'w') as f:
+        f.write('x display window at 0,0, %d x %d\n' % (w, h))
+    times = [k / 30 for k in range(40)]
+    with open(os.path.join(run, 'frames.csv'), 'w') as f:
+        f.write(''.join('%.6f\n' % t for t in times))
+    with open(os.path.join(run, 'probe.txt'), 'w') as f:
+        f.write('1000.0\tflash\ton\n1100.0\tstep\tpull 300 px past the top\n1500.0\tpressed\tscroll 225 200 ts 1\n')
+        f.write('1520.0\tstate\tVerticalScrollBar ScrollingIndicatorStates NoIndicator > TouchIndicator\n')
+        f.write('2200.0\tstep\tthe end\n')
+    fp = top + 1548 * scale
+    os.makedirs(os.path.join(run, 'analysis'))
+    with open(os.path.join(run, 'analysis', 'bars.gray'), 'wb') as fb, open(os.path.join(run, 'analysis', 'edge.rgb'), 'wb') as fe:
+        for k, t in enumerate(times):
+            s = 1.0 if t < 0.6 or t > 1.0 else s_min
+            col = bytearray(h)
+            if t < 0.05:
+                for y in range(int(top)):
+                    col[y] = 255
+            for b in range(8):
+                c = fp + s * (top + 4.8 + 120 * b - fp)
+                # Drawn with its edges' coverage, 8 view px tall: the centroid finds c, to within a row's half.
+                for y in range(int(c - 6), int(c + 7)):
+                    cover = max(0.0, min(y + 1, c + 4.8 * s) - max(y, c - 4.8 * s))
+                    if top < y < h and cover > 0:
+                        col[y] = int(round(128 * cover))
+            fb.write(bytes(v for v in col for _ in range(12)))
+            edge = bytearray(24 * h * 3)
+            lit = {13: 31, 14: 70, 15: 115, 16: 115, 17: 70, 18: 31}.get(k, 0)
+            for y in range(300, 630):
+                for x in (18, 19, 20):
+                    for ch in range(3):
+                        edge[(y * 24 + x) * 3 + ch] = lit
+            fe.write(bytes(edge))
+
+
+@check
+def scrollend_compression_and_indicator():
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        scrollend_run(run, 0.91)
+        code, out = run_script('scrollend.py', run)
+    assert code == 0, out
+    m = re.search(r'most compressed at \+\d+: s ([\d.]+), .* scaled about (\d+) view px past the pulled edge', out)
+    assert m, out
+    near(float(m.group(1)), 0.91, 0.002, 'compression')
+    near(int(m.group(2)), 1548, 30, 'the point the content is scaled about')
+    assert '2.50 view px wide' in out and 'brightest 115' in out and '275.0 view px long' in out, out
+
+
+@check
+def listpress_tilt():
+    # A press held at 5% across an item: the held projection, the Button model beside it, and the return's fractions.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\titem2 19.167 158.333 412.083 39.167 tilt 19.167 158.333 412.083 39.167\n')
+            f.write('100.0\tstep\thold item2 at 0.05 0.5\n')
+            f.write('1000.0\tpressed\tlist 39.771 177.917 handled ts 1\n')
+            f.write('1000.5\tstate\titem2 CommonStates Normal > Pressed\n')
+            proj = '%.1f\tvalue\tprojection item2 rot %g %g 0 centre 0.5 0.5 0 local 0 0 0 global 0 0 %g\n'
+            f.write(proj % (1030.0, -2.63, 8.09, -9.41))
+            f.write('1600.0\treleased\tlist 39.771 177.917 handled ts 2\n')
+            for k, frac in enumerate([0.9412, 0.8039, 0.5]):
+                f.write(proj % (1788.0 + 15 * k, -2.63 * frac, 8.09 * frac, -9.41 * frac))
+            f.write('1900.0\tvalue\tprojection item2 none\n')
+        code, out = run_script('listpress.py', run)
+    assert code == 0, out
+    assert 'held: RotationX -2.63, RotationY 8.09, GlobalOffsetZ -9.41' in out, out
+    assert 'the Button model at -0.450, 0.000: 0.00, 8.01' in out, out
+    assert '+188.0 0.9412; +203.0 0.8039; +218.0 0.5000; +300.0 rest' in out, out
 
 
 for fn in checks:

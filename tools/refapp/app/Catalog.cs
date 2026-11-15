@@ -64,6 +64,36 @@ namespace RefApp
             };
         }
 
+        /// <summary>
+        /// A ScrollViewer 280 tall over 14 lines of body text, 40 apart (560 tall), scrolled to the offset from code once it
+        /// has laid out.
+        /// </summary>
+        private static FrameworkElement Scrolled(double offset)
+        {
+            var content = new StackPanel();
+            for (var i = 1; i <= 14; i++)
+            {
+                content.Children.Add(new Border { Height = 40, Child = new TextBlock { Text = "line " + i, FontSize = 20 } });
+            }
+
+            var sv = new ScrollViewer { Height = 280, Content = content };
+            if (offset > 0)
+            {
+                EventHandler<object> scroll = null;
+                scroll = (s, e) =>
+                {
+                    if (sv.ScrollableHeight > 0)
+                    {
+                        sv.LayoutUpdated -= scroll;
+                        sv.ChangeView(null, offset, null, true);
+                    }
+                };
+                sv.LayoutUpdated += scroll;
+            }
+
+            return sv;
+        }
+
         public static List<Specimen> All()
         {
             var list = new List<Specimen>();
@@ -139,6 +169,15 @@ namespace RefApp
                 l.SelectedIndex = 1;
                 return l;
             });
+
+            // The ScrollViewer and ScrollBar (#113, for #116): the indicator shows only while the ScrollBar's IndicatorMode
+            // is TouchIndicator, which the ScrollViewer's forced TouchIndicator state sets. A standalone ScrollBar is given
+            // round numbers, so its thumb's size can be checked: 200 long, Maximum 100, ViewportSize 50.
+            add("ScrollViewer", "rest", 300, () => Scrolled(0));
+            add("ScrollViewer", "offset-200", 300, () => Scrolled(200));
+            add("ScrollBar", "vertical", 240, () => new ScrollBar { Orientation = Orientation.Vertical, Height = 200, Maximum = 100, ViewportSize = 50, Value = 25, IndicatorMode = ScrollingIndicatorMode.TouchIndicator, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top });
+            add("ScrollBar", "horizontal", 60, () => new ScrollBar { Orientation = Orientation.Horizontal, Width = 200, Maximum = 100, ViewportSize = 50, Value = 25, IndicatorMode = ScrollingIndicatorMode.TouchIndicator, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
+            add("ScrollBar", "no-indicator", 240, () => new ScrollBar { Orientation = Orientation.Vertical, Height = 200, Maximum = 100, ViewportSize = 50, Value = 25, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top });
 
             list.Add(new Specimen
             {
