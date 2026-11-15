@@ -460,6 +460,9 @@ public class PageTransitionTests
         var task = new TurnstileTransition().Start(from, to, true, cancel.Token);
         AtTick(clock, 3);
         Task.Run(cancel.Cancel).Wait();
+        // Nothing is done on the other thread: the stop waits for the UI thread.
+        Assert.False(task.IsCompleted);
+        Assert.NotNull(to.RenderTransform);
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(task.IsCanceled);
