@@ -14,8 +14,11 @@
     Wp81ScrollBarPanningThumbTheme, which draws the Rectangle. The root of the other orientation is hidden, as WinRT's
     code collapses it.
 
-    The ScrollBar takes no pointer: a press on it falls through to the ScrollViewer's content under it, so a touch at
-    the very edge pans, and nothing can drag the indicator.
+    In a ScrollViewer (the Wp81 ScrollViewer theme's styles) the ScrollBar takes no pointer, so a press on it falls
+    through to the content under it and a touch at the very edge pans; and its mode is the ScrollViewer's state,
+    NoIndicator at rest. A ScrollBar an app places on its own (or one in a control's template outside a ScrollViewer)
+    takes the pointer, so its thin thumb can be dragged, and its mode is MouseIndicator unless set: it shows. The
+    phone's would draw nothing, at None: a deliberate difference, so such a bar isn't lost (PLAN.md).
 
     The states:
     - ScrollingIndicatorStates, from wp81:PhoneScrollIndicators.IndicatorMode, which the ScrollViewer theme sets from
@@ -44,7 +47,6 @@
     <Setter Property="Foreground" Value="Transparent" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="Focusable" Value="False" />
-    <Setter Property="IsHitTestVisible" Value="False" />
     <Setter Property="Template">
       <ControlTemplate>
         <Panel x:Name="Root">
@@ -53,7 +55,7 @@
                  Orientation="Horizontal"
                  Minimum="{TemplateBinding Minimum}"
                  Maximum="{TemplateBinding Maximum}"
-                 Value="{TemplateBinding Value}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
                  ViewportSize="{TemplateBinding ViewportSize}">
             <Thumb x:Name="HorizontalPanningThumb"
                    Theme="{StaticResource Wp81ScrollBarPanningThumbTheme}"
@@ -66,7 +68,7 @@
                  IsDirectionReversed="True"
                  Minimum="{TemplateBinding Minimum}"
                  Maximum="{TemplateBinding Maximum}"
-                 Value="{TemplateBinding Value}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
                  ViewportSize="{TemplateBinding ViewportSize}">
             <Thumb x:Name="VerticalPanningThumb"
                    Theme="{StaticResource Wp81ScrollBarPanningThumbTheme}"

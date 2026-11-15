@@ -18,7 +18,7 @@
       gesture recogniser and its snap point and inertia bindings are Avalonia's, as in Simple's template. The scroll
       physics are #113's (PLAN.md, "Scroll physics": pending).
     - PART_VerticalScrollBar, in the second column at the right, and PART_HorizontalScrollBar, in the second row: the
-      phone's thin indicators (Controls/ScrollBar.axaml).
+      phone's thin indicators (Controls/ScrollBar.axaml), taking no pointer (styles below).
 
     ScrollingIndicatorStates: wp81:PhoneScrollIndicators, turned on here, sets the ScrollViewer's state from the
     scroll and the pointer, and the styles below pass it to both ScrollBars, as the phone's TouchIndicator state sets
@@ -70,7 +70,15 @@
       </ControlTemplate>
     </Setter>
 
-    <!-- The ScrollViewer's state, passed to its ScrollBars' IndicatorMode. -->
+    <!--
+      Its ScrollBars are the phone's indicators: they take no pointer, so a press on one falls through to the content
+      under it and pans, and nothing drags them; and they draw the ScrollViewer's state, passed to their IndicatorMode,
+      NoIndicator at rest.
+    -->
+    <Style Selector="^ /template/ ScrollBar">
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="None" />
+    </Style>
     <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=TouchIndicator] /template/ ScrollBar">
       <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="TouchIndicator" />
     </Style>

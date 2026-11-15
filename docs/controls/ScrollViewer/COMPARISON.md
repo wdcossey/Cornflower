@@ -48,6 +48,7 @@ are `ScrollBar_Partial.cpp`'s, read as a guide (PLAN.md). Each will be checked a
 - **A mouse shows the thin indicator**, which the phone's template would not (PLAN.md, "Decided on the user's
   behalf").
 - **`AllowAutoHide` false keeps it shown**: Avalonia's switch, which WinRT lacks.
+- **A ScrollBar on its own shows, and its thumb drags**: the phone's would draw nothing at `None`.
 
 ## Gaps
 

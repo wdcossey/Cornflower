@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Cornflower.Controls;
@@ -62,7 +63,8 @@ internal static class PhoneScrollIndicators
 
     /// <summary>
     /// On a ScrollViewer, its <c>ScrollingIndicatorStates</c> state, which this sets; on a ScrollBar, WinRT's
-    /// <c>ScrollBar.IndicatorMode</c>, which the ScrollViewer theme's styles set and the ScrollBar theme draws.
+    /// <c>ScrollBar.IndicatorMode</c>, which the ScrollViewer theme's styles set and the ScrollBar theme draws. A
+    /// ScrollBar's default is <see cref="PhoneIndicatorMode.MouseIndicator"/>, so one an app places on its own shows.
     /// </summary>
     public static readonly AttachedProperty<PhoneIndicatorMode> IndicatorModeProperty =
         AvaloniaProperty.RegisterAttached<Control, PhoneIndicatorMode>("IndicatorMode", typeof(PhoneScrollIndicators));
@@ -71,6 +73,10 @@ internal static class PhoneScrollIndicators
 
     static PhoneScrollIndicators()
     {
+        // A ScrollBar on its own, which no ScrollViewer sets, draws the mouse's look: shown (PLAN.md, "A ScrollBar on
+        // its own"). The ScrollViewer theme sets its own bars' mode, None at rest.
+        IndicatorModeProperty.OverrideDefaultValue<ScrollBar>(PhoneIndicatorMode.MouseIndicator);
+
         IsEnabledProperty.Changed.AddClassHandler<ScrollViewer>((viewer, change) =>
         {
             if (Watched.TryGetValue(viewer, out var old))
@@ -78,9 +84,8 @@ internal static class PhoneScrollIndicators
                 Watched.Remove(viewer);
                 old.Dispose();
 
-                // A theme going unsets its values one by one, and a handler that takes away a value the store has yet
-                // to reach stops it (spike 6). IndicatorMode is registered after IsEnabled (above), so its value is
-                // never one still to unset: taking it away here, inside that pass, is safe.
+                // A theme going unsets its values one by one, and a handler that takes a value away inside that pass
+                // can stop it (spike 6). Hide sets None rather than clearing the value, so it takes nothing away.
                 old.Hide();
             }
 
@@ -115,12 +120,14 @@ internal static class PhoneScrollIndicators
         {
             _viewer = viewer;
 
-            // As WinRT's ScrollViewer overrides: the pointer entering it, and a move or a key that reaches it unhandled.
-            // A touch press counts wherever it lands, as WinRT's manipulation starting does.
+            // As WinRT's ScrollViewer overrides: the pointer entering it, and a move that reaches it unhandled. A key
+            // is taken as it tunnels, before Avalonia's ScrollViewer scrolls for PageUp or PageDown, as WinRT's
+            // OnKeyDown clears the mouse's preference before it scrolls. A touch press counts wherever it lands, as
+            // WinRT's manipulation starting does.
             viewer.AddHandler(InputElement.PointerEnteredEvent, OnPointer);
             viewer.AddHandler(InputElement.PointerMovedEvent, OnPointer);
             viewer.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-            viewer.AddHandler(InputElement.KeyDownEvent, OnKeyDown);
+            viewer.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             viewer.DetachedFromVisualTree += OnDetached;
         }
 
@@ -184,13 +191,13 @@ internal static class PhoneScrollIndicators
             _timer = CornflowerClock.Schedule(Hide, HideKeyTime);
         }
 
-        /// <summary>The state is <c>NoIndicator</c>: the value goes.</summary>
+        /// <summary>The state is <c>NoIndicator</c>.</summary>
         public void Hide()
         {
             _timer?.Dispose();
             _timer = null;
             _leaving = false;
-            _viewer.ClearValue(IndicatorModeProperty);
+            _viewer.SetValue(IndicatorModeProperty, PhoneIndicatorMode.None);
         }
     }
 }

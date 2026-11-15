@@ -157,8 +157,15 @@ The thumb is centred across the bar, as the phone's Rectangle, with its fixed wi
 | `ScrollingIndicatorStates`, `NoIndicator` | `FadeOutThemeAnimation` on both panning roots | the roots at opacity 0, at once: the fade is owed |
 
 WinRT's ScrollBar picks the state from its `IndicatorMode` (`ChangeVisualState`): `MouseIndicator` for the mouse's,
-`TouchIndicator` for the touch's, `NoIndicator` for `None`. A ScrollBar outside a ScrollViewer starts at `None`, so it
-draws nothing.
+`TouchIndicator` for the touch's, `NoIndicator` for `None`. A ScrollBar outside a ScrollViewer starts at `None`, so on
+the phone it draws nothing.
+
+**A ScrollBar on its own: a deliberate difference.** On the phone, a ScrollBar an app places, or one in a control's
+template outside a ScrollViewer, draws nothing and can't be dragged. Ours defaults its mode to `MouseIndicator`, so it
+shows the thin indicator, and takes the pointer, so its thumb can be dragged (the `Track`'s `Value` is bound both
+ways). Inside the Wp81 ScrollViewer, its theme sets its bars' mode (`None` at rest) and makes them take no pointer.
+Reason: such a bar, Avalonia.Controls.DataGrid's say, would otherwise vanish for good, as an app can't set the
+internal mode.
 
 The fades are theme animations, whose durations live in the OS's animation metrics, not in a template or in WinUI's
 source. They are owed to #113's recording (or to `run.ps1 -Native` reading `AnimationMetrics` for `FadeIn` and
@@ -182,9 +189,10 @@ WinRT's ScrollViewer code (`ScrollViewer_Partial.cpp`) decides the state; the te
 1. **On a scroll.** Any change of the offset, once the ScrollViewer is loaded, shows the indicators (`ShowIndicators`
    on a view change; not during initialisation, `m_isLoaded`).
 2. **On a mouse or a pen.** A pointer that isn't a touch entering or moving over the ScrollViewer shows them, and sets
-   `m_preferMouseIndicators`; a touch manipulation starting or a key going down clears it. The move and the key are
-   WinRT's `OnPointerMoved` and `OnKeyDown` overrides, which see only what reaches the ScrollViewer unhandled; a move
-   bubbles, so an outer ScrollViewer shows its own indicator too. While it is set, the state
+   `m_preferMouseIndicators`; a touch manipulation starting or a key going down clears it. The move is WinRT's
+   `OnPointerMoved` override, which sees only what reaches the ScrollViewer unhandled; a move bubbles, so an outer
+   ScrollViewer shows its own indicator too. The key is `OnKeyDown`, which clears the preference before it scrolls for
+   PageUp or PageDown; ours takes the key as it tunnels, before Avalonia's ScrollViewer scrolls for it. While it is set, the state
    is `MouseIndicator`; otherwise `TouchIndicator`. A touch shows nothing by itself: only the scroll it makes does.
 3. **For how long.** The state's storyboard runs; when it completes, WinRT goes to `NoIndicator`
    (`IndicatorStateStoryboardCompleted`), through the transition. The phone's `TouchIndicator` storyboard lasts 0.1 s and
@@ -216,7 +224,7 @@ pointer over the ScrollBar, which takes no pointer here: they stay at rest and d
 | Difference | The phone | Avalonia (Simple) | Rung |
 |---|---|---|---|
 | The bar | the thin indicator, 2.4 wide, in `PhoneBaseLowColor`, over the content | a wide grey bar beside the content, with arrows (#99) | 1, theme |
-| The bar takes the pointer | not draggable; a touch on it pans (DirectManipulation takes the touch over the whole ScrollViewer) | a bar to drag, which takes the press, so the presenter's gesture never sees it | 1, the ScrollBar theme's `IsHitTestVisible` false |
+| The bar takes the pointer | not draggable; a touch on it pans (DirectManipulation takes the touch over the whole ScrollViewer) | a bar to drag, which takes the press, so the presenter's gesture never sees it | 1, the ScrollViewer theme sets its bars' `IsHitTestVisible` false |
 | The indicator's size and place | WinRT's code (above) | `Track`'s, the same sums | 1, theme: a `Track` per panning root |
 | When it shows, and which | the scroll and the pointer type pick the state | `IsExpanded` from the pointer over the bar, whatever its type | 2, `PhoneScrollIndicators`, internal to the theme, set by its setter |
 | The fades | `FadeInThemeAnimation`, `FadeOutThemeAnimation` | none | owed: their durations aren't measured. Shown and hidden at once until then |
@@ -251,8 +259,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
    alignment; the indicators lie over the content. `The_Template_Is_The_Phones_Part_For_Part`.
 3. **The Padding is the presenter's Margin**, clipped; the Border and the Background are drawn.
    `Padding_Insets_The_Presenter_And_The_Border_And_Background_Are_Drawn`.
-4. **The ScrollBar's style**: 7 each way, transparent, not focusable, taking no pointer; the panning roots' 53.
-   `The_ScrollBars_Style_Sets_What_The_Phone_Sets`.
+4. **The ScrollBar's style**: 7 each way, transparent, not focusable; the panning roots' 53; in a ScrollViewer,
+   taking no pointer. `The_ScrollBars_Style_Sets_What_The_Phone_Sets`.
 5. **The indicator's size and place**: the bar 7 wide (7.0833 laid out, 17 px) at the right; the thumb 2.4 wide (2.5,
    6 px), centred in it; 320 long for 800 of 2000; 240 down at 600 of 1200; at the bottom at the end.
    `The_Indicator_Is_Sized_And_Placed_As_WinRTs_Code_Places_It`.
@@ -269,14 +277,15 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 13. **A drag on the indicator pans the content.** `A_Drag_On_The_Indicator_Pans_The_Content`.
 14. **The pointer type picks the indicator**: a mouse over it shows the mouse's at once, and a scroll after it is the
     mouse's; a touch press gives the touch's back. `The_Pointer_Type_Picks_The_Indicator`.
-15. **A key gives the touch's back.** `A_Key_Gives_The_Touch_Indicator_Back`.
+15. **A key gives the touch's back**, before it scrolls: PageDown, which Avalonia's ScrollViewer handles, scrolls with
+    the touch's. `A_Key_Gives_The_Touch_Indicator_Back`.
 16. **No indicator while loading.** `An_Offset_Set_Before_It_Loads_Shows_Nothing`.
 17. **`AllowAutoHide` off keeps it shown.** `AllowAutoHide_Off_Keeps_The_Indicator`.
 18. **Disabled draws it at 0.5.** `Disabled_Draws_The_Indicator_At_Half`.
 19. **Turned off, nothing follows the scroll.** `Turning_The_Indicators_Off_Leaves_No_Indicator`.
 20. **The colours follow the variant.** `The_Colours_Follow_A_Change_Of_Variant`.
-21. **A ScrollBar on its own** is themed, 7 wide, draws its mode, and has no RepeatButton.
-    `A_ScrollBar_On_Its_Own_Draws_Its_Mode`.
+21. **A ScrollBar on its own** is themed, 7 wide, shown (`MouseIndicator` unless set), its thin thumb dragged by the
+    pointer, draws its mode when set, and has no RepeatButton. `A_ScrollBar_On_Its_Own_Shows_And_Its_Thumb_Drags`.
 22. **The bar-less theme**: no ScrollBars, the Padding as the presenter's Margin, and it scrolls.
     `The_Scrollbarless_Theme_Has_No_Bars_And_Scrolls`.
 23. **The Thumb's style and its Pressed state.** `A_Thumb_Has_The_Phones_Style_And_Pressed_State`.
@@ -291,6 +300,10 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 28. **A drag between the content's parts pans it**, in both themes. `A_Drag_Between_The_Contents_Parts_Pans_It`.
 29. **A move the content handles shows nothing.** `A_Move_The_Content_Handles_Shows_Nothing`.
 30. **A new theme mid-scroll comes in whole.** `A_New_Theme_Mid_Scroll_Comes_In_Whole`.
+31. **A scroll inside the state doesn't start it again**: scrolls at 0, 40 and 80 ms, gone at 150.
+    `A_Scroll_Inside_The_State_Doesnt_Start_It_Again`.
+32. **A touch that doesn't scroll shows nothing.** `A_Touch_That_Doesnt_Scroll_Shows_Nothing`.
+33. **Taken out of the window mid-scroll, it is at `NoIndicator`**, no timer left. `Taken_Out_Mid_Scroll_It_Is_At_NoIndicator`.
 
 ## Decided on the user's behalf
 
@@ -300,9 +313,12 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
   "always show the position", and no phone value contradicts it. Reverse: delete `^[AllowAutoHide=False]` from the
   ScrollBar theme's shown style.
 - **The holes' ScrollViewers take this theme.** Simple's templates for ListBox, ComboBox, TextBox (in the holes),
-  TreeView and the rest hold ScrollViewers with no theme of their own, so they now scroll with the phone's indicator.
-  Unlike a Wp81 Button in a Simple template, it changes nothing they lay out (the indicator lies over the content) and
-  is what the phone's lists do. Reverse: add `ScrollViewer` to `HoleParts` (a shared file).
+  TreeView and the rest hold ScrollViewers with no theme of their own, so they now scroll with the phone's indicator,
+  as the phone's lists do. Their content runs under the indicator (up to 7 wider, where Simple's bar stood), and a
+  mouse can't drag a bar in them: a wheel or a touch scrolls them. ListView's theme (#119) and the rest will replace
+  them. Reverse: add `ScrollViewer` to `HoleParts` (a shared file).
+- **A ScrollBar on its own shows and can be dragged** (above), where the phone's would draw nothing. Reverse: drop
+  the `OverrideDefaultValue` in `PhoneScrollIndicators`.
 - **The Thumb is themed by type**, as the issue names it, though the phone's own templates don't use its style.
 - **No fades until they are measured**, rather than a guessed duration.
 

@@ -40,7 +40,6 @@ public partial class ScrollViewerPage : UserControl
     /// <summary>How far the page has scrolled, read from it.</summary>
     private void ShowState()
     {
-        if (State is null || Page is null) return;
         State.Text = $"scrolled {Page.Offset.Y:0} of {Page.ScrollBarMaximum.Y:0}";
     }
 }

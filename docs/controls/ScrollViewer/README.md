@@ -43,6 +43,8 @@ scroll; it goes 50 to 150 ms after the scroll stops. A touch on it pans the cont
 - **The bar-less theme**: `Wp81ScrollViewerScrollBarlessTheme`, the phone's `ScrollViewerScrollBarlessTemplate`, the
   same presenter with no bars.
 - **A Thumb** an app places has the phone's Thumb style, and its Pressed state.
+- **A ScrollBar on its own**, outside a ScrollViewer, shows the thin indicator and its thumb can be dragged; the phone's
+  would draw nothing (a deliberate difference, so a bar an app or a library places isn't lost).
 
 The tests are `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` and `Sample/ScrollViewerPageTests.cs`; PLAN.md
 lists each behaviour beside its test.

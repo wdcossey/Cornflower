@@ -354,6 +354,61 @@ public class ScrollViewerTests
         Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Vertical));
     }
 
+    // A scroll inside the state's 100 ms doesn't start it again: scrolls at 0, 40 and 80 ms, and it goes at 150, not
+    // 150 ms after the last.
+    [AvaloniaFact]
+    public void A_Scroll_Inside_The_State_Doesnt_Start_It_Again()
+    {
+        using var clock = new TestClock();
+        using var stage = new Stage();
+
+        foreach (var t in new[] { 0, 40, 80 })
+        {
+            clock.At(t);
+            stage.ScrollTo(10 + t);
+        }
+
+        clock.At(149);
+        Assert.Equal(PhoneIndicatorMode.TouchIndicator, ModeOf(stage.Vertical));
+        clock.At(150);
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Vertical));
+    }
+
+    // A touch that doesn't scroll shows nothing: only the scroll a touch makes shows the indicator.
+    [AvaloniaFact]
+    public void A_Touch_That_Doesnt_Scroll_Shows_Nothing()
+    {
+        using var clock = new TestClock();
+        using var stage = new Stage();
+
+        var at = new Point(200, 300);
+        var touch = stage.Window.TouchBegin(at);
+        stage.Window.TouchMove(touch, at + new Point(1, 1));
+        Dispatcher.UIThread.RunJobs();
+        stage.Window.TouchEnd(touch, at + new Point(1, 1));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, stage.Viewer.Offset.Y);
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+        Assert.Equal(0, clock.Pending);
+    }
+
+    // Taken out of the window mid-scroll, it is at NoIndicator, with no timer left.
+    [AvaloniaFact]
+    public void Taken_Out_Mid_Scroll_It_Is_At_NoIndicator()
+    {
+        using var clock = new TestClock();
+        using var stage = new Stage();
+        stage.ScrollTo(100);
+        var page = (Border)stage.Viewer.Parent!;
+
+        page.Child = null;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(PhoneIndicatorMode.None, ModeOf(stage.Viewer));
+        Assert.Equal(0, clock.Pending);
+    }
+
     // A touch drag pans the content, and its scroll shows the touch's indicator.
     [AvaloniaFact]
     public void A_Touch_Drag_Shows_The_Touch_Indicator()
@@ -499,7 +554,8 @@ public class ScrollViewerTests
         Assert.Equal(PhoneIndicatorMode.TouchIndicator, ModeOf(stage.Vertical));
     }
 
-    // A key going down on the ScrollViewer also ends the mouse's preference (WinRT's OnKeyDown).
+    // A key going down on the ScrollViewer also ends the mouse's preference, before the key scrolls (WinRT's OnKeyDown):
+    // PageDown, which Avalonia's ScrollViewer handles itself, scrolls with the touch's indicator.
     [AvaloniaFact]
     public void A_Key_Gives_The_Touch_Indicator_Back()
     {
@@ -514,8 +570,9 @@ public class ScrollViewerTests
         clock.At(400);
 
         button.Focus();
-        stage.Window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.None);
-        stage.ScrollTo(200);
+        stage.Window.KeyPressQwerty(PhysicalKey.PageDown, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(stage.Viewer.Offset.Y > 100, "PageDown didn't scroll");
         Assert.Equal(PhoneIndicatorMode.TouchIndicator, ModeOf(stage.Vertical));
     }
 
@@ -592,23 +649,36 @@ public class ScrollViewerTests
         Assert.Equal(LightIndicator, Frames.PixelAt(light, x, y));
     }
 
-    // A ScrollBar on its own, outside a ScrollViewer: the phone's NoIndicator until its mode is set.
+    // A ScrollBar on its own, outside a ScrollViewer: the thin indicator, shown (MouseIndicator unless its mode is set:
+    // a deliberate difference, the phone's would draw nothing), and its thumb takes the pointer, so it can be dragged.
     [AvaloniaFact]
-    public void A_ScrollBar_On_Its_Own_Draws_Its_Mode()
+    public void A_ScrollBar_On_Its_Own_Shows_And_Its_Thumb_Drags()
     {
-        var bar = new ScrollBar { Height = 300, Maximum = 100, ViewportSize = 10 };
-        using var scene = new Scene(new Border { Child = bar, HorizontalAlignment = HorizontalAlignment.Left });
+        var bar = new ScrollBar { Height = 300, Maximum = 100, ViewportSize = 100 };
+        using var scene = new Scene(new Border { Child = bar, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
+        var thumb = Part<Thumb>(bar, "VerticalPanningThumb");
 
         Assert.Null(bar.Theme);
         Assert.Equal(BarThickness, bar.Bounds.Width);
+        Assert.Equal(PhoneIndicatorMode.MouseIndicator, ModeOf(bar));
+        Assert.Equal(1, Shown(bar));
+        Assert.True(bar.IsHitTestVisible);
+        Assert.Equal(150, thumb.Bounds.Height, 0.5);
+        Assert.Empty(bar.GetVisualDescendants().OfType<RepeatButton>());
+
+        var from = thumb.TranslatePoint(new Point(1, 75), scene.Window)!.Value;
+        scene.Window.MouseDown(from, MouseButton.Left);
+        scene.Window.MouseMove(from + new Point(0, 75));
+        scene.Window.MouseUp(from + new Point(0, 75), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(50, bar.Value, 0.5);
+
+        PhoneScrollIndicators.SetIndicatorMode(bar, PhoneIndicatorMode.None);
+        Dispatcher.UIThread.RunJobs();
         Assert.Equal(0, Shown(bar));
         PhoneScrollIndicators.SetIndicatorMode(bar, PhoneIndicatorMode.TouchIndicator);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(1, Shown(bar));
-        PhoneScrollIndicators.SetIndicatorMode(bar, PhoneIndicatorMode.MouseIndicator);
-        Dispatcher.UIThread.RunJobs();
-        Assert.Equal(1, Shown(bar));
-        Assert.Empty(bar.GetVisualDescendants().OfType<RepeatButton>());
     }
 
     // The phone's ScrollViewerScrollBarlessTemplate, for Hub and Pivot: the presenter in a Grid with the Background,
