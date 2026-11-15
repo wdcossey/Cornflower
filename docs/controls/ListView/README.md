@@ -1,6 +1,6 @@
 # ListView and ListViewItem
 
-Status: done · [#119](https://github.com/wdcossey/CornflowerUI/issues/119) · press compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · ListViewHeaderItem and GroupItem deferred with grouping · reorder deferred · owed: the device run on the Pixel 8 · owed: the real-window run (`drive.ps1`'s touch and drag, #124)
+Status: done · [#119](https://github.com/wdcossey/CornflowerUI/issues/119) · press compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · ListViewHeaderItem and GroupItem deferred with grouping · reorder deferred · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `fedf781`: cold 738 ms, the page opened in 315 ms, every specimen drawn, the check mode included) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the listview page opened in 37 ms with 287 elements) · owed: a real-window section driving its press, pan and check mode (#124's helpers)
 
 The Windows Phone 8.1 ListView and ListViewItem: Avalonia's `ListBox` and `ListBoxItem`, themed by `Wp81Theme` with the
 phone's default styles and the item's template, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`; the phone's

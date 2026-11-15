@@ -1,6 +1,6 @@
 # ScrollViewer, ScrollBar and Thumb
 
-Status: done · [#116](https://github.com/wdcossey/CornflowerUI/issues/116) · compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s captures, probes and recording (runs `20261115-1921-dev11`, `-1938-`, `-1946-`) · the scroll physics a recorded deviation · owed: the device run on the Pixel 8 · owed: the real-window run (`drive.ps1`'s touch, drag and wheel, #124)
+Status: done · [#116](https://github.com/wdcossey/CornflowerUI/issues/116) · compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s captures, probes and recording (runs `20261115-1921-dev11`, `-1938-`, `-1946-`) · the scroll physics a recorded deviation · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page scrollviewer` on `main` at `c5ee6fb`: cold 745 ms, the page opened in 309 ms, the thin indicators drawn dark, light and disabled; on the `slider` page (cold 703, opened 295) a touch drag shows the thin indicator and it is gone 3 s later, where Simple drew its wide bar (#99)) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the scrollviewer page opened in 11 ms with 161 elements) · owed: a real-window section driving its touch, drag and wheel (#124's helpers)
 
 The Windows Phone 8.1 ScrollViewer and its thin scroll indicators: Avalonia's `ScrollViewer`, `ScrollBar` and `Thumb`,
 themed by `Wp81Theme` with the phone's default styles and templates, in
