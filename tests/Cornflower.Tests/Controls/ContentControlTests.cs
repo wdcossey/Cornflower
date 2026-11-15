@@ -180,7 +180,9 @@ public class ContentControlTests
     }
 
     // The phone's template draws no Background, BorderBrush or BorderThickness: a ContentControl given them draws only
-    // its content, and its padding takes no hits. Avalonia's own draws them, and is hit there.
+    // its content, and neither its padding nor the space behind a transparent content takes hits. Avalonia's own draws
+    // them, and is hit there. The points: the padding's corners and sides, and inside the 20-square content at 140, 140,
+    // where a presenter drawing them would put its border (140 to 145) and its background.
     [AvaloniaTheory]
     [InlineData("dark")]
     [InlineData("light")]
@@ -201,11 +203,14 @@ public class ContentControlTests
 
         using var frame = scene.Capture();
         var page = Frames.PixelAt(frame, 50, 50);                              // outside the control
-        foreach (var (x, y) in new[] { (102.0, 102.0), (110.0, 150.0), (250.0, 120.0), (298.0, 198.0) })
+        foreach (var (x, y) in new[] { (102.0, 102.0), (110.0, 150.0), (250.0, 120.0), (298.0, 198.0), (142.0, 142.0), (150.0, 150.0) })
             Assert.Equal(page, Frames.PixelAt(frame, (int)(x * Scene.ReferenceScaling), (int)(y * Scene.ReferenceScaling)));
 
-        var hit = scene.Window.InputHitTest(new Point(110, 110));
-        Assert.True(hit is null || !ReferenceEquals(hit, control) && !control.IsVisualAncestorOf((Visual)hit), $"{hit} took the hit");
+        foreach (var point in new[] { new Point(110, 110), new Point(150, 150) })
+        {
+            var hit = scene.Window.InputHitTest(point);
+            Assert.True(hit is null || !ReferenceEquals(hit, control) && !control.IsVisualAncestorOf((Visual)hit), $"{hit} took the hit at {point}");
+        }
     }
 
     // The theme is keyed: a bare ContentControl keeps Avalonia's own template under Wp81, which binds the Background, so

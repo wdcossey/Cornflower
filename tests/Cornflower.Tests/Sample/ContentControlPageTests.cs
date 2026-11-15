@@ -61,7 +61,8 @@ public class ContentControlPageTests
         }
     }
 
-    // The specimen with a background draws only its text: the slot's inside is the page's colour.
+    // The specimen with a background draws only its text: the slot's inside is the page's colour, beside the text and
+    // behind it, at its presenter's last row, below the letters.
     [AvaloniaFact]
     public void The_Background_Isnt_Drawn()
     {
@@ -71,9 +72,17 @@ public class ContentControlPageTests
         Assert.NotNull(specimen.Background);
 
         using var frame = scene.Capture();
-        var inside = specimen.TranslatePoint(new Point(specimen.Bounds.Width - 10, specimen.Bounds.Height - 10), scene.Window)!.Value;
-        var pixel = Frames.PixelAt(frame, (int)(inside.X * Scene.ReferenceScaling), (int)(inside.Y * Scene.ReferenceScaling));
-        Assert.True(inside.Y < Scene.ReferenceHeight, $"{inside}");
-        Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(page.Background).Color, pixel);     // ApplicationPageBackgroundThemeBrush
+        var presenter = specimen.Presenter!;
+        var points = new[]
+        {
+            specimen.TranslatePoint(new Point(specimen.Bounds.Width - 10, specimen.Bounds.Height - 10), scene.Window)!.Value,
+            presenter.TranslatePoint(new Point(presenter.Bounds.Width / 2, presenter.Bounds.Height - 0.5), scene.Window)!.Value,
+        };
+        foreach (var point in points)
+        {
+            Assert.True(point.Y < Scene.ReferenceHeight, $"{point} is off the view");
+            var pixel = Frames.PixelAt(frame, (int)(point.X * Scene.ReferenceScaling), (int)(point.Y * Scene.ReferenceScaling));
+            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(page.Background).Color, pixel);
+        }     // ApplicationPageBackgroundThemeBrush
     }
 }
