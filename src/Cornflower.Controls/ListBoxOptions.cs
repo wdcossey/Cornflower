@@ -81,8 +81,8 @@ public static class ListBoxOptions
     /// <summary>Takes an event the item would select on, if its list clicks items, and clicks it on a release or a key.</summary>
     private static void Take(ListBoxItem item, RoutedEventArgs e)
     {
-        if (e.Handled ||
-            ItemsControl.ItemsControlFromItemContainer(item) is not ListBox list ||
+        // An event something in the item handled (a Button's press) doesn't reach a class handler at all.
+        if (ItemsControl.ItemsControlFromItemContainer(item) is not ListBox list ||
             !GetIsItemClickEnabled(list) ||
             list.SelectionMode.HasFlag(SelectionMode.Multiple))
         {
