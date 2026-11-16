@@ -117,15 +117,22 @@ recorded deviation, carried forward, not a gap in the shell. Grouped lists
 
 ### Tier 3
 
-| Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
-|---|---|---|---|
-| ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. A subclass, `Cornflower.Controls.ComboBox`, opens `ListPickerFlyout` for the full-screen form a long list gets | 1, 4 |
-| ListPickerFlyout, PickerFlyout, and their presenters | none | New controls. The full-screen presenters are where the phone look lives | 5 |
-| DatePicker, TimePicker, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. Avalonia's already use looping selectors. Full-screen presentation to be measured; if Avalonia's presenter can't be placed full screen, the presenter becomes a part class | 1, 3 |
-| LoopingSelector, LoopingSelectorItem (primitives) | DateTimePickerPanel is the nearest; to check | Part of the pickers. Decide with them whether Avalonia's panel can be themed to match or a new control is needed | 5 |
-| Flyout, MenuFlyout, MenuFlyoutItem, ToggleMenuFlyoutItem, FlyoutPresenter, MenuFlyoutPresenter | Flyout, MenuFlyout, FlyoutPresenter, MenuFlyoutPresenter exist; ToggleMenuFlyoutItem: to check | Theme | 1 |
-| ContentDialog | none | New control | 5 |
-| AutoSuggestBox | AutoCompleteBox | Theme. A different API | 1 |
+| Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
+|---|---|---|---|---|
+| [#151](https://github.com/wdcossey/CornflowerUI/issues/151) | Flyout, FlyoutPresenter | both exist | Theme. The worked example for Tier 3: how a popup over the page is hosted, placed, dimmed, opened, closed and dismissed | 1, 2 |
+| [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutItem, ToggleMenuFlyoutItem, MenuFlyoutPresenter | MenuFlyout, MenuFlyoutPresenter; no MenuFlyoutItem or ToggleMenuFlyoutItem: a MenuFlyout holds `MenuItem`s, and `MenuItem.ToggleType` is the toggle item (checked 2026-11-16) | Theme, with the phone's item as a theme for `MenuItem` inside the presenter | 1, 2 |
+| [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | none | New controls. The full-screen presenters are where the phone look lives. The pickers' bar, with our accept and cancel glyphs, is built here | 5 |
+| [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem (primitives) | `Primitives.DateTimePickerPanel` is the nearest: a panel, not a control with items (checked 2026-11-16) | Part of the pickers. Decide whether Avalonia's panel can be themed and driven to match or a new control is needed. Perhaps the moment for [#129](https://github.com/wdcossey/CornflowerUI/issues/129) | 5 |
+| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | none | New control | 5 |
+| [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | AutoCompleteBox | Theme. A different API | 1, 2 |
+| [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. A subclass, `Cornflower.Controls.ComboBox`, opens `ListPickerFlyout` for the full-screen form a long list gets (6 items or more, #58) | 1, 4 |
+| [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. Avalonia's already use looping selectors. Full-screen presentation to be measured; if Avalonia's presenter can't be placed full screen, the presenter becomes a part class | 1, 3 |
+
+The reads Tier 3 needs: [#149](https://github.com/wdcossey/CornflowerUI/issues/149) LoopingSelector's physics, the pickers' row swing, and the popups' open and
+close as curves; [#150](https://github.com/wdcossey/CornflowerUI/issues/150) AutoSuggestBox's first captures, how each popup is dismissed, ContentDialog's layout
+and the pickers' bar. Both wait for [#148](https://github.com/wdcossey/CornflowerUI/issues/148), Tier 2's remaining reads, as the VM runs one emulator at a time.
+The batches: #149, #150 and #151 first (#151 as a draft until #149's curves are in); then #152, #153, #154, #157
+and #158; then #155 and #156. Each issue names its own blockers; they are the record, not this list.
 
 ### Tier 4
 
