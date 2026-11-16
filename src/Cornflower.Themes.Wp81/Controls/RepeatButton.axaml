@@ -39,7 +39,7 @@
     <Setter Property="Interval" Value="33" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="wp81:PhonePress.IsEnabled" Value="True" />
-    <!-- In the template of a control Wp81 doesn't theme yet (ScrollBar), the theme under Wp81's RepeatButton instead. -->
+    <!-- In the template of a control Wp81 doesn't theme yet (the menu ScrollViewer), the theme under Wp81's RepeatButton instead. -->
     <Setter Property="wp81:HoleParts.FallBack" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

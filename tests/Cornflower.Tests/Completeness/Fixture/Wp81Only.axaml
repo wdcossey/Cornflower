@@ -1,0 +1,6 @@
+<!-- A file holding another Wp81, brought in with StyleInclude under Wp81, for HoleContentControlPartsTests. (A
+     Wp81Theme can't be a file's root: XAML can't build it there.) -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <wp81:Wp81Theme />
+</Styles>

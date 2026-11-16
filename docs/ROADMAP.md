@@ -90,11 +90,11 @@ step, and a control that climbs a rung says so in its PR.
 
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
-| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme: the scroll indicators, set by a behaviour from the pointer type; ScrollBar is the phone's thin indicator. Scroll physics measured ([#113](https://github.com/wdcossey/CornflowerUI/issues/113), which blocks only this issue's Compare step): a part class or a recorded deviation. The worked example for Tier 2: ListView, Page, Pivot and Hub hold one | 1, 2, 3 |
-| [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | both exist | Theme | 1 |
-| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme. Measure what Avalonia's lacks: the minimised bar (`ClosedDisplayMode`, an attached property), the ellipsis menu. AppBarSeparator has no default style on the phone | 1, 2 |
-| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; the header items: to check | Theme. Selection modes and item press feedback to be measured; the multi-select check mode by a behaviour; reorder deferred. The header items are a grouped list's group headers | 1, 2 |
-| [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame exists | Theme, plus our own page transitions. Frame is the navigation host | 1 |
+| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme; ScrollBar is the phone's thin indicator; the indicators by `PhoneScrollIndicators` and `PhoneIndicatorFade`; the scroll physics a recorded deviation, measured by [#113](https://github.com/wdcossey/CornflowerUI/issues/113) (a part class is [#129](https://github.com/wdcossey/CornflowerUI/issues/129)). The worked example for Tier 2: ListView, Page, Pivot and Hub hold one; done 2026-11-15 (#126), device run passed 2026-11-15 | 1, 2, 6 |
+| [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | both exist | Theme, by type since the Tier 2 roll-up, #139 (keyed until then); ContentPresenter keeps Avalonia's own, as the phone's style reaches no template's presenter; done 2026-11-15 (#125), device run passed 2026-11-15 | 1, 2 |
+| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
+| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/CornflowerUI/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/CornflowerUI/issues/132), done 2026-11-15, #138); reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
+| [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame: `NavigationPage` (Avalonia has no `Frame`) | Theme, plus our own page transitions (`TurnstileTransition`, `SlideTransition`, `ContinuumTransition`). `NavigationPage` is the navigation host; done 2026-11-15 (#134), device run owed | 1 |
 | [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls | 5 |
 | [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | none | New control | 5 |
 
@@ -102,8 +102,10 @@ The reads and tools Tier 2 needs: [#113](https://github.com/wdcossey/CornflowerU
 ScrollViewer physics and ListView press feedback; [#114](https://github.com/wdcossey/CornflowerUI/issues/114)
 the app bar's heights, the turnstile's forward angle and Pivot's header motion;
 [#115](https://github.com/wdcossey/CornflowerUI/issues/115) real touch, drag and wheel input in
-`drive.ps1`, from Avonic. The batches: #113, #115, #116 and #117 first; then #114, #118, #119 and
-#120; then #121 and #122. Each issue names its own blockers; they are the record, not this list.
+`drive.ps1`, from Avonic. All three done on 2026-11-15 (#127, #128, #124); the reads still owed for
+Pivot, Hub, ListView and CommandBar are [#136](https://github.com/wdcossey/CornflowerUI/issues/136). The batches: #113,
+#115, #116 and #117 first; then #114, #118, #119 and #120 (both batches done 2026-11-15); then #121 and #122. Each issue
+names its own blockers; they are the record, not this list.
 
 ### Tier 3
 
@@ -180,7 +182,8 @@ Tier 1.
       storyboards read every frame, theme transitions from video (`run.ps1 -Record`). The numbers
       are in [`tools/refapp`](../tools/refapp/README.md) "Motion" and
       [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-motion). Not yet: the pickers'
-      and the full Flyout's per-row swivel curves, and the turnstile's forward start angle.
+      and the full Flyout's per-row swivel curves. The turnstile's forward start was read on 2026-11-15
+      ([#114](https://github.com/wdcossey/CornflowerUI/issues/114), #128).
 - [x] Read from the emulator: the item count at which ComboBox goes full screen, and the
       ToggleSwitch drag threshold ([#25](https://github.com/wdcossey/CornflowerUI/issues/25)), on 2026-11-09 (#58):
       5 items open inline and 6 full screen, by count, not by screen. A ToggleSwitch release is a tap
@@ -291,5 +294,15 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#35](https://github.com/wdcossey/CornflowerUI/issues/35) | ProgressBar | Done 2026-11-12 (#95) |
 | [#36](https://github.com/wdcossey/CornflowerUI/issues/36) | TextBox | Done 2026-11-12 (#101) |
 | [#37](https://github.com/wdcossey/CornflowerUI/issues/37) | PasswordBox | Done 2026-11-12 (#103, #106) |
+| [#113](https://github.com/wdcossey/CornflowerUI/issues/113) | Read: ScrollViewer physics and ListView press feedback | Done 2026-11-15 (#127) |
+| [#114](https://github.com/wdcossey/CornflowerUI/issues/114) | Read: app bar heights, the turnstile's forward angle, Pivot's header motion | Done 2026-11-15 (#128) |
+| [#115](https://github.com/wdcossey/CornflowerUI/issues/115) | `drive.ps1`: real touch, drag and wheel input | Done 2026-11-15 (#124) |
+| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | Done 2026-11-15 (#126) |
+| [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | Done 2026-11-15 (#125; by type at the Tier 2 roll-up, #139) |
+| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | Done 2026-11-15 (#133) |
+| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem (ListViewHeaderItem, GroupItem deferred) | Done 2026-11-15 (#130) |
+| [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | Done 2026-11-15 (#134) |
+| [#132](https://github.com/wdcossey/CornflowerUI/issues/132) | ListView's `ItemClick` and `IsItemClickEnabled` | Done 2026-11-15 (#138) |
 
-Tier 1 is complete. Each row's device run on the Pixel 8 is in the Tier 1 table above.
+Tier 1 is complete. Each row's device run on the Pixel 8 is in the Tier 1 and Tier 2 tables above. Tier 2's
+batches 1 and 2 are done; #121 (Pivot) and #122 (Hub) are open.

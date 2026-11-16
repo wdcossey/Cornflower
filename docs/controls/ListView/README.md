@@ -90,8 +90,7 @@ None.
 
 ## Known gaps
 
-- **No `ItemClick`**: Avalonia's ListBox has no `IsItemClickEnabled` or `ItemClick`. Handle `SelectionChanged`, or the
-  item's `Tapped`.
+- **`ItemClick`** is `ListBoxOptions`' ([ItemClick](../ItemClick/README.md), #132).
 - **No `SelectionMode` None.**
 - **No `Header` or `Footer`** that scroll with the items.
 - **No grouping**: so no ListViewHeaderItem or GroupItem (Avalonia 12.1.4 has neither, nor `GroupStyle`). Deferred

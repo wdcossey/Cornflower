@@ -16,17 +16,11 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The Buttons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme under Wp81: with
 /// Simple then Wp81, each is laid out as with Simple alone, and none is Wp81's Button. In Avalonia 12.1.4, Simple's
-/// templates for CalendarItem (in Calendar), CalendarDatePicker, NavigationPage, PipsPager and the managed
-/// file dialogs hold plain Buttons with no theme of their own (read from each of Simple's templates, built on its own).
+/// templates for CalendarItem (in Calendar), CalendarDatePicker, PipsPager and the managed file dialogs hold plain
+/// Buttons with no theme of their own (read from each of Simple's templates, built on its own).
 /// </summary>
 public class HolePartsTests
 {
-    /// <summary>Every hole that can be shown on its own in a window; a top level or a popup's host can't.</summary>
-    private static IEnumerable<Type> ShowableHoles() =>
-        Holes.TemplatedControls(new SimpleTheme())
-            .Where(type => Holes.Listed().Contains(type.Name))
-            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
-
     /// <summary>The plain Buttons in <paramref name="control"/>'s templates, nested ones included, in tree order.</summary>
     private static List<Button> PlainButtons(Control control) =>
         control.GetVisualDescendants().OfType<Button>().Where(b => b.GetType() == typeof(Button)).ToList();
@@ -40,7 +34,7 @@ public class HolePartsTests
     public void Every_Holes_Buttons_Keep_The_Theme_Under_Wp81()
     {
         var problems = new List<string>();
-        var holes = ShowableHoles().ToList();
+        var holes = Holes.Showable().ToList();
         var withButtons = 0;
         var fellBack = new List<string>();
 
