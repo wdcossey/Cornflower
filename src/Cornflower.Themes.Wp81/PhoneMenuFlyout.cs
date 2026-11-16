@@ -63,6 +63,9 @@ internal static class PhoneMenuFlyout
 
     private static readonly ConditionalWeakTable<MenuFlyoutPresenter, Binder> Binders = new();
 
+    /// <summary>The binders let go of, until they have given their popups back.</summary>
+    private static readonly ConditionalWeakTable<MenuFlyoutPresenter, Binder> Leaving = new();
+
     static PhoneMenuFlyout()
     {
         IsEnabledProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, change) =>
@@ -70,11 +73,21 @@ internal static class PhoneMenuFlyout
             if (Binders.TryGetValue(presenter, out var old))
             {
                 // From the dispatcher, as PhoneFlyout does: a theme going unsets this first (CLAUDE.md, the Avalonia facts).
+                // Turned on again meanwhile, the new binder comes after the old has given the popup back what its host
+                // set, so the new host doesn't take those values for the popup's own.
                 Binders.Remove(presenter);
-                Dispatcher.UIThread.Post(old.Dispose);
+                Leaving.Add(presenter, old);
+                Dispatcher.UIThread.Post(() =>
+                {
+                    old.Dispose();
+                    Leaving.Remove(presenter);
+                    if (GetIsEnabled(presenter) && !Binders.TryGetValue(presenter, out _) && presenter.Parent is Popup again)
+                        Binders.Add(presenter, new Binder(presenter, again));
+                });
+                return;
             }
 
-            if (change.GetNewValue<bool>() && presenter.Parent is Popup popup)
+            if (change.GetNewValue<bool>() && !Leaving.TryGetValue(presenter, out _) && presenter.Parent is Popup popup)
                 Binders.Add(presenter, new Binder(presenter, popup));
         });
         // From the dispatcher too: a theme going unsets these, and re-styling the items in the middle of that would be
@@ -311,21 +324,23 @@ internal static class PhoneMenuFlyout
 
         private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
         {
+            // Laid out already: no layout pass of its own.
             if (e.HeightChanged && _top is not null)
-                Place();
+                Place(layout: false);
         }
 
         /// <summary>
         /// The menu below its target if it fits there by the window's bottom, else above it; as tall as the window or
         /// taller, at the window's top. In the window's area inside the safe area, the host's.
         /// </summary>
-        private void Place()
+        private void Place(bool layout = true)
         {
             if (_top is null || _flyout?.Target is not { } target)
                 return;
             var area = new Rect(_top.ClientSize).Deflate(_insets?.SafeAreaPadding ?? default);
             // Laid out at the size the host has just given the popup.
-            _presenter.UpdateLayout();
+            if (layout)
+                _presenter.UpdateLayout();
             var height = _presenter.Bounds.Height;
             var targetTop = target.TranslatePoint(default, _top)?.Y ?? area.Y;
             var targetBottom = targetTop + target.Bounds.Height;

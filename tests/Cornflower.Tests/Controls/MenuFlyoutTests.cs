@@ -617,4 +617,24 @@ public class MenuFlyoutTests
 
         Assert.Same(containers, stage.Item(0).Theme);
     }
+
+    [AvaloniaFact]
+    public void Turned_Off_And_On_Again_It_Keeps_The_Menu_Hosted()
+    {
+        // The old binder lets go from the dispatcher: the new one is made after it has given the popup back what its
+        // host set, so the new host doesn't take those values for the popup's own and lose them.
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        stage.Flyout.Hide();
+
+        PhoneMenuFlyout.SetIsEnabled(stage.Presenter, false);
+        PhoneMenuFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+        stage.Open();
+
+        Assert.NotNull(PhoneMenuFlyout.HostOf(stage.Presenter));
+        Assert.True(stage.Flyout.Popup.ShouldUseOverlayLayer);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 600);
+        Near(Placements[0].MenuTop, stage.Bounds().Y);
+    }
 }

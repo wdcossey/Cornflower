@@ -51,8 +51,8 @@ Avalonia has no `MenuFlyoutItem`: a `MenuFlyout` holds `MenuItem`s, the same typ
 phone's item is a keyed theme, `Wp81MenuFlyoutItemTheme` (and `Wp81MenuFlyoutSeparatorTheme` for `Separator`), not the
 theme for the type. The presenter's theme names them (`PhoneMenuFlyout.ItemTheme`, `PhoneMenuFlyout.SeparatorTheme`),
 and `PhoneMenuFlyout` gives them to the presenter's own containers, at style priority, as each is prepared. A
-`MenuItem` anywhere else (a desktop `Menu`, Tier 4) keeps its own theme. An app's own `Theme` on an item, or a
-`MenuFlyout.ItemContainerTheme`, wins.
+`MenuItem` anywhere else (a desktop `Menu`, Tier 4) keeps its own theme. An app's own `Theme` set on an item, or a
+`MenuFlyout.ItemContainerTheme`, wins; a style's `Theme` setter for `MenuItem` competes with ours at style priority.
 
 ## Extensions
 
