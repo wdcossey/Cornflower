@@ -98,7 +98,6 @@ public class ContentDialog : ContentControl
     private State _state;
     private int _shows;
     private int _clickingIn = -1;
-    private IInputElement? _focusBefore;
 
     /// <summary>Initialises a dialog with no title, content or buttons.</summary>
     public ContentDialog()
@@ -278,7 +277,6 @@ public class ContentDialog : ContentControl
         _state = State.Open;
         _shows++;
         _clickingIn = -1;
-        var focused = topLevel.FocusManager?.GetFocusedElement();
         _popup.IsOpen = true;
         if (!_popup.IsOpen)
         {
@@ -287,7 +285,7 @@ public class ContentDialog : ContentControl
             throw new InvalidOperationException("The dialog's popup didn't open.");
         }
 
-        _focusBefore = focused;
+        // Avalonia's popup gives the focus back where it was as it closes.
         Focus();
         Opened?.Invoke(this, new ContentDialogOpenedEventArgs());
         return result.Task;
@@ -441,16 +439,12 @@ public class ContentDialog : ContentControl
     }
 
     /// <summary>
-    /// The popup has closed, the dialog gone from the screen: the focus goes back where it was, and the popup leaves
-    /// its window, so a dialog kept by the app doesn't keep the window. A popup closed under a shown dialog (its window
+    /// The popup has closed, the dialog gone from the screen: the popup leaves its window, so a dialog kept by the app
+    /// doesn't keep the window. A popup closed under a shown dialog (its window
     /// closing, say) closes the dialog, with no result.
     /// </summary>
     private void OnPopupClosed(object? sender, EventArgs e)
     {
-        var focus = _focusBefore;
-        _focusBefore = null;
-        if (focus is Visual visual && TopLevel.GetTopLevel(visual) is not null && IsKeyboardFocusWithin)
-            focus.Focus();
         if (_popup is not null)
         {
             _popup.ClearValue(Popup.PlacementTargetProperty);

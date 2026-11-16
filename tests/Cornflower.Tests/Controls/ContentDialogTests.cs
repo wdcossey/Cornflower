@@ -975,6 +975,7 @@ public class ContentDialogTests
         Assert.Equal(FontWeight.Normal, body.FontWeight);
         Assert.Equal(18.14, body.FontSize);
         Assert.IsNotType<AccessText>(title);
+        Assert.IsNotType<AccessText>(body);
         Assert.Equal("my_title", title.Text);
         Assert.Equal("my_photo.jpg", body.Text);
         Assert.Equal(25.5 * PhoneTextLineHeight, title.Bounds.Height, RawPixel);
@@ -1006,11 +1007,8 @@ public class ContentDialogTests
         for (var tick = 3; tick < OpenTicks; tick++)
         {
             stage.At(first + tick * Tick);
-            if (stage.Bands is { } bands)
-                Assert.Equal(Eased(tick), bands.Angles[0], 1e-9);
+            Assert.Equal(Eased(tick), stage.Bands!.Angles[0], 1e-9);
         }
-
-        Assert.NotNull(stage.Bands);
     }
 
     [AvaloniaFact]
