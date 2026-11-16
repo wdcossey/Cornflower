@@ -72,7 +72,9 @@ internal static class PhoneListMultiSelect
         InputElement.PointerCaptureLostEvent.AddClassHandler<ListBoxItem>(OnCaptureLost, handledEventsToo: true);
         IsOnProperty.Changed.AddClassHandler<ListBoxItem>((item, e) =>
         {
-            if (!e.GetNewValue<bool>()) Release(item);
+            if (e.GetNewValue<bool>()) return;
+            item.ClearValue(FirstProperty);
+            Release(item);
         });
         InputElement.IsEffectivelyEnabledProperty.Changed.AddClassHandler<ListBoxItem>((item, e) =>
         {
@@ -103,9 +105,16 @@ internal static class PhoneListMultiSelect
         return null;
     }
 
+    /// <summary>
+    /// Notes the first pointer down on the item, from inside its own tree: a press in a popup the item owns is routed
+    /// through it, but its capture is lost in the popup's tree. One noted whose capture went unseen is let go.
+    /// </summary>
     private static void OnFirst(ListBoxItem item, PointerPressedEventArgs e)
     {
-        if (GetIsOn(item) && !item.IsSet(FirstProperty))
+        if (!GetIsOn(item) || e.Source is not Visual hit || !(ReferenceEquals(hit, item) || item.IsVisualAncestorOf(hit)))
+            return;
+
+        if (item.GetValue(FirstProperty) is not { } first || first.Captured is null)
             item.SetValue(FirstProperty, e.Pointer);
     }
 
@@ -115,10 +124,10 @@ internal static class PhoneListMultiSelect
     /// </summary>
     private static void OnPressed(ListBoxItem item, PointerPressedEventArgs e)
     {
-        // The first pointer is noted only in the check mode, so an item out of it stops here.
+        // The first pointer is noted only in the check mode, from inside the item's tree, so a press out of the mode, or
+        // in a popup, or a second finger, stops here.
         if (!ReferenceEquals(item.GetValue(FirstProperty), e.Pointer) || !item.IsEffectivelyEnabled || item.IsSet(PressProperty) ||
             !e.GetCurrentPoint(item).Properties.IsLeftButtonPressed ||
-            e.Source is not Visual hit || !(ReferenceEquals(hit, item) || item.IsVisualAncestorOf(hit)) ||
             BoxOf(item) is not { } box || box.GetVisualParent() is not { } parent ||
             box.Bounds is not { Width: > 0, Height: > 0 } bounds)
             return;
@@ -129,7 +138,7 @@ internal static class PhoneListMultiSelect
 
         // The item's tilt took the press first (or, returning from an earlier one, was still showing): turned off, it
         // goes back to rest with nothing drawn, and no other pointer tilts the content until the box's press ends.
-        var press = new BoxPress(item, box, e.Pointer, at - bounds.Position)
+        var press = new BoxPress(item, box, at - bounds.Position)
         {
             TiltOff = Tilt.GetIsEnabled(item) ? item.SetValue(Tilt.IsEnabledProperty, false, BindingPriority.Animation) : null,
         };
@@ -169,16 +178,14 @@ internal static class PhoneListMultiSelect
         private IDisposable? _pending;
         private int _steps;
 
-        public BoxPress(ListBoxItem item, Control box, IPointer pointer, Point press)
+        public BoxPress(ListBoxItem item, Control box, Point press)
         {
             _item = item;
             _box = box;
             _press = press;
-            Pointer = pointer;
-            _item.DetachedFromVisualTree += OnDetached;
+            // The item leaving the tree, or a new template taking the box away, ends the press.
+            _box.DetachedFromVisualTree += OnDetached;
         }
-
-        public IPointer Pointer { get; }
 
         /// <summary>The item's tilt held off for the press; disposed, it comes back, at rest.</summary>
         public IDisposable? TiltOff { get; init; }
@@ -215,12 +222,11 @@ internal static class PhoneListMultiSelect
         /// <summary>The box's own transform back, nothing pending.</summary>
         public void Stop()
         {
-            _item.DetachedFromVisualTree -= OnDetached;
+            _box.DetachedFromVisualTree -= OnDetached;
             _pending?.Dispose();
             _pending = null;
             _shown?.Dispose();
             _shown = null;
-            State = TiltState.Rest;
             TiltOff?.Dispose();
         }
 

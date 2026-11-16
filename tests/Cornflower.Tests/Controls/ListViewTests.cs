@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -790,6 +791,26 @@ public class ListViewTests
 
         Assert.Null(box.RenderTransform);
         Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+    }
+
+    // A new template while the box is pressed takes the box away: the press ends, and nothing is left filled.
+    [AvaloniaFact]
+    public void A_New_Template_Ends_The_Boxs_Press()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.True(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        item.Template = new FuncControlTemplate<ListBoxItem>((_, _) => new Border());
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
     }
 
     // One pointer at a time, as Tilt's: a second finger on the box while the first holds the item's text changes nothing
