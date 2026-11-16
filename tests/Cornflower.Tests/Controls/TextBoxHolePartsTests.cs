@@ -15,7 +15,7 @@ namespace Cornflower.Tests.Controls;
 /// <summary>
 /// A plain TextBox in the template of a control Wp81 doesn't theme yet (a hole) keeps the theme under Wp81 for TextBox,
 /// through <c>HoleParts</c>, as <c>CheckBoxHolePartsTests</c> shows for the file dialog's CheckBox. In Avalonia 12.1.4,
-/// Simple's templates for AutoCompleteBox, CalendarDatePicker, ComboBox (its editable box), the managed file dialog and
+/// Simple's templates for CalendarDatePicker, ComboBox (its editable box), the managed file dialog and
 /// NumericUpDown hold one or more, and pass them Simple's brushes, or none: with the phone's theme they would draw the
 /// phone's black text and white box in chrome laid out for Simple's (CalendarDatePicker's and NumericUpDown's text
 /// black on Simple's dark background, ComboBox's editable box white when focused).
@@ -60,7 +60,7 @@ public class TextBoxHolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Equal(
-            [nameof(AutoCompleteBox), nameof(CalendarDatePicker), nameof(ComboBox), nameof(ManagedFileChooser), nameof(NumericUpDown)],
+            [nameof(CalendarDatePicker), nameof(ComboBox), nameof(ManagedFileChooser), nameof(NumericUpDown)],
             found);
     }
 

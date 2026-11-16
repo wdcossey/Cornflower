@@ -1,0 +1,256 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Platform;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
+
+namespace Cornflower.Themes.Wp81;
+
+/// <summary>
+/// The phone's AutoSuggestBox list on Avalonia's <see cref="AutoCompleteBox"/>, turned on by the AutoCompleteBox theme
+/// (<c>Controls/AutoCompleteBox.axaml</c>): where the list hangs, how tall it may be, and what closes it, as #150 read
+/// them (tools/refapp/README.md, "AutoSuggestBox", and docs/controls/AutoSuggestBox/PLAN.md).
+/// </summary>
+/// <remarks>
+/// <para><b>Where.</b> The list's top border lies on the box's bottom border: as the list opens, the template's
+/// <c>PART_Popup</c> is moved up by the <c>PART_TextBox</c>'s bottom border (2.5), so the list's top is the box's bottom
+/// less 2.5 (63.33 on the phone, its box from 26.67 to 65.83).</para>
+/// <para><b>How tall.</b> As tall as its suggestions, up to the room below the box: down to 2.5 above the keyboard's top
+/// while the keyboard is up (twelve suggestions run to 450.83, the keyboard's top 453.33), or above the window's bottom,
+/// inside its safe area, when there is none; and never over <see cref="AutoCompleteBox.MaxDropDownHeight"/> (WinRT's
+/// <c>MaxSuggestionListHeight</c>). Worked out as it opens and again when the keyboard or the window changes.</para>
+/// <para><b>Back and the keyboard.</b> On the phone one Back hides the keyboard, closes the list and takes the focus from
+/// the box, in one frame, and the next Back reaches the app (#150). Here a class handler on
+/// <see cref="TopLevel.BackRequestedEvent"/> does it for a box that has the focus: it closes the list, clears the focus
+/// and marks Back handled, so the page's <c>NavigationPage</c> doesn't go back. On Android the keyboard takes the first
+/// Back itself and Avalonia never sees it; so the keyboard going down while the box has the focus does the same.</para>
+/// <para><b>A tap on a suggestion</b> closes the list and leaves the focus in the box, so the keyboard stays, as on the
+/// phone: the template's list and its items take no focus, and the list is closed here as the release selects.</para>
+/// <para>The page doesn't move up to put the box at the window's top, as the phone's does: that is the shell's, and
+/// Avalonia has no such pan (a recorded gap).</para>
+/// </remarks>
+internal static class PhoneSuggestionList
+{
+    /// <summary>Set by the AutoCompleteBox theme.</summary>
+    public static readonly AttachedProperty<bool> IsEnabledProperty =
+        AvaloniaProperty.RegisterAttached<AutoCompleteBox, bool>("IsEnabled", typeof(PhoneSuggestionList));
+
+    /// <summary>The list's bottom border stops this far above the keyboard's top, or the window's bottom (#150: 450.83 against 453.33).</summary>
+    internal const double KeyboardGap = 2.5;
+
+    /// <summary>
+    /// The platform's keyboard of a top level: Avalonia's <see cref="TopLevel.InputPane"/>, or none. A test replaces it,
+    /// as no headless top level has one.
+    /// </summary>
+    internal static Func<TopLevel, IPhoneKeyboard?> KeyboardOf = top => top.InputPane is { } pane ? new PaneKeyboard(pane) : null;
+
+    private static readonly AttachedProperty<Hold?> HoldProperty =
+        AvaloniaProperty.RegisterAttached<AutoCompleteBox, Hold?>("Hold", typeof(PhoneSuggestionList));
+
+    static PhoneSuggestionList()
+    {
+        IsEnabledProperty.Changed.AddClassHandler<AutoCompleteBox>((box, change) =>
+        {
+            box.GetValue(HoldProperty)?.Dispose();
+            box.ClearValue(HoldProperty);
+            if (change.GetNewValue<bool>())
+                box.SetValue(HoldProperty, new Hold(box));
+        });
+        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
+    }
+
+    public static bool GetIsEnabled(AutoCompleteBox box) => box.GetValue(IsEnabledProperty);
+
+    public static void SetIsEnabled(AutoCompleteBox box, bool value) => box.SetValue(IsEnabledProperty, value);
+
+    /// <summary>Back while a box of ours has the focus: close its list, take its focus, and leave the page alone.</summary>
+    private static void OnBackRequested(TopLevel top, RoutedEventArgs e)
+    {
+        if (e.Handled || BoxWithFocus(top) is not { } box)
+            return;
+        e.Handled = true;
+        LetGo(box);
+    }
+
+    /// <summary>The box of ours that has the focus in the top level, if one has.</summary>
+    private static AutoCompleteBox? BoxWithFocus(TopLevel top) =>
+        (top.FocusManager?.GetFocusedElement() as Visual)?.GetSelfAndVisualAncestors()
+            .OfType<AutoCompleteBox>().FirstOrDefault(GetIsEnabled);
+
+    /// <summary>What the phone does on Back or when its keyboard goes: the list closes and the box loses the focus.</summary>
+    private static void LetGo(AutoCompleteBox box)
+    {
+        box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
+        TopLevel.GetTopLevel(box)?.FocusManager?.Focus(null);
+    }
+
+    /// <summary>One box's hold on its template's parts, its window and the keyboard.</summary>
+    private sealed class Hold : IDisposable
+    {
+        private readonly AutoCompleteBox _box;
+        private Popup? _popup;
+        private TextBox? _textBox;
+        private Control? _list;
+        private TopLevel? _top;
+        private IPhoneKeyboard? _keyboard;
+        private bool _keyboardWasOpen;
+
+        public Hold(AutoCompleteBox box)
+        {
+            _box = box;
+            box.TemplateApplied += OnTemplateApplied;
+            box.AttachedToVisualTree += OnAttached;
+            box.DetachedFromVisualTree += OnDetached;
+            box.PropertyChanged += OnBoxPropertyChanged;
+            if (TopLevel.GetTopLevel(box) is not null)
+                Attach();
+        }
+
+        public void Dispose()
+        {
+            _box.TemplateApplied -= OnTemplateApplied;
+            _box.AttachedToVisualTree -= OnAttached;
+            _box.DetachedFromVisualTree -= OnDetached;
+            _box.PropertyChanged -= OnBoxPropertyChanged;
+            Detach();
+            Take(null, null);
+        }
+
+        private void OnTemplateApplied(object? sender, TemplateAppliedEventArgs e) =>
+            Take(e.NameScope.Find<Popup>("PART_Popup"), e.NameScope.Find<TextBox>("PART_TextBox"));
+
+        private void Take(Popup? popup, TextBox? textBox)
+        {
+            if (_popup is not null)
+                _popup.Opened -= OnOpened;
+            _list?.RemoveHandler(InputElement.PointerReleasedEvent, OnListReleased);
+            _popup = popup;
+            _textBox = textBox;
+            _list = popup?.Child as Control;
+            if (_popup is not null)
+                _popup.Opened += OnOpened;
+            _list?.AddHandler(InputElement.PointerReleasedEvent, OnListReleased, RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+
+        /// <summary>
+        /// A suggestion tapped: the list closes, the box keeping the focus. The template's list and items take no focus,
+        /// so Avalonia's own close, when the box loses it, doesn't come; and its commit on release is for a mouse alone.
+        /// </summary>
+        private void OnListReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            if ((e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault() is { IsSelected: true })
+                _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
+        }
+
+        private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e) => Attach();
+
+        private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) => Detach();
+
+        private void Attach()
+        {
+            Detach();
+            _top = TopLevel.GetTopLevel(_box);
+            if (_top is null)
+                return;
+            _top.PropertyChanged += OnTopPropertyChanged;
+            _keyboard = KeyboardOf(_top);
+            if (_keyboard is not null)
+            {
+                _keyboardWasOpen = _keyboard.IsOpen;
+                _keyboard.Changed += OnKeyboardChanged;
+            }
+        }
+
+        private void Detach()
+        {
+            if (_top is not null)
+                _top.PropertyChanged -= OnTopPropertyChanged;
+            if (_keyboard is not null)
+            {
+                _keyboard.Changed -= OnKeyboardChanged;
+                _keyboard.Dispose();
+            }
+            _top = null;
+            _keyboard = null;
+        }
+
+        private void OnBoxPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == AutoCompleteBox.IsDropDownOpenProperty && e.GetNewValue<bool>()
+                || e.Property == AutoCompleteBox.MaxDropDownHeightProperty)
+                Place();
+        }
+
+        private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == TopLevel.ClientSizeProperty)
+                Place();
+        }
+
+        private void OnOpened(object? sender, EventArgs e) => Place();
+
+        private void OnKeyboardChanged(object? sender, EventArgs e)
+        {
+            var open = _keyboard?.IsOpen == true;
+            var went = _keyboardWasOpen && !open;
+            _keyboardWasOpen = open;
+            if (went && _top is not null && BoxWithFocus(_top) == _box)
+                LetGo(_box);
+            else
+                Place();
+        }
+
+        /// <summary>Hangs the list from the box's bottom border and gives it the room below, down to the keyboard.</summary>
+        private void Place()
+        {
+            if (_popup is null || _textBox is null || _top is null)
+                return;
+            _popup.VerticalOffset = -_textBox.BorderThickness.Bottom;
+            if (_popup.Child is not Control list)
+                return;
+            var below = _textBox.TranslatePoint(new Point(0, _textBox.Bounds.Height), _top);
+            if (below is not { } at)
+                return;
+            var bottom = new Rect(_top.ClientSize).Deflate(_top.InsetsManager?.SafeAreaPadding ?? default).Bottom;
+            if (_keyboard is { IsOpen: true } keyboard)
+                bottom = Math.Min(bottom, keyboard.Occluded.Top);
+            var room = bottom - KeyboardGap - (at.Y + _popup.VerticalOffset);
+            list.MaxHeight = Math.Max(0, Math.Min(room, _box.MaxDropDownHeight));
+        }
+    }
+
+    /// <summary>The platform keyboard, as the list needs it: up or not, what it covers, and when that changes.</summary>
+    internal interface IPhoneKeyboard : IDisposable
+    {
+        bool IsOpen { get; }
+
+        /// <summary>What it covers, in the top level's coordinates.</summary>
+        Rect Occluded { get; }
+
+        event EventHandler? Changed;
+    }
+
+    /// <summary>Avalonia's input pane as an <see cref="IPhoneKeyboard"/>.</summary>
+    private sealed class PaneKeyboard : IPhoneKeyboard
+    {
+        private readonly IInputPane _pane;
+
+        public PaneKeyboard(IInputPane pane)
+        {
+            _pane = pane;
+            _pane.StateChanged += OnStateChanged;
+        }
+
+        public bool IsOpen => _pane.State == InputPaneState.Open;
+
+        public Rect Occluded => _pane.OccludedRect;
+
+        public event EventHandler? Changed;
+
+        public void Dispose() => _pane.StateChanged -= OnStateChanged;
+
+        private void OnStateChanged(object? sender, InputPaneStateEventArgs e) => Changed?.Invoke(this, EventArgs.Empty);
+    }
+}
