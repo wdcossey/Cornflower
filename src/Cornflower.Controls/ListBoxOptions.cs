@@ -36,8 +36,10 @@ public sealed class ItemClickEventArgs : RoutedEventArgs
 /// the press itself, a Button or a TextBox, takes the tap as it would.
 /// </para>
 /// <para>
-/// In the check mode, a <see cref="ListBox.SelectionMode"/> with <see cref="SelectionMode.Multiple"/>, a tap checks
-/// the item as before and nothing is clicked. A selection set in code stands either way.
+/// In the check mode, a <see cref="ListBox.SelectionMode"/> with both <see cref="SelectionMode.Multiple"/> and
+/// <see cref="SelectionMode.Toggle"/> (WinRT's <c>Multiple</c>), a tap checks the item as before and nothing is clicked.
+/// <see cref="SelectionMode.Multiple"/> alone, WinRT's <c>Extended</c>, isn't the check mode (#142): a tap clicks and
+/// selects nothing, as in <c>Single</c>. A selection set in code stands either way.
 /// </para>
 /// <para>
 /// A pointer's events are taken on the item's template root, by a class handler, so the root's own handlers don't see
@@ -100,11 +102,11 @@ public static class ListBoxOptions
 
     public static void SetIsItemClickEnabled(ListBox list, bool value) => list.SetValue(IsItemClickEnabledProperty, value);
 
-    /// <summary>The item's list, if it clicks its items now: item click on, and out of the check mode.</summary>
+    /// <summary>The item's list, if it clicks its items now: item click on, and out of the check mode (Multiple and Toggle).</summary>
     private static ListBox? Clicking(ListBoxItem item) =>
         ItemsControl.ItemsControlFromItemContainer(item) is ListBox list &&
         GetIsItemClickEnabled(list) &&
-        !list.SelectionMode.HasFlag(SelectionMode.Multiple)
+        !list.SelectionMode.HasFlag(SelectionMode.Multiple | SelectionMode.Toggle)
             ? list
             : null;
 

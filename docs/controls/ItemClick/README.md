@@ -32,8 +32,8 @@ with `xmlns:cf="using:Cornflower.Controls"`.
   pressed and let go on the focused item (once, however long it is held). A pan, or a press dragged off the item,
   clicks nothing; the press tilts either way.
 - **Selection.** With item click on, a tap, click or key selects nothing, whatever the `SelectionMode`, unless the
-  list is in the check mode: `SelectionMode` with `Multiple` (`Multiple,Toggle` is WinRT's Multiple), where a tap
-  checks the item and clicks nothing. A selection set in code stands. WinRT's `SelectionMode="None"` with
+  list is in the check mode: `SelectionMode="Multiple,Toggle"`, WinRT's Multiple, where a tap checks the item and
+  clicks nothing. `Multiple` alone, WinRT's Extended, isn't the check mode (#142): a tap clicks, as in Single. A selection set in code stands. WinRT's `SelectionMode="None"` with
   `IsItemClickEnabled` is Single here: no tap selects.
 - `ClickedItem` is the list's item, the data, not its `ListBoxItem`.
 - `ItemClick` is a direct routed event raised on the list, as WinRT's is the list's own; its sender and source are

@@ -244,11 +244,10 @@ public class ItemClickTests
 
     // ----- The check mode -----
 
-    // In the check mode, any SelectionMode with Multiple (WinRT's Multiple, and its Extended), a tap checks the item as
-    // before and clicks nothing.
+    // In the check mode, Multiple and Toggle (WinRT's Multiple), a tap checks the item as before and clicks nothing.
     [AvaloniaTheory]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle)]
-    [InlineData(SelectionMode.Multiple)]
+    [InlineData(SelectionMode.Multiple | SelectionMode.Toggle | SelectionMode.AlwaysSelected)]
     public void In_The_Check_Mode_A_Tap_Checks_And_Clicks_Nothing(SelectionMode mode)
     {
         using var page = new ClickPage();
@@ -276,6 +275,24 @@ public class ItemClickTests
 
         Assert.Equal(["item 1"], page.Clicked);
         Assert.Equal(before, page.List.SelectedIndex);
+    }
+
+    // Multiple without Toggle, WinRT's Extended, isn't the check mode (#142: the phone shows no boxes, and a tap is
+    // Single's): with item click on, a tap clicks and selects nothing, and a selection set in code stands.
+    [AvaloniaTheory]
+    [InlineData(SelectionMode.Multiple)]
+    [InlineData(SelectionMode.Multiple | SelectionMode.AlwaysSelected)]
+    public void Multiple_Without_Toggle_A_Tap_Clicks(SelectionMode mode)
+    {
+        using var page = new ClickPage();
+        page.List.SelectionMode = mode;
+        page.List.SelectedIndex = 3;
+        Dispatcher.UIThread.RunJobs();
+
+        page.Tap(page.On(1));
+
+        Assert.Equal(["item 1"], page.Clicked);
+        Assert.Equal([(object)"item 3"], page.List.SelectedItems!.Cast<object>());
     }
 
     // ----- Mouse and keys -----
