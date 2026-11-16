@@ -21,12 +21,6 @@ public class HoleTogglePartsTests
 {
     private static readonly Type[] Kinds = [typeof(ToggleButton), typeof(RepeatButton)];
 
-    /// <summary>Every hole that can be shown on its own in a window, as <see cref="HolePartsTests"/> shows them.</summary>
-    private static IEnumerable<Type> ShowableHoles() =>
-        Holes.TemplatedControls(new SimpleTheme())
-            .Where(type => Holes.Listed().Contains(type.Name))
-            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
-
     /// <summary>The plain ToggleButtons and RepeatButtons (not their subclasses) in <paramref name="control"/>'s templates.</summary>
     private static List<Button> Plain(Control control) =>
         control.GetVisualDescendants().OfType<Button>().Where(b => Kinds.Contains(b.GetType())).ToList();
@@ -43,7 +37,7 @@ public class HoleTogglePartsTests
         var problems = new List<string>();
         var fellBack = new List<string>();
 
-        foreach (var type in ShowableHoles())
+        foreach (var type in Holes.Showable())
         {
             var alone = (Control)Activator.CreateInstance(type)!;
             List<Type> expected;

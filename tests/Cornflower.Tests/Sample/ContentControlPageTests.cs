@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
+using Cornflower.Themes.Wp81;
 
 namespace Cornflower.Tests.Sample;
 
@@ -53,6 +54,7 @@ public class ContentControlPageTests
         {
             Assert.Null(specimen.Theme);
             var presenter = Assert.IsType<ContentPresenter>(specimen.Presenter);
+            Assert.True(PhoneHeaderLine.GetIsEnabled(presenter), $"{specimen.Name}'s presenter isn't the theme's");
             var at = presenter.TranslatePoint(default, specimen)!.Value;
             if (specimen.Name == "Centred")
                 Assert.True(at.X > 100 && at.Y > 20, $"{specimen.Name}'s content at {at}");

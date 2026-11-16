@@ -3,6 +3,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
 using Avalonia.VisualTree;
@@ -20,12 +21,6 @@ namespace Cornflower.Tests.Completeness;
 /// </summary>
 public class HoleContentControlPartsTests
 {
-    /// <summary>Every hole that can be shown on its own in a window, as <see cref="HolePartsTests"/> shows them.</summary>
-    private static IEnumerable<Type> ShowableHoles() =>
-        Holes.TemplatedControls(new SimpleTheme())
-            .Where(type => Holes.Listed().Contains(type.Name))
-            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
-
     /// <summary>The plain ContentControls (not their subclasses) in <paramref name="control"/>'s templates, in tree order.</summary>
     private static List<ContentControl> Plain(Control control) =>
         control.GetVisualDescendants().OfType<ContentControl>().Where(c => c.GetType() == typeof(ContentControl)).ToList();
@@ -43,7 +38,7 @@ public class HoleContentControlPartsTests
         var problems = new List<string>();
         var fellBack = new List<string>();
 
-        foreach (var type in ShowableHoles())
+        foreach (var type in Holes.Showable())
         {
             var alone = (Control)Activator.CreateInstance(type)!;
             int expected;
@@ -108,6 +103,22 @@ public class HoleContentControlPartsTests
         Assert.All(parts, c => Assert.True(IsOwn(c.Theme)));
     }
 
+    /// <summary>
+    /// A theme to put under Wp81: an <see cref="HolePartsTests.AppControl"/> template holding <paramref name="inner"/>,
+    /// and the <paramref name="extra"/> themes beside it.
+    /// </summary>
+    private static Styles Under(Func<Control> inner, params (Type Key, ControlTheme Theme)[] extra)
+    {
+        var template = new FuncControlTemplate<HolePartsTests.AppControl>((_, _) => new Border { Child = inner() });
+        var under = new Styles
+        {
+            Resources = { [typeof(HolePartsTests.AppControl)] = new ControlTheme(typeof(HolePartsTests.AppControl)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } } },
+        };
+        foreach (var (key, theme) in extra)
+            under.Resources[key] = theme;
+        return under;
+    }
+
     // A ContentControl in a template from under Wp81, where that theme has its own theme for ContentControl: it takes
     // that one, as a Button takes the Button theme under Wp81.
     [AvaloniaFact]
@@ -115,16 +126,7 @@ public class HoleContentControlPartsTests
     {
         var host = new HolePartsTests.AppControl();
         var underContent = new ControlTheme(typeof(ContentControl));
-        var template = new FuncControlTemplate<HolePartsTests.AppControl>((_, _) => new Border { Child = new ContentControl { Name = "Inner" } });
-        var under = new Styles
-        {
-            Resources =
-            {
-                [typeof(HolePartsTests.AppControl)] = new ControlTheme(typeof(HolePartsTests.AppControl)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } },
-                [typeof(ContentControl)] = underContent,
-            },
-        };
-        using var scene = new Scene(host, themes: [under, new Wp81Theme()]);
+        using var scene = new Scene(host, themes: [Under(() => new ContentControl { Name = "Inner" }, (typeof(ContentControl), underContent)), new Wp81Theme()]);
 
         Assert.Same(underContent, Plain(host).Single().Theme);
     }
@@ -140,16 +142,28 @@ public class HoleContentControlPartsTests
             Setters = { new Setter(HoleParts.FallBackToOwnProperty, true), new Setter(HoleParts.FallBackProperty, true) },
         };
         var host = new HolePartsTests.AppControl();
-        var template = new FuncControlTemplate<HolePartsTests.AppControl>((_, _) => new Border { Child = new Note { Name = "Inner" } });
-        var under = new Styles
-        {
-            Resources = { [typeof(HolePartsTests.AppControl)] = new ControlTheme(typeof(HolePartsTests.AppControl)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } } },
-        };
-        using var scene = new Scene(host, themes: [under, wp81]);
+        using var scene = new Scene(host, themes: [Under(() => new Note { Name = "Inner" }), wp81]);
 
         var note = host.GetVisualDescendants().OfType<Note>().Single();
         Assert.Equal(typeof(Note), note.Theme?.TargetType);
         Assert.Empty(note.Theme!.Setters);
+    }
+
+    // A theme an app brings in from a file, with StyleInclude, under Wp81: its template's plain Button takes Simple's
+    // Button theme and its plain ContentControl Avalonia's own, as from a theme added in code.
+    [AvaloniaFact]
+    public void A_Template_From_A_StyleInclude_Under_Wp81_Falls_Back()
+    {
+        var baseUri = new Uri("avares://Cornflower.Tests/");
+        var include = new StyleInclude(baseUri) { Source = new Uri(baseUri, "Completeness/Fixture/UnderWp81.axaml") };
+        var simple = new SimpleTheme();
+        var pager = new PipsPager();
+        using var scene = new Scene(pager, themes: [simple, include, new Wp81Theme()]);
+
+        var button = pager.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "Inner");
+        Assert.True(simple.TryGetResource(typeof(Button), ThemeVariant.Dark, out var simpleButton));
+        Assert.Same(simpleButton, button.Theme);
+        Assert.True(IsOwn(Plain(pager).Single().Theme));
     }
 
     /// <summary>A ContentControl with a style key of its own.</summary>

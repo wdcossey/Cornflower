@@ -58,8 +58,8 @@ The phone's own, all in `Tokens/`, each by `DynamicResource`: `TextControlThemeM
 `Disabled` keys (`TextBoxDisabledBackgroundThemeBrush`, `TextBoxDisabledBorderThemeBrush`,
 `TextBoxDisabledForegroundThemeBrush`, `TextBoxDisabledHeaderForegroundThemeBrush`), and for the header
 `TextStyleMediumFontSize` and `PhoneMidBrush`. No new key. The part's `ScrollViewer` theme is the phone's bar-less one,
-`Wp81ScrollViewerScrollBarlessTheme` (#116; until the Tier 2 roll-up the TextBox's own `Wp81TextBoxScrollViewerTheme`,
-the same template).
+`Wp81ScrollViewerScrollBarlessTheme` (#116; until the Tier 2 roll-up, #139, the TextBox's own `Wp81TextBoxScrollViewerTheme`,
+the same presenter without the bar-less theme's `Grid`: the same pixels).
 
 ## The template's parts
 

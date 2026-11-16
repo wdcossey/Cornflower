@@ -39,8 +39,9 @@ namespace Cornflower.Themes.Wp81;
 /// RepeatButton's, CheckBox's, TextBox's and ContentControl's) and <see cref="FallBackToOwnProperty"/>
 /// (ContentControl's): they are internal, with no accessors. It goes false when that theme leaves
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
-/// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>); one with no
-/// templated parent returns at once.</para>
+/// given. It costs only the controls whose theme sets it (every Button, CheckBox, TextBox and plain ContentControl in
+/// Wp81's themes), and no global rule (<c>StyleBudgetTests</c>). One with no templated parent returns at once; one in
+/// a template of Wp81's, after one walk up its styling parents.</para>
 /// </remarks>
 internal static class HoleParts
 {
@@ -169,6 +170,10 @@ internal static class HoleParts
     /// <summary>Every template a <c>ControlTheme</c> in <paramref name="node"/> sets, read once per node.</summary>
     private static HashSet<object> TemplatesOf(object node)
     {
+        // A StyleInclude's file is loaded once: its styles are read once too, kept beside what it loaded.
+        var loaded = node is StyleInclude include ? include.Loaded : null;
+        if (loaded is not null)
+            node = loaded;
         if (Templates.TryGetValue(node, out var known))
             return known;
 
@@ -177,7 +182,7 @@ internal static class HoleParts
 
         // A theme (Wp81Theme, SimpleTheme, any Styles subclass) is read once. What an app holds and can change
         // as it runs, a plain group of styles or a host's own resources, is read each time: it is small.
-        if (node is Styles theme && theme.GetType() != typeof(Styles))
+        if (loaded is not null || node is Styles theme && theme.GetType() != typeof(Styles))
             Templates.AddOrUpdate(node, found);
         return found;
     }
@@ -192,6 +197,9 @@ internal static class HoleParts
             case Wp81Theme when seen.Count > 1:
                 return;                                          // another Wp81 inside what is under this one
             case ResourceInclude include:
+                Collect(include.Loaded, found, seen);
+                return;
+            case StyleInclude include:                       // a theme an app brings in from a file
                 Collect(include.Loaded, found, seen);
                 return;
             case ControlTheme theme:

@@ -93,7 +93,7 @@ phone shows its style doesn't.
 
 ### Keyed, not by type: why
 
-*Superseded at the Tier 2 roll-up:* the user decided on 2026-11-15 to key it by type, with the three changes below
+*Superseded at the Tier 2 roll-up (#139):* the user decided on 2026-11-15 to key it by type, with the three changes below
 made there ([README](README.md#by-type)). This section is the reason it first shipped keyed.
 
 A theme keyed `{x:Type ContentControl}` in Wp81 reaches every bare ContentControl. That breaks three things today, each
@@ -115,7 +115,7 @@ control, Simple then Wp81, before and after):
 None of them is a Tier 1 control's frame: every Tier 1 control's frame is the same pixels with the theme keyed by type
 (none of their templates holds a bare ContentControl). So the theme ships keyed, `Wp81ContentControlTheme`, for a
 template or an app to set, and the three changes that let it be keyed by type are proposed for the roll-up
-([README](README.md#turning-it-on-by-type)). Decided on the user's behalf, in the PR.
+([README](README.md#by-type)). Decided on the user's behalf, in the PR.
 
 ### IsTabStop
 

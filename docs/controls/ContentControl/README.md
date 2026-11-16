@@ -1,6 +1,6 @@
 # ContentControl and ContentPresenter
 
-Status: done, by type since the Tier 2 roll-up ([below](#by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page contentcontrol` on `main` at `c5ee6fb`: cold 762 ms, the page opened in 252 ms, every specimen drawn) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the contentcontrol page opened in 8 ms with 53 elements)
+Status: done, by type since the Tier 2 roll-up, #139 ([below](#by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page contentcontrol` on `main` at `c5ee6fb`: cold 762 ms, the page opened in 252 ms, every specimen drawn) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the contentcontrol page opened in 8 ms with 53 elements)
 
 The Windows Phone 8.1 ContentControl: Avalonia's `ContentControl` in the phone's default style and template, keyed by
 type and as `Wp81ContentControlTheme`, in `src/Cornflower.Themes.Wp81/Controls/ContentControl.axaml`. The bare `ContentPresenter` keeps
@@ -23,6 +23,14 @@ app that hosts its pages in a ContentControl sets both content alignments to Str
 ```xml
 <ContentControl x:Name="Host" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 ```
+
+**What changes for an app** since the theme went in by type: a ContentControl of its own (a page or view host, a
+`ContentControl Content="{Binding CurrentPage}"`) puts its content at the top left at its own size, and draws no
+`Background` or border, so a transparent background no longer takes taps. Set the two alignments to Stretch to fill,
+or give it an empty theme to keep Avalonia's own template:
+`<ControlTheme x:Key="PlainContentControl" TargetType="ContentControl" />` and
+`Theme="{StaticResource PlainContentControl}"`. A ContentControl in the template of a theme added after Wp81 counts as
+the app's, and wears Wp81's too.
 
 ## Behaviours
 
@@ -56,7 +64,7 @@ None.
 
 ## By type
 
-On the phone every ContentControl has this style, and so it is here, since the Tier 2 roll-up (the user's decision of
+On the phone every ContentControl has this style, and so it is here, since the Tier 2 roll-up, #139 (the user's decision of
 2026-11-15). Keyed by type it also reaches three things outside this control's files, changed with it:
 
 1. **The holes.** Simple's templates for ComboBox, DataValidationErrors, MenuItem and the managed file dialog hold plain

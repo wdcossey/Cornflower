@@ -21,12 +21,6 @@ namespace Cornflower.Tests.Completeness;
 /// </summary>
 public class HolePartsTests
 {
-    /// <summary>Every hole that can be shown on its own in a window; a top level or a popup's host can't.</summary>
-    private static IEnumerable<Type> ShowableHoles() =>
-        Holes.TemplatedControls(new SimpleTheme())
-            .Where(type => Holes.Listed().Contains(type.Name))
-            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
-
     /// <summary>The plain Buttons in <paramref name="control"/>'s templates, nested ones included, in tree order.</summary>
     private static List<Button> PlainButtons(Control control) =>
         control.GetVisualDescendants().OfType<Button>().Where(b => b.GetType() == typeof(Button)).ToList();
@@ -40,7 +34,7 @@ public class HolePartsTests
     public void Every_Holes_Buttons_Keep_The_Theme_Under_Wp81()
     {
         var problems = new List<string>();
-        var holes = ShowableHoles().ToList();
+        var holes = Holes.Showable().ToList();
         var withButtons = 0;
         var fellBack = new List<string>();
 

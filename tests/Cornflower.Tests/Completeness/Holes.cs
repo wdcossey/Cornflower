@@ -31,6 +31,15 @@ internal static class Holes
     internal const string ListResource = "Cornflower.Tests.Completeness.Holes.txt";
 
     /// <summary>
+    /// Every listed hole that can be shown on its own in a window, for the hole-parts tests: a top level, a popup's host
+    /// and a type with no parameterless constructor can't.
+    /// </summary>
+    internal static IEnumerable<Type> Showable() =>
+        TemplatedControls(new Avalonia.Themes.Simple.SimpleTheme())
+            .Where(type => Listed().Contains(type.Name))
+            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
+
+    /// <summary>
     /// Every public, concrete <see cref="TemplatedControl"/> in the Avalonia assemblies that
     /// <paramref name="simple"/>'s own assembly refers to and that <paramref name="simple"/> themes
     /// by its type, in either variant; and the style key of each in <paramref name="ours"/>.
