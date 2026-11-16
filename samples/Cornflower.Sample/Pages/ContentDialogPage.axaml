@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ContentDialogPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 ContentDialog, shown with ShowAsync: with two buttons, one, none, FullSizeDesired, a title and body too long
+    for the screen, and a TextBox in it. Each swings in at the top of the window over the dim layer; its buttons or
+    Back close it, and what it returned is shown. Below, the two MessageDialog text styles (B18). The switch makes the
+    window light while the page is shown, as a dialog takes its window's theme.
+  -->
+  <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+    <ScrollViewer>
+      <StackPanel Margin="19,12,19,24">
+        <sample:SamplePageHeader x:Name="Header" />
+
+        <TextBlock Text="last" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+        <TextBlock x:Name="State" Text="none" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+        <Button x:Name="ShowTwo" Content="two buttons" Click="OnShowTwo" Margin="0,12,0,0" />
+        <Button x:Name="ShowOne" Content="one button" Click="OnShowOne" />
+        <Button x:Name="ShowNone" Content="no buttons" Click="OnShowNone" />
+        <Button x:Name="ShowFull" Content="full size" Click="OnShowFull" />
+        <Button x:Name="ShowLong" Content="long" Click="OnShowLong" />
+        <Button x:Name="ShowTextBox" Content="with a text box" Click="OnShowTextBox" />
+
+        <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" Margin="0,12,0,0" />
+
+        <TextBlock Text="message dialog styles" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+        <TextBlock x:Name="MessageTitle" Text="message dialog title" Theme="{DynamicResource MessageDialogTitleStyle}" />
+        <TextBlock x:Name="MessageContent" Text="The MessageDialog's message, in its content style, long enough to wrap onto a second line."
+                   Theme="{DynamicResource MessageDialogContentStyle}" />
+      </StackPanel>
+    </ScrollViewer>
+  </Panel>
+</UserControl>

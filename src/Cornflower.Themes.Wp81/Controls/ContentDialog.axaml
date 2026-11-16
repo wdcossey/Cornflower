@@ -1,0 +1,79 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ContentDialog: the default style of the 8.1 Update 1 runtime (contentdialog.json, which equals
+    the SDK's generic.xaml), re-expressed as an Avalonia ControlTheme for Cornflower's own ContentDialog, and the phone's
+    popup round it (PhoneContentDialog, PhonePopupHost). docs/controls/ContentDialog/PLAN.md has the values and their
+    sources.
+
+    The template is the phone's, part for part: Container, LayoutRoot, BackgroundElement (the Background) and
+    ContentPanel, a grid of three rows and two star columns: the Title (PhoneFontFamilyNormal, SemiBold,
+    TextStyleExtraLargeFontSize, ContentDialogTitleMargin), the content (TextStyleLargeFontSize,
+    ContentDialogContentMargin; our PART_ContentPresenter, the part Avalonia's ContentControl looks for) and the two
+    button hosts (ContentDialogButton1HostPadding and ContentDialogButton2HostPadding; PART_ for the control, which puts
+    its Buttons in them), each row at least its ContentDialog*MinHeight. The ContentPanel is PhoneContentDialogPanel,
+    which lays the grid out and, when the dialog fills the window (FullSizeDesired, or too tall for it), puts the buttons
+    in the bar the phone's shell draws at its foot (#150). Text the presenters make of a string gets the phone's line
+    (PhoneContentLine). The Orientation group's Landscape state is PhonePopupHost.IsLandscape on the dialog.
+
+    The bar's values are the shell's, read from the screen (refapp run 20261116-1934-dev11): the page's compact app
+    bar's height, 62.92, and the outlines of its two buttons, 194.17 × 41.67 at x 20.83 and 235.83, y 747.08 of 800;
+    the slots are the Buttons', the outline and the Button's PhoneTouchTargetOverhang (9.5) above and below.
+  -->
+  <x:Double x:Key="Wp81ContentDialogBarHeight">62.9166</x:Double>
+  <Thickness x:Key="Wp81ContentDialogBarPadding">20.8333,0.5,20,1.75</Thickness>
+  <x:Double x:Key="Wp81ContentDialogBarSpacing">20.8333</x:Double>
+
+  <ControlTheme x:Key="{x:Type cf:ContentDialog}" TargetType="cf:ContentDialog">
+    <Setter Property="Background" Value="{DynamicResource ContentDialogBackgroundThemeBrush}" />
+    <!-- The phone's dialog inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set, as
+         the FlyoutPresenter's is. -->
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="wp81:PhoneContentDialog.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Container">
+          <Panel x:Name="LayoutRoot">
+            <Border x:Name="BackgroundElement" Background="{TemplateBinding Background}">
+              <wp81:PhoneContentDialogPanel x:Name="ContentPanel"
+                                            FullSizeDesired="{TemplateBinding FullSizeDesired}"
+                                            TitleMinHeight="{DynamicResource ContentDialogTitleMinHeight}"
+                                            ContentMinHeight="{DynamicResource ContentDialogContentMinHeight}"
+                                            ButtonsMinHeight="{DynamicResource ContentDialogButtonsMinHeight}"
+                                            BarHeight="{StaticResource Wp81ContentDialogBarHeight}"
+                                            BarPadding="{StaticResource Wp81ContentDialogBarPadding}"
+                                            BarSpacing="{StaticResource Wp81ContentDialogBarSpacing}">
+                <ContentPresenter x:Name="Title"
+                                  Margin="{DynamicResource ContentDialogTitleMargin}"
+                                  Content="{TemplateBinding Title}"
+                                  ContentTemplate="{TemplateBinding TitleTemplate}"
+                                  FontSize="{DynamicResource TextStyleExtraLargeFontSize}"
+                                  FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                                  FontWeight="SemiBold"
+                                  RecognizesAccessKey="True"
+                                  wp81:PhoneContentLine.IsEnabled="True" />
+                <ContentPresenter x:Name="PART_ContentPresenter"
+                                  Margin="{DynamicResource ContentDialogContentMargin}"
+                                  Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                  FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                                  ClipToBounds="True"
+                                  RecognizesAccessKey="True"
+                                  wp81:PhoneContentLine.IsEnabled="True" />
+                <Border x:Name="PART_Button1Host" Padding="{DynamicResource ContentDialogButton1HostPadding}" />
+                <Border x:Name="PART_Button2Host" Padding="{DynamicResource ContentDialogButton2HostPadding}" />
+              </wp81:PhoneContentDialogPanel>
+            </Border>
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ wp81|PhoneContentDialogPanel#ContentPanel">
+      <Setter Property="Width" Value="{DynamicResource ContentDialogContentLandscapeWidth}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
