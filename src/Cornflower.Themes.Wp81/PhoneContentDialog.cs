@@ -1,7 +1,10 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -50,7 +53,21 @@ internal static class PhoneContentDialog
     /// <summary>The dialog is gone this long after it is asked to close: the middle of the read 95 to 120 ms.</summary>
     internal static readonly TimeSpan GoneAfter = TimeSpan.FromMilliseconds(107.5);
 
+    /// <summary>
+    /// Set by Wp81's ContentDialog theme on the title's and the content's presenters: the text a presenter makes of a
+    /// string gets the phone's line, as <see cref="PhoneContentLine"/> gives an <c>AccessText</c>'s, with no access keys,
+    /// so an underscore in the text shows as written, as on the phone.
+    /// </summary>
+    public static readonly AttachedProperty<bool> TextLineProperty =
+        AvaloniaProperty.RegisterAttached<ContentPresenter, bool>("TextLine", typeof(PhoneContentDialog));
+
+    /// <summary>The <c>MaxHeight</c> line height that gives the phone's own line, 1.33 em (as PhoneContentLine's).</summary>
+    private const double PhoneLine = double.Epsilon;
+
     private const string DimKey = "ContentDialogDimmingThemeBrush";
+
+    /// <summary>The text each presenter's line was put on, to take it back.</summary>
+    private static readonly ConditionalWeakTable<ContentPresenter, TextBlock> Lined = new();
 
     private static readonly ConditionalWeakTable<ContentDialog, Binder> Binders = new();
 
@@ -70,6 +87,35 @@ internal static class PhoneContentDialog
     {
         IsEnabledProperty.Changed.AddClassHandler<ContentDialog>((dialog, _) => Update(dialog));
         StyledElement.ParentProperty.Changed.AddClassHandler<ContentDialog>((dialog, _) => Update(dialog));
+        TextLineProperty.Changed.AddClassHandler<ContentPresenter>((presenter, _) => UpdateLine(presenter));
+        ContentPresenter.ChildProperty.Changed.AddClassHandler<ContentPresenter>((presenter, _) => UpdateLine(presenter));
+    }
+
+    public static bool GetTextLine(ContentPresenter presenter) => presenter.GetValue(TextLineProperty);
+
+    public static void SetTextLine(ContentPresenter presenter, bool value) => presenter.SetValue(TextLineProperty, value);
+
+    /// <summary>
+    /// The phone's line on the text the presenter made of content that isn't an element, with no template; taken back
+    /// off text it no longer shows. An app's own template whose root is a TextBlock, for a string, would get it too.
+    /// </summary>
+    private static void UpdateLine(ContentPresenter presenter)
+    {
+        var made = presenter.GetValue(TextLineProperty) && presenter.Child is TextBlock text &&
+                   presenter.ContentTemplate is null && presenter.Content is not (null or Control)
+            ? text
+            : null;
+        if (Lined.TryGetValue(presenter, out var previous) && !ReferenceEquals(previous, made))
+        {
+            previous.ClearValue(PhoneTextLine.MaxHeightLineHeightProperty);
+            Lined.Remove(presenter);
+        }
+
+        if (made is not null && !Lined.TryGetValue(presenter, out _))
+        {
+            made.SetValue(PhoneTextLine.MaxHeightLineHeightProperty, PhoneLine);
+            Lined.Add(presenter, made);
+        }
     }
 
     public static bool GetIsEnabled(ContentDialog dialog) => dialog.GetValue(IsEnabledProperty);
@@ -139,8 +185,11 @@ internal static class PhoneContentDialog
 
     private sealed class Binder : IDisposable
     {
+        /// <summary>The dim layer's brush, its colour the theme's, followed while it is shown.</summary>
+        private readonly SolidColorBrush _dim = new();
         private IDisposable? _frame;
         private IDisposable? _going;
+        private IDisposable? _untouchable;
         private TimeSpan? _start;
         private int _uncut;
 
@@ -148,7 +197,8 @@ internal static class PhoneContentDialog
         {
             Dialog = dialog;
             Popup = popup;
-            Host = new PhonePopupHost(popup, dialog, Close) { Placement = PhonePopupPlacement.Top, Dim = Dim() };
+            Host = new PhonePopupHost(popup, dialog, Close) { Placement = PhonePopupPlacement.Top };
+            OnThemeChanged(null, EventArgs.Empty);
             // After the host's: it has placed and dimmed the popup, and cut its band.
             popup.Opened += OnOpened;
             popup.Closed += OnClosed;
@@ -208,10 +258,19 @@ internal static class PhoneContentDialog
                 Popup.IsOpen = false;
         }
 
-        private IBrush? Dim() =>
-            Dialog.TryFindResource(DimKey, Dialog.ActualThemeVariant, out var brush) ? brush as IBrush : null;
-
-        private void OnThemeChanged(object? sender, EventArgs e) => Host.Dim = Dim();
+        /// <summary>The dim's colour the theme's; none without the key.</summary>
+        private void OnThemeChanged(object? sender, EventArgs e)
+        {
+            if (Dialog.TryFindResource(DimKey, Dialog.ActualThemeVariant, out var found) && found is ISolidColorBrush brush)
+            {
+                _dim.Color = brush.Color;
+                Host.Dim = _dim;
+            }
+            else
+            {
+                Host.Dim = null;
+            }
+        }
 
         private void OnOpened(object? sender, EventArgs e)
         {
@@ -238,8 +297,9 @@ internal static class PhoneContentDialog
             _frame = null;
             if (Host.Bands is not { } bands)
             {
-                // Not cut yet, as the host waits a few frames for the popup to be laid out; or the host is at rest.
-                if (_start is null && ++_uncut < 5)
+                // Not cut yet, as the host waits a few frames for the popup to be laid out; cut again after a resize, the
+                // opening going on; or the host at rest.
+                if (_start is null ? ++_uncut < 5 : CornflowerClock.Now - _start < OpenLength)
                     _frame = CornflowerClock.RequestFrame(Dialog, Step);
                 return;
             }
@@ -263,6 +323,8 @@ internal static class PhoneContentDialog
             Stop();
             // The host takes Back and does nothing meanwhile, and shows the dialog at rest if it was still opening.
             Host.Dismiss();
+            // Closed: it takes no taps while it is still drawn.
+            _untouchable = Dialog.SetValue(InputElement.IsHitTestVisibleProperty, false, BindingPriority.Animation);
             _going = CornflowerClock.Schedule(Close, GoneAfter);
         }
 
@@ -278,6 +340,8 @@ internal static class PhoneContentDialog
             _frame = null;
             _going?.Dispose();
             _going = null;
+            _untouchable?.Dispose();
+            _untouchable = null;
         }
     }
 }

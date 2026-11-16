@@ -163,6 +163,14 @@ public class ContentDialogTests
         Assert.Equal(expected.Height, actual.Height, tolerance);
     }
 
+    /// <summary>A task's result, once it has one: never waited for, which would block the UI thread.</summary>
+    private static ContentDialogResult Done(Task<ContentDialogResult>? task)
+    {
+        Assert.NotNull(task);
+        Assert.True(task.IsCompletedSuccessfully);
+        return task.Result;
+    }
+
     private static double Eased(int tick) =>
         OpenFrom * (1 - (1 - Math.Exp(-OpenExponent * tick / (double)OpenTicks)) / (1 - Math.Exp(-OpenExponent)));
 
@@ -398,9 +406,12 @@ public class ContentDialogTests
         using var stage = new Stage(page: Brushes.White);
         stage.ShowAtRest();
         var log = new List<string>();
+
+        // An app's await: its continuation comes after the events, from the dispatcher, not inside Hide().
+        async Task Await() => log.Add($"result {await stage.Result!}");
         stage.Dialog.Closing += (_, e) => log.Add($"Closing {e.Result}");
         stage.Dialog.Closed += (_, e) => log.Add($"Closed {e.Result}");
-        _ = stage.Result!.ContinueWith(t => log.Add($"result {t.Result}"), TaskScheduler.FromCurrentSynchronizationContext());
+        _ = Await();
         var hidden = stage.Clock.Now.TotalMilliseconds;
 
         stage.Dialog.Hide();
@@ -436,7 +447,7 @@ public class ContentDialogTests
         stage.Click(stage.Buttons[1]);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(["SecondaryButtonClick", "Closing Secondary", "Closed Secondary", "result Secondary"], log);
-        Assert.Equal(ContentDialogResult.Secondary, stage.Result.Result);
+        Assert.Equal(ContentDialogResult.Secondary, Done(stage.Result));
     }
 
     [AvaloniaTheory]
@@ -455,7 +466,7 @@ public class ContentDialogTests
         stage.Click(stage.Buttons[primary ? 0 : 1]);
         Assert.Equal(primary ? ["p"] : [], first.Ran);
         Assert.Equal(primary ? [] : ["s"], second.Ran);
-        Assert.Equal(primary ? ContentDialogResult.Primary : ContentDialogResult.Secondary, stage.Result!.Result);
+        Assert.Equal(primary ? ContentDialogResult.Primary : ContentDialogResult.Secondary, Done(stage.Result));
     }
 
     [AvaloniaTheory]
@@ -521,7 +532,7 @@ public class ContentDialogTests
         deferral!.Complete();
         deferral.Complete();
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(ContentDialogResult.Primary, stage.Result.Result);
+        Assert.Equal(ContentDialogResult.Primary, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -563,7 +574,7 @@ public class ContentDialogTests
         Assert.False(stage.Result.IsCompleted);
         deferral.Complete();
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(ContentDialogResult.None, stage.Result.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -614,7 +625,7 @@ public class ContentDialogTests
         Assert.True(request.Handled);
         Assert.Same(second, nav.CurrentPage);
         Assert.Equal(["Closing None", "Closed None"], log);
-        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
 
         // A second Back while it is still drawn is taken and does nothing.
         var again = new RoutedEventArgs(TopLevel.BackRequestedEvent);
@@ -681,7 +692,7 @@ public class ContentDialogTests
         Assert.False(stage.Result!.IsCompleted);
 
         stage.Back();
-        Assert.Equal(ContentDialogResult.None, stage.Result.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -768,7 +779,7 @@ public class ContentDialogTests
 
         stage.Dispose();
         Assert.Equal([ContentDialogResult.None], closed);
-        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -808,7 +819,7 @@ public class ContentDialogTests
 
         stage.Dialog.Hide();
         stage.At(stage.Clock.Now.TotalMilliseconds + 500);
-        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
         Assert.NotNull(again);
         Assert.False(again.IsCompleted);
         Assert.True(stage.Dialog.Popup!.IsOpen);
@@ -825,7 +836,7 @@ public class ContentDialogTests
         var first = stage.Result!;
         stage.Click(stage.Buttons[0]);
         stage.Dialog.Hide();
-        Assert.Equal(ContentDialogResult.None, first.Result);
+        Assert.Equal(ContentDialogResult.None, Done(first));
         stage.At(stage.Clock.Now.TotalMilliseconds + 500);
 
         stage.ShowAtRest();
@@ -834,7 +845,7 @@ public class ContentDialogTests
         Assert.False(stage.Result!.IsCompleted);
         // The new show's buttons click.
         stage.Click(stage.Buttons[1]);
-        Assert.Equal(ContentDialogResult.Secondary, stage.Result.Result);
+        Assert.Equal(ContentDialogResult.Secondary, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -865,7 +876,10 @@ public class ContentDialogTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(stage.Dialog.IsKeyboardFocusWithin);
 
+        // Back to the page once the dialog has gone from the screen, not while it is still drawn over it.
         stage.Dialog.Hide();
+        Assert.True(stage.Dialog.IsKeyboardFocusWithin);
+        stage.At(stage.Clock.Now.TotalMilliseconds + GoneBy);
         Assert.Same(stage.Button, focus.GetFocusedElement());
     }
 
@@ -876,7 +890,8 @@ public class ContentDialogTests
         stage.Page.Children.Add(stage.Dialog);
         Dispatcher.UIThread.RunJobs();
 
-        Assert.Throws<InvalidOperationException>(() => { _ = stage.Dialog.ShowAsync(stage.Scene.Window); });
+        var error = Assert.Throws<InvalidOperationException>(() => { _ = stage.Dialog.ShowAsync(stage.Scene.Window); });
+        Assert.Contains("declare it in resources", error.Message);
         Assert.False(stage.Dialog.IsShown);
     }
 
@@ -897,7 +912,7 @@ public class ContentDialogTests
         stage.Back(request);
         Assert.True(request.Handled);
         Assert.Equal([ContentDialogResult.None], closing);
-        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
         // Gone, with the popup in it.
         stage.At(stage.Clock.Now.TotalMilliseconds + 500);
         Assert.False(plain.IsOpen);
@@ -918,7 +933,7 @@ public class ContentDialogTests
         Assert.Same(stage.Scene.Window, stage.Dialog.Popup.PlacementTarget);
 
         stage.Back();
-        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.Equal(ContentDialogResult.None, Done(stage.Result));
     }
 
     [AvaloniaFact]
@@ -946,6 +961,102 @@ public class ContentDialogTests
         Assert.False(panel.IsFull);
     }
 
+
+    [AvaloniaFact]
+    public void The_Title_Is_SemiBold_Extra_Large_And_The_Body_Large_And_An_Underscore_Shows()
+    {
+        using var stage = new Stage(title: "my_title", content: "my_photo.jpg");
+        stage.ShowAtRest();
+
+        var title = (TextBlock)stage.Part<ContentPresenter>("Title").Child!;
+        var body = (TextBlock)stage.Part<ContentPresenter>("PART_ContentPresenter").Child!;
+        Assert.Equal(FontWeight.SemiBold, title.FontWeight);
+        Assert.Equal(25.5, title.FontSize);
+        Assert.Equal(FontWeight.Normal, body.FontWeight);
+        Assert.Equal(18.14, body.FontSize);
+        Assert.IsNotType<AccessText>(title);
+        Assert.Equal("my_title", title.Text);
+        Assert.Equal("my_photo.jpg", body.Text);
+        Assert.Equal(25.5 * PhoneTextLineHeight, title.Bounds.Height, RawPixel);
+    }
+
+    [AvaloniaFact]
+    public void The_Dim_Follows_The_Windows_Theme_While_Shown()
+    {
+        using var stage = new Stage();
+        stage.ShowAtRest();
+        var layer = (Panel)stage.Dialog.GetVisualAncestors().OfType<OverlayPopupHost>().Single().GetVisualParent()!;
+        var dim = layer.Children.OfType<Rectangle>().Single();
+
+        stage.Scene.Window.RequestedThemeVariant = ThemeVariant.Light;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(Dim(dark: false), ((ISolidColorBrush)dim.Fill!).Color);
+    }
+
+    [AvaloniaFact]
+    public void Resized_Mid_Opening_It_Keeps_Its_Own_Curve()
+    {
+        using var stage = new Stage();
+        stage.Show();
+        var first = stage.FirstFrameAfter(0);
+        stage.At(first + 2 * Tick);
+
+        stage.Scene.Window.Height = 700;
+        Dispatcher.UIThread.RunJobs();
+        for (var tick = 3; tick < OpenTicks; tick++)
+        {
+            stage.At(first + tick * Tick);
+            if (stage.Bands is { } bands)
+                Assert.Equal(Eased(tick), bands.Angles[0], 1e-9);
+        }
+
+        Assert.NotNull(stage.Bands);
+    }
+
+    [AvaloniaFact]
+    public void Closed_It_Takes_No_Taps_While_Still_Drawn_And_Then_Leaves_Its_Window()
+    {
+        using var stage = new Stage();
+        stage.ShowAtRest();
+
+        stage.Dialog.Hide();
+        Assert.False(stage.Dialog.IsHitTestVisible);
+        stage.At(stage.Clock.Now.TotalMilliseconds + GoneBy);
+        Assert.Null(stage.Dialog.Popup!.Parent);
+        Assert.Null(stage.Dialog.Popup.PlacementTarget);
+        Assert.True(stage.Dialog.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public void A_Closing_Deferral_Of_An_Earlier_Show_Decides_Nothing()
+    {
+        var stage = new Stage();
+        try
+        {
+            var deferrals = new List<ContentDialogClosingDeferral>();
+            stage.Dialog.Closing += (_, e) => deferrals.Add(e.GetDeferral());
+            stage.ShowAtRest();
+            stage.Dialog.Hide();
+            // The popup closed under it, by its window: the show ends with no result.
+            stage.Dialog.Popup!.IsOpen = false;
+            Dispatcher.UIThread.RunJobs();
+            var first = stage.Result;
+            Assert.Equal(ContentDialogResult.None, Done(first));
+
+            stage.ShowAtRest();
+            stage.Dialog.Hide();
+            deferrals[0].Complete();
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(stage.Result!.IsCompleted);
+            deferrals[1].Complete();
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(ContentDialogResult.None, Done(stage.Result));
+        }
+        finally
+        {
+            stage.Dispose();
+        }
+    }
 
     private sealed class Command : ICommand
     {

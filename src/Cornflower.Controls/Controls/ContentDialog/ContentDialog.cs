@@ -350,10 +350,6 @@ public class ContentDialog : ContentControl
         var secondary = !string.IsNullOrEmpty(SecondaryButtonText);
         var first = primary ? _primary : secondary ? _secondary : null;
         var second = primary && secondary ? _secondary : null;
-        if (_host1 is not null)
-            _host1.Child = null;
-        if (_host2 is not null)
-            _host2.Child = null;
         Place(_host1, first);
         Place(_host2, second);
     }
@@ -403,11 +399,13 @@ public class ContentDialog : ContentControl
         if (_state != State.Open)
             return;
         _state = State.Closing;
+        var show = _shows;
         var args = new ContentDialogClosingEventArgs(result);
         Closing?.Invoke(this, args);
         args.Deferrals.Then(() =>
         {
-            if (_state != State.Closing)
+            // A deferral of an earlier show, completed late, decides nothing.
+            if (_state != State.Closing || _shows != show)
                 return;
             if (args.Cancel)
             {
@@ -425,17 +423,13 @@ public class ContentDialog : ContentControl
         });
     }
 
-    /// <summary>The dialog closed: its show's task to complete, and the focus given back.</summary>
+    /// <summary>The dialog closed: its show's task to complete.</summary>
     private TaskCompletionSource<ContentDialogResult>? Finished()
     {
         _state = State.Closed;
         _clickingIn = -1;
         var task = _result;
         _result = null;
-        var focus = _focusBefore;
-        _focusBefore = null;
-        if (focus is Visual visual && TopLevel.GetTopLevel(visual) is not null && IsKeyboardFocusWithin)
-            focus.Focus();
         return task;
     }
 
@@ -446,9 +440,23 @@ public class ContentDialog : ContentControl
         task?.TrySetResult(result);
     }
 
-    /// <summary>A popup closed under a shown dialog (its window closing, say) closes it, with no result.</summary>
+    /// <summary>
+    /// The popup has closed, the dialog gone from the screen: the focus goes back where it was, and the popup leaves
+    /// its window, so a dialog kept by the app doesn't keep the window. A popup closed under a shown dialog (its window
+    /// closing, say) closes the dialog, with no result.
+    /// </summary>
     private void OnPopupClosed(object? sender, EventArgs e)
     {
+        var focus = _focusBefore;
+        _focusBefore = null;
+        if (focus is Visual visual && TopLevel.GetTopLevel(visual) is not null && IsKeyboardFocusWithin)
+            focus.Focus();
+        if (_popup is not null)
+        {
+            _popup.ClearValue(Popup.PlacementTargetProperty);
+            ((ISetLogicalParent)_popup).SetParent(null);
+        }
+
         if (_state != State.Closed)
             Raise(ContentDialogResult.None, Finished());
     }

@@ -11,7 +11,7 @@ namespace Cornflower.Themes.Wp81;
 /// <remarks>
 /// <para>As tall as its content asks, the phone's three-row grid: the title, then the content, each at least its
 /// <see cref="TitleMinHeight"/> and <see cref="ContentMinHeight"/>, then the hosts side by side in the halves of the
-/// width, the row at least <see cref="ButtonsMinHeight"/>; a hidden host's half stays empty.</para>
+/// width, the first in the left half, the row at least <see cref="ButtonsMinHeight"/>.</para>
 /// <para><b>Full</b> (<see cref="IsFull"/>): with <see cref="FullSizeDesired"/>, or when that is taller than the room
 /// there is, the panel fills the room, and the buttons go to a bar at its foot, as the phone's shell draws them: the
 /// bar is <see cref="BarHeight"/> tall, and each host is placed so its child fills its slot of the bar less
@@ -149,12 +149,9 @@ internal sealed class PhoneContentDialogPanel : Panel
         {
             Body?.Arrange(new Rect(0, _titleHeight, width, _contentHeight));
             var top = _titleHeight + _contentHeight;
-            // The phone's two star columns: the first shown host in the left half.
-            var column = 0;
-            if (Shown(Host1) is { } first)
-                first.Arrange(new Rect(column++ * width / 2, top, width / 2, _buttonsHeight));
-            if (Shown(Host2) is { } second)
-                second.Arrange(new Rect(column * width / 2, top, width / 2, _buttonsHeight));
+            // The phone's two star columns, a host in each.
+            Host1?.Arrange(new Rect(0, top, width / 2, _buttonsHeight));
+            Host2?.Arrange(new Rect(width / 2, top, width / 2, _buttonsHeight));
             return finalSize;
         }
 
@@ -162,11 +159,10 @@ internal sealed class PhoneContentDialogPanel : Panel
         Body?.Arrange(new Rect(0, _titleHeight, width, Math.Max(0, barTop - _titleHeight)));
         var slots = new Rect(0, barTop, width, BarHeight).Deflate(BarPadding);
         var slotWidth = Math.Max(0, (slots.Width - BarSpacing) / 2);
-        var slot = 0;
-        if (Shown(Host1) is { } one)
-            InSlot(one, slot++);
-        if (Shown(Host2) is { } two)
-            InSlot(two, slot);
+        if (Host1 is { } one)
+            InSlot(one, 0);
+        if (Host2 is { } two)
+            InSlot(two, 1);
         return finalSize;
 
         void InSlot(Control host, int index)

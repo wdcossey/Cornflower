@@ -76,9 +76,20 @@ public partial class ContentDialogPage : UserControl
             return;
         dialog.Opened += (_, _) => State.Text = $"{name} opened";
         Shown = dialog;
-        var result = await dialog.ShowAsync(top);
-        Shown = null;
-        State.Text = $"{name}: {result.ToString().ToLowerInvariant()}";
+        try
+        {
+            var result = await dialog.ShowAsync(top);
+            State.Text = $"{name}: {result.ToString().ToLowerInvariant()}";
+        }
+        catch (InvalidOperationException error)
+        {
+            State.Text = $"{name}: {error.Message}";
+        }
+        finally
+        {
+            if (Shown == dialog)
+                Shown = null;
+        }
     }
 
     private void OnLightChanged(object? sender, RoutedEventArgs e)

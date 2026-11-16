@@ -16,7 +16,7 @@
     its Buttons in them), each row at least its ContentDialog*MinHeight. The ContentPanel is PhoneContentDialogPanel,
     which lays the grid out and, when the dialog fills the window (FullSizeDesired, or too tall for it), puts the buttons
     in the bar the phone's shell draws at its foot (#150). Text the presenters make of a string gets the phone's line
-    (PhoneContentLine). The Orientation group's Landscape state is PhonePopupHost.IsLandscape on the dialog.
+    (PhoneContentDialog.TextLine: PhoneContentLine's, without access keys, so an underscore shows as written). The Orientation group's Landscape state is PhonePopupHost.IsLandscape on the dialog.
 
     The bar's values are the shell's, read from the screen (refapp run 20261116-1934-dev11): the page's compact app
     bar's height, 62.92, and the outlines of its two buttons, 194.17 × 41.67 at x 20.83 and 235.83, y 747.08 of 800;
@@ -54,8 +54,7 @@
                                   FontSize="{DynamicResource TextStyleExtraLargeFontSize}"
                                   FontFamily="{DynamicResource PhoneFontFamilyNormal}"
                                   FontWeight="SemiBold"
-                                  RecognizesAccessKey="True"
-                                  wp81:PhoneContentLine.IsEnabled="True" />
+                                  wp81:PhoneContentDialog.TextLine="True" />
                 <ContentPresenter x:Name="PART_ContentPresenter"
                                   Margin="{DynamicResource ContentDialogContentMargin}"
                                   Content="{TemplateBinding Content}"
@@ -63,8 +62,7 @@
                                   FontSize="{DynamicResource TextStyleLargeFontSize}"
                                   FontFamily="{DynamicResource PhoneFontFamilyNormal}"
                                   ClipToBounds="True"
-                                  RecognizesAccessKey="True"
-                                  wp81:PhoneContentLine.IsEnabled="True" />
+                                  wp81:PhoneContentDialog.TextLine="True" />
                 <Border x:Name="PART_Button1Host" Padding="{DynamicResource ContentDialogButton1HostPadding}" />
                 <Border x:Name="PART_Button2Host" Padding="{DynamicResource ContentDialogButton2HostPadding}" />
               </wp81:PhoneContentDialogPanel>
