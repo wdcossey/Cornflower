@@ -46,7 +46,10 @@ namespace RefApp
             public string Label;
             public Func<Task> Action;
 
-            /// <summary>A touch's setup, logged as a "step" (which the scripts cut the log at); else an "action" during one.</summary>
+            /// <summary>
+            /// Logged as a "step", which the scripts cut the log at: a touch's setup, or a step from code with no touch
+            /// (<see cref="Code"/>); else an "action" during a touch.
+            /// </summary>
             public bool Touch;
         }
 
@@ -289,6 +292,158 @@ namespace RefApp
             }
 
             await RunScheduled(page, header);
+        }
+
+        /// <summary>
+        /// The ListView's owed reads (#136, for #130), on the list of <see cref="ListPress"/> (40 items, each a TextBlock in
+        /// ListViewItemTextBlockStyle) without item clicks. First in the check mode (SelectionMode Multiple): presses held
+        /// 600 ms on item 1's box, on its text, at 95% across and at 10% and 90% down; taps on item 4's box and text and
+        /// on item 5's text. Then SelectionMode Extended: taps on items 1, 2 and 2 again. Then None: a tap and a 600 ms
+        /// press on item 3. Then Single, with the offset at 0: SelectedIndex set to 30 from code, then to 5, then to 39,
+        /// 3 s apart, with no touch, to see whether the list scrolls to it. The item states, both tilt containers'
+        /// projections and transforms, the selection and the list's offset every frame are logged.
+        /// </summary>
+        private async Task ListCheck(Grid host)
+        {
+            var list = new ListView
+            {
+                Name = "list",
+                SelectionMode = ListViewSelectionMode.Multiple,
+                Margin = new Thickness(19, HeaderHeight + 20, 19, 0),
+                ItemTemplate = (DataTemplate)XamlReader.Load("<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"><TextBlock Text=\"{Binding}\" Style=\"{ThemeResource ListViewItemTextBlockStyle}\" /></DataTemplate>"),
+            };
+            for (var i = 0; i < 40; i++)
+            {
+                list.Items.Add("item " + i);
+            }
+
+            var header = Header();
+            var page = await Page(host, header, list);
+            var items = Enumerable.Range(0, 7).Select(i => list.ContainerFromIndex(i) as ListViewItem).ToList();
+            var sv = Find(list, "ScrollViewer") as ScrollViewer;
+            if (items.Any(item => item == null) || sv == null)
+            {
+                await Finish(sv == null ? "the ListView's template has no ScrollViewer" : "the ListView made no container for one of its first 7 items");
+                return;
+            }
+
+            LogPointers(list, "list");
+            LogGestures(list, "list");
+            list.SelectionChanged += (s, e) => Log("selection", "added " + string.Join(",", e.AddedItems) + " removed " + string.Join(",", e.RemovedItems) + " now index " + list.SelectedIndex + ", " + list.SelectedItems.Count + " selected");
+            var boxes = new List<FrameworkElement>();
+            foreach (var item in items)
+            {
+                var index = list.IndexFromContainer(item);
+                item.Name = "item" + index;
+                var tilt = Find(item, "TiltContainer");
+                var box = Find(item, "CheckboxTiltContainer");
+                if (tilt == null || box == null)
+                {
+                    await Finish("no " + (tilt == null ? "TiltContainer" : "CheckboxTiltContainer") + " in item " + index + "'s template");
+                    return;
+                }
+
+                boxes.Add(box);
+                var b = Bounds(item);
+                var tb = Bounds(tilt);
+                var bb = Bounds(box);
+                Log("layout", "item" + index + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + " tilt " + Num(tb.X) + " " + Num(tb.Y) + " " + Num(tb.Width) + " " + Num(tb.Height) + " box " + Num(bb.X) + " " + Num(bb.Y) + " " + Num(bb.Width) + " " + Num(bb.Height));
+                WatchStates(item);
+                var t = tilt;
+                var c = box;
+                WatchValue("projection item" + index, sample => Read(t.Projection, sample));
+                WatchValue("transform item" + index, sample => Read(t.RenderTransform, sample));
+                WatchValue("projection box" + index, sample => Read(c.Projection, sample));
+                WatchValue("transform box" + index, sample => Read(c.RenderTransform, sample));
+            }
+
+            WatchFrames(() => new[] { sv.VerticalOffset }, now => "offset " + Num(now[0]));
+            var top = Offset(sv, 0);
+            Func<ListViewSelectionMode, Func<Task>> mode = m => async () =>
+            {
+                await top();
+                if (list.SelectionMode != m)
+                {
+                    list.SelectionMode = m;
+                    Log("setup", "SelectionMode " + m);
+                }
+            };
+            Func<int, double, double, Windows.Foundation.Point> at = (i, fx, fy) =>
+            {
+                var b = Bounds(items[i]);
+                return new Windows.Foundation.Point(b.X + b.Width * fx, b.Y + b.Height * fy);
+            };
+            Func<int, Windows.Foundation.Point> boxAt = i =>
+            {
+                var b = Bounds(boxes[i]);
+                return new Windows.Foundation.Point(b.X + b.Width / 2, b.Y + b.Height / 2);
+            };
+
+            var multiple = mode(ListViewSelectionMode.Multiple);
+            {
+                var p = boxAt(1);
+                Drag(items[1], "hold item1 on the box", multiple, p.X, p.Y, p.Y, 0, 600, ListGap);
+            }
+
+            foreach (var f in new[] { new[] { 0.5, 0.5 }, new[] { 0.95, 0.5 }, new[] { 0.5, 0.1 }, new[] { 0.5, 0.9 } })
+            {
+                var p = at(1, f[0], f[1]);
+                Drag(items[1], "hold item1 at " + Num(f[0]) + " " + Num(f[1]), multiple, p.X, p.Y, p.Y, 0, 600, ListGap);
+            }
+
+            {
+                var p = boxAt(4);
+                Drag(items[4], "tap item4 on the box", multiple, p.X, p.Y, p.Y, 0, 80, ListGap);
+                p = at(4, 0.5, 0.5);
+                Drag(items[4], "tap item4 at its text", multiple, p.X, p.Y, p.Y, 0, 80, ListGap);
+                p = at(5, 0.5, 0.5);
+                Drag(items[5], "tap item5 at its text", multiple, p.X, p.Y, p.Y, 0, 80, ListGap);
+            }
+
+            var extended = mode(ListViewSelectionMode.Extended);
+            foreach (var i in new[] { 1, 2, 2 })
+            {
+                var p = at(i, 0.5, 0.5);
+                Drag(items[i], "Extended: tap item" + i, extended, p.X, p.Y, p.Y, 0, 80, ListGap);
+            }
+
+            var none = mode(ListViewSelectionMode.None);
+            {
+                var p = at(3, 0.5, 0.5);
+                Drag(items[3], "None: tap item3", none, p.X, p.Y, p.Y, 0, 80, ListGap);
+                Drag(items[3], "None: hold item3", none, p.X, p.Y, p.Y, 0, 600, ListGap);
+            }
+
+            var single = mode(ListViewSelectionMode.Single);
+            Code("Single, offset 0", single, 1200);
+            foreach (var index in new[] { 30, 5, 39 })
+            {
+                var k = index;
+                Code("SelectedIndex " + k + " from code", () =>
+                {
+                    list.SelectedIndex = k;
+                    Log("setup", "SelectedIndex " + k + ", offset now " + Num(sv.VerticalOffset));
+                    return Task.FromResult(true);
+                }, 3000);
+            }
+
+            await RunScheduled(page, header);
+        }
+
+        /// <summary>
+        /// A step with no touch: <paramref name="action"/> runs when the plan reaches it, logged as a step, and the plan
+        /// waits <paramref name="ms"/> before the next. A touch's setup runs 1.2 s before its press, so a wait under
+        /// 1.2 s would let the next touch's setup run first: it is refused.
+        /// </summary>
+        private void Code(string label, Func<Task> action, double ms)
+        {
+            if (ms < 1200)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ms), "a touch's setup runs 1.2 s before its press: wait at least that");
+            }
+
+            _schedule.Add(new Scheduled { At = _plannedMs, Label = label, Action = action, Touch = true });
+            Wait(ms);
         }
 
         /// <summary>

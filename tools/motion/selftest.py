@@ -555,6 +555,24 @@ def listpress_tilt():
     assert 'the Button model at -0.450, 0.000: 0.00, 8.01' in out, out
     assert '+188.0 0.9412; +203.0 0.8039; +218.0 0.5000; +300.0 rest' in out, out
     assert 'item2: projection first changes at +30.0 ms' in out, out
+    # The check mode (#136): a press on the box goes to CheckboxPressed and is read on the box, against the box's bounds;
+    # it is back at rest on the first frame after the release.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\titem1 19.167 119.167 412.083 39.167 tilt 19.167 119.167 412.083 39.167 box 19.167 128.75 25.417 25.417\n')
+            f.write('100.0\tstep\thold item1 on the box\n')
+            f.write('1000.0\tpressed\tlist 31.88 141.46 handled ts 1\n')
+            f.write('1000.9\tstate\titem1 CommonStates Normal > CheckboxPressed\n')
+            f.write('1030.0\tvalue\tprojection box1 rot -2.7 0.146 0 centre 0.5 0.5 0 local 0 0 0 global 0.167 -209 -20.86\n')
+            # A later move to Pressed doesn't take the read off the box: the first state the press went to counts.
+            f.write('1100.0\tstate\titem1 CommonStates CheckboxPressed > Pressed\n')
+            f.write('1600.0\treleased\tlist 31.88 141.46 handled ts 2\n')
+            f.write('1601.0\tvalue\tprojection box1 rot 0 0 0 centre 0.5 0.5 0 local 0 0 0 global 0.167 -209 0\n')
+        code, out = run_script('listpress.py', run)
+    assert code == 0, out
+    assert 'box1: projection first changes at +30.0 ms' in out, out
+    assert 'held: RotationX -2.70, RotationY 0.15, GlobalOffsetZ -20.86; the Button model at 0.000, 0.000' in out, out
+    assert 'after the release (ms from it, fraction of the held): +1.0 0.0000' in out, out
 
 
 @check
@@ -605,6 +623,27 @@ def pivot_header_and_slide():
     assert 'header "one" moves 0.23706 px a px of offset' in out, out
     assert 'slides in from 450.00 px: at 0 after 406.' in out and '16:0.8526 31:0.7266' in out, out
     assert 'offset +450.00' in out, out  # from the frame at rest, logged before the step
+    # A header wider than the screen (#136): its pitch is 744.58, so it moves 1.6546 px a px, over 100 px a frame
+    # here; then it jumps to the end, the way the offset went.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            line = '%.1f\tframe\trt %g offset %g index %d panel [p] items [translate %g 0] itemsAt %g | wide %g op 1 cp none | one %g op 1 cp none\n'
+            f.write('0.0\tlayout\titems wide one\n')
+            f.write(line % (50.0, 1000, 1000, 0, 1000, 0, 15.84, 760.42))
+            f.write('100.0\tstep\tswipe left\n')
+            f.write('200.0\tpressed\tpivot 380 450 ts 1\n')
+            f.write('210.0\tcapturelost\tpivot 380 450 ts 1\n')
+            for k in range(1, 6):
+                off = 1000 + 70 * k
+                d = 1.6546 * (off - 1000)
+                f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - d, 760.42 - d))
+            # The reorder can come on a frame where the offset is still or goes back a little: the jump still ends the line.
+            f.write(line % (280.0, 1078.125, 1340, 0, 1000, -340, 15.84 - 1.6546 * 350 + 1200, 760.42 - 1.6546 * 350))
+            f.write('290.0\tselection\tindex 1\n')
+            f.write(line % (300.0, 1093.75, 1450, 1, 1450, 0, 15.84 - 1.6546 * 450 + 1200, 15.84))
+        code, out = run_script('pivot.py', run)
+    assert code == 0, out
+    assert 'header "wide" moves 1.65460 px a px of offset, against it, over 6 frames' in out, out
     with tempfile.TemporaryDirectory() as run:
         with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
             for k in range(40):
@@ -613,6 +652,77 @@ def pivot_header_and_slide():
         code, out = run_script('pivot.py', run)
     assert code == 0 and '1 / slope = 18.000' in out, out
 
+
+
+
+@check
+def hub_background_and_end():
+    # A Hub with a 900 px image (#136): its left edge at -offset (W - V) / (L - V) up to L - V, then one for one; the
+    # touch at the end, left out of the header's line, its offset back to 0.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\theader 15 61 123.75 103.75 scroll extent 1665.417 viewport 450\n')
+            for k in range(4):
+                f.write('0.0\tlayout\tsection section %d %d 60 405 740\n' % (k + 1, 405 * k))
+            line = '%.1f\tframe\trt %g offset %g header %g [none] | section 1 %g | Background %g w 900 none | WrapBackground 0 w 900 none\n'
+            for k in range(1, 121):
+                off = 10.0 * k
+                bg = -off * 450 / 1170 if off <= 1170 else -450 - (off - 1170)
+                f.write(line % (k * 15.0, k * 15.625, off, 15 - off / 18, -off, bg))
+            f.write('2000.0\tstep\tswipe left at the end\n')
+            f.write('2000.5\tsetup\toffset 1215.417\n')
+            f.write(line % (2100.0, 3000, 1200, 400, -1500, -800))
+            f.write(line % (2115.0, 3015.625, 0, 300, 0, 0))
+        code, out = run_script('pivot.py', run)
+    assert code == 0, out
+    assert '1 / slope = 18.000' in out, out
+    assert '(W - V) / (L - V) = 0.384615' in out, out
+    assert re.search(r'offsets up to L - V: left edge = -?0.000 -0.384615 x offset', out), out
+    assert re.search(r'offsets past L - V: left edge = 720.000 -1.000000 x offset', out), out
+    assert 'swipe left at the end: offset 1200.0 at the start; back to 0 at 115 ms' in out, out
+
+@check
+def appbar_motion():
+    # A synthetic -Probe appbar -Record run: the flash, then the bar's top rising from 737.08 to 514.58 view px after
+    # the bar's Opened, the rest of the way falling by e every 80 ms, on frames 25 ms apart; and the log's events.
+    import math
+    import tempfile
+    w, h, scale = 540, 960, 1.2
+
+    def top(k):
+        # At rest once less than a raw pixel is left, as a drawn bar is.
+        left = 222.5 * math.exp(-(k - 20) * 25 / 80.0)
+        return 737.08 if k <= 20 else 514.58 + (left if left > 0.42 else 0)
+
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'rect.log'), 'w') as f:
+            f.write('x display window at 0,0, %d x %d\n' % (w, h))
+        times = [k / 40 for k in range(80)]
+        with open(os.path.join(run, 'frames.csv'), 'w') as f:
+            f.write(''.join('%.6f\n' % t for t in times))
+        with open(os.path.join(run, 'probe.txt'), 'w') as f:
+            f.write('1000.0\tflash\ton\n1100.0\tstep\ttap the ellipsis, bar closed\n1100.5\tsetup\tCompact, closed\n')
+            f.write('1480.0\tbar\tOpened\n')
+        os.makedirs(os.path.join(run, 'analysis'))
+        with open(os.path.join(run, 'analysis', 'left.gray'), 'wb') as fg:
+            for k in range(len(times)):
+                col = bytearray(h)
+                if k == 2:
+                    for y in range(int(60 * scale)):
+                        col[y] = 255
+                for y in range(int(round(top(k) * scale)), h):
+                    col[y] = 31
+                fg.write(bytes(v for v in col for _ in range(12)))
+        code, out = run_script('appbar.py', run)
+    assert code == 0, out
+    assert 'the flash pairs app time 1000.0 ms with recording 0.050 s' in out, out
+    # Frame 21, the first change, is at 1475 ms by the flash: 5 ms before Opened.
+    assert '736.67 to 514.17; the first change -5 ms from bar at 1480 (Opened)' in out, out
+    m = re.search(r'falls by e every (\d+) ms', out)
+    assert m, out
+    near(int(m.group(1)), 80, 6, 'the time constant')
+    assert 'tap the ellipsis, bar closed: setup Compact, closed; bar Opened' in out, out
 
 for fn in checks:
     fn()

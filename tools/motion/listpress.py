@@ -1,4 +1,5 @@
-"""A ListView item's press, frame by frame, from a `-Probe listpress` run's log (#113, gap register B8).
+"""A ListView item's press, frame by frame, from a `-Probe listpress` or `-Probe listcheck` run's log (#113, gap register
+B8; #136).
 
 Usage: python -I listpress.py <run folder>
 
@@ -6,7 +7,10 @@ The probe (tools/refapp/app/Probe.Scroll.cs, ListPress) lays out a ListView of 4
 20261115-1941-dev11, which couldn't pan) with IsItemClickEnabled and
 watches the first seven items' `TiltContainer` (the template's `Pressed` state runs a `PointerDownThemeAnimation` on
 it): its projection and transform every frame they change, and each item's visual states. Each touch's `step` line,
-1.2 s before its press, starts its segment. For each touch it prints, in ms by the app's stopwatch from the press:
+1.2 s before its press, starts its segment. The `listcheck` probe (#136) does the same in the check mode
+(SelectionMode Multiple) and then Extended and None, and also watches each item's `CheckboxTiltContainer` (`box<n>`), which
+the template's `CheckboxPressed` state tilts: a press whose item goes to `CheckboxPressed` is read on its box, against the
+box's bounds. For each touch it prints, in ms by the app's stopwatch from the press:
 
 - the item pressed (the one whose state goes to `Pressed` with the press), its state changes, ItemClick, SelectionChanged and the gesture events, and the release (or capture lost);
 - the first and the last frame the projection changes, and the projection held 120 ms after the press (or at the
@@ -24,7 +28,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
-PROJ = re.compile(r'projection (item\d+) (?:rot ([-\d.e]+) ([-\d.e]+) ([-\d.e]+) centre .* global ([-\d.e]+) ([-\d.e]+) ([-\d.e]+)|(none|\w+))$')
+PROJ = re.compile(r'projection ((?:item|box)\d+) (?:rot ([-\d.e]+) ([-\d.e]+) ([-\d.e]+) centre .* global ([-\d.e]+) ([-\d.e]+) ([-\d.e]+)|(none|\w+))$')
 MAX = 17.19
 
 
@@ -35,12 +39,16 @@ def g(d):
 
 
 def layout(rows):
-    """{item: (x, y, w, h)} of each watched item's TiltContainer in the window."""
+    """{item: (x, y, w, h)} of each watched item's TiltContainer in the window, and {box<n>: ...} of its
+    CheckboxTiltContainer where the log has it (listcheck)."""
     out = {}
     for t, what, d in rows:
         if what == 'layout' and d.startswith('item') and ' tilt ' in d:
             name, rest = d.split(' ', 1)
-            out[name] = tuple(float(v) for v in rest.split(' tilt ')[1].split())
+            tilt = rest.split(' tilt ')[1]
+            out[name] = tuple(float(v) for v in tilt.split(' box ')[0].split())
+            if ' box ' in tilt:
+                out['box' + name[4:]] = tuple(float(v) for v in tilt.split(' box ')[1].split())
     return out
 
 
@@ -75,11 +83,13 @@ def main():
                 print('  %+8.1f ms  %s %s' % (t - t0, what, d))
         # The item is the one whose state went to Pressed with this press. A touch's segment starts 1.2 s before its
         # press, so it can hold the end of the last touch's return, on another item: only what follows the press counts.
-        pressed = next((d.split()[0] for t, what, d in seg if what == 'state' and t >= t0 and d.endswith('> Pressed')), None)
-        if pressed is None:
-            print('  no item went to Pressed')
+        # In the check mode a press on the box goes to CheckboxPressed instead, and tilts the box (listcheck).
+        # Whichever of the two the press went to first.
+        went = next((d for t, what, d in seg if what == 'state' and t >= t0 and d.endswith(('> Pressed', '> CheckboxPressed'))), None)
+        if went is None:
+            print('  no item went to Pressed or CheckboxPressed')
             continue
-        item = pressed
+        item = went.split()[0] if went.endswith('> Pressed') else 'box' + went.split()[0][4:]
         mine = [(t, v) for t, i, v in ((t, ) + projection(d) for t, what, d in seg if what == 'value' and d.startswith('projection'))
                 if i == item and t >= t0]
         if not mine:

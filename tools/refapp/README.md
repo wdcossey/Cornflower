@@ -431,7 +431,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -792,6 +792,43 @@ to `Normal` transition a `PointerUpThemeAnimation`: the tilt.
 - Clocks: the press and release times are by the stopwatch, between input events. The return's fractions are the
   Button's, which are on animation time.
 
+### ListView: the check mode, Extended and None, and a selection set from code (2026-11-15, device 11, #136)
+
+For #130. `20261115-2352-dev11` (`-Probe listcheck`): the list of the `listpress` probe (40 items, each 412.08 × 39.17
+view px), without item clicks, in `SelectionMode` `Multiple` (the check mode). The probe also watches each item's
+`CheckboxTiltContainer`, the 25.42 px box at the item's left. Presses held 600 ms on item 1's box, on its text, at 95%
+across and at 10% and 90% down; taps on item 4's box and text and on item 5's text. Then `Extended`: taps on items 1, 2
+and 2 again. Then `None`: a tap and a 600 ms press on item 3. Then `Single`, the offset at 0, and `SelectedIndex` set from
+code to 30, 5 and 39, 3 s apart, with no touch. Again after review, `20261116-0040-dev11`, with the offset resets
+logged: the same tilts, offsets and states, within the ranges below. `tools/motion/listpress.py` prints the presses.
+
+- **A press on the box goes to `CheckboxPressed` (0.6 to 39.7 ms after the press) and tilts only the box.** It tilts about the box's own centre: a press at
+  its centre holds `RotationX` −2.70° (the screen-position bias), `RotationY` 0.15° and `GlobalOffsetZ` −20.86. The
+  depth follows the item's rule: −25 × (1 − (|`RotationX`| + |`RotationY`|) / 17.19°). The box's `CompositeTransform`
+  is the item's (−0.167, 209 for item 1). The first frame shows the depth with almost no angle (0.28°, −24.39), the
+  next overshoots (−3.16°), and the one after settles, as an item does.
+- **The box has no return.** On release it is back at rest on the next frame (1 to 8 ms later), and
+  `CheckboxPressed` > `Normal` comes 0.4 to 15 ms after the release. No 182.6 ms hold, no `KeySpline`.
+- **A press anywhere else on the item is the Single mode's press.** That covers the text, 95% across, and 10% or 90%
+  down. `CommonStates` goes to `Pressed` within 0.7 to 4.5 ms, and the whole item tilts, box included. Item 1 holds
+  −2.13° at its centre and `RotationY` −8.10° at 95% across, as in [an item's press](#listview-an-items-press-2026-11-15-device-11-113).
+  On release the item holds, then returns through the Button's fractions (0.9412, 0.8039, … 0.0163) one a frame. The
+  first change comes 178 to 193 ms after the release of a 600 ms hold, and `Pressed` > `Normal` 346 to 362 ms after it.
+- **In the check mode every tap toggles its item**, on the box or off it. The selection changes at the release, with
+  `Tapped`. `ItemClick` doesn't fire (`IsItemClickEnabled` is false).
+- **Leaving `Multiple` turns every item's `MultiSelectStates` to `NoMultiSelect`** at once (the boxes go).
+- **`Extended` under a tap is `Single`.** The first tap kept only the tapped item: items 1 and 5 were selected, the tap
+  on item 1 removed item 5. A tap on another item replaces the selection, and a tap on the selected item changes
+  nothing. Each press tilts the item as in `Single`.
+- **`None` under a tap still presses and tilts** (`Pressed`, the same tilt and return) and selects nothing. Setting
+  `None` cleared the selection.
+- **A `SelectedIndex` set from code scrolls the list, at once and as little as it can.** From offset 0, `SelectedIndex`
+  30 put the offset at 494.17 in the same call, with item 30's bottom edge on the list's bottom (30 × 39.17 + 39.17 −
+  720). Then 5, above the view, put the offset at 195.83, with item 5 at the top. Then 39 put it at 846.67, the end.
+  There is no animation: the next frame has the new offset.
+- Clocks: the press, release and state times are the stopwatch's, between input events, as in #113. The return's
+  fractions are frames (one a 15.625 ms step), the Button's.
+
 ## Motion (2026-11-10, device 11, #24)
 
 How the theme moves: the ToggleSwitch's slide, the flyouts and pickers opening and closing, the
@@ -853,11 +890,14 @@ to about a frame.
 | The ProgressRing clock's own numbers (`Completed` 3,856.5 ms after `Begin()` and the like) | the stopwatch, and said so | the storyboard's own time is read beside them |
 | The tilt press's first frame, 30 to 40 ms after the press | the stopwatch | about 31 to 42 ms (× 1.0405 on `20261109-2307-dev11`); a press is a jump, so there is no duration to build |
 | The turnstile's forward ease, 425 ms (#114) | frames: distinct values one a 15.625 ms step | as given |
-| Pivot's header strip and the new item's 400 ms slide, Hub's header (#114) | frames: `RenderingTime` | as given; the selection's times are the stopwatch's |
+| Pivot's header strip and the new item's 400 ms slide, Hub's header (#114); the same with wide headers and two items, and the offset's settle times (#136) | frames: `RenderingTime` | as given; the selection's times are the stopwatch's |
 | The turnstile's tick-0 times (#114) | the recording against the log, by the turns' median lag | only forward against back is used |
 | The ScrollViewer's inertia (#113): each flick's time, 812 to 2,156 ms, and the fits' constants | frames: `RenderingTime`, which steps by 15.625 ms a frame | as given |
 | The indicator's `IndicatorMode` changes and the ListView's press and release times (#113) | the stopwatch, between input events and states | left as read, as the tap limit is |
 | The ListView item's tilt return (#113) | frames: the same fractions a frame as the Button's | the Button's 182.6 ms hold and 167.0 ms `KeySpline` |
+| The check mode's press and release times, and the `SelectedIndex` jump (#136) | the stopwatch, between input events and states | left as read |
+| Hub's background rate and the header's 420 ms ease after the loop (#136) | frames: `RenderingTime` | as given; the jump's time after the press is the stopwatch's |
+| The app bar's opening and closing, its time constants and settle times (#136) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
 
@@ -1015,6 +1055,43 @@ earlier than the log has them (checked on the first swipe, header and content).
   A drag of 100 px held 300 ms and let go goes back: the offset returns to where it was.
 - Clocks: the per-frame values are on `RenderingTime` (15.625 ms a step); the selection times are the stopwatch's.
 
+### Pivot: wide headers, two items, and a tap on a header cut by the edge (2026-11-15, device 11, #136)
+
+For #121. `20261115-2339-dev11` (`-Probe pivotwide -Record`): four items, headers "favourites", "everything", "recent" and
+"supercalifragilisticexpialidocious", which come to 1,346 px against the 450 px view, the last one 728.75 wide on its
+own. Swipes left from each item (the last wraps), a swipe right from the first, and taps on the headers the right edge
+cuts. Again after review, `20261116-0027-dev11`, without a tap the first run labelled as a cut header's but which was on
+the selected one; every number below covers both. `20261115-2343-dev11` (`-Probe pivottwo -Record`): two items, "one" and "two", swiped left and right from each, and
+each header tapped from the other item. Before the touches, the probe selects each item from code and logs every
+header's place at rest (the `rest` lines). `tools/motion/pivot.py` prints the numbers below.
+
+- **Wide headers follow the same rule.** Each header is laid out at its full width; nothing is trimmed or wrapped. At
+  rest the selected header is at 15.84, and the rest follow it in item order, 15.83 apart, wrapping round (with
+  "recent" selected: recent 15.84, supercal… 177.09, favourites 921.67, everything 1162.5). A header the edge cuts is
+  simply cut, as is one wider than the screen (the recording shows "supercalifragilisticex" running off the right).
+- **The strip still moves at the selected header's pitch over 450.** Pitch is the next header's left edge less this
+  one's. "favourites" 0.53518 px a px (pitch 240.83), "everything" 0.58428 (262.92), "recent" 0.35835 (161.25). The
+  wide header moves 1.65462 px a px (pitch 744.58): faster than the content, about 42 px a frame. Going right from
+  "favourites", the strip moves at 1.65463, the pitch of the wide header coming in. Worst residual 0.011 px.
+- **The header that leaves still goes to the end** once the new item is chosen, wide or not (the wide one jumps from
+  −424 to 949).
+- **A tap on a header the edge cuts selects it**, as a tap on any other header does: "everything" (on screen from 256.67
+  to 450, tapped at 352.8) from item 0, and the wide header (tapped at 313) from "recent". The selection changes at
+  the release, 68 to 86 ms after the press. The offset then travels 450 px and settles 531 ms (rt) after the first
+  frame after the press. That is the same as a tap on a header fully on screen.
+- **A tap on the selected header does nothing**, even when the header runs off the screen. It raises `Tapped`, but the
+  selection, the offset and the strip don't change.
+- **A two-item Pivot still wraps, both ways.** A swipe left from "two" goes to "one", and a swipe right from "one" to
+  "two". Each moves the offset 450 px and slides the new item in, as with four items. The strip holds only the two
+  headers, with no copies. Going left, the header that leaves goes after the other one, as with four. Going right
+  from "one", "one" moves right at "two"'s pitch (0.23056 px a px). "two" stays to the right of it until the selection
+  changes, then jumps to the left (−41.9) and slides in to 15.83. Until then nothing is drawn left of "one".
+- **The new item's slide is the same** in both runs, to four places: one frame at 450 px, then `ExponentialEase` 4
+  over 400 ms (rms 0.003). The selection changes 155 to 235 ms into a swipe left and 152 to 172 ms into a swipe right
+  (stopwatch). The offset settles 578 to 672 ms (rt) after the first frame after the press.
+- Clocks: the per-frame places and the settle times are on `RenderingTime` (15.625 ms a step). The selection times are
+  the stopwatch's.
+
 ### Hub's header (2026-11-15, device 11, #114)
 
 `20261115-2059-dev11` (`-Probe hub -Record`): a Hub with the header "hub" and four sections, swiped left three times,
@@ -1025,6 +1102,40 @@ right once, and dragged 150 px and let go.
   with the offset. The recording agrees within a frame.
 - At launch the Hub's entrance animation moves the header in from 19.7 to 15 (and the sections with it) before any
   touch.
+
+### Hub: a background image, and the end of the sections (2026-11-15 and 16, device 11, #136)
+
+For #122. `-Probe hubimage` gives the Hub's `Background` an `ImageBrush` (`Stretch` `Fill`, the default) of a picture the
+probe draws: a hue running left to right, a black line every 50 px and a white one every 250 px. Runs:
+`20261116-0009-dev11` and, after review, `20261116-0025-dev11` (1600 × 800 px), and `20261116-0001-dev11`
+(`-Probe hubimage900`, 900 × 400). Each run reads, every
+frame, the template's `Background` grid and its two borders, `MainBackground` and `WrapBackground`. Since #136 every Hub
+probe also sets the offset to the end and swipes left there, and again and swipes right. `20261116-0007-dev11`
+(`-Probe hub`) is the Hub with no image. `20261115-2350-dev11` was a first 1600 px run, whose layout lines were read
+during the entrance. `tools/motion/pivot.py` prints the numbers below; the recordings show the same.
+
+- **The image is drawn at its own width and the screen's height.** `Background` and both borders are the image's
+  pixel width in view px (1600, 900) by 800, the window's height (the Hub is 740 tall here), whatever the image's
+  height. `Fill` stretches the 400 px picture to 800 tall and leaves its width alone.
+- **The image moves, slower than the sections, at a rate set by its width.** Let L be the sections' width in all (4 ×
+  405 = 1,620) and V the view's (450). Until the offset reaches L − V (1,170), the image's left edge is −offset × (W −
+  V) / (L − V), W the image's width. That is 0.982906 for 1600 and 0.384615 for 900, within 0.001 px over every frame.
+  So the image's right edge reaches the screen's right edge just as the last section's does. Past L − V, to the end of
+  the scroll range (1,215.4), the image moves nearly one for one with the sections (0.99778).
+- **`WrapBackground` is a second copy of the image, 1 px less than its width away** (−1599 or −899 while the offset is
+  low, +1599 or +899 near the end). At the end it fills the screen past the image's right edge, so the picture repeats.
+- **The header still moves at 1/18 of the offset** (15 − offset / 18, worst 0.0005 px), image or not.
+- **The Hub loops.** A swipe left at the end carries on past the last section, with or without an image. The
+  sections, the image and its copy go on moving left, and the first section comes in from the right, drawn after the
+  last. The header speeds up to the left (from −52.5 to about −110). Then, 206 to 238 ms after the press
+  (stopwatch), it jumps to the right, to 433 to 459. Then it eases in to 15: the same fractions a frame in every run, an
+  `ExponentialEase` (exponent 7) over 420 ms (rms 0.0002 to 0.0007). About 200 ms (rt) after the jump the offset goes
+  back to 0: the first section to its place and the image to 0, its copy to −W + 1. On the screen that is a step of
+  1.4 px.
+- **When the image opens, `BackgroundImageLoadStates` goes from `BackgroundHidden` straight to `BackgroundShowing`**,
+  with no `BackgroundImageFadingIn` (`20261116-0025-dev11`, where the probe gives the Hub its image only once it watches
+  the states; before that the image had loaded unwatched). The `Background` grid's opacity is 1 when `ImageOpened` comes.
+- Clocks: the per-frame places and the ease are on `RenderingTime`. The jump's time after the press is the stopwatch's.
 
 ### ProgressRing: Active
 
@@ -1123,6 +1234,65 @@ In view pixels, the same in every reading of each row:
   450 × 709.17. Under `UseVisible` (the default) the page's content is laid out in it; under `UseCoreWindow` the
   content fills the window, 450 × 800, and `VisibleBounds` still says what the bar and the tray cover. The page itself
   fills the window in both.
+
+### The app bar under touches, and with other numbers of secondary commands (2026-11-15 and 16, device 11, #136)
+
+For #133. Two runs:
+
+- `20261115-2354-dev11` (`-Probe appbar -Record`): the bar above as the page's `BottomAppBar`, compact, with favorite
+  unchecked and delete enabled. The touches go where the screenshots draw things, planned with no target, since the
+  shell's bar is outside the app's tree. The app logs the bar's `Opened` and `Closed` and each command's `Click`. The
+  recording shows the bar. `tools/motion/appbar.py` reads the bar's top edge in each recorded frame from a strip at the
+  screen's left, paired with the log by the header's flash. Again after review, `20261116-0042-dev11`, the bar taken
+  off only after the run: the same events, and the ranges below cover both.
+- `20261116-0005-dev11` (`-Popups only -Only BottomAppBar -Grab`): the bar open with 0, 1, 3, 4, 5 and 10 secondary
+  commands, dark and light, each with a screenshot. The screenshots and the recording's stills are in
+  [`ref/wp81/CommandBar/`](../../ref/wp81/CommandBar/README.md).
+
+What a touch does:
+
+- **Invoking a command closes the open bar.** That holds for a primary command, a secondary one (a menu line) and the
+  toggle. `Closed` comes first, as the finger lifts, and `Click` 2 to 21 ms after it. The toggle is checked by then.
+  On the closed bar a command's `Click` comes and the bar stays closed.
+- **A tap on the ellipsis opens the closed bar and closes the open one.** A tap on the page above the open bar closes it.
+- **A tap on the minimal bar away from the ellipsis opens it**, as a tap on its ellipsis does.
+- **Opening from code** (`IsOpen` set) raises `Opened` in the same call and moves the bar as a tap does.
+
+What a press looks like (stills from the recording, 540 × 960, 1.2 recording px a view px):
+
+- **A pressed command fills its circle with the accent** (#3E65FE recorded; Cobalt is #FF3E65FF). The glyph stays white
+  and the label doesn't change. The circle sinks: its ink is 46 recording px across where it is 49 at rest, and its
+  bottom rises 4 px, as a tilt's depth does. This is the same on the closed and the open bar.
+- **A pressed menu line tilts and keeps its colours.** The text's ink moves from x 26–239, y 743–768 to x 29–239,
+  y 740–766, with no highlight behind it.
+
+The motion, from the recording (`appbar.py`). The bar's top moves; the bar doesn't fade.
+
+- **Opening**: the top rises from 737.08 (compact) or 773.75 (minimal) to 514.58. The rest of the way falls about
+  exponentially, by e every 76 to 92 ms (fourteen openings). It is 90% there 145 to 255 ms after the last frame at
+  rest, and at rest 384 to 455 ms after it.
+- **Closing** is faster: by e every 27 to 52 ms, 90% there by 67 to 127 ms, at rest by 163 to 233 ms (fourteen
+  closings).
+- **Changing `ClosedDisplayMode`** while closed moves the top in 36 to 50 ms (compact to minimal) or 91 to 134 ms (back).
+- Clocks: these are the recording's (the VM's), its frames 18 to 36 ms apart, and good to about a frame (35 ms).
+  Whether the VM's clock runs with the emulator's is open, as for the popups' times ([which clock](#motion-2026-11-10-device-11-24)).
+  The pairing is good to about 35 ms: one opening's first move came 35 ms before the setup that caused it.
+
+**The open bar's height with other numbers of secondary commands** (the screenshots; view px; the same dark and light):
+
+| Secondary commands | Bar's top | Bar's height |
+|---|---|---|
+| 0 | 710.83 | 89.17: the circles and labels, then 18.3 below the labels |
+| 1 | 632.50 | 167.50 |
+| 2 (the 2026-11-09 screenshots) and 3 | 514.58 | 285.42 |
+| 4, 5 and 10 | 381.25 | 418.75 |
+
+- From the bar's top, everything sits where it does with two: the circles from 10.83, the labels from 62.08, the first
+  menu line's ink from 104.58, and each line 59.58 below the last.
+- **The height goes up in steps, not a line at a time**: 2 and 3 lines are drawn the same height, and so are 4 and 5.
+  With 3, 41.7 is left under the last line, where 2 leave 100.8.
+- **It stops at 418.75.** With 10 lines the sixth runs off the bottom of the screen. Whether that list scrolls isn't
+  read.
 
 ## Popup pixels
 
