@@ -148,10 +148,13 @@ Button's.
 **Ours.** `Tilt` is the Button's tilt, with its hold and return, and draws on one target; so the box's press is
 `PhoneListMultiSelect`'s. A press on the box (`CheckboxTiltContainer`'s bounds), by a touch, a pen or the left button,
 in the check mode, sets `IsBoxPressed`, which the theme's selectors read for the colours. Its class handler runs as
-the press bubbles, after the item's `Tilt` (a tunnelling handler) has taken it, and turns the item's `Tilt` off and on
-again at once: that puts the content back at rest with nothing drawn, and the press forgotten. It then steps the box's
-own tilt each frame by `TiltModel`, as `Tilt` steps an item's, with the eye from the item's centre. On release, or a
-lost capture (a pan), the box's transform and `IsBoxPressed` go at once. A press off the box is left to `Tilt` on
+the press bubbles, after the item's `Tilt` (a tunnelling handler) has taken it, and turns the item's `Tilt` off until
+the box's press ends: that puts the content back at rest with nothing drawn, and keeps a second finger from tilting
+it. It then steps the box's own tilt each frame by `TiltModel`, as `Tilt` steps an item's, with the eye from the
+item's centre. One pointer at a time, as `Tilt`'s: only the first pointer down on the item can press the box. On
+release, a lost capture (a pan), the item disabled or the list leaving the check mode, the box's transform and
+`IsBoxPressed` go at once. A box pressed while the content still returns from an earlier tap puts the content at
+rest at once, as the phone's CheckboxPressed stops Pressed's transition. A press off the box is left to `Tilt` on
 TiltContainer, as in Single mode.
 
 ## Avalonia's ListBox against the phone's ListView
@@ -247,7 +250,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 15a. **In the check mode a press off the box is the Single mode's**: four probed presses (the centre, 95% across, 10%
     and 90% down) at the phone's tilts on TiltContainer, the box flat and unfilled, the release holding and returning.
     `In_The_Check_Mode_A_Press_Off_The_Box_Is_The_Single_Modes`.
-15b. **Leaving the check mode mid-press** puts the box at rest. `Leaving_The_Check_Mode_Puts_A_Pressed_Box_At_Rest`.
+15b. **Leaving the check mode, or the item disabled, mid-press** puts the box at rest.
+    `Leaving_The_Check_Mode_Puts_A_Pressed_Box_At_Rest`, `Disabling_The_Item_Puts_A_Pressed_Box_At_Rest`. **A second
+    finger** neither takes the press nor adds a tilt. `A_Second_Finger_Neither_Takes_Nor_Adds_A_Press`.
 15c. **Extended under a tap is Single**, with no boxes, each press tilting the content. `Extended_Under_A_Tap_Is_Single`.
 15d. **A `SelectedIndex` set from code scrolls at once by the least**, the probe's 30, 5 and 39 to its offsets, and
     doesn't move on the frames after. `A_SelectedIndex_Set_From_Code_Scrolls_At_Once_By_The_Least`.

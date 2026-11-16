@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
@@ -26,15 +27,19 @@ namespace Cornflower.Themes.Wp81;
 /// A nested Wp81 list sets its own. An item outside a list never has it. It costs the ListView theme one style rule,
 /// and no global rule.</para>
 /// <para><b>A press on the box</b> (<c>CheckboxPressed</c>, read in run <c>20261116-0040-dev11</c>): the item's own
-/// press, the Button's tilt on its content (<see cref="Tilt"/>), is put back at rest in the same input event, and the
-/// box tilts instead, by <see cref="TiltModel"/>'s rule about the box's own centre, with the eye the item's: the phone
+/// press, the Button's tilt on its content (<see cref="Tilt"/>), is put back at rest in the same input event and kept
+/// off until the box's press ends, and the box tilts instead, by <see cref="TiltModel"/>'s rule about the box's own centre, with the eye the item's: the phone
 /// moves the box by the item's offset to the screen's centre, not by its own. On release, or when the pointer is taken
 /// (a pan), the box is at rest at once, with no hold and no return, and <see cref="IsBoxPressedProperty"/>, which fills
 /// the box with the accent, goes. A press anywhere else on the item is the item's press, as in <c>Single</c>: the
-/// content tilts and the box stays flat. A move of the finger doesn't re-aim the box's tilt (not read). The screen's
+/// content tilts and the box stays flat. One pointer at a time, as the phone's one <c>CommonStates</c> and
+/// <see cref="Tilt"/> have it: only the first pointer down on the item, while it holds, can press the box, and while
+/// the box is pressed nothing else on the item tilts. A box pressed while the content's tilt still returns from an
+/// earlier tap puts the content at rest at once, as the phone's <c>CheckboxPressed</c> stops <c>Pressed</c>'s
+/// transition. A move of the finger doesn't re-aim the box's tilt (not read). The screen's
 /// centre is taken into the item's space as <c>TranslatePoint</c> takes it, through any tilt an ancestor shows, which
 /// <see cref="Tilt"/> leaves out: a list inside a pressed, tilting control isn't the phone's case. It costs a class
-/// handler per pointer press and capture lost on an item, which does nothing out of the check mode.</para>
+/// handler per pointer press (two) and capture lost on an item, which do nothing out of the check mode.</para>
 /// </remarks>
 internal static class PhoneListMultiSelect
 {
@@ -50,17 +55,26 @@ internal static class PhoneListMultiSelect
     private static readonly AttachedProperty<BoxPress?> PressProperty =
         AvaloniaProperty.RegisterAttached<ListBoxItem, BoxPress?>("Press", typeof(PhoneListMultiSelect));
 
+    /// <summary>The pointer whose press reached the item first, in the check mode, until its capture goes.</summary>
+    private static readonly AttachedProperty<IPointer?> FirstProperty =
+        AvaloniaProperty.RegisterAttached<ListBoxItem, IPointer?>("First", typeof(PhoneListMultiSelect));
+
     /// <summary>The template's part that the box's press tilts, the phone's name for it.</summary>
     private const string BoxPart = "CheckboxTiltContainer";
 
     static PhoneListMultiSelect()
     {
-        // Bubbling, so after the item's own tilt (a tunnelling handler) has taken the press: it is then put back. A press
-        // holds the pointer until it is let go, so the release, a pan taking it, or anything else that takes it ends the
-        // box's press as the pointer's capture goes.
+        // The first pointer down is noted as the press tunnels in; the box's press is taken as it bubbles, after the
+        // item's own tilt (a tunnelling handler) has taken it, which is then put back. A press holds the pointer until it
+        // is let go, so the release, a pan taking it, or anything else that takes it ends the press as the capture goes.
+        InputElement.PointerPressedEvent.AddClassHandler<ListBoxItem>(OnFirst, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerPressedEvent.AddClassHandler<ListBoxItem>(OnPressed, handledEventsToo: true);
         InputElement.PointerCaptureLostEvent.AddClassHandler<ListBoxItem>(OnCaptureLost, handledEventsToo: true);
         IsOnProperty.Changed.AddClassHandler<ListBoxItem>((item, e) =>
+        {
+            if (!e.GetNewValue<bool>()) Release(item);
+        });
+        InputElement.IsEffectivelyEnabledProperty.Changed.AddClassHandler<ListBoxItem>((item, e) =>
         {
             if (!e.GetNewValue<bool>()) Release(item);
         });
@@ -73,16 +87,36 @@ internal static class PhoneListMultiSelect
 
     /// <summary>The item's own box, the part its <c>CheckboxPressed</c> tilts.</summary>
     internal static Control? BoxOf(ListBoxItem item) =>
-        item.GetVisualDescendants().OfType<Control>()
-            .FirstOrDefault(c => c.Name == BoxPart && ReferenceEquals(c.TemplatedParent, item));
+        item.GetVisualChildren().FirstOrDefault() is Control root ? PartOf(item, root) : null;
+
+    /// <summary>The box among the template's own parts, not looking into the content.</summary>
+    private static Control? PartOf(ListBoxItem item, Control part)
+    {
+        if (!ReferenceEquals(part.TemplatedParent, item)) return null;
+        if (part.Name == BoxPart) return part;
+
+        foreach (var child in part.GetVisualChildren())
+        {
+            if (child is Control c && PartOf(item, c) is { } found) return found;
+        }
+
+        return null;
+    }
+
+    private static void OnFirst(ListBoxItem item, PointerPressedEventArgs e)
+    {
+        if (GetIsOn(item) && !item.IsSet(FirstProperty))
+            item.SetValue(FirstProperty, e.Pointer);
+    }
 
     /// <summary>
     /// A press on the item: on its box, in the check mode, by a touch, a pen or the left button, from inside the item's
-    /// own tree (not a popup it owns) and the first. Anything else is left to the item.
+    /// own tree (not a popup it owns), and by the first pointer down on the item. Anything else is left to the item.
     /// </summary>
     private static void OnPressed(ListBoxItem item, PointerPressedEventArgs e)
     {
         if (!GetIsOn(item) || !item.IsEffectivelyEnabled || item.IsSet(PressProperty) ||
+            !ReferenceEquals(item.GetValue(FirstProperty), e.Pointer) ||
             !e.GetCurrentPoint(item).Properties.IsLeftButtonPressed ||
             e.Source is not Visual hit || !(ReferenceEquals(hit, item) || item.IsVisualAncestorOf(hit)) ||
             BoxOf(item) is not { } box || box.GetVisualParent() is not { } parent ||
@@ -93,11 +127,12 @@ internal static class PhoneListMultiSelect
         if (!bounds.Contains(at))
             return;
 
-        // The item's tilt took the press first; it goes back to rest with nothing drawn, its press forgotten.
-        if (Tilt.GetIsEnabled(item))
-            item.SetValue(Tilt.IsEnabledProperty, false, BindingPriority.Animation)?.Dispose();
-
-        var press = new BoxPress(item, box, e.Pointer, at - bounds.Position);
+        // The item's tilt took the press first (or, returning from an earlier one, was still showing): turned off, it
+        // goes back to rest with nothing drawn, and no other pointer tilts the content until the box's press ends.
+        var press = new BoxPress(item, box, e.Pointer, at - bounds.Position)
+        {
+            TiltOff = Tilt.GetIsEnabled(item) ? item.SetValue(Tilt.IsEnabledProperty, false, BindingPriority.Animation) : null,
+        };
         item.SetValue(PressProperty, press);
         item.SetValue(IsBoxPressedProperty, true);
         press.Step();
@@ -105,8 +140,11 @@ internal static class PhoneListMultiSelect
 
     private static void OnCaptureLost(ListBoxItem item, PointerCaptureLostEventArgs e)
     {
-        if (item.GetValue(PressProperty) is { } press && ReferenceEquals(press.Pointer, e.Pointer))
-            Release(item);
+        if (!ReferenceEquals(item.GetValue(FirstProperty), e.Pointer))
+            return;
+
+        item.ClearValue(FirstProperty);
+        Release(item);
     }
 
     /// <summary>The box back at rest at once, with no hold and no return, as the phone's <c>CheckboxPressed</c> has none.</summary>
@@ -141,6 +179,9 @@ internal static class PhoneListMultiSelect
         }
 
         public IPointer Pointer { get; }
+
+        /// <summary>The item's tilt held off for the press; disposed, it comes back, at rest.</summary>
+        public IDisposable? TiltOff { get; init; }
 
         public TiltState State { get; private set; }
 
@@ -180,6 +221,7 @@ internal static class PhoneListMultiSelect
             _shown?.Dispose();
             _shown = null;
             State = TiltState.Rest;
+            TiltOff?.Dispose();
         }
 
         private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) => Release(_item);

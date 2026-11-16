@@ -771,6 +771,71 @@ public class ListViewTests
         Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
     }
 
+    // The item disabled while its box is pressed: the box at rest, unfilled.
+    [AvaloniaFact]
+    public void Disabling_The_Item_Puts_A_Pressed_Box_At_Rest()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.NotNull(box.RenderTransform);
+        page.List.IsEnabled = false;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+    }
+
+    // One pointer at a time, as Tilt's: a second finger on the box while the first holds the item's text changes nothing
+    // (the content keeps its tilt, the box stays flat); and while the box is pressed, a second finger on the text doesn't
+    // tilt the content. Once the box is let go, the item tilts again.
+    [AvaloniaFact]
+    public void A_Second_Finger_Neither_Takes_Nor_Adds_A_Press()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+        var text = CheckModePresses[0].Press;
+
+        var first = page.Window.TouchBegin(text);
+        clock.At(SettleMs);
+        var held = CfTilt.Current(item);
+        Assert.NotEqual(TiltState.Rest, held);
+        var second = page.Window.TouchBegin(BoxPress);
+        clock.At(2 * SettleMs);
+        Assert.Equal(held, CfTilt.Current(item));
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        page.Window.TouchEnd(second, BoxPress);
+        page.Window.TouchEnd(first, text);
+        clock.At(2 * SettleMs + HoldMs + ReturnMs + 40);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+
+        first = page.Window.TouchBegin(BoxPress);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotNull(box.RenderTransform);
+        second = page.Window.TouchBegin(text);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+        Assert.Null(Part<Border>(item, "TiltContainer").RenderTransform);
+        page.Window.TouchEnd(second, text);
+        page.Window.TouchEnd(first, BoxPress);
+        Assert.Null(box.RenderTransform);
+
+        page.Window.TouchBegin(text);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotEqual(TiltState.Rest, CfTilt.Current(item));
+    }
+
     // The probe: in the check mode a press anywhere off the box is the Single mode's, at the same tilts: the content
     // tilts, the box stays flat and unfilled; on release the tilt holds, then eases back.
     public static TheoryData<int> CheckModePressIndexes => new(Enumerable.Range(0, CheckModePresses.Length));

@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -42,9 +43,13 @@ public class ListViewFrames
                 if (state.StartsWith("MultiSelectStates.ListMultiSelect", StringComparison.Ordinal))
                     item.SetValue(PhoneListMultiSelect.IsOnProperty, true);
                 using var stage = new ListViewTests.ItemStage(variant, item);
-                // Pressed at the item's centre; CheckboxPressed at the box's (its bounds are in the item's space).
-                if (state.EndsWith("CheckboxPressed", StringComparison.Ordinal) && PhoneListMultiSelect.BoxOf(item) is { } box)
-                    stage.Window.TouchBegin(stage.At(box.Bounds.Center.X, box.Bounds.Center.Y));
+                // Pressed at the item's centre; CheckboxPressed at the box's.
+                if (state.EndsWith("CheckboxPressed", StringComparison.Ordinal))
+                {
+                    var box = PhoneListMultiSelect.BoxOf(item) ?? throw new InvalidOperationException("No CheckboxTiltContainer.");
+                    var centre = box.TranslatePoint(new Rect(box.Bounds.Size).Center, item)!.Value;
+                    stage.Window.TouchBegin(stage.At(centre.X, centre.Y));
+                }
                 else if (state.EndsWith("Pressed", StringComparison.Ordinal))
                     stage.Window.TouchBegin(stage.At(stage.Item.Bounds.Width / 2, stage.Item.Bounds.Height / 2));
                 clock.At(160);
