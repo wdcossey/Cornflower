@@ -107,11 +107,13 @@ public class PageTimingTests
         using var scene = new Scene(shell);
         using var clock = new TestClock();
 
+        var sinceOpen = System.Diagnostics.Stopwatch.StartNew();
         shell.Open("slow page");
         Dispatcher.UIThread.RunJobs();
         Assert.Empty(lines);
 
         Draw();
+        var firstFrame = sinceOpen.ElapsedMilliseconds;
         Assert.Empty(lines);
         var page = Assert.IsType<Slow>(shell.Shown);
         Assert.Contains(page.GetVisualAncestors(), visual => visual.RenderTransform is not null);   // turned
@@ -121,10 +123,15 @@ public class PageTimingTests
         Draw();
         Assert.Empty(lines);
 
-        Settle(clock);
-        var line = Assert.Single(Ready(lines));
-        Assert.InRange(OpenMs(line), SlowMs - 10, 400);
+        // The turn's end, then a real wait, which the time leaves out. The line waits for a frame drawn at rest.
+        clock.At(1000);
+        Thread.Sleep(SlowMs);
+        Dispatcher.UIThread.RunJobs();
         Assert.DoesNotContain(page.GetVisualAncestors(), visual => visual.RenderTransform is not null);
+        Assert.Empty(lines);
+        Draw();
+        var line = Assert.Single(Ready(lines));
+        Assert.InRange(OpenMs(line), SlowMs - 10, firstFrame + 1);
     }
 
     // The theme page, the device run's page and drive.ps1's, at the reference view beside the rail.

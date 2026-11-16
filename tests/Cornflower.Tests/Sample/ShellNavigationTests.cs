@@ -108,6 +108,49 @@ public class ShellNavigationTests
         Assert.Equal(new Size(Scene.ReferenceWidth, Scene.ReferenceHeight), third.Bounds.Size);
     }
 
+    // Open from a page, as Open(title) can be called: the new page takes the old one's place, so Back is one turn away.
+    [AvaloniaFact]
+    public void A_Page_Opened_From_Another_Takes_Its_Place()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+
+        shell.ShowPage(new Border(), "first");
+        shell.ShowPage(new Border(), "second");
+        Settle(clock);
+        Assert.Equal(2, host.StackDepth);
+
+        shell.ShowPage(new Border(), "third");
+        Settle(clock);
+        Assert.Equal(2, host.StackDepth);
+
+        shell.ShowIndex();
+        Settle(clock);
+        Assert.Equal(1, host.StackDepth);
+        Assert.Same(Index(shell).FindAncestorOfType<ContentPage>(), host.CurrentPage);
+    }
+
+    // A page that refuses to be left (its Navigating cancelled) keeps the navigation page where it is: the shell stops
+    // asking rather than asking for ever.
+    [AvaloniaFact]
+    public void A_Navigation_The_Page_Refuses_Is_Given_Up()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+        var list = host.CurrentPage!;
+        list.Navigating += e => { e.Cancel = true; return Task.CompletedTask; };
+
+        shell.ShowPage(new Border(), "a page");
+        Settle(clock);
+
+        Assert.Same(list, host.CurrentPage);
+        Assert.False(host.IsNavigating);
+    }
+
     // With the focus in a page, Alt+Left is the navigation page's own: it pops to the list, and the shell follows.
     [AvaloniaFact]
     public void Alt_Left_Taken_By_The_Navigation_Page_Shows_The_List()
