@@ -32,7 +32,6 @@
                              SelectionChanged="OnSelectionChanged" />
         <DateTimePickerPanel x:Name="Year" Grid.Column="2" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
                              PanelType="Year" ItemFormat="yyyy"
-                             MaximumValue="2076" MinimumValue="1976"
                              SelectionChanged="OnSelectionChanged" />
       </Grid>
 

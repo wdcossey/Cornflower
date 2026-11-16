@@ -521,6 +521,14 @@ public class LoopingSelectorTests
             stage.Window.MouseWheel(stage.At(stage.Year, 350), new Vector(0, -0.4));
         clock.At(3000);
         Assert.Equal(2015, stage.Year.SelectedValue);
+
+        // At its end the scroll isn't the wheel's: it goes on to what holds it.
+        stage.Year.SelectedValue = 2076;
+        var outer = 0;
+        stage.Canvas.PointerWheelChanged += (_, _) => outer++;
+        for (var i = 0; i < 5; i++)
+            stage.Window.MouseWheel(stage.At(stage.Year, 350), new Vector(0, -0.2));
+        Assert.Equal(5, outer);
     }
 
     [AvaloniaFact]
@@ -633,5 +641,13 @@ public class LoopingSelectorTests
         Assert.False(wheel.IsCoasting);
         Assert.False(PhoneLoopingSelector.GetIsMoving(panel));
         Assert.Equal((15 - 1 + items) % 31 + 1, panel.SelectedValue);
+
+        // Shown again, it is as the phone opens its wheels: none active, and its first expansion at once.
+        Assert.Equal(0, Expansion(panel));
+        popup.IsOpen = true;
+        stage.Settle();
+        Assert.False(wheel.IsActive);
+        wheel.Activate();
+        Assert.Equal(1, Expansion(panel));
     }
 }

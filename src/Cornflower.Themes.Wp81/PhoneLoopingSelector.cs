@@ -257,6 +257,7 @@ internal static class PhoneLoopingSelector
             StopMotion();
             _held = false;
             IsDragging = true;
+            _way = 0;
             _dragFrom = Offset;
             _lastSet = Offset;
             _panel.SetValue(IsMovingProperty, true);
@@ -312,14 +313,18 @@ internal static class PhoneLoopingSelector
         {
             if (e.Delta.Y == 0 || IsDragging)
                 return;
+            var from = _motion?.Target ?? Math.Round(Offset / Pitch) * Pitch;
+            var (min, max) = Range();
+            if (Math.Clamp(from - Math.Sign(e.Delta.Y) * Pitch, min, max) == from)
+            {
+                _notches = 0;
+                return;
+            }
+
             _notches += e.Delta.Y;
             var notches = Math.Truncate(_notches);
             _notches -= notches;
-            var from = _motion?.Target ?? Math.Round(Offset / Pitch) * Pitch;
-            var (min, max) = Range();
             var target = Math.Clamp(from - notches * Pitch, min, max);
-            if (notches != 0 && target == from)
-                return;
             e.Handled = true;
             if (notches == 0)
                 return;
@@ -412,7 +417,9 @@ internal static class PhoneLoopingSelector
         {
             if (offset != Offset)
                 _panel.Offset = new Vector(0, offset);
-            _lastSet = Offset;
+
+            // What was asked for, so a jump the panel made of it, or its owner made inside it, shows next time.
+            _lastSet = offset;
         }
 
         /// <summary>Where the offset can go: anywhere for a looping wheel, the first item to the last for one that doesn't.</summary>
@@ -495,15 +502,19 @@ internal static class PhoneLoopingSelector
         }
 
         /// <summary>Out of the window there are no frames: a move ends where it was going, a fade where it was going.</summary>
+        /// <remarks>
+        /// A flyout that closes takes its wheels out of the window and can show them again: they come back as the phone
+        /// opens its wheels, none active, each with no state, and no finger on them.
+        /// </remarks>
         private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
         {
             Shown.Remove(this);
+            _recognizer.Cancel();
             Settle();
-            if (_expansionFrame is not null)
-            {
-                StopExpansion();
-                _panel.SetValue(ExpansionProperty, _expansionTarget);
-            }
+            StopExpansion();
+            _expansionTarget = 0;
+            _expandedBefore = false;
+            _panel.SetValue(ExpansionProperty, 0d);
         }
     }
 
@@ -611,6 +622,9 @@ internal static class PhoneLoopingSelector
             var ms = (last.Time - first.Time).TotalMilliseconds;
             return ms > 0 ? (first.Y - last.Y) / ms : 0;
         }
+
+        /// <summary>Forgets the finger: its wheel left the window under it.</summary>
+        public void Cancel() => Reset();
 
         private void Reset()
         {

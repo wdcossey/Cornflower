@@ -125,9 +125,6 @@ internal sealed class PhoneLoopingSelectorMotion
     /// <summary>How far a coast at <paramref name="speed"/> goes before it stops: (1/2c) ln(1 + c v² / a).</summary>
     public static double CoastLength(double speed) => Math.Log(1 + Drag * speed * speed / Deceleration) / (2 * Drag);
 
-    /// <summary>The speed a coast needs to go <paramref name="distance"/>.</summary>
-    public static double CoastSpeed(double distance) => Math.Sqrt(Deceleration / Drag * (Math.Exp(2 * Drag * distance) - 1));
-
     /// <summary>How long a coast of <paramref name="distance"/> takes, in ms: acos(e^(−c d)) / √(a c).</summary>
     public static double StopTime(double distance) => Math.Acos(Math.Exp(-Drag * distance)) / Math.Sqrt(Deceleration * Drag);
 

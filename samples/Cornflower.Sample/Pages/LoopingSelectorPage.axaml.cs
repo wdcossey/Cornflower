@@ -18,6 +18,9 @@ public partial class LoopingSelectorPage : UserControl
 
         // A bare panel names its days in this month (its presenter would set the month), so it has this month's days.
         Day.MaximumValue = System.DateTime.DaysInMonth(today.Year, today.Month);
+        // A hundred years round this one, as Avalonia's DatePicker has.
+        Year.MaximumValue = today.Year + 50;
+        Year.MinimumValue = today.Year - 50;
         Month.SelectedValue = today.Month;
         Day.SelectedValue = today.Day;
         Year.SelectedValue = today.Year;

@@ -111,7 +111,7 @@
     <!-- The template's values that a state changes are set here, as a template's own would win over a state's. -->
     <Style Selector="^ /template/ Grid#Root">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Opacity" Value="{Binding $parent[ListBoxItem].(wp81:PhoneLoopingSelector.Expansion)}" />
+      <Setter Property="Opacity" Value="{Binding $self.(wp81:PhoneLoopingSelector.Expansion)}" />
     </Style>
     <Style Selector="^ /template/ Border#Border">
       <Setter Property="BorderBrush" Value="{DynamicResource LoopingSelectorForegroundThemeBrush}" />
