@@ -276,7 +276,7 @@ public class PivotTests
         Assert.Contains("b!", texts);
         Assert.Contains("page a", texts);
         Assert.Equal("a", pivot.SelectedItem);
-        Assert.IsType<PivotItem>(pivot.ContainerFromIndex(0));
+        Assert.Equal("a", Assert.IsType<PivotItem>(pivot.ContainerFromIndex(0)).Header);
     }
 
     [AvaloniaFact]
@@ -499,6 +499,23 @@ public class PivotTests
         Assert.False(motion.IsMoving);
         Assert.Equal(0, stage.Pivot.SelectedIndex);
         Assert.Equal(0, stage.ItemX(0), 0.001);
+    }
+
+    // A slow drag let go past half a page goes on (not read on the phone: PLAN.md, "The motion, as modelled").
+    [AvaloniaFact]
+    public void A_Slow_Drag_Past_Half_A_Page_Goes_On()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        clock.At(10);
+        var touch = stage.Window.TouchBegin(new Point(400, 450), RawInputModifiers.None);
+        stage.Window.TouchMove(touch, new Point(300, 450), RawInputModifiers.None);
+        clock.At(20);
+        stage.Window.TouchMove(touch, new Point(160, 450), RawInputModifiers.None);
+        clock.At(400);
+        stage.Window.TouchEnd(touch, new Point(160, 450), RawInputModifiers.None);
+        clock.At(2000);
+        Assert.Equal(1, stage.Pivot.SelectedIndex);
     }
 
     // #128: a header tap selects at the release; the offset moves a page a header (two for "three") on the tap's
