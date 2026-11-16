@@ -7,7 +7,7 @@ namespace RefApp
 {
     /// <summary>
     /// What a run captures. run.ps1 -Only writes run-options.txt into the package; without it, everything runs.
-    /// One setting per line: <c>only=&lt;regex&gt;</c> keeps the specimens and popups whose name matches;
+    /// One setting per line: <c>only=&lt;regex&gt;</c> keeps the specimens whose name matches and the popups whose name, or name/variant, matches;
     /// <c>popups=only</c> or <c>popups=also</c> adds the popups, which a run leaves out by default;
     /// <c>demo</c> shows the demo page instead of running the suite; <c>hold=&lt;ms&gt;</c> holds each popup open,
     /// full window, for the screen grabs (run.ps1 -Grab); <c>probe=&lt;name&gt;</c> runs one <see cref="Probe"/> instead

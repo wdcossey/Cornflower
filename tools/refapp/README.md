@@ -26,6 +26,8 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pages -Record               # 
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe scrollend -Record           # the end of the content and the indicator (see Probes)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pivot -Record               # Pivot's header strip (see Motion; also turnstile, hub)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe popupcurves -Record         # the popups' bands, eight times each (see Motion)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe dismiss                     # each popup dismissed by Back and by taps; the AutoSuggestBox's events (#150)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'   # popups by name, or name/variant
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
 
@@ -38,7 +40,8 @@ Results go to a run folder, `<yyyyMMdd-HHmm>-dev<n>`, in that `-Out` folder: one
 capture, `index.json` for the run, and `index.html`, which lays every state out dark beside light.
 Device indexes are in `wp81-emulator-profiles.md` in the reference folder.
 
-`-Only <regex>` keeps the specimens and popups whose name matches. `-Popups also` adds the popups to a
+`-Only <regex>` keeps the specimens whose name matches, and the popups whose name or `<name>/<variant>` does
+(`ContentDialog/keyboard`). `-Popups also` adds the popups to a
 run and `-Popups only` runs them alone; by default a run leaves them out, because with them inside
 a full run the emulator connection broke at about 477 PNGs, twice. The app reads these from a
 `run-options.txt` that `run.ps1` writes into the package for that run and then deletes.
@@ -420,6 +423,8 @@ last touch has settled. `touch.log` says where each step landed on the VM's scre
 - **Resolution:** at the zoom that fits the VM's 1440-high screen, one screen pixel is 0.83 view
   pixels on the reference profile, so a probe can't place a touch finer than that. The app logs
   the positions it got.
+- **A key** (`key <vk>` in `gestures.txt`, #150) is pressed on the VM's keyboard with the emulator in front. The
+  emulator maps F1 to the phone's Back, which is how `-Probe dismiss` presses Back.
 - **A still touch reports every 100 ms; a moving one, every 15 to 30 ms.** While a touch is held the emulator
   sends its position every 100 ms from the press, moved or not, and now and then drops one; the mouse's own moves
   reach the phone 15 to 30 ms apart (the logs of #33). So a probe reads a position, not a smooth speed, and a press
@@ -432,7 +437,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)), and for #150 `dismiss` ([how each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -1045,6 +1050,23 @@ first recorded change is within a frame or two of the call (−20 to +70 ms).
   later and don't show.
 - So the storyboards say EaseInOut, not linear, and neither shows on the screen.
 
+**The full Flyout's bands, read again for #161** (#150, from the same recording; `strips.py --popup "Flyout full"
+--frames`, and the rows below 380 compared with the page and with the popup at rest, frame by frame, over the eight
+calls):
+
+- **The bands are 100 px.** A band's centre line stays on the screen's plane, so it is read straight off any frame:
+  opening, 49.3, 149.0, 248.9 and 348.2 (each the median of 17 to 27 readings, all within 49.1 to 51.5, 139.1 to
+  149.4, 245.2 to 249.2, 345.1 to 349.1); closing, 149.5, 249.9, 349.9, 449.9, 550.1, 650.1 and 750.6. On a still,
+  what shows of a turned band isn't centred on its line: its near half is drawn larger than its far half, and
+  edge-on halves show nothing, so the gaps between what shows aren't the pitch (the closing stills' pieces start at
+  about 448, 556, 664 and 774).
+- **Opening, the area below about 430 doesn't turn: it is drawn at rest, a piece at a time, downwards.** Every row
+  below 380 that differs from the page is full width (0 to 450) and the same as the popup at rest, in every frame of
+  every call; no row there is ever a band's slanted edge. The drawn area ends at 428, 551, 673, then 800 (call 1, at
+  119, 144, 206 and 269 ms), 434, 676, 800 (call 2, at 120, 195, 257 ms), 428, 551, 795, 800 (call 3, at 120, 182,
+  232, 282 ms): steps of about 122 px, one each two frames or so, with a seam at 440 to 448 left the page's for a
+  frame. Closing, the bands below 400 do turn, as above.
+
 ### LoopingSelector, and a press on a closed ComboBox (2026-11-16, device 11, #149)
 
 `20261116-1904-dev11` (`-Probe looping`, `looping.py`): a DatePickerFlyout (15 July 2014) opened from code, and its
@@ -1565,6 +1587,177 @@ motion is within a frame of #136's ranges: time constants 79 to 89 ms opening an
 441 ms and 177 to 236 ms.
 
 - Clocks: the recording's (the VM's), as in #136.
+
+## Tier 3's popups: their layout, the pickers' bar and the keyboard (2026-11-16, device 11, #150)
+
+Screen grabs and dumps from three `-Grab` runs: `20261116-1934-dev11` (`-Popups also -Grab -Only
+'^(AutoSuggestBox|ContentDialog|MenuFlyout|PickerFlyout|ListPickerFlyout|DatePicker|TimePicker)$'`), then two reruns of
+what it missed, `20261116-1940-dev11` (the menu's pressed item, forced 700 ms after `Opened`) and `20261116-1944-dev11`
+(the AutoSuggestBox focused, and the dialog's TextBox focused 500 ms after `Opened`). A focused box's caret blinks,
+so its screen never held still for `vm\grab-loop.ps1`; the loop now counts a change only when more than 600 pixels of
+the window differ (`-MaxChangedPixels`; a blink was more than 64, and at 600 every focused grab came back, at the zoom
+that fits the VM's screen). A change that small makes no new shot; the loop logs changes of 64 to 5,000 pixels. The PNGs are in `ref/wp81/<control>/`. View pixels throughout; positions in the
+window.
+
+### AutoSuggestBox
+
+- **Focus from code brings the keyboard up**, and focusing the box moves the page up until the control's top (its
+  header's) is at the window's top: the box, 48.33 to 87.5 at rest, goes to 26.67 to 65.83, 21.67 up.
+- **The keyboard** is 346.67 tall from y 453.33 (the screen's bottom 832 raw px), `#FF1F1F1F`, the same in both
+  themes. Above its first row of keys, 453.33 to 519.17 holds the word suggestions, blank until there is text. Its keys are 39.2 × 65 on rows 70.8 apart,
+  centres at y 551.7, 622.5, 693.3 and 764.4: q to p at x 22.5 + 45 k; a to l at 45 + 45 k; shift and backspace 61.7
+  wide at 33.8 and 416.2 with z to m between them; "&123" and Enter 61.7 wide at the ends of the bottom row, the
+  comma and full stop beside them, the space bar 219.2 wide in the middle.
+- **The focused box** has a 2.5 accent (`#FF3E65FF`) border and a white inside, in both themes (at rest it reads
+  `#FFCCCCCC` all through, border and inside, in both themes).
+- **The list** hangs from the box: its top is the box's bottom border (63.33, the two 2.5 borders on top of each
+  other), the control's width (19.17 to 431.25), a 2.5 accent border, white inside and black text (20.26 px) in both
+  themes. Its rows are 39.17 tall, 48.75 apart, the first 12.08 below the border's top (each item's margin 6.5, 9.5).
+  One suggestion makes it 53.75 tall, three 151.25. **Twelve fill it down to the keyboard**: 387.5 tall, its bottom
+  border at 448.33 to 450.83, 2.5 above the keyboard's top; the rest scroll.
+- `QuerySubmitted` isn't in the 8.1 API (it came with Windows 10): the box has `TextChanged` and `SuggestionChosen`
+  only. Their order is in [How each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events).
+
+### ContentDialog's layout
+
+| Variant | The dialog | Title | Body | Buttons |
+|---|---|---|---|---|
+| Two buttons (`default`) | 0 to 199.17, `#FF1F1F1F` | 19.17, 33.33 | from 84.17 | each in half the width (hosts 0 and 225, 90.83 tall from 108.33): a 196.67 × 38.33 outline at 19.17 and 234.58, y 142.08 |
+| One button, primary or secondary | 0 to 199.17 | | | the one button in the left half, either way |
+| No button | 0 to 153.33 | | | the hosts collapsed |
+| `FullSizeDesired` | the whole screen, 0 to 800 | | | not in the dialog: the shell draws them at the bottom, two outlines 194.17 × 41.67 at 20.83 and 235.83, y 747.08 |
+| Long title, forty lines of body | the whole screen, as `FullSizeDesired` | one line, cut at the edge: it doesn't wrap | clipped at the bar: no ScrollViewer in the template (the content's panel is 1,094.58 tall in an 800 dialog) | as `FullSizeDesired` |
+| A TextBox in the body, focused | 0 to 284.17: it stays at the top, the keyboard below | | | as `default`, from 193.33 |
+
+Behind every variant is the `#99000000` layer over the whole window. Whether the long body scrolls under a finger is
+in [How each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events).
+
+### The pickers' bar (B15)
+
+Read from the grabs with [`pickerbar.py`](pickerbar.py) (`20261108-2254-dev11`, `20261116-1934-dev11`, and the page's
+own app bar in `20261109-2124-dev11`):
+
+- **Which pickers have one:** ListPickerFlyout in `Multiple`, PickerFlyout with `ConfirmationButtonsVisible`,
+  DatePickerFlyout and TimePickerFlyout. ListPickerFlyout in `Single`, the ComboBox's full-screen picker and a
+  PickerFlyout without the buttons have none: no buttons and no "...".
+- **It is the page's compact app bar:** the "..." dots' top row at 747.5 and their centres at 409.27, 418.15 and
+  427.10, as on a page's compact `BottomAppBar` (#23: its top at 737.08, 62.92 tall), and the same rings (40.80).
+  The bar is the same colour as the picker behind it, so its top isn't seen in the pixels.
+- **Accept and cancel:** rings centred at x 187.50 and 261.25 (73.75 apart, about the bar's middle), y 768.33; each
+  40.80 across outside (the box of its outline at half ink) with a 2.68 stroke. The template says 38.5 and 2.5: the
+  shell draws the buttons about 6% larger, as it draws the bar 62.92 tall, not 57.5.
+- **The accept glyph (the check):** its box 20.00 × 17.23 dark, 19.92 × 17.12 light, centred within 0.13 of the ring's
+  centre. Its centre line runs from the left end (−8.32, −0.32) to the bottom corner (−1.93, +6.65) to the right end
+  (+8.31, −6.22) from the ring's centre (light: ±8.53, the corner at +6.86). Its stroke is 3.37 dark and 2.94 light:
+  the same outline, anti-aliased white on dark and black on light.
+- **The cancel glyph (the cross):** its box 16.06 × 15.87 dark (15.95 × 15.76 light), centred +0.19, +0.48 from the
+  ring's centre; stroke 3.31 dark, 2.89 light.
+
+Each glyph's stroke is 2 × its ink area ÷ the length of its outline at half ink, the width of a stroke much longer
+than wide. These are sizes and places, for drawing our own glyphs; the outlines stay out of the repository.
+
+### ListPickerFlyout in `Multiple`
+
+`20261116-1934-dev11`'s `multiple-two-checked` ("two" and "four" checked): the title, "LIST PICKER", is Segoe WP
+SemiBold (600) 18.14 px with `CharacterSpacing` 15, at 19.17, 37.08, 32.5 above the items. The items are 39.17
+tall, 58.33 apart, from 93.33. Each has a check box first: a 25.42 square at x 19.17 (2.5 stroke in the foreground,
+transparent fill), its tick (18.33 × 17.08, the foreground) shown when checked, and the item's text from x 44.67.
+The selected items show only the tick: the accent earmark of `Single` isn't drawn. Accept and cancel are in the bar
+above. What accept returns is in [How each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events).
+
+### MenuFlyout
+
+- **Items** are 51.25 tall and 51.25 apart, the first 16.67 (17.08 for a menu at a target lower down) below the
+  menu's top, text at x 19.17. The menu is the window's width, `#FF000000` dark and `#FFFFFFFF` light, with a 1.5
+  top and bottom border.
+- **A ToggleMenuFlyoutItem draws the same checked and unchecked**: the phone's template has no check mark and no
+  check states. **A MenuFlyoutSeparator draws nothing and takes no room** (0 tall). A disabled item's text is the
+  disabled brush. The pressed item is the `PointerDownThemeAnimation` tilt on `InnerBorder`, no colour change.
+- **Where it sits:** directly below its target (the menu's top at the target's bottom), or directly above (its bottom
+  at the target's top). Targets of 57.5 with a four-item menu (244.58): top at 312.08 → below; at 512.08, 652.08 and
+  732.08 → above. Where exactly it flips is in [How each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events).
+- **A menu longer than the screen** (24 items, 1,269.58 of items) fills the window, 0 to 800, whatever the target.
+
+### B19: DatePicker's and TimePicker's inner button
+
+`FlyoutButton` is a Button in the default Button style, with its `Foreground` and `BorderBrush` bound to the
+picker's `Foreground` and a 2.5 border. Forced into its own states (`20261116-1934-dev11`), the dumps and pixels
+match the JSON's Button states: `Pressed` gives the border's inside the accent (`#FF3E65FF`) and the text
+`PhoneTextOverAccentColor` (white, in both themes), border unchanged; `Disabled` gives the border and text
+`PhoneBaseLowColor` (`#73FFFFFF` dark, `#40000000` light); `PointerOver` is `Normal`. The picker's `IsEnabled` false
+gives the same as the forced `Disabled`. The header is `#99FFFFFF` dark, `#73000000` light, in every state.
+
+### How each popup is dismissed, and the AutoSuggestBox's events
+
+`20261116-1951-dev11` (`-Probe dismiss`, 51 cases) and `20261116-1955-dev11` (`-Probe dismissagain`, 17 cases: what
+the first missed; `dismiss` has since taken its menu taps, above and below the menu, in place of the one at 630 that
+landed on the menu's last item, and left the long dialog's drag to it), read with [`dismiss.py`](dismiss.py). Each case opens a popup from code 1.2 s before its touch:
+Back (F1, a `key` step), a 90 ms tap off the popup (on a Button, "under", below every popup that doesn't fill the
+screen, or the bare page), a tap on the popup, or on one of its parts. Times are milliseconds from the touch as
+planned, the animation clock's frames (`rt`) to a frame; a touch lands within about 80 ms of its plan. Every event of
+one popup below came in the order given; "in one frame" is the same RenderingTime.
+
+**Back**
+
+- **Back closes every popup**: the top and the full Flyout, MenuFlyout, ContentDialog, ListPickerFlyout (single and
+  multiple), PickerFlyout, DatePickerFlyout and TimePickerFlyout. `Closed` comes when the close is drawn: the top
+  Flyout 139 ms after the key (125 in a second case), the full Flyout 312, the menu at once (+1), the list pickers
+  427 to 453, PickerFlyout 318, the date and time pickers 244 and 247. A ContentDialog's `Closing` (result `None`),
+  `Closed` (`None`) and `ShowAsync`'s `None` come in one frame.
+- **A popup's Back never reaches the app**: `HardwareButtons.BackPressed` wasn't raised in any case with a popup or
+  the keyboard open. With nothing open it was, not handled (`Handled` false on entry). In the last case the app's
+  handler left Back unhandled: the top Flyout still closed and the app stayed.
+- **The keyboard takes Back first.** In a dialog with a focused TextBox, the first Back hid the keyboard and took the
+  focus from the TextBox, the dialog staying; the second closed it. In the AutoSuggestBox, one Back hid the keyboard,
+  closed the suggestion list and took the focus, all in one frame; the next reached the app.
+- The pickers' results on Back: ListPickerFlyout's `ShowAtAsync` returns null (in multiple, after an item was ticked
+  too), PickerFlyout's false, DatePickerFlyout's and TimePickerFlyout's null, each in `Closed`'s frame, with no
+  `ItemsPicked`, `Confirmed`, `DatePicked` or `TimePicked`.
+
+**Taps**
+
+| Popup | A tap off it | Reaches the page? | A tap on it |
+|---|---|---|---|
+| Flyout, top | closes it (`Closed` +45 ms) | no: neither the Button under it nor the page saw a press | on the flyout: stays open |
+| Flyout, full | (it fills the screen) | | on it: stays open |
+| MenuFlyout | on its layer above the menu or below it: closes it in that frame (−77 and −72 ms: the tap came early) | no | an item: its `Click`, then `Closed`, in one frame; a ToggleMenuFlyoutItem's `IsChecked` flips before its `Click` (true to false); the disabled item: nothing, it stays open |
+| ContentDialog | on the `#99000000` layer: nothing, it stays open | no | its body: nothing. A button: `PrimaryButtonClick` (or `Secondary…`, `Cancel` false), `Closing` with that result, `Closed`, then `ShowAsync`'s result, within one frame |
+| ListPickerFlyout, single | (fills the screen) | | an item: `ShowAtAsync`'s result (`[four]`) and `ItemsPicked` (added `four`, removed `two`, `SelectedIndex` 3) in one frame, `Closed` 447 ms later |
+| ListPickerFlyout, multiple | | | an item ticks or unticks it, nothing raised; accept: the result and `ItemsPicked` in one frame, `Closed` 483 ms later. With "two" ticked at the start, ticking "one" and unticking "two" gave added `[one]`, removed `[two]`, `SelectedItems` `[one]`, `SelectedIndex` 0, and the result `[one]`. Cancel: as Back |
+| PickerFlyout | | | accept: the result true and `Confirmed` in one frame, `Closed` 323 ms later; cancel: as Back |
+| DatePickerFlyout | | | accept: the result and `DatePicked` in one frame, `Closed` 253 ms later. **`DatePicked` comes even when nothing changed** (old and new 2014-07-15); after the month was dragged up one item, old 2014-07-15, new 2014-08-15. Cancel: as Back |
+| TimePickerFlyout | | | accept: as the date picker, `TimePicked` with old and new 12:30 unchanged |
+
+So a tap on the layer behind a popup ("dim") counts as a tap outside for MenuFlyout (it closes) and for nothing else
+read: the dialog's dim layer does nothing. No tap off a popup reached the page.
+
+**Events in order.** On 8.1 a flyout raises `Opening`, `Opened` and `Closed` (FlyoutBase has no `Closing` there;
+ContentDialog has `Opened`, `Closing` and `Closed`, and no `Opening`). `Opening` and `Opened` come in `ShowAt`'s or
+`ShowAtAsync`'s frame for every flyout; the dialog's `Opened` in `ShowAsync`'s. `Closed` comes when the close is drawn
+(above); a menu's at once.
+
+**A long menu** (24 items, filling the screen) doesn't move under a drag: the press went to the menu's popup (handled)
+and its first item stayed at 16.67. **The long dialog's** template has no ScrollViewer (its content panel is 1,094.58
+tall in an 800 dialog, clipped); the drag on it wasn't read, as both times the dialog opened, the page's AutoSuggestBox
+took the focus and the keyboard came up (its top at 390.42, above the dialog's bar), and the drag typed on it.
+
+**The AutoSuggestBox** (on the page at y 70; the probe answers each `UserInput` change with the fruits starting with
+the text as `ItemsSource`):
+
+1. A tap on the box: `GotFocus`, then the keyboard's `Showing` (0, 453.33, 450 × 346.67) in the same frame, and a frame
+   later the box at the window's top (its TextBox part from 70 to 0).
+2. A key: `KeyDown` at the tap, `TextChanged` with `UserInput` 150 to 177 ms later (the keyboard capitalises the first
+   letter: "A"). Setting `ItemsSource` in the handler opens the list (`IsSuggestionListOpen` true at once); with text
+   in it the box sits at 5.83 to 6.25, the list from 2.5 above the TextBox part's bottom (69.17), 151.25 tall for three
+   suggestions, 102.5 for two.
+3. A tap on a suggestion ("apricot", with "Ap" typed): `SuggestionChosen` ("apricot", `Text` still "Ap", the list still
+   open), the TextBox losing and regaining the focus in the same frame, then `TextChanged` with `SuggestionChosen` and
+   `Text` "apricot" 162 ms later, the list closed. The keyboard stays.
+4. Enter on the keyboard: `KeyDown` Enter, nothing else: no `TextChanged`, the keyboard stays. (`QuerySubmitted` is
+   Windows 10's.)
+5. `Text` set from code: `TextChanged` with `ProgrammaticChange` at once.
+6. A tap on the page off the box and list: the box loses the focus, the keyboard and list go, no `TextChanged`.
+7. Back: as above.
 
 ## Popup pixels
 

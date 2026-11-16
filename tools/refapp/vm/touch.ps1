@@ -7,6 +7,8 @@
 #   move <x> <y>    move there, pressed or not
 #   up <x> <y>      move there and release
 #   wait <ms>
+#   key <vk>        press and release a key on the PC's keyboard, a virtual-key code, with the emulator in front: the
+#                   emulator maps some to the phone's keys (F1, 112, is Back)
 # A view point lands on the display window (class OPWindowClass), which shows the phone's whole display at the
 # window's zoom, so one window pixel is (view width / window width) view pixels: about 0.82 at the zoom that
 # fits a 1440-high screen. The app logs the positions it actually got.
@@ -47,6 +49,8 @@ public static class XdeMouse {
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+    [DllImport("user32.dll")] static extern uint MapVirtualKey(uint code, uint type);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint ms);
     [DllImport("winmm.dll")] public static extern uint timeEndPeriod(uint ms);
@@ -92,10 +96,18 @@ public static class XdeMouse {
     public static void PostUp(IntPtr h, int x, int y) { _down = false; PostMessage(h, WM_LBUTTONUP, IntPtr.Zero, Point(x, y)); }
 
     // Real: screen coordinates.
-    public static void Front(IntPtr h) { SetForegroundWindow(GetAncestor(h, 2)); }
+    public static bool Front(IntPtr h) { return SetForegroundWindow(GetAncestor(h, 2)); }
     public static void RealMove(int x, int y) { SetCursorPos(x, y); }
     public static void RealDown() { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); }
     public static void RealUp() { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); }
+
+    // A key, pressed and released 80 ms later, to whatever has the keyboard: the emulator, once in front.
+    public static void Key(int vk) {
+        var scan = (byte)MapVirtualKey((uint)vk, 0);
+        keybd_event((byte)vk, scan, 0, UIntPtr.Zero);
+        System.Threading.Thread.Sleep(80);
+        keybd_event((byte)vk, scan, 2, UIntPtr.Zero);
+    }
 }
 '@
 
@@ -112,7 +124,7 @@ if ($chosen.Count -ne 1) { Log "failed: $($chosen.Count) display windows belong 
 $window = $chosen[0].Key
 $left, $top, $width, $height = [XdeMouse]::Client($window)
 if ($RectOnly) {
-    [XdeMouse]::Front([IntPtr]$window)
+    [void][XdeMouse]::Front([IntPtr]$window)
     Log "display window at $left,$top, $width x $height"
     "rect $left $top $width $height"
     exit 0
@@ -128,7 +140,7 @@ Log ("display window at {0},{1}, {2} x {3}; view {4} x {5}; {6:0.####} x {7:0.##
 # Each step runs at its own time from the start, so the time the steps take doesn't add up; the log is kept in
 # memory and written at the end, for the same reason.
 $steps = New-Object System.Collections.Generic.List[string]
-if ($Mode -eq 'real') { [XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
+if ($Mode -eq 'real') { [void][XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
 Log "playing $($lines.Count - 1) lines"
 # The system timer ticks every 15.6 ms unless asked for 1 ms, and a sleep of 1 ms lasts a tick: without it the steps of
 # a fast flick, 10 ms apart, bunched up (2026-11-15). With it a 1 ms sleep is about 1 ms, so the loop sleeps until 2 ms
@@ -144,6 +156,15 @@ try {
             if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
         }
 
+        if ($parts[0] -eq 'key') {
+            # Keys go to the window in front, so a key step brings the emulator to the front even in post mode. If that
+            # fails the key goes elsewhere: the step says so in the log.
+            $front = [XdeMouse]::Front([IntPtr]$window)
+            [XdeMouse]::Key([int]$parts[1])
+            $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2}{3}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $(if ($front) { '' } else { ' (the emulator did not come to the front)' })))
+            continue
+        }
+
         $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
         $y = [int][Math]::Round([double]::Parse($parts[2], $inv) * $sy)
         if ($Mode -eq 'post') {
@@ -154,7 +175,7 @@ try {
             }
         }
         else {
-            if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
+            if ($parts[0] -eq 'down') { [void][XdeMouse]::Front([IntPtr]$window) }
             [XdeMouse]::RealMove($left + $x, $top + $y)
             if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
             elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }

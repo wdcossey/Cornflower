@@ -140,6 +140,12 @@ namespace RefApp
                 case "looping":
                     await probe.LoopingProbe(host);
                     break;
+                case "dismiss":
+                    await probe.DismissProbe(host);
+                    break;
+                case "dismissagain":
+                    await probe.DismissProbe(host, true);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;
@@ -891,6 +897,13 @@ namespace RefApp
                 if (s.Verb == "wait")
                 {
                     text.Append("wait ").Append(Num(s.X)).Append('\n');
+                    continue;
+                }
+
+                // A key on the PC's keyboard, which the emulator maps to a phone key (F1 is Back): its virtual-key code.
+                if (s.Verb == "key")
+                {
+                    text.Append("key ").Append(Num(s.X)).Append('\n');
                     continue;
                 }
 

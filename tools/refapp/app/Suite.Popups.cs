@@ -59,7 +59,7 @@ namespace RefApp
                     _errors.Add(baseName + ": " + fault);
                 }
 
-                if (popups.Count == 0 && p.Fault == null)
+                if (popups.Count == 0 && p.Fault == null && !p.NoPopup)
                 {
                     _errors.Add(baseName + ": no popup open");
                 }
