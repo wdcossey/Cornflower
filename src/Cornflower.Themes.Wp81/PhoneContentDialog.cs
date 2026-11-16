@@ -57,6 +57,15 @@ internal static class PhoneContentDialog
     /// <summary>The dialogs shown now, each with its binder.</summary>
     private static readonly List<Binder> Shown = [];
 
+    /// <summary>
+    /// Adds the Back handler as the module loads: a class handler runs in the order it was added, and the hosts' is added
+    /// when the first host is made.
+    /// </summary>
+#pragma warning disable CA2255 // A library's module initializer: the one way to come before PhonePopupHost's class handler.
+    [ModuleInitializer]
+#pragma warning restore CA2255
+    internal static void TakeBack() => TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
+
     static PhoneContentDialog()
     {
         IsEnabledProperty.Changed.AddClassHandler<ContentDialog>((dialog, _) => Update(dialog));
@@ -74,15 +83,6 @@ internal static class PhoneContentDialog
     /// <summary>The dialog's angle <paramref name="time"/> into its opening, in degrees: 0 at rest.</summary>
     internal static double OpeningAngle(TimeSpan time) =>
         time >= OpenLength ? 0 : PhoneEase.Remaining(OpenFrom, OpenExponent, time, OpenLength);
-
-    /// <summary>
-    /// Adds the Back handler as the module loads: a class handler runs in the order it was added, and the hosts' is added
-    /// when the first host is made.
-    /// </summary>
-#pragma warning disable CA2255 // A library's module initializer: the one way to come before PhonePopupHost's class handler.
-    [ModuleInitializer]
-#pragma warning restore CA2255
-    internal static void TakeBack() => TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
 
     private static void Update(ContentDialog dialog)
     {

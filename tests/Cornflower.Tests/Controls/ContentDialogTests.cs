@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
@@ -623,6 +625,11 @@ public class ContentDialogTests
         {
             flyout.Dispose();
         }
+
+        // Which comes first can't be shown in one test process, where whichever was made first stays: so the handler is
+        // added as the module loads, before any host can be made.
+        var take = typeof(PhoneContentDialog).GetMethod(nameof(PhoneContentDialog.TakeBack), BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(take!.GetCustomAttribute<ModuleInitializerAttribute>());
 
         using var stage = new Stage();
         stage.Dialog.Closing += (_, e) => e.Cancel = true;
