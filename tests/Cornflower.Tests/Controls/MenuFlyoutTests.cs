@@ -593,4 +593,28 @@ public class MenuFlyoutTests
         Assert.True(stage.Bounds().Height > FourItemHeight);
         Near(Placements[1].TargetTop, stage.Bounds().Bottom);
     }
+
+    [AvaloniaFact]
+    public void A_Target_Past_The_Windows_Bottom_Keeps_The_Menu_In_The_Window()
+    {
+        using var stage = new Stage(targetTop: 850);
+        stage.OpenAtRest();
+
+        Near(FullWindow.Bottom, stage.Bounds().Bottom);
+    }
+
+    [AvaloniaFact]
+    public void An_ItemContainerTheme_Set_After_The_Menu_Has_Opened_Wins()
+    {
+        var containers = new ControlTheme(typeof(MenuItem));
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        stage.Flyout.Hide();
+        Assert.Same(stage.Scene.Window.FindResource("Wp81MenuFlyoutItemTheme"), stage.Item(0).Theme);
+
+        stage.Flyout.ItemContainerTheme = containers;
+        stage.OpenAtRest();
+
+        Assert.Same(containers, stage.Item(0).Theme);
+    }
 }

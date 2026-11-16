@@ -81,6 +81,8 @@ the menu's height (`PhoneMenuFlyoutRoot`). No type is substituted.
   target has its top that much lower.
 - **Landscape** isn't drawn as the phone's (`LeftLandscape`, `RightLandscape`: the menu along a side, its own padding):
   there is no landscape capture. In landscape it is placed and opens as in portrait.
+- **Sub-menus.** A `MenuItem` with items of its own shows no sub-menu in a MenuFlyout: a tap on it does nothing and the
+  menu stays (8.1 has no sub-menus; the item template has no popup part).
 - **The full-window layer** under the menu goes with it; the phone's goes about 300 ms later. It draws nothing.
 - **The host** (`PhonePopupHost`) has no switch yet for a popup with a motion of its own, so `PhoneMenuFlyout` gives
   its band motion a stand-in and closes the menu itself on Back (the PR's "Proposed for shared files").

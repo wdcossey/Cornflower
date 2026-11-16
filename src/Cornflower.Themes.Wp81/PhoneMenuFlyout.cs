@@ -77,8 +77,10 @@ internal static class PhoneMenuFlyout
             if (change.GetNewValue<bool>() && presenter.Parent is Popup popup)
                 Binders.Add(presenter, new Binder(presenter, popup));
         });
-        ItemThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Retheme(presenter));
-        SeparatorThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Retheme(presenter));
+        // From the dispatcher too: a theme going unsets these, and re-styling the items in the middle of that would be
+        // the same trouble.
+        ItemThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Dispatcher.UIThread.Post(() => Retheme(presenter)));
+        SeparatorThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Dispatcher.UIThread.Post(() => Retheme(presenter)));
         FlyoutBase.IsOpenProperty.Changed.AddClassHandler<MenuFlyout>((flyout, change) =>
         {
             if (change.GetNewValue<bool>() && flyout.Popup.Child is MenuFlyoutPresenter presenter
@@ -119,7 +121,7 @@ internal static class PhoneMenuFlyout
         private readonly MenuFlyoutPresenter _presenter;
         private readonly Popup _popup;
         private readonly TemplateParts _parts;
-        private readonly Dictionary<Control, IDisposable> _themed = [];
+        private readonly Dictionary<Control, (ControlTheme Theme, IDisposable Given)> _themed = [];
         private readonly ScaleTransform _outerScale = new();
         private readonly ScaleTransform _innerScale = new();
         private readonly List<IDisposable> _moving = [];
@@ -170,7 +172,7 @@ internal static class PhoneMenuFlyout
             OnClosed(null, EventArgs.Empty);
             Host.Dispose();
             _parts.Dispose();
-            foreach (var given in _themed.Values)
+            foreach (var (_, given) in _themed.Values)
                 given.Dispose();
             _themed.Clear();
             if (closing)
@@ -199,8 +201,6 @@ internal static class PhoneMenuFlyout
 
         private void GiveTheme(Control container)
         {
-            if (_themed.Remove(container, out var old))
-                old.Dispose();
             var theme = container switch
             {
                 MenuItem => GetItemTheme(_presenter),
@@ -209,11 +209,26 @@ internal static class PhoneMenuFlyout
             };
             // An app's ItemContainerTheme (the flyout's, given to the presenter) is set as the container is prepared, at
             // no priority of its own that a style's value wouldn't replace: it is left alone.
-            if (_presenter.ItemContainerTheme is { TargetType: { } type } && type.IsAssignableFrom(container.StyleKey))
-                return;
+            var appTheme = _presenter.ItemContainerTheme is { TargetType: { } type } && type.IsAssignableFrom(container.StyleKey)
+                ? _presenter.ItemContainerTheme
+                : null;
+            if (appTheme is not null)
+                theme = null;
+            if (_themed.TryGetValue(container, out var old))
+            {
+                // The same theme again (a container prepared again, or the other item theme changed): kept, not re-styled.
+                if (old.Theme == theme)
+                    return;
+                _themed.Remove(container);
+                old.Given.Dispose();
+                // Prepared with ours on it, the container didn't take the app's ItemContainerTheme: given as Avalonia gives it.
+                if (appTheme is not null && !container.IsSet(StyledElement.ThemeProperty))
+                    container.SetCurrentValue(StyledElement.ThemeProperty, appTheme);
+            }
+
             // At style priority: an app's own Theme wins.
             if (theme is not null && container.SetValue(StyledElement.ThemeProperty, theme, BindingPriority.Style) is { } given)
-                _themed[container] = given;
+                _themed[container] = (theme, given);
         }
 
         private void OnContainerPrepared(object? sender, ContainerPreparedEventArgs e) => GiveTheme(e.Container);
@@ -221,7 +236,7 @@ internal static class PhoneMenuFlyout
         private void OnContainerClearing(object? sender, ContainerClearingEventArgs e)
         {
             if (_themed.Remove(e.Container, out var given))
-                given.Dispose();
+                given.Given.Dispose();
         }
 
         private void Take(Func<string, Control?> part)
@@ -328,7 +343,8 @@ internal static class PhoneMenuFlyout
             }
             else
             {
-                top = Math.Max(area.Y, targetTop - height);
+                // Kept inside the window, a target past its bottom too.
+                top = Math.Clamp(targetTop - height, area.Y, area.Bottom - height);
                 _above = true;
             }
 
