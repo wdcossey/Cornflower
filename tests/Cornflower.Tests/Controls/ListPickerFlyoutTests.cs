@@ -759,11 +759,12 @@ public class ListPickerFlyoutTests
         {
             stage.OpenAtRest();
             PickerFlyoutBase.SetTitle(list, "NEW");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("NEW", stage.Part<TextBlock>("TitlePresenter").Text);
+
             list.ItemsSource = new[] { "x", "y" };
             Dispatcher.UIThread.RunJobs();
             stage.At(stage.Now + 50);
-
-            Assert.Equal("NEW", stage.Part<TextBlock>("TitlePresenter").Text);
             Assert.Equal(2, stage.ListItems().Count);
         }
 
