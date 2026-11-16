@@ -711,6 +711,14 @@ public class ListViewTests
             Assert.Null(box.RenderTransform);
             Assert.Equal(TiltState.Rest, CfTilt.Current(item));
         }
+
+        // The mouse's left button, the same.
+        page.Window.MouseDown(BoxPress, MouseButton.Left);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotNull(box.RenderTransform);
+        page.Window.MouseUp(BoxPress, MouseButton.Left);
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
     }
 
     // A pan from a press on the box takes the pointer from the item: the box is at rest at once, and nothing is checked.

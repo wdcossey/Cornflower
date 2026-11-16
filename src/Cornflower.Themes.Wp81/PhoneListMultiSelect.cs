@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
@@ -35,7 +34,7 @@ namespace Cornflower.Themes.Wp81;
 /// content tilts and the box stays flat. A move of the finger doesn't re-aim the box's tilt (not read). The screen's
 /// centre is taken into the item's space as <c>TranslatePoint</c> takes it, through any tilt an ancestor shows, which
 /// <see cref="Tilt"/> leaves out: a list inside a pressed, tilting control isn't the phone's case. It costs a class
-/// handler per pointer press, release and capture lost on an item, which does nothing out of the check mode.</para>
+/// handler per pointer press and capture lost on an item, which does nothing out of the check mode.</para>
 /// </remarks>
 internal static class PhoneListMultiSelect
 {
@@ -56,9 +55,10 @@ internal static class PhoneListMultiSelect
 
     static PhoneListMultiSelect()
     {
-        // Bubbling, so after the item's own tilt (a tunnelling handler) has taken the press: it is then put back.
+        // Bubbling, so after the item's own tilt (a tunnelling handler) has taken the press: it is then put back. A press
+        // holds the pointer until it is let go, so the release, a pan taking it, or anything else that takes it ends the
+        // box's press as the pointer's capture goes.
         InputElement.PointerPressedEvent.AddClassHandler<ListBoxItem>(OnPressed, handledEventsToo: true);
-        InputElement.PointerReleasedEvent.AddClassHandler<ListBoxItem>(OnReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerCaptureLostEvent.AddClassHandler<ListBoxItem>(OnCaptureLost, handledEventsToo: true);
         IsOnProperty.Changed.AddClassHandler<ListBoxItem>((item, e) =>
         {
@@ -101,12 +101,6 @@ internal static class PhoneListMultiSelect
         item.SetValue(PressProperty, press);
         item.SetValue(IsBoxPressedProperty, true);
         press.Step();
-    }
-
-    private static void OnReleased(ListBoxItem item, PointerReleasedEventArgs e)
-    {
-        if (item.GetValue(PressProperty) is { } press && ReferenceEquals(press.Pointer, e.Pointer))
-            Release(item);
     }
 
     private static void OnCaptureLost(ListBoxItem item, PointerCaptureLostEventArgs e)
