@@ -386,12 +386,7 @@ namespace RefApp
 
             WatchHub(hub, sv, headerHost, parts);
             var y = 500.0;
-            Func<Task> start = () =>
-            {
-                var ok = sv.ChangeView(0, null, null, true);
-                Log("setup", "offset 0" + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
+            var start = OffsetX(sv, 0);
             Func<Task> none = () => Task.FromResult(true);
             for (var i = 0; i < 3; i++)
             {
@@ -401,12 +396,7 @@ namespace RefApp
             Swipe(hub, "swipe right", none, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
             Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, dx: -150, moveMs: 500, holdMs: 300, gapMs: 3000);
             // To the end and past it (#136): the offset set to the end from code, then a swipe left there and one back.
-            Func<Task> end = () =>
-            {
-                var ok = sv.ChangeView(sv.ScrollableWidth, null, null, true);
-                Log("setup", "offset " + Num(sv.ScrollableWidth) + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
+            var end = OffsetX(sv, double.MaxValue);
             Swipe(hub, "swipe left at the end", end, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
             Swipe(hub, "swipe right from the end", end, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
 

@@ -794,8 +794,17 @@ def hub_entrance_fit():
         code, out = run_script('entrance.py', run)
     assert code == 0, out
     assert 'RotationY -90 at tick 0, 0 at tick 48 (750.0 ms of rt)' in out, out
-    assert 'ExponentialEase 5.00 over 750.0 ms' in out, out
+    assert 'ExponentialEase 5.00 over 750.0 ms, the first frame its start' in out, out
     assert 'The 2 entrances have the same RotationY on every tick each shows' in out, out
+    # A turn the segment cuts off before 0 isn't fitted.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as fp:
+            fp.write('5000.0\tstep\tplace a Hub, cut off\n')
+            for k in range(20):
+                fp.write(line % (5020 + 15 * k, 5000 + ml.TICK * k, round(-90 * (1 - f(k * ml.TICK / 750)), 3)))
+        code, out = run_script('entrance.py', run)
+    assert code == 0, out
+    assert 'place a Hub, cut off: RotationY -90 at tick 0, never back to 0 in the segment' in out, out
 
 
 for fn in checks:

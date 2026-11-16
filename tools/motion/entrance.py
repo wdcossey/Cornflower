@@ -10,8 +10,9 @@ opacity, the header's and the first section's left edges and the background grid
 For each Hub placed (each `step` that starts "place a Hub"), it prints:
 - the RotationY a frame, from the first frame where it isn't 0 to the first where it is 0 again, with the frames
   counted on rt (one a 15.625 ms step), and the projection's other values where they aren't 0;
-- the RotationY as a fraction of its first value, fitted with an ExponentialEase (out) whose exponent and duration are
-  searched on a grid, the first value at tick 0 of the curve; and its ratio a tick at the start;
+- an ExponentialEase (out) fitted to the RotationY as a fraction of its first value, the first frame the ease's start
+  (`fit` says why); and the ratio a tick at the start. An entrance that never gets back to 0 in its segment is said so
+  and not fitted;
 - the background grid at the end: its size and left edge.
 Then whether every Hub's entrance had the same values a frame.
 
@@ -49,21 +50,21 @@ def entrance(seg):
 
 
 def fit(curve):
-    """The ExponentialEase (exponent, duration ms, rms) whose remaining fraction fits the curve's fractions of its
-    first value best, the first at tick 0: exponents 1 to 12 by 0.05, durations 500 to 1500 ms by 15.625 / 4."""
+    """The ExponentialEase (out) whose remaining fraction fits the curve's fractions of its first value best, the first
+    frame at the curve's start: (exponent, duration ms, rms of the first value). A grid (exponents 1 to 12 by 0.25,
+    durations 500 to 1500 ms by a tick), then both moved off it by Nelder-Mead.
+
+    The first frame is taken as the ease's start, not fitted: an ExponentialEase's start, exponent and duration trade
+    off so closely that a fit with all of them free finds another ease within 0.00001 (a synthetic 5 over 750 ms read a
+    tick late fits 4.93 over 740 ms, 0.34 ticks in). On the phone the first frame is -120 on every placement, a round
+    value, which points to it being the start."""
     first = curve[0][1]
     ticks = [k for k, _ in curve]
     fracs = [v / first for _, v in curve]
-    best = None
-    for i in range(20, 241):
-        k = i / 20
-        f = ml.expo_out(k)
-        for j in range(128, 385):
-            d = j * ml.TICK / 4
-            r = ml.rms(ml.fraction_residuals(fracs, f, d, 0, ticks))
-            if best is None or r < best[2]:
-                best = (k, d, r)
-    return best
+    cost = lambda x: ml.rms(ml.fraction_residuals(fracs, ml.expo_out(x[0]), x[1], 0, ticks)) if x[0] > 0 and x[1] > 0 else 1e9
+    grid = min((cost((i / 4, j * ml.TICK)), i / 4, j * ml.TICK) for i in range(4, 49) for j in range(32, 97))
+    r, (k, d) = ml.minimize(cost, [grid[1], grid[2]], [0.25, ml.TICK])
+    return k, d, r
 
 
 def main():
@@ -78,6 +79,10 @@ def main():
             print('\n%s: no frame with the Hub turned' % label)
             continue
         curve, start, last = got
+        if curve[-1][1] != 0:
+            print('\n%s: RotationY %s at tick 0, never back to 0 in the segment (%g at tick %d); not fitted'
+                  % (label, start.group(3), curve[-1][1], curve[-1][0]))
+            continue
         seen.append(curve)
         print('\n%s: RotationY %s at tick 0, 0 at tick %d (%.1f ms of rt), %d frames'
               % (label, start.group(3), curve[-1][0], curve[-1][0] * ml.TICK, len(curve)))
@@ -86,7 +91,7 @@ def main():
         print('  ' + ' '.join('%d:%.3f' % c for c in curve[:12]) + ' ...')
         ratios = [b / a for (ka, a), (kb, b) in zip(curve, curve[1:6]) if kb == ka + 1 and a]
         k, d, r = fit(curve)
-        print('  a tick at the start: %s; ExponentialEase %.2f over %.1f ms, rms %.5f of the first value'
+        print('  a tick at the start: %s; ExponentialEase %.2f over %.1f ms, the first frame its start, rms %.5f of the first value'
               % (' '.join('%.4f' % x for x in ratios), k, d, r))
         print('  at the end: header %s, section 1 %s; background grid %s x %s at %s, opacity %s'
               % (last.group(12), last.group(14), last.group(16), last.group(17), last.group(18), last.group(15)))

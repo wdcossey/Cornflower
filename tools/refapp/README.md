@@ -919,7 +919,7 @@ to about a frame.
 | Hub's background rate and the header's 420 ms ease after the loop (#136) | frames: `RenderingTime` | as given; the jump's time after the press is the stopwatch's |
 | The app bar's opening and closing, its time constants and settle times (#136) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | Where a Pivot's or Hub's release goes: the release times, and the item events' times after `SelectionChanged` (#148) | the stopwatch, with touch.log's press-to-release times put on it by the start tap | left as read |
-| `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` 4.60 over 1,000 ms (#148) | frames: `RenderingTime` | as given |
+| `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` 4.61 over 1,000 ms (#148) | frames: `RenderingTime` | as given |
 | The light app bar's motion, and the long list's scroll (#148) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
@@ -1164,7 +1164,8 @@ during the entrance. `tools/motion/pivot.py` prints the numbers below; the recor
 
 `20261116-1706-dev11` (`-Probe pivotrelease`): the four-item Pivot of `-Probe pivot`, item 0 selected from code before
 each touch. `20261116-1714-dev11` (`-Probe hubrelease`): the four-section Hub of `-Probe hub`, its offset set from code
-before each touch. The drags are held still 400 ms before the release (a release with no speed), or let go while still
+before each touch; again after review, `20261116-1751-dev11`, with the layout lines read after the entrance. The Hub's
+numbers below cover both runs. The drags are held still 400 ms before the release (a release with no speed), or let go while still
 moving at a set speed. `tools/motion/release.py` prints the numbers below. The ScrollViewer takes the touch once it pans,
 so the release isn't in the app's log: its time comes from `touch.log`, put on the app's clock by the start tap. The
 offset at the release is the first inertial `ViewChanging`'s `next`; the speed is a straight line through the drag's
@@ -1191,15 +1192,17 @@ Right drags do the same, the other way: 201.0 held goes back, 245.4 held on, 60 
   speed × T, passes H. Here T is between 350 and 420 ms, and H is between 228.3 and 239.3 px.
 - A release moving back the other way goes back.
 
-**Where a Hub's release goes** (a section is 405 px): held still, 70.0 and 125.2 px go back, and 211.6 to 267.5 px go on
-(the probe's 190 px drag reached 214.9). Let go moving after 60 px (28.7 to 36.2 px at the release), speeds of 0.09 to
-0.30 px/ms read go back, and 0.39 px/ms and faster go on. From the second section, 60 px right at 0.2 goes back and at
+**Where a Hub's release goes** (a section is 405 px): held still, 67.0 to 125.2 px go back, and 211.6 to 276.1 px go on
+(the probe's 190 px drag reached 214.9 and 227.7). Let go moving after 60 px (26.8 to 44.0 px at the release), speeds
+of 0.09 to 0.30 px/ms read go back, and 0.39 px/ms and faster (planned 0.4) go on. From the second section, 60 px right at 0.2 goes back and at
 0.6 on, to the first.
 
 **A press while it moves catches it**, on both. In each case a swipe left (200 px in 150 ms) is followed by a second
-press, 30 to 360 ms after its release. That press stops the offset where it is: the offset moves 0 to 0.9 px over a 600 ms
-press. On the second release the offset goes on to the next page or section. Those presses came with the offset 245 to
-443 px into a Pivot page, and 223 to 391 px into a Hub section, past half each time. A 80 ms tap does the same.
+press, 30 to 360 ms after its release. That press stops the offset within a frame: no `ViewChanging` comes from it
+until the release, and the offset moves at most one frame's step (0 to 6.1 px on the Pivot, 0 to 5.1 on the Hub, over
+a 600 ms press; 0 every time on the Hub's second run). On the second release the offset goes on to the next page or section. Those presses came with the
+offset 245 to 443 px into a Pivot page, and 220 to 393 px into a Hub section, past half each time. An 80 ms tap does the
+same (22.3 px on the Pivot and 20.8 or 0 on the Hub: at most one frame of the swipe's speed).
 
 **A drag right at the Hub's first section loops backwards.** The offset stays 0, and the sections move with the finger:
 section 1 to 144 px for a 150 px drag. Once section 1 is between 35 and 50 px in, sections 2 to 4 are laid out to the left of
@@ -1209,7 +1212,7 @@ carries on: the offset ends at 1,215.4, the end, which shows the last section. T
 px a frame, mirroring the loop forward.
 
 **`ScrollToSection` doesn't animate.** From offset 0 to sections 3, 2, 4 and 1, the offset is 810, 405, 1,215 and 0 on
-the call's return and on the next frame, with no frame between.
+the call's return and on the next frame, with no frame between, in both runs.
 
 **The Pivot's item events come together, right after the selection.** Every one of the 31 selection changes in the run
 is followed by `PivotItemUnloading` (the item left), `PivotItemUnloaded` (the same), `PivotItemLoading` (the item
@@ -1230,7 +1233,9 @@ events come before the new item has slid in.
 
 `20261116-1721-dev11` (`-Probe hubentrance -Record`) places a Hub three times, each from code on a page with only the
 header band: with no background, with a plain colour (`#FF603090`), swiped left and back, and with a 1600 × 800 image.
-`tools/motion/entrance.py` prints the entrance. `20261116-1720-dev11` (`-Probe hubstretch`) gives the Hub's `Background`
+`tools/motion/entrance.py` prints the entrance. `20261116-1720-dev11` and, after review, `20261116-1754-dev11` (`-Probe
+hubstretch`; the second gives each brush a picture of its own, loaded afresh, and reads the layout after the entrance:
+the same sizes and places) give the Hub's `Background`
 a series of `ImageBrush`es: a 900 × 400 picture at `Fill`, `None`, `Uniform` and `UniformToFill`, then a 300 × 400 one
 at `Fill` and `None`. Each brush is read at offsets from 0 to the end, and the page is rendered at 0, 585 and the end
 (`stretch-*.png` in the run).
@@ -1238,15 +1243,16 @@ at `Fill` and `None`. Each brush is read at offsets from 0 to the end, and the p
 - **The entrance turns the Hub in.** The template's `EntranceAnimationProjection` (on `HubRoot`) has `RotationY` −120° on
   the first frame and reaches 0 on the 64th tick after, 1,000 ms of animation time. `CenterOfRotationX` is −0.5, the
   axis half the Hub's width to its left; nothing else in the projection moves, and no opacity changes. The values are
-  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent 4.60, out) over 1,000 ms
-  to 0.00023 of the first value. The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
+  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent 4.61, out) over 1,000 ms
+  to under 0.00001 of the first value, the first frame taken as its start (`entrance.py` says why it isn't fitted). The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
   draws it: the header and the first section are carried with it, and both are at rest when `RotationY` is 0.
 - **With no background**, the `Background` grid is 0 × 800.
 - **A plain colour** fills a grid the view's width by the window's height: 450 × 800 (the Hub is 740 tall here). It
   stays at 0 while the sections move, swiped and looped.
 - **`BackgroundImageLoadStates`** goes to `BackgroundShowing` 88 to 92 ms after `Loaded`, through
   `BackgroundImageFadingIn`, with the colour as with the image. An image given to a Hub already on the screen (in the
-  stretch run) went `BackgroundHidden` > `BackgroundImageFadingIn` and stayed there for the rest of the run. The `Background` grid's
+  stretch runs) went `BackgroundHidden` > `BackgroundImageFadingIn` and stayed there for the rest of the run, through
+  six more brushes, each of which raised `ImageOpened` (`20261116-1754-dev11`). The `Background` grid's
   opacity reads 1 every frame throughout: `FadeInThemeAnimation` runs where the app can't read it. #136's run went from
   `BackgroundHidden` straight to `BackgroundShowing`.
 - **`Stretch` is the brush's own, in a box the image's pixel width by 800.** With the 900 × 400 picture the parts are

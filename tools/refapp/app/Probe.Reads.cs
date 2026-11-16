@@ -24,6 +24,22 @@ namespace RefApp
         private static double MoveMs(double distance, double speed) => Math.Abs(distance) / speed;
 
         /// <summary>
+        /// A setup that sets a ScrollViewer's horizontal offset from code at once, clamped to the content (double.MaxValue
+        /// for the end), and logs it as "offset N": <see cref="Offset"/> across.
+        /// </summary>
+        private Func<Task> OffsetX(ScrollViewer sv, double offset)
+        {
+            return () =>
+            {
+                var target = Math.Min(offset, sv.ScrollableWidth);
+                // ChangeView returns false when the offset is already there.
+                var ok = sv.ChangeView(target, null, null, true);
+                Log("setup", "offset " + Num(target) + (ok ? "" : " (ChangeView returned false)"));
+                return Task.FromResult(true);
+            };
+        }
+
+        /// <summary>
         /// A second touch inside the touch just planned, with no setup of its own (so no step cuts the log between them):
         /// pressed at (x, y), held still for <paramref name="holdMs"/>, released; <paramref name="gapMs"/> before the next.
         /// Planned straight after a touch whose own gap is how long after its release this one presses.
@@ -171,13 +187,10 @@ namespace RefApp
             }
 
             LogPointers(hub, "hub");
+            // The layout lines once the entrance is over, not under its projection.
+            await Task.Delay(1500);
             WatchHub(hub, sv, headerHost, new FrameworkElement[0]);
-            Func<double, Func<Task>> at = offset => () =>
-            {
-                var ok = sv.ChangeView(offset, null, null, true);
-                Log("setup", "offset " + Num(offset) + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
+            Func<double, Func<Task>> at = offset => OffsetX(sv, offset);
             var start = at(0);
             const double y = 500, gap = 3000;
             foreach (var d in new[] { 100.0, 150, 190, 200, 205, 215, 250 })
@@ -362,31 +375,33 @@ namespace RefApp
 
             WatchStates(hub);
             var parts = new[] { bg, wrap, main };
+            // The layout lines once the entrance is over, not under its projection.
+            await Task.Delay(1500);
             WatchHub(hub, sv, headerHost, parts);
-            var wide = await StripeImage(900, 400, "hub-900.png");
-            var narrow = await StripeImage(300, 400, "hub-300.png");
             var configs = new[]
             {
-                new { Name = "fill-900", Stretch = Stretch.Fill, Image = wide },
-                new { Name = "none-900", Stretch = Stretch.None, Image = wide },
-                new { Name = "uniform-900", Stretch = Stretch.Uniform, Image = wide },
-                new { Name = "uniformtofill-900", Stretch = Stretch.UniformToFill, Image = wide },
-                new { Name = "fill-300", Stretch = Stretch.Fill, Image = narrow },
-                new { Name = "none-300", Stretch = Stretch.None, Image = narrow },
+                new { Name = "fill-900", Stretch = Stretch.Fill, Width = 900 },
+                new { Name = "none-900", Stretch = Stretch.None, Width = 900 },
+                new { Name = "uniform-900", Stretch = Stretch.Uniform, Width = 900 },
+                new { Name = "uniformtofill-900", Stretch = Stretch.UniformToFill, Width = 900 },
+                new { Name = "fill-300", Stretch = Stretch.Fill, Width = 300 },
+                new { Name = "none-300", Stretch = Stretch.None, Width = 300 },
             };
             foreach (var config in configs)
             {
                 var c = config;
-                Code("background " + c.Name, () =>
+                Code("background " + c.Name, async () =>
                 {
+                    // A new picture for each brush, so that each loads afresh: a BitmapImage already opened raises no
+                    // ImageOpened on the next brush it is given to.
+                    var image = await StripeImage(c.Width, 400, "hub-" + c.Name + ".png");
                     var brush = new ImageBrush { Stretch = c.Stretch };
                     brush.ImageOpened += (s, e) => Log("image", "opened, " + c.Name + ", background opacity " + Num(bg.Opacity));
                     brush.ImageFailed += (s, e) => Log("image", "failed, " + c.Name + ": " + e.ErrorMessage);
-                    brush.ImageSource = c.Image;
+                    brush.ImageSource = image;
                     hub.Background = brush;
-                    var ok = sv.ChangeView(0, null, null, true);
-                    Log("setup", "background " + c.Name + ", Stretch " + c.Stretch + ", offset 0" + (ok ? "" : " (ChangeView returned false)"));
-                    return Task.FromResult(true);
+                    Log("setup", "background " + c.Name + ", Stretch " + c.Stretch);
+                    await OffsetX(sv, 0)();
                 }, 2000);
                 foreach (var offset in new[] { 0.0, 200, 400, 585, 800, 1000, 1170, double.MaxValue })
                 {
@@ -394,9 +409,7 @@ namespace RefApp
                     var shot = o == 0 || o == 585 || o == double.MaxValue;
                     Code(c.Name + ": offset " + (o == double.MaxValue ? "end" : Num(o)), async () =>
                     {
-                        var target = Math.Min(o, sv.ScrollableWidth);
-                        var ok = sv.ChangeView(target, null, null, true);
-                        Log("setup", "offset " + Num(target) + (ok ? "" : " (ChangeView returned false)"));
+                        await OffsetX(sv, o)();
                         await Task.Delay(400);
                         var line = new StringBuilder("parts at offset " + Num(sv.HorizontalOffset) + ":");
                         foreach (var part in parts)

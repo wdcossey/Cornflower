@@ -32,7 +32,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
-VIEWCHANGING = re.compile(r'next ([-\d.]+) final ([-\d.]+) inertial (True|False)')
 FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: index (-?\d+))?')
 TOUCH = re.compile(r'^\s*([\d.]+) ms \(planned\s+[\d.]+\) (down|up) ')
 
@@ -91,7 +90,7 @@ def read_touch(seg, t0, t1, all_touches, page, all_frames):
     if not mine:
         return None
     press, release = mine[0]
-    events = [(t,) + tuple(_vc(d)) for t, w, d in seg if w == 'viewchanging']
+    events = ml.view_changes(seg)
     frames = [(t, float(m.group(2)), int(m.group(3)) if m.group(3) is not None else None)
               for t, w, d in seg if w == 'frame' for m in [FRAME.match(d)] if m]
     before = [f for f in all_frames if f[0] <= press]
@@ -115,22 +114,18 @@ def read_touch(seg, t0, t1, all_touches, page, all_frames):
     }
     if len(mine) > 1:
         second, second_release = mine[1]
-        during = [f[1] for f in frames if second <= f[0] <= second_release]
+        # The offset at the press, then every frame during it: a frame is logged only when something changed, so a
+        # single move during the press shows only against the offset it moved from.
+        at_second = offset_at(events, second, start)
+        during = [at_second] + [f[1] for f in frames if second <= f[0] <= second_release]
         out['second'] = {
             'after': second - release,
-            'at': offset_at(events, second, start) - start,
-            'moved': (max(during) - min(during)) if during else 0.0,
+            'at': at_second - start,
+            'moved': max(during) - min(during),
             'held': second_release - second,
             'inertial_after': next((e[0] - second_release for e in events if e[0] > second_release and e[3]), None),
         }
     return out
-
-
-def _vc(d):
-    m = VIEWCHANGING.match(d)
-    if not m:
-        raise SystemExit('a ViewChanging line this script can\'t read: %s' % d)
-    return float(m.group(1)), float(m.group(2)), m.group(3) == 'True'
 
 
 def verdict(r):
@@ -161,12 +156,15 @@ def main():
             print('    the second press %.0f ms after the release, the offset %+.1f from the start; it moved %.1f px during the %.0f ms press; '
                   'inertial again %s; at the end %+.1f'
                   % (s['after'], s['at'], s['moved'], s['held'],
-                     '%.0f ms after its release' % s['inertial_after'] if s['inertial_after'] is not None else 'never', r['end']))
+                     '%.0f ms after its release' % s['inertial_after'] if s['inertial_after'] is not None else 'never',
+                     r['end'] if r['end'] is not None else float('nan')))
     if pivot:
         print('\nThe item events, in ms after the selection change before them')
         sel = None
         for t, w, d in rows:
             if w == 'step':
+                # A step starts afresh: an item event before its own selection change has none to be timed from.
+                sel = None
                 print('  %s' % d)
             elif w == 'selection':
                 sel = t
@@ -176,7 +174,7 @@ def main():
     else:
         print('\nScrollToSection')
         for label, t0, t1, seg in ml.step_segments(rows, times=True):
-            if not label.startswith('ScrollToSection ') or label.endswith('first'):
+            if not label.startswith('ScrollToSection '):
                 continue
             said = next((d for t, w, d in seg if w == 'setup'), '-')
             frames = [(t - t0, float(m.group(2))) for t, w, d in seg if w == 'frame' for m in [FRAME.match(d)] if m]
