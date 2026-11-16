@@ -54,6 +54,8 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 | `appbar.py` | a `-Probe appbar -Record` run (#136) | the page's app bar: its top edge in each recorded frame, each opening and closing frame by frame with its time constant and when it is 90% there and at rest, and the bar's events and clicks for each touch. It reads one strip of the recording, which `--decode` makes with ffmpeg |
 | `release.py` | a `-Probe pivotrelease` or `hubrelease` run (#148) | for each touch, the offset and its speed at the release (the release's time from touch.log, put on the app's clock by the start tap), and where it goes, from the first inertial `ViewChanging`'s `FinalView`; a second press while it moves, and whether it holds the offset; the Pivot's item events after each selection change; the Hub's `ScrollToSection` calls, frame by frame |
 | `entrance.py` | a `-Probe hubentrance` run (#148) | each Hub's entrance: its `EntranceAnimationProjection`'s `RotationY` frame by frame, an `ExponentialEase` fitted to it, and the background grid at the end |
+| `strips.py` | a `-Probe popupcurves -Record` run (#149) | each popup's opening and closing as bands: each frame's slanted pieces taken back off the screen with the camera, each band's line, its distinct angles and the turn a tick (or an exponential fit where the turn isn't linear), when the band is at rest (an opening) or starts (a closing) on the recording's clock, and when the whole popup is over. The run's RenderingTime-to-stopwatch factor comes from the calls' `rt`. `--frames` prints every frame's pieces, `--popup <name>` one popup. About 15 minutes for the run |
+| `looping.py` | a `-Probe looping` run (#149) | LoopingSelector: the layout and the items' pitch; each touch's offset at the press and the release, the first inertial `ViewChanging`, the motion to rest frame by frame with eases and #113's inertia fitted, a recentring, the selection, a press during the coast; each column's fades; and the closed ComboBox's press |
 | `clock.py` | any probe run that logs its frames | the frames' mean spacing by the stopwatch (`motionlib.frame_spacing`), and the factor, 15.625 ms over it, that takes the run's stopwatch durations to animation time |
 | `motionlib.py` | | what they share: the run, the frame measurements, the projection, the easing curves and the fits |
 | `selftest.py` | nothing | checks the measurements and fits on synthetic data with known answers |
@@ -90,7 +92,9 @@ strips, and a list item's held tilt and return; and for #114 a torn frame and a 
 header strip and slide and Hub's header; and for #136 a header wider than the screen, faster than 100 px a frame,
 a press on the check mode's box, the Hub's background against the offset and its loop, and the app bar's opening read
 off a synthetic strip; and for #148 a release's decision and a second press, paired through touch.log, and the Hub's
-entrance fitted.
+entrance fitted; and for #149 a band turned about its centre line read back off a synthetic frame (and one past
+edge-on), bands found by their lines and an ease fitted to their angles, the turn a tick with a tick no call showed,
+and a LoopingSelector's snap, recentring and fade.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
 logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.

@@ -134,6 +134,12 @@ namespace RefApp
                 case "listclick":
                     await probe.ListClickProbe(host);
                     break;
+                case "popupcurves":
+                    await probe.PopupCurvesProbe(host);
+                    break;
+                case "looping":
+                    await probe.LoopingProbe(host);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;
