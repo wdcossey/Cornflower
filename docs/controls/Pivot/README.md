@@ -41,7 +41,7 @@ its item. A mouse doesn't swipe, as Avalonia's ScrollViewer doesn't; it taps the
 - **The strip**: laid out from the selected header, in item order, wrapping round; each header at its full width, the
   view's edge cutting what doesn't fit. A header's pitch is its width plus 15.83.
 - **The swipe**: the content follows the finger; the strip moves with it, a page of offset its leaving header's pitch
-  (the incoming header's going back). Let go fast enough the way it went, or past half a page, it goes on; else back.
+  (the incoming header's going back). Let go fast enough the way it went, it goes on; as fast the other way, back; slower, on past half a page and back short of it.
 - **The motion**, the phone's: the selection changes 78 ms after a swipe left's release (a frame after one right), so
   188 to 241 ms into the probes' swipe; the old item slides out ahead of the offset; the new one comes in a page beyond
   its place and slides in by `ExponentialEase` 4 over 400 ms; the headers already passed go to the end; the offset

@@ -273,7 +273,7 @@ and moves the same two transforms.
 | What | The phone (#128, #136) | Ours |
 |---|---|---|
 | The drag | The content with the finger | One for one, from the press, held to a page either way |
-| Let go | A swipe goes on (200 px in 150 ms); a 100 px drag held 300 ms goes back | On if it was moving 0.3 px/ms or faster the way it went, or past half a page; else back (the threshold isn't read: owed) |
+| Let go | A swipe goes on (200 px in 150 ms); a 100 px drag held 300 ms goes back | On if it was moving 0.3 px/ms or faster the way it went; back if as fast the other way; else on past half a page, back short of it (the threshold isn't read: owed) |
 | The swipe's offset after the release | Exactly a page; 33 to 35 frames; the same shape whatever the speed | `KeySpline` 0.24,0.60 0.22,1 over 515.625 ms: 1.07 px rms of 450 against the median of 20 |
 | A tap's (and a change from code's) | 500 ms; a page a header (900 px for two) | `KeySpline` 0.20,0.08 0.02,1 over 500 ms: 0.74 px rms against 6 |
 | Back after a drag let go | 35 frames | `KeySpline` 0.25,0 0.20,1 over 546.875 ms: 0.12 px rms of 109, the one read |
