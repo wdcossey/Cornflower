@@ -128,6 +128,14 @@ internal static class PhoneLoopingSelector
         private double _dragFrom;
         private int _way;
 
+        // Where this last put the panel, to see the panel's owner move it; a move this held with a press; the mouse
+        // wheel's steps short of a notch.
+        private double _lastSet;
+        private bool _held;
+        private double _notches;
+
+        private ControlTheme? _itemTheme;
+
         private bool _expandedBefore;
         private double _expansionTarget;
         private TimeSpan _expansionLast;
@@ -178,8 +186,9 @@ internal static class PhoneLoopingSelector
             _panel.PointerWheelChanged -= OnWheel;
             foreach (var child in _panel.Children)
                 Unhook(child);
-            _panel.ClearValue(IsMovingProperty);
-            _panel.ClearValue(ExpansionProperty);
+            // Set back rather than cleared: this can run while the panel's theme is being unset (spike 6).
+            _panel.SetValue(IsMovingProperty, false);
+            _panel.SetValue(ExpansionProperty, 0d);
             Shown.Remove(this);
         }
 
@@ -189,10 +198,14 @@ internal static class PhoneLoopingSelector
         {
             foreach (var child in _panel.Children)
                 Hook(child);
+            _itemTheme = GetItemTheme(_panel);
         }
 
         private void OnChildrenChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            // The panel moves its items round as it scrolls, most frames: they are the same items, hooked already.
+            if (e.Action == NotifyCollectionChangedAction.Move)
+                return;
             if (e.OldItems is not null)
                 foreach (Control child in e.OldItems)
                     Unhook(child);
@@ -203,13 +216,21 @@ internal static class PhoneLoopingSelector
 
         private void Hook(Control child)
         {
+            if (child.Theme == _itemTheme)
+                child.ClearValue(StyledElement.ThemeProperty);
             if (GetItemTheme(_panel) is { } theme)
                 child.Theme = theme;
             child.RemoveHandler(InputElement.TappedEvent, OnItemTapped);
             child.AddHandler(InputElement.TappedEvent, OnItemTapped);
         }
 
-        private void Unhook(Control child) => child.RemoveHandler(InputElement.TappedEvent, OnItemTapped);
+        /// <summary>The item is Avalonia's again: no tap handler, and the theme it had before, if this gave it one.</summary>
+        private void Unhook(Control child)
+        {
+            child.RemoveHandler(InputElement.TappedEvent, OnItemTapped);
+            if (_itemTheme is not null && child.Theme == _itemTheme)
+                child.ClearValue(StyledElement.ThemeProperty);
+        }
 
         /// <summary>The phone's tap selects nothing and moves nothing: it only makes the wheel the active one.</summary>
         private void OnItemTapped(object? sender, TappedEventArgs e)
@@ -227,14 +248,17 @@ internal static class PhoneLoopingSelector
                 return;
             _way = Math.Sign(_motion.Target - Offset);
             StopMotion();
+            _held = true;
         }
 
         /// <summary>The finger has moved far enough up or down: the drag begins, from where the items are.</summary>
         public void BeginDrag()
         {
             StopMotion();
+            _held = false;
             IsDragging = true;
             _dragFrom = Offset;
+            _lastSet = Offset;
             _panel.SetValue(IsMovingProperty, true);
             Activate();
         }
@@ -244,6 +268,9 @@ internal static class PhoneLoopingSelector
         {
             if (!IsDragging)
                 return;
+
+            // The panel's owner moved it under the finger (a presenter changing its range): go on from there.
+            _dragFrom += Offset - _lastSet;
             var offset = Clamp(_dragFrom + travel);
             if (offset != Offset)
                 _way = Math.Sign(offset - Offset);
@@ -257,6 +284,7 @@ internal static class PhoneLoopingSelector
         public void Release(double velocity)
         {
             IsDragging = false;
+            _held = false;
             var (min, max) = Range();
             Start(PhoneLoopingSelectorMotion.Release(Offset, velocity, _way, Pitch, min, max));
         }
@@ -265,20 +293,37 @@ internal static class PhoneLoopingSelector
         public void Lift()
         {
             Activate();
-            if (!IsCoasting && !IsAtRest())
+            if (_held || (!IsCoasting && !IsAtRest()))
                 Release(0);
         }
 
-        /// <summary>A notch of the mouse wheel: one item, coasting on to it (the phone has no mouse; a desktop does).</summary>
+        /// <summary>The finger was taken before it dragged: a move it held goes on to an item.</summary>
+        public void LetGo()
+        {
+            if (_held)
+                Release(0);
+        }
+
+        /// <summary>
+        /// The mouse wheel: an item a notch, coasting on to it (the phone has no mouse; a desktop does). A finer wheel's
+        /// small steps add up to a notch. At a wheel's end the scroll is left to what holds it.
+        /// </summary>
         private void OnWheel(object? sender, PointerWheelEventArgs e)
         {
             if (e.Delta.Y == 0 || IsDragging)
                 return;
-            e.Handled = true;
-            Activate();
+            _notches += e.Delta.Y;
+            var notches = Math.Truncate(_notches);
+            _notches -= notches;
             var from = _motion?.Target ?? Math.Round(Offset / Pitch) * Pitch;
             var (min, max) = Range();
-            var target = Math.Clamp(from - Math.Sign(e.Delta.Y) * Pitch, min, max);
+            var target = Math.Clamp(from - notches * Pitch, min, max);
+            if (notches != 0 && target == from)
+                return;
+            e.Handled = true;
+            if (notches == 0)
+                return;
+            Activate();
             Start(PhoneLoopingSelectorMotion.CoastTo(Offset, target));
         }
 
@@ -295,6 +340,7 @@ internal static class PhoneLoopingSelector
 
             _motion = motion;
             _motionStart = CornflowerClock.Now;
+            _lastSet = Offset;
             _panel.SetValue(IsMovingProperty, true);
             var generation = _generation;
             _frame = CornflowerClock.RequestFrame(_panel, () => Step(generation));
@@ -304,6 +350,14 @@ internal static class PhoneLoopingSelector
         {
             if (generation != _generation || _motion is not { } motion)
                 return;
+            // The panel's owner moved it under the move (a presenter changing its range): it rests where the panel is.
+            if (Offset != _lastSet)
+            {
+                StopMotion();
+                Rest(Offset);
+                return;
+            }
+
             var elapsed = CornflowerClock.Now - _motionStart;
             if (elapsed >= motion.Duration)
             {
@@ -329,6 +383,7 @@ internal static class PhoneLoopingSelector
         /// <summary>At rest on the item at <paramref name="offset"/>: it is selected, and shows as selected.</summary>
         private void Rest(double offset)
         {
+            _held = false;
             var count = Count;
             var index = (int)Math.Round(offset / Pitch);
             index = _panel.ShouldLoop ? ((index % count) + count) % count : Math.Clamp(index, 0, count - 1);
@@ -344,7 +399,7 @@ internal static class PhoneLoopingSelector
                 StopMotion();
                 Rest(motion.Target);
             }
-            else if (IsDragging)
+            else if (IsDragging || _held)
             {
                 IsDragging = false;
                 Rest(Offset);
@@ -357,6 +412,7 @@ internal static class PhoneLoopingSelector
         {
             if (offset != Offset)
                 _panel.Offset = new Vector(0, offset);
+            _lastSet = Offset;
         }
 
         /// <summary>Where the offset can go: anywhere for a looping wheel, the first item to the last for one that doesn't.</summary>
@@ -532,6 +588,8 @@ internal static class PhoneLoopingSelector
                 return;
             if (_dragging)
                 _wheel.Release(0);
+            else
+                _wheel.LetGo();
             Reset();
         }
 

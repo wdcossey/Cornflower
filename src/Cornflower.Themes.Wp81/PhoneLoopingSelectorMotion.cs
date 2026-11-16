@@ -44,7 +44,7 @@ internal sealed class PhoneLoopingSelectorMotion
     private readonly double _to;
     private readonly double _way;
 
-    // The coast: its time to stop at the release, and √(a c).
+    // The coast: its time to stop at the release.
     private readonly double _stopTime;
 
     // The way back: where it starts, and how long it takes.
@@ -94,7 +94,7 @@ internal sealed class PhoneLoopingSelectorMotion
             return null;
 
         var toward = Math.Sign(target - offset);
-        var back = way != 0 && toward != way && Math.Abs(velocity) * toward <= 0;
+        var back = way != 0 && toward != way && velocity * toward <= 0;
         return new PhoneLoopingSelectorMotion(offset, target, way, back);
     }
 

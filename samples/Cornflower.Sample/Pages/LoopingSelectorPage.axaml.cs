@@ -15,6 +15,9 @@ public partial class LoopingSelectorPage : UserControl
     {
         InitializeComponent();
         var today = System.DateTime.Today;
+
+        // A bare panel names its days in this month (its presenter would set the month), so it has this month's days.
+        Day.MaximumValue = System.DateTime.DaysInMonth(today.Year, today.Month);
         Month.SelectedValue = today.Month;
         Day.SelectedValue = today.Day;
         Year.SelectedValue = today.Year;

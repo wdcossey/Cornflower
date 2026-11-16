@@ -14,7 +14,8 @@
     makes the page light.
 
     A DatePicker's own presenter keeps its columns in step (the days in the month, their names); these three are bare,
-    so the day wheel names the days of this month.
+    so the day wheel has this month's days and names them (Avalonia's panel names the days in the month its presenter
+    sets, or this month).
   -->
   <ThemeVariantScope x:Name="Scope">
     <Grid Background="{DynamicResource FlyoutBackgroundThemeBrush}" RowDefinitions="Auto,*,Auto">
@@ -27,7 +28,7 @@
                              SelectionChanged="OnSelectionChanged" />
         <DateTimePickerPanel x:Name="Day" Grid.Column="1" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
                              PanelType="Day" ItemFormat="dd&#10;dddd" ShouldLoop="True"
-                             MaximumValue="31" MinimumValue="1"
+                             MaximumValue="28" MinimumValue="1"
                              SelectionChanged="OnSelectionChanged" />
         <DateTimePickerPanel x:Name="Year" Grid.Column="2" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
                              PanelType="Year" ItemFormat="yyyy"

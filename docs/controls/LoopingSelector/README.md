@@ -26,8 +26,9 @@ wheel is that panel, with the theme by key:
   a panel that doesn't loop short of its last items.
 - **Two lines.** `ItemFormat`'s first line is drawn large, the rest small below it, as the phone's `PrimaryText` and
   `SecondaryText`: `"MM\nMMMM"` gives 07 over July, `"dd\ndddd"` 15 over Tuesday, `"yyyy"` the year alone. The day's
-  name is for the month the panel's presenter tells it (`FormatDate`, internal to Avalonia: a bare panel names this
-  month's days).
+  name is for the month the panel's presenter tells it (`FormatDate`, internal to Avalonia). A bare panel names this
+  month's days, so give it no more days than this month has: Avalonia's panel throws formatting a day the month
+  lacks.
 - **The active wheel** is the one last tapped or dragged among the wheels in the same template (or, outside one, the
   same window). The others show only their selected item.
 - **Sizes.** The phone's columns are 138.333 wide and 700 tall; the items are 123 square drawn 1.125 larger, 138.375

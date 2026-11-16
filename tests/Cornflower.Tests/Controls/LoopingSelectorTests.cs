@@ -307,6 +307,8 @@ public class LoopingSelectorTests
         Tap(stage, clock, stage.Month, 350, 0);
         Tap(stage, clock, stage.Day, 350, 1000);
         Assert.Equal(1, Expansion(stage.Day));
+        Assert.True(PhoneLoopingSelector.Of(stage.Day)!.IsActive);
+        Assert.False(PhoneLoopingSelector.Of(stage.Month)!.IsActive);
         // A straight line: the same step each frame, the phone's 0.0469.
         var start = clock.Now.TotalMilliseconds;
         var last = double.NaN;
@@ -398,6 +400,13 @@ public class LoopingSelectorTests
         foreach (var (ms, offset) in BackFrames)
             Assert.Equal(offset, motion.OffsetAt(TimeSpan.FromMilliseconds(ms)), 4.5);
         Assert.InRange(motion.Duration.TotalMilliseconds, 470, 500);
+
+        // The same either way: dragged down and let go still moving down a little, it drifts on down, then back.
+        var down = PhoneLoopingSelectorMotion.Release(-0.3 * Pitch, -0.01, -1, Pitch)!;
+        Assert.True(down.IsBack);
+        Assert.True(down.OffsetAt(TimeSpan.FromMilliseconds(50)) < -0.3 * Pitch);
+        var up = PhoneLoopingSelectorMotion.Release(0.3 * Pitch, 0.01, +1, Pitch)!;
+        Assert.True(up.IsBack);
     }
 
     [AvaloniaFact]
@@ -506,6 +515,43 @@ public class LoopingSelectorTests
         stage.Window.MouseWheel(stage.At(stage.Year, 350), new Vector(0, 1));
         clock.At(2000);
         Assert.Equal(2014, stage.Year.SelectedValue);
+
+        // A finer wheel's small steps add up to a notch.
+        for (var i = 0; i < 3; i++)
+            stage.Window.MouseWheel(stage.At(stage.Year, 350), new Vector(0, -0.4));
+        clock.At(3000);
+        Assert.Equal(2015, stage.Year.SelectedValue);
+    }
+
+    [AvaloniaFact]
+    public void A_Press_Before_A_Move_Has_Gone_Anywhere_Still_Brings_It_To_Rest()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        stage.Window.MouseWheel(stage.At(stage.Year, 350), new Vector(0, -1));
+        var touch = stage.Window.TouchBegin(stage.At(stage.Year, 350), RawInputModifiers.None);
+        Assert.False(PhoneLoopingSelector.Of(stage.Year)!.IsCoasting);
+        clock.At(78);
+        stage.Window.TouchEnd(touch, stage.At(stage.Year, 350), RawInputModifiers.None);
+        clock.At(1000);
+        Assert.False(PhoneLoopingSelector.GetIsMoving(stage.Year));
+        Assert.Equal(2014, stage.Year.SelectedValue);
+    }
+
+    [AvaloniaFact]
+    public void Its_Range_Changed_Under_A_Move_It_Rests_Where_The_Panel_Is()
+    {
+        // As a DatePicker's presenter shortens the days when the month changes, while the day wheel still coasts.
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var release = Drag(stage, clock, stage.Day, 150, y: 500, step: 15, holdMs: 0);
+        clock.At(release + 100);
+        stage.Day.MaximumValue = 30;
+        clock.At(release + 3000);
+        Assert.False(PhoneLoopingSelector.GetIsMoving(stage.Day));
+        Assert.InRange(stage.Day.SelectedValue, 1, 30);
+        stage.Settle();
+        Assert.Equal(SelectedTop, stage.TopOf(stage.Day, stage.Day.SelectedValue), 1);
     }
 
     [AvaloniaFact]
@@ -513,10 +559,14 @@ public class LoopingSelectorTests
     {
         using var clock = PhoneClock();
         using var stage = new Stage();
+        var itemTheme = stage.Year.FindResource("Wp81LoopingSelectorItemTheme");
+        var items = stage.Year.Children.OfType<ListBoxItem>().ToList();
         stage.Year.Theme = null;
         stage.Settle();
         Assert.Null(PhoneLoopingSelector.Of(stage.Year));
         Assert.Equal(40, stage.Year.ItemHeight);
+        Assert.All(items, item => Assert.NotSame(itemTheme, item.Theme));
+
         Tap(stage, clock, stage.Year, ColumnHeight / 2 + 2 * stage.Year.ItemHeight, 0);
         Assert.Equal(2016, stage.Year.SelectedValue);
     }
@@ -549,16 +599,28 @@ public class LoopingSelectorTests
     [AvaloniaFact]
     public void Out_Of_Its_Window_A_Move_Ends_Where_It_Was_Going()
     {
+        // In a popup that closes: out of the visual tree, still in the logical one, so the theme stays.
         using var clock = PhoneClock();
         using var stage = new Stage();
-        var rest = stage.Day.Offset.Y;
-        var release = Drag(stage, clock, stage.Day, 150, y: 500, step: 15, holdMs: 0);
-        var wheel = PhoneLoopingSelector.Of(stage.Day)!;
+        var panel = Stage.Make(DateTimePickerPanelType.Day, "dd", 1, 31, 15, loop: true);
+        panel.Width = ColumnWidth;
+        panel.Height = ColumnHeight;
+        var popup = new Avalonia.Controls.Primitives.Popup { Child = panel, PlacementTarget = stage.Canvas };
+        stage.Canvas.Children.Add(popup);
+        popup.IsOpen = true;
+        stage.Settle();
+        var wheel = PhoneLoopingSelector.Of(panel)!;
+        var rest = panel.Offset.Y;
+        wheel.BeginDrag();
+        wheel.Drag(100);
+        wheel.Release(2);
         var items = (int)Math.Round((wheel.Motion!.Target - rest) / Pitch);
-        clock.At(release + 100);
-        stage.Canvas.Children.Remove(stage.Day);
+        clock.At(100);
+        Assert.True(wheel.IsCoasting);
+        popup.IsOpen = false;
+        Assert.Same(wheel, PhoneLoopingSelector.Of(panel));
         Assert.False(wheel.IsCoasting);
-        Assert.False(PhoneLoopingSelector.GetIsMoving(stage.Day));
-        Assert.Equal((15 - 1 + items) % 31 + 1, stage.Day.SelectedValue);
+        Assert.False(PhoneLoopingSelector.GetIsMoving(panel));
+        Assert.Equal((15 - 1 + items) % 31 + 1, panel.SelectedValue);
     }
 }

@@ -45,6 +45,19 @@ public class LoopingSelectorPageTests
     }
 
     [AvaloniaFact]
+    public void The_Day_Wheel_Has_This_Months_Days_Which_It_Names()
+    {
+        // Avalonia's panel names a day in the month its presenter sets, or this month, and throws on a day it lacks.
+        var page = new LoopingSelectorPage();
+        using var scene = new Scene(page);
+        var day = page.FindControl<DateTimePickerPanel>("Day")!;
+        Assert.Equal(DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month), day.MaximumValue);
+        day.SelectedValue = day.MaximumValue;
+        scene.Window.UpdateLayout();
+        Assert.Equal(day.MaximumValue, day.SelectedValue);
+    }
+
+    [AvaloniaFact]
     public void A_Drag_Turns_A_Wheel_And_The_Page_Shows_It()
     {
         using var clock = new TestClock();
