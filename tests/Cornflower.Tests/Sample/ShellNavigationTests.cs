@@ -283,6 +283,37 @@ public class ShellNavigationTests
         Assert.Equal(2, host.StackDepth);
     }
 
+    // A finger that presses a RepeatButton on a page and slides sideways off it and back keeps the press, as drive.ps1's
+    // "repeatbutton" section holds: the navigation page's own swipe recogniser, whose back swipe the theme turns off
+    // (IsGestureEnabled), mustn't take the finger. It did, so the repeats never came back (the real-window run of #147).
+    [AvaloniaFact]
+    public void A_Finger_Slid_Sideways_On_A_Page_Stays_The_Pages()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var button = new RepeatButton { Content = "more", Width = 200, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left };
+        shell.ShowPage(new StackPanel { Margin = new Avalonia.Thickness(19, 200, 0, 0), Children = { button } }, "a page");
+        Settle(clock);
+        var centre = button.TranslatePoint(new Avalonia.Point(100, button.Bounds.Height / 2), scene.Window)!.Value;
+
+        var finger = scene.Window.TouchBegin(centre, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(button.IsPressed);
+        for (var i = 1; i <= 10; i++)
+            scene.Window.TouchMove(finger, centre + new Avalonia.Point(20 * i, 0), RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(button.IsPressed, "the slide sideways took the finger from the button");
+        Assert.True(button.GetValue(Cornflower.Themes.Wp81.PhonePress.IsOffProperty));
+
+        for (var i = 9; i >= 0; i--)
+            scene.Window.TouchMove(finger, centre + new Avalonia.Point(20 * i, 0), RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(button.IsPressed);
+        Assert.False(button.GetValue(Cornflower.Themes.Wp81.PhonePress.IsOffProperty));
+        scene.Window.TouchEnd(finger, centre, RawInputModifiers.None);
+    }
+
     // drive.ps1 finds the list's buttons by name through UI Automation, and counts every button for "no button without a
     // size": the list, behind a page, isn't there to find.
     [AvaloniaFact]

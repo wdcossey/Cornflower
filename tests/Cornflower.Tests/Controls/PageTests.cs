@@ -267,8 +267,15 @@ public class PageTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(NavigationPage.GetHasNavigationBar(page));
-        // Nor an edge swipe: the phone's back is the hardware button.
+        // Nor an edge swipe: the phone's back is the hardware button. Its recogniser is off too, so it takes no finger
+        // sliding sideways from a page; an app that turns the swipe on gets it back.
         Assert.False(nav.IsGestureEnabled);
+        var swipe = Assert.Single(nav.GestureRecognizers.OfType<Avalonia.Input.GestureRecognizers.SwipeGestureRecognizer>());
+        Assert.False(swipe.IsEnabled);
+        nav.IsGestureEnabled = true;
+        Assert.True(swipe.IsEnabled);
+        nav.IsGestureEnabled = false;
+        Assert.False(swipe.IsEnabled);
         Assert.False(nav.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "PART_NavigationBar").IsEffectivelyVisible);
         AssertRect(new Rect(0, 0, 450, 800), BoundsIn(page, nav), "the page");
         AssertRect(new Rect(0, Bounds.TrayHeight, 450, 800 - Bounds.TrayHeight), BoundsIn(content, nav), "the content");
