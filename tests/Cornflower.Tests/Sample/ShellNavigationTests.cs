@@ -177,6 +177,30 @@ public class ShellNavigationTests
         Assert.False(shell.FindControl<Button>("BackButton")!.IsVisible);
     }
 
+    // A page asked for while the navigation page turns back to the list itself waits for its turn, then opens.
+    [AvaloniaFact]
+    public void A_Page_Opened_While_The_Navigation_Page_Goes_Back_Itself_Opens_When_It_Ends()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+        var focusable = new Button { Content = "in the page" };
+        shell.ShowPage(new StackPanel { Children = { focusable } }, "a page");
+        Settle(clock);
+        focusable.Focus();
+        focusable.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Left, KeyModifiers = KeyModifiers.Alt });
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(host.IsNavigating);
+
+        var next = new Border();
+        shell.ShowPage(next, "next");
+        Settle(clock);
+
+        Assert.Same(next.FindAncestorOfType<ContentPage>(), host.CurrentPage);
+        Assert.Equal(2, host.StackDepth);
+    }
+
     // drive.ps1 finds the list's buttons by name through UI Automation, and counts every button for "no button without a
     // size": the list, behind a page, isn't there to find.
     [AvaloniaFact]

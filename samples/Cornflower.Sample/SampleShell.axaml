@@ -50,9 +50,10 @@
   <Grid ColumnDefinitions="*,Auto">
     <!-- The page host is the phone's Frame, Wp81's NavigationPage: the list is its first page, and each sample page is
          pushed onto it in a ContentPage, so it comes in with the turnstile and Back turns back to the list. A page
-         fills its ContentPage, as the phone's Frame stretches its page (frame.json: both content alignments Stretch). -->
+         fills its ContentPage, whose content alignments are Stretch by default, as the phone's Frame stretches its page
+         (frame.json: both content alignments Stretch). -->
     <NavigationPage x:Name="Host">
-      <ContentPage x:Name="IndexPage" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+      <ContentPage x:Name="IndexPage">
         <ScrollViewer x:Name="Index">
           <StackPanel Margin="19,12,19,24" Spacing="6">
             <TextBlock Text="CORNFLOWER" FontFamily="{DynamicResource PhoneFontFamilySemiBold}"

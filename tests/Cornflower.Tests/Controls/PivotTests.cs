@@ -738,8 +738,12 @@ public class PivotTests
     public void The_Translation_Draws_The_Element_That_Far_Right()
     {
         var border = new Border();
-        PhonePivotHeader.SetTranslation(border, 40);
-        Assert.Equal(40, ((TranslateTransform)border.RenderTransform!).X);
+        PhonePivotHeader.SetTranslation(border, 12);
+        var made = (TranslateTransform)border.RenderTransform!;
+        Assert.Equal(12, made.X);
+        PhonePivotHeader.SetTranslation(border, 40);                  // a transition's next frame moves the same one
+        Assert.Same(made, border.RenderTransform);
+        Assert.Equal(40, made.X);
         PhonePivotHeader.SetTranslation(border, 0);
         Assert.Null(border.RenderTransform);
 

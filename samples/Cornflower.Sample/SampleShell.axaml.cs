@@ -153,12 +153,8 @@ public partial class SampleShell : UserControl
         Abandon();
         HidePerformance();
         BackButton.IsVisible = true;
-        _wanted = new ContentPage
-        {
-            Content = page,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            VerticalContentAlignment = VerticalAlignment.Stretch,
-        };
+        // A ContentPage stretches its content both ways by default, as the phone's Frame stretches its page.
+        _wanted = new ContentPage { Content = page };
         _opening = new Opening(page, _wanted, title, started);
         Navigate();
         AwaitFirstFrame();
