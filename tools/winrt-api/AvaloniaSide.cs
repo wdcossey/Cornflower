@@ -79,12 +79,37 @@ internal sealed class AvaloniaSide
         }
     }
 
-    /// <summary>Avalonia's type of that name in <c>Avalonia.Controls</c>, then <c>.Primitives</c>.</summary>
-    private static Type? FindType(string name) =>
-        Controls.GetExportedTypes()
-            .Where(t => t.Name == name && t.Namespace is "Avalonia.Controls" or "Avalonia.Controls.Primitives")
-            .OrderBy(t => t.Namespace == "Avalonia.Controls" ? 0 : 1)
+    /// <summary>
+    /// The namespaces Avalonia's controls are looked for in: <c>Avalonia.Controls</c>, <c>.Primitives</c> and
+    /// <c>.Presenters</c> (<c>ContentPresenter</c>, <c>ItemsPresenter</c>, <c>ScrollContentPresenter</c>,
+    /// <c>TextPresenter</c>). The templated controls a checklist is for are all in these three.
+    /// </summary>
+    internal static readonly IReadOnlyList<string> Namespaces =
+        ["Avalonia.Controls", "Avalonia.Controls.Primitives", "Avalonia.Controls.Presenters"];
+
+    /// <summary>
+    /// The top-level exported types in <see cref="Namespaces"/>, by short name, built once. A nested type
+    /// (<c>ProgressBar.ProgressBarTemplateSettings</c>) is never a control a checklist is for, so it isn't indexed.
+    /// </summary>
+    private static readonly Lazy<ILookup<string, Type>> ByName = new(() => Controls.GetExportedTypes()
+        .Where(t => !t.IsNested && Namespaces.Contains(t.Namespace!))
+        .ToLookup(t => t.Name, StringComparer.Ordinal));
+
+    /// <summary>
+    /// Of the types that share a short name, the one whose namespace comes first in <paramref name="order"/>. No
+    /// name is in two of <see cref="Namespaces"/> at Avalonia 12.1.4; if a later one puts a name in two, the
+    /// order decides, as it did before the presenters were added.
+    /// </summary>
+    internal static Type? FirstByNamespace(IEnumerable<Type> candidates, IReadOnlyList<string> order) =>
+        candidates
+            .Select(t => (Type: t, Rank: Enumerable.Range(0, order.Count).FirstOrDefault(i => order[i] == t.Namespace, -1)))
+            .Where(c => c.Rank >= 0)
+            .OrderBy(c => c.Rank)
+            .Select(c => c.Type)
             .FirstOrDefault();
+
+    /// <summary>Avalonia's type of that name in <see cref="Namespaces"/>, by their order, or null.</summary>
+    private static Type? FindType(string name) => FirstByNamespace(ByName.Value[name], Namespaces);
 
     /// <summary>Avalonia's control, or null for a control Avalonia doesn't have.</summary>
     public Type? Type => _type;

@@ -272,6 +272,38 @@ public class ChecklistTests
         Assert.Equal(typeof(Avalonia.Controls.Primitives.ToggleButton), new AvaloniaSide("ToggleButton").Type);
     }
 
+    [Fact]
+    public void Avalonia_s_Presenters_Are_Found_Too()
+    {
+        // WinRT's ContentPresenter and ScrollContentPresenter have checklists (#125); Avalonia keeps its presenters
+        // in Avalonia.Controls.Presenters.
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ContentPresenter), new AvaloniaSide("ContentPresenter").Type);
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ScrollContentPresenter),
+            new AvaloniaSide("ScrollContentPresenter").Type);
+    }
+
+    [Fact]
+    public void Only_Top_Level_Types_In_The_Three_Namespaces_Are_Found()
+    {
+        // Avalonia.Controls.Shapes is outside the three; ProgressBarTemplateSettings is nested in ProgressBar.
+        Assert.Null(new AvaloniaSide("Ellipse").Type);
+        Assert.Null(new AvaloniaSide("ProgressBarTemplateSettings").Type);
+    }
+
+    [Fact]
+    public void A_Name_In_Two_Namespaces_Goes_To_The_First_In_Order()
+    {
+        // No name is in two of the three at Avalonia 12.1.4, so the rule is tested on the namespaces alone: whichever
+        // candidate's namespace comes first wins, and one outside the order is never picked.
+        Type[] candidates =
+            [typeof(Avalonia.Controls.Presenters.ContentPresenter), typeof(Avalonia.Controls.ContentControl)];
+        Assert.Equal(typeof(Avalonia.Controls.ContentControl),
+            AvaloniaSide.FirstByNamespace(candidates, AvaloniaSide.Namespaces));
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ContentPresenter),
+            AvaloniaSide.FirstByNamespace(candidates, ["Avalonia.Controls.Presenters", "Avalonia.Controls"]));
+        Assert.Null(AvaloniaSide.FirstByNamespace([typeof(Avalonia.Controls.Shapes.Ellipse)], AvaloniaSide.Namespaces));
+    }
+
     [Theory]
     [InlineData("Normal", "")]
     [InlineData("Pressed", ":pressed")]
