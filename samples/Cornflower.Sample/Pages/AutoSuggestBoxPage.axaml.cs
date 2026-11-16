@@ -6,7 +6,7 @@ namespace Cornflower.Sample.Pages;
 
 /// <summary>
 /// The 8.1 AutoSuggestBox (Avalonia's AutoCompleteBox): the page gives the fruits that start with what is typed, the
-/// last one chosen shown; disabled, and in the light theme.
+/// last one selected shown (a suggestion tapped, or the text typed in full: Avalonia's box selects an exact match); disabled, and in the light theme.
 /// </summary>
 [SamplePage("autosuggestbox", Order = 158)]
 public partial class AutoSuggestBoxPage : UserControl
@@ -32,6 +32,6 @@ public partial class AutoSuggestBoxPage : UserControl
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count > 0)
-            State.Text = $"chose {e.AddedItems[0]}";
+            State.Text = $"selected {e.AddedItems[0]}";
     }
 }

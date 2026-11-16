@@ -65,7 +65,7 @@ public class AutoSuggestBoxPageTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("apricot", box.Text);
-        Assert.Equal("chose apricot", page.FindControl<TextBlock>("State")!.Text);
+        Assert.Equal("selected apricot", page.FindControl<TextBlock>("State")!.Text);
         Assert.False(box.IsDropDownOpen);
     }
 }

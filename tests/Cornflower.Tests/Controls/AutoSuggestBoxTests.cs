@@ -304,7 +304,7 @@ public class AutoSuggestBoxTests
         Assert.Equal(200, stage.InWindow(stage.List).Height, 0.01);
     }
 
-    // A keyboard that covers nothing, or one over the list's top (a box low on a page that, unlike the phone's, doesn't
+    // A keyboard that covers nothing, or leaves less than one suggestion's room (a box low on a page that, unlike the phone's, doesn't
     // move up), is passed over: the list runs to the window's bottom rather than shrink to nothing.
     [AvaloniaFact]
     public void A_Keyboard_Covering_Nothing_Or_Over_The_Lists_Top_Is_Passed_Over()
@@ -313,17 +313,17 @@ public class AutoSuggestBoxTests
         using var stage = new Stage(atTop: true, keyboard: keyboard);
         var room = Scene.ReferenceHeight - KeyboardGap - ListTop;
 
-        keyboard.Show(default);
+        keyboard.Show(new Rect(0, 500, 450, 0));
         stage.Open(3);
         Assert.Equal(room, stage.List.MaxHeight, 0.01);
 
-        keyboard.Show(new Rect(0, 30, 450, 770));
+        keyboard.Show(new Rect(0, ListTop + OneTall, 450, 300));
         stage.Settle();
         Assert.True(stage.Box.IsDropDownOpen);
         Assert.Equal(room, stage.List.MaxHeight, 0.01);
     }
 
-    // With no room at all below the box, the list closes rather than stay open and unseen.
+    // With less than one suggestion's room below the box, the list closes rather than stay open and unseen.
     [AvaloniaFact]
     public void With_No_Room_Below_The_Box_The_List_Closes()
     {
@@ -444,7 +444,7 @@ public class AutoSuggestBoxTests
         RunFor(5_000, () => asked is not null);
         Assert.NotNull(asked);
         // Avalonia's timer against a stopwatch started before the key: a few milliseconds' slack for the timer's rounding.
-        Assert.InRange(asked.Value, CueAfterKey - 5, 5_000);
+        Assert.InRange(asked.Value, CueAfterKey - 5, CueAfterKey + 500);
         stage.Settle();
         Assert.True(stage.Box.IsDropDownOpen);
         Assert.Equal(3, stage.Rows.Count);
@@ -536,6 +536,34 @@ public class AutoSuggestBoxTests
         var next = stage.Back();
         Assert.True(next.Handled);
         Assert.Same(first, nav.CurrentPage);
+    }
+
+    // Turned on after the template was applied (a theme swapped in), the behaviour takes the parts as they are.
+    [AvaloniaFact]
+    public void Turned_On_After_The_Template_It_Takes_The_Parts()
+    {
+        using var stage = new Stage(atTop: true);
+        PhoneSuggestionList.SetIsEnabled(stage.Box, false);
+        PhoneSuggestionList.SetIsEnabled(stage.Box, true);
+        stage.Open(3);
+
+        Assert.Equal(ListTop, stage.InWindow(stage.List).Y, 0.001);
+        Assert.Equal(Scene.ReferenceHeight - KeyboardGap - ListTop, stage.List.MaxHeight, 0.01);
+    }
+
+    // A right click on a suggestion chooses nothing: the list stays open.
+    [AvaloniaFact]
+    public void A_Right_Click_On_A_Suggestion_Keeps_The_List()
+    {
+        using var stage = new Stage(atTop: true);
+        stage.Open(3, "ap");
+        var at = stage.InWindow(stage.Rows[1]).Center;
+
+        stage.Window.MouseDown(at, MouseButton.Right);
+        stage.Window.MouseUp(at, MouseButton.Right);
+        stage.Settle();
+
+        Assert.True(stage.Box.IsDropDownOpen);
     }
 
     // With the focus elsewhere, Back is the page's.

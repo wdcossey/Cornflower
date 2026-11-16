@@ -44,7 +44,9 @@ void OnPopulating(object? sender, PopulatingEventArgs e) => ((AutoCompleteBox)se
 - **A key** asks the app 150 ms after the last key (`Populating`), and the list opens if it gave anything; emptying
   the box asks again. `Text` set from code doesn't open the list.
 - **While open** the list follows the box as the page lays out; a tap on the box goes to the box and the list stays;
-  with no room below the box the list closes.
+  with less than one suggestion's room below the box the list closes.
+- **`SelectionChanged`** comes for a tapped suggestion and also when the typed text equals one (Avalonia's box selects
+  an exact match); the phone's `SuggestionChosen` comes for a tap alone.
 - **A tap on a suggestion** puts it in the box and closes the list; the box keeps the focus, so the keyboard stays.
 - **Back** closes the list and takes the focus from the box, before the page's `NavigationPage` sees it; the next Back
   is the page's. The keyboard going down (Android's keyboard takes the first Back itself) does the same.

@@ -4,6 +4,7 @@ using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Reactive;
 using Avalonia.VisualTree;
 
 namespace Cornflower.Themes.Wp81;
@@ -42,6 +43,12 @@ internal static class PhoneSuggestionList
     internal const double KeyboardGap = 2.5;
 
     /// <summary>
+    /// The list's least height, one suggestion's (#150: 53.75). A keyboard that leaves less is passed over; with less
+    /// room than this at all, the list closes rather than stay open as a sliver.
+    /// </summary>
+    internal const double OneSuggestion = 53.75;
+
+    /// <summary>
     /// The platform's keyboard of a top level: Avalonia's <see cref="TopLevel.InputPane"/>, or none. A test replaces it,
     /// as no headless top level has one.
     /// </summary>
@@ -52,6 +59,7 @@ internal static class PhoneSuggestionList
 
     static PhoneSuggestionList()
     {
+        AutoCompleteBox.MaxDropDownHeightProperty.Changed.AddClassHandler<AutoCompleteBox>((box, _) => box.GetValue(HoldProperty)?.Replace());
         IsEnabledProperty.Changed.AddClassHandler<AutoCompleteBox>((box, change) =>
         {
             box.GetValue(HoldProperty)?.Dispose();
@@ -100,6 +108,7 @@ internal static class PhoneSuggestionList
         private TopLevel? _top;
         private IPhoneKeyboard? _keyboard;
         private bool _keyboardWasOpen;
+        private IDisposable? _clientSize;
 
         public Hold(AutoCompleteBox box)
         {
@@ -107,17 +116,23 @@ internal static class PhoneSuggestionList
             box.TemplateApplied += OnTemplateApplied;
             box.AttachedToVisualTree += OnAttached;
             box.DetachedFromVisualTree += OnDetached;
-            box.PropertyChanged += OnBoxPropertyChanged;
             if (TopLevel.GetTopLevel(box) is not null)
                 Attach();
+            // Turned on after the template was applied (a theme swapped in): its parts as they are.
+            var parts = box.GetVisualDescendants().OfType<Control>().Where(c => c.TemplatedParent == box).ToList();
+            if (parts.Count > 0)
+                Take(parts.OfType<Popup>().FirstOrDefault(p => p.Name == "PART_Popup"),
+                    parts.OfType<TextBox>().FirstOrDefault(t => t.Name == "PART_TextBox"));
         }
+
+        /// <summary>The list's room again, for a new <see cref="AutoCompleteBox.MaxDropDownHeight"/>.</summary>
+        public void Replace() => Place();
 
         public void Dispose()
         {
             _box.TemplateApplied -= OnTemplateApplied;
             _box.AttachedToVisualTree -= OnAttached;
             _box.DetachedFromVisualTree -= OnDetached;
-            _box.PropertyChanged -= OnBoxPropertyChanged;
             Detach();
             Take(null, null);
         }
@@ -152,7 +167,8 @@ internal static class PhoneSuggestionList
         /// </summary>
         private void OnListReleased(object? sender, PointerReleasedEventArgs e)
         {
-            if ((e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault() is { IsSelected: true })
+            if (e.InitialPressMouseButton == MouseButton.Left
+                && (e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault() is { IsSelected: true })
                 _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
         }
 
@@ -166,7 +182,7 @@ internal static class PhoneSuggestionList
             _top = TopLevel.GetTopLevel(_box);
             if (_top is null)
                 return;
-            _top.PropertyChanged += OnTopPropertyChanged;
+            _clientSize = _top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(_ => Place()));
             if (_top.InsetsManager is { } insets)
                 insets.SafeAreaChanged += OnSafeAreaChanged;
             _keyboard = KeyboardOf(_top);
@@ -181,7 +197,6 @@ internal static class PhoneSuggestionList
         {
             if (_top is not null)
             {
-                _top.PropertyChanged -= OnTopPropertyChanged;
                 if (_top.InsetsManager is { } insets)
                     insets.SafeAreaChanged -= OnSafeAreaChanged;
             }
@@ -190,21 +205,12 @@ internal static class PhoneSuggestionList
                 _keyboard.Changed -= OnKeyboardChanged;
                 _keyboard.Dispose();
             }
+            _clientSize?.Dispose();
+            _clientSize = null;
             _top = null;
             _keyboard = null;
         }
 
-        private void OnBoxPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property == AutoCompleteBox.MaxDropDownHeightProperty)
-                Place();
-        }
-
-        private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property == TopLevel.ClientSizeProperty)
-                Place();
-        }
 
         private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => Place();
 
@@ -238,13 +244,13 @@ internal static class PhoneSuggestionList
 
         /// <summary>
         /// Hangs the open list from the box's bottom border and gives it the room below, down to the keyboard. A keyboard
-        /// that covers nothing, or whose top is at or above the list's, is passed over (the list then runs under it to
-        /// the window's bottom, as the page doesn't move up as the phone's does); with no room at all, the list closes
-        /// rather than stay open and unseen.
+        /// that covers nothing, or leaves less than one suggestion's room, is passed over (the list then runs under it to
+        /// the window's bottom, as the page doesn't move up as the phone's does); with less room than that at all, the
+        /// list closes rather than stay open and unseen.
         /// </summary>
         private void Place()
         {
-            if (_popup is not { IsOpen: true } || _textBox is null || _top is null || _popup.Child is not Control list)
+            if (_popup is not { IsOpen: true } || _textBox is null || _top is null || _list is not { } list)
                 return;
             if (_textBox.TranslatePoint(new Point(0, _textBox.Bounds.Height), _top) is not { } below)
                 return;
@@ -257,10 +263,11 @@ internal static class PhoneSuggestionList
             _placedAt = below;
             var top = below.Y + offset;
             var bottom = new Rect(_top.ClientSize).Deflate(_top.InsetsManager?.SafeAreaPadding ?? default).Bottom;
-            if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0 && keyboard.Occluded.Top - KeyboardGap > top)
+            if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0
+                && keyboard.Occluded.Top - KeyboardGap - top >= OneSuggestion)
                 bottom = Math.Min(bottom, keyboard.Occluded.Top);
             var room = bottom - KeyboardGap - top;
-            if (room <= 0)
+            if (room < OneSuggestion)
             {
                 _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
                 return;
