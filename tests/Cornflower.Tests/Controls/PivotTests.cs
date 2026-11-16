@@ -778,4 +778,141 @@ public class PivotTests
         using var stage = new Stage(pivot: pivot);
         Assert.Equal(["loading one", "loaded one"], log);
     }
+
+    // ---- Interruptions (the first review) ----
+
+    private static List<string> LogEvents(Pivot pivot)
+    {
+        var log = new List<string>();
+        pivot.PivotItemLoading += (_, e) => log.Add($"loading {e.Item.Header}");
+        pivot.PivotItemLoaded += (_, e) => log.Add($"loaded {e.Item.Header}");
+        pivot.PivotItemUnloading += (_, e) => log.Add($"unloading {e.Item.Header}");
+        pivot.PivotItemUnloaded += (_, e) => log.Add($"unloaded {e.Item.Header}");
+        return log;
+    }
+
+    [AvaloniaFact]
+    public void A_Change_From_Code_Mid_Move_Keeps_The_Item_Events_With_The_Item_Shown()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var log = LogEvents(stage.Pivot);
+        Tap(stage, clock, 1000, HeaderCentre(stage, 1), holdMs: 62.5);
+        clock.At(1062.5 + 2 * Frame);                                         // the old item still going out
+        stage.Pivot.SelectedIndex = 2;
+        clock.At(3000);
+        Assert.True(stage.Shown(2));
+        Assert.Equal("loaded three", log[^1]);
+        Assert.Equal(log.Count(l => l.StartsWith("loaded")), log.Count(l => l.StartsWith("unloaded")));
+
+        stage.Pivot.SelectedIndex = 3;
+        clock.At(5000);
+        Assert.Equal(["unloading three", "loading four", "unloaded three", "loaded four"], log.TakeLast(4));
+    }
+
+    [AvaloniaFact]
+    public void An_Item_Inserted_Before_The_Selected_One_Raises_No_Item_Events_And_Keeps_It_Shown()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        stage.Pivot.SelectedIndex = 1;
+        stage.Pivot.Motion.Finish();
+        var log = LogEvents(stage.Pivot);
+        var two = stage.Pivot.Items[1];
+        stage.Pivot.Items.Insert(0, new PivotItem { Header = "zero", Content = new TextBlock { Text = "zero" } });
+        clock.At(1000);
+        stage.Layout();
+        Assert.Same(two, stage.Pivot.SelectedItem);
+        Assert.Equal(2, stage.Pivot.SelectedIndex);
+        Assert.True(stage.Shown(2));
+        Assert.Empty(log);
+        Assert.Equal(5, stage.Strip.Children.Count);
+        Assert.Equal(HeaderLeft, stage.HeaderX(2), 0.02);
+    }
+
+    [AvaloniaFact]
+    public void A_Control_As_A_Header_Survives_The_Strip_Being_Made_Again()
+    {
+        var pivot = new Pivot();
+        pivot.Items.Add(new PivotItem { Header = new TextBlock { Text = "one" } });
+        pivot.Items.Add(new PivotItem { Header = "two" });
+        using var stage = new Stage(pivot: pivot);
+        pivot.Items.Add(new PivotItem { Header = "three" });
+        Assert.Equal(3, stage.Strip.Children.Count);
+        Assert.IsType<TextBlock>(stage.Header(0).Content);
+
+        var direct = new Pivot();
+        direct.Items.Add(new TextBlock { Text = "a page" });
+        direct.Items.Add(new TextBlock { Text = "another" });
+        using var other = new Stage(pivot: direct);
+        Assert.Null(other.Header(0).Content);
+    }
+
+    [AvaloniaFact]
+    public void A_Flick_Back_After_Half_A_Page_Stays()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        clock.At(10);
+        var touch = stage.Window.TouchBegin(new Point(400, 450), RawInputModifiers.None);
+        stage.Window.TouchMove(touch, new Point(100, 450), RawInputModifiers.None);  // 300 left
+        for (var i = 1; i <= 5; i++)
+        {
+            clock.At(10 + 10 * i);
+            stage.Window.TouchMove(touch, new Point(100 + 10 * i, 450), RawInputModifiers.None);  // back right, 1 px/ms
+        }
+
+        stage.Window.TouchEnd(touch, new Point(150, 450), RawInputModifiers.None);
+        clock.At(2000);
+        Assert.Equal(0, stage.Pivot.SelectedIndex);
+        Assert.Equal(0, stage.ItemX(0), 0.001);
+    }
+
+    [AvaloniaFact]
+    public void A_Tap_On_The_Header_A_Swipe_Is_About_To_Select_Changes_Nothing_More()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        Swipe(stage, clock, 6.25);
+        var at = HeaderCentre(stage, 1);
+        clock.At(156.25 + 2 * Frame);                                          // before the selection, 5 frames on
+        Assert.Equal(0, stage.Pivot.SelectedIndex);
+        stage.Window.MouseDown(at, MouseButton.Left);
+        stage.Window.MouseUp(at, MouseButton.Left);
+        Assert.Equal(1, stage.Pivot.SelectedIndex);
+        Assert.False(stage.Pivot.Motion.IsMoving);
+    }
+
+    [AvaloniaFact]
+    public void Shown_Again_In_A_Window_The_Item_Loads_Again()
+    {
+        var pivot = Stage.Make(["one", "two"]);
+        var log = LogEvents(pivot);
+        using (new Stage(pivot: pivot))
+        {
+        }
+
+        using var again = new Stage(pivot: pivot);
+        Assert.Equal(["loading one", "loaded one", "loading one", "loaded one"], log);
+    }
+
+    [AvaloniaFact]
+    public void A_Selection_Handler_That_Changes_The_Selection_Leaves_One_Move()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var redirected = false;
+        stage.Pivot.SelectionChanged += (_, _) =>
+        {
+            if (redirected) return;
+            redirected = true;
+            stage.Pivot.SelectedIndex = 3;
+        };
+        Swipe(stage, clock, 6.25);
+        clock.At(3000);
+        Assert.Equal(3, stage.Pivot.SelectedIndex);
+        Assert.False(stage.Pivot.Motion.IsMoving);
+        Assert.Equal(0, clock.Pending);
+        Assert.True(stage.Shown(3));
+    }
 }

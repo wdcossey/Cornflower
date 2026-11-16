@@ -66,21 +66,6 @@ public class PivotHeaderPanel : Panel
         return header.DesiredSize.Width - header.Margin.Left + next.Margin.Left;
     }
 
-    /// <summary>The left edge of header <paramref name="index"/>'s slot, as laid out from <see cref="Lead"/>.</summary>
-    internal double SlotLeft(int index)
-    {
-        var count = Children.Count;
-        var x = 0.0;
-        for (var k = 0; k < count; k++)
-        {
-            var i = Wrap(_lead + k, count);
-            if (i == Wrap(index, count)) return x;
-            x += Children[i].DesiredSize.Width;
-        }
-
-        return x;
-    }
-
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize)
     {

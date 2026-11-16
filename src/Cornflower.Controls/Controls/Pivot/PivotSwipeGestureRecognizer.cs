@@ -101,7 +101,9 @@ internal sealed class PivotSwipeGestureRecognizer : GestureRecognizer
     {
         var now = CornflowerClock.Now;
         _moves.Add((now, x));
-        _moves.RemoveAll(m => now - m.Time > VelocityWindow);
+        var stale = 0;
+        while (now - _moves[stale].Time > VelocityWindow) stale++;
+        _moves.RemoveRange(0, stale);
     }
 
     /// <summary>View pixels a millisecond, right positive, over the last moves; 0 if they all came at one time.</summary>

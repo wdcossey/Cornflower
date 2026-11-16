@@ -78,7 +78,9 @@ public class Pivot : SelectingItemsControl
     private TopLevel? _topLevel;
     private bool _selectingFromMotion;
     private int _knownCount;
-    private int _loaded = -1;
+    private object? _selected;
+    private PivotItem? _shown;
+    private readonly HashSet<PivotItem> _headed = [];
 
     static Pivot()
     {
@@ -177,17 +179,12 @@ public class Pivot : SelectingItemsControl
         }
     }
 
-    /// <summary>The new item has come in: the item at <paramref name="from"/> has gone and the one at <paramref name="to"/> is shown.</summary>
-    internal void OnItemCameIn(int from, int to)
-    {
-        ApplyMotion();
-        if (_loaded < 0 || _loaded != from) return;     // nothing loaded yet: the first item loads when it is shown
-        _loaded = to;
-        Raise(PivotItemUnloaded, from);
-        Raise(PivotItemLoaded, to);
-    }
-
-    /// <summary>Draws the motion's state: the strip laid out and slid, the shown item and where it is.</summary>
+    /// <summary>
+    /// Draws the motion's state: the strip laid out and slid, and the shown item and where it is. When the item shown
+    /// changes, the one that went raises <see cref="PivotItemUnloaded"/> and the one that came in
+    /// <see cref="PivotItemLoaded"/>, once it is visible; the first shown in a window raises
+    /// <see cref="PivotItemLoading"/> and <see cref="PivotItemLoaded"/>.
+    /// </summary>
     internal void ApplyMotion()
     {
         var lead = _motion.Lead;
@@ -201,11 +198,26 @@ public class Pivot : SelectingItemsControl
         }
 
         _itemsTranslation.X = _motion.ItemX;
+        var shown = lead >= 0 && lead < ItemCount ? ContainerFor(lead) : null;
+        if (ReferenceEquals(shown, _shown) && shown?.IsVisible != false)
+            return;
+
         for (var i = 0; i < ItemCount; i++)
         {
-            if (ContainerFromIndex(i) is { } container)
-                container.IsVisible = i == lead;
+            if (ContainerFor(i) is { } container)
+                container.IsVisible = ReferenceEquals(container, shown);
         }
+
+        if (shown is null || !this.IsAttachedToVisualTree() || ReferenceEquals(shown, _shown))
+            return;
+
+        var gone = _shown;
+        _shown = shown;
+        if (gone is null)
+            PivotItemLoading?.Invoke(this, new PivotItemEventArgs(shown));
+        else
+            PivotItemUnloaded?.Invoke(this, new PivotItemEventArgs(gone));
+        PivotItemLoaded?.Invoke(this, new PivotItemEventArgs(shown));
     }
 
     /// <summary>A <see cref="PivotItem"/>'s header has changed: its header in the strip shows the new one.</summary>
@@ -230,14 +242,18 @@ public class Pivot : SelectingItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is PivotItem pivotItem && !ReferenceEquals(container, item))
-            pivotItem.SetCurrentValue(PivotItem.HeaderProperty, item);
+        {
+            // A data item is its own header; a control can't be in two places, so it gets none.
+            pivotItem.SetCurrentValue(PivotItem.HeaderProperty, item is Control ? null : item);
+            _headed.Add(pivotItem);
+        }
     }
 
     /// <inheritdoc />
     protected override void ClearContainerForItemOverride(Control container)
     {
         base.ClearContainerForItemOverride(container);
-        if (container is PivotItem pivotItem && !Items.Contains(container))
+        if (container is PivotItem pivotItem && _headed.Remove(pivotItem))
             pivotItem.ClearValue(PivotItem.HeaderProperty);
     }
 
@@ -246,15 +262,18 @@ public class Pivot : SelectingItemsControl
     {
         base.ContainerForItemPreparedOverride(container, item, index);
         container.IsVisible = index == _motion.Lead;
-        if (index == SelectedIndex && _loaded < 0 && container is PivotItem prepared && this.IsAttachedToVisualTree())
-            LoadFirst(prepared);
+        if (index == _motion.Lead)
+            ApplyMotion();
     }
 
+    // A change to the items ends any move where it is: the indices it was moving between may no longer hold.
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         _knownCount = ItemCount;
         BuildHeaders();
-        _motion.Rest(Math.Max(SelectedIndex, 0));
+        // Rest on the selected item where it now is: the selection may not have caught up with the change yet.
+        var at = _selected is null ? -1 : ItemsView.IndexOf(_selected);
+        _motion.Rest(at >= 0 ? at : Math.Max(SelectedIndex, 0));
         UpdateHeaderStates();
     }
 
@@ -283,8 +302,7 @@ public class Pivot : SelectingItemsControl
         if (_topLevel is not null)
             _topLevel.PropertyChanged += OnTopLevelPropertyChanged;
         UpdateOrientation();
-        if (_loaded < 0)
-            LoadFirst();
+        ApplyMotion();
     }
 
     /// <inheritdoc />
@@ -298,6 +316,7 @@ public class Pivot : SelectingItemsControl
             _motion.Finish();
         _motion.StopFrames();
         _motion.Rest(Math.Max(SelectedIndex, 0));
+        _shown = null;                                   // shown again in a window, the item loads again
     }
 
     /// <inheritdoc />
@@ -329,26 +348,35 @@ public class Pivot : SelectingItemsControl
     private void OnSelectedIndexChanged(int from, int to)
     {
         UpdateHeaderStates();
-        if (_selectingFromMotion)
+        // The motion's own change is this one only: a handler of it that selects again is a change from code.
+        var fromMotion = _selectingFromMotion;
+        _selectingFromMotion = false;
+        var item = to >= 0 && to < ItemCount ? ItemsView[to] : null;
+        var same = ReferenceEquals(item, _selected) && item is not null;
+        _selected = item;
+        if (same)
         {
-            Raise(PivotItemUnloading, from);
-            Raise(PivotItemLoading, to);
+            // The items changed round the selected one, which moved: nothing is selected anew.
+            if (!_motion.IsMoving && !_motion.IsDragging)
+                _motion.Rest(Math.Max(to, 0));
             return;
         }
 
+        RaiseFor(PivotItemUnloading, from >= 0 && from < ItemCount ? ContainerFor(from) : null);
+        RaiseFor(PivotItemLoading, to >= 0 ? ContainerFor(to) : null);
+        if (fromMotion)
+            return;
+
         var count = ItemCount;
         // A selection that moves because the items changed (the count isn't yet the one this saw last) goes there at once.
-        var moving = ItemCount == _knownCount && from >= 0 && to >= 0 && count > 1 && _header is not null &&
+        var moving = count == _knownCount && from >= 0 && to >= 0 && count > 1 && _header is not null &&
                      PageWidth > 0 && this.IsAttachedToVisualTree() && IsEffectivelyVisible;
         if (_motion.IsMoving || _motion.IsDragging)
             _motion.Rest(Math.Max(from, 0));
 
-        Raise(PivotItemUnloading, from);
-        Raise(PivotItemLoading, to);
         if (!moving)
         {
             _motion.Rest(Math.Max(to, 0));
-            OnItemCameIn(from, to);
             return;
         }
 
@@ -367,13 +395,14 @@ public class Pivot : SelectingItemsControl
             !ReferenceEquals(tapped.GetVisualParent(), _header))
             return;
 
+        if (_motion.IsMoving)
+            _motion.Finish();
+
         // A tap on the selected header raises Tapped and changes nothing, as on the phone (#136).
         if (tapped.Index == SelectedIndex)
             return;
 
         e.Handled = true;
-        if (_motion.IsMoving)
-            _motion.Finish();
 
         var from = SelectedIndex;
         var steps = PivotHeaderPanel.Wrap(tapped.Index - from, ItemCount);
@@ -398,12 +427,20 @@ public class Pivot : SelectingItemsControl
     private void BuildHeaders()
     {
         if (_header is not { } header) return;
+        foreach (var child in header.Children)
+            ((PivotHeaderItem)child).Content = null;      // a header that is a control goes to the new strip
         header.Children.Clear();
         for (var i = 0; i < ItemCount; i++)
             header.Children.Add(new PivotHeaderItem { Index = i, Content = HeaderFor(i), ContentTemplate = HeaderTemplate });
     }
 
-    private object? HeaderFor(int index) => ItemsView[index] is PivotItem item ? item.Header : ItemsView[index];
+    /// <summary>An item's header: a <see cref="PivotItem"/>'s own, or a data item itself; a control has none, as it is its page.</summary>
+    private object? HeaderFor(int index) => ItemsView[index] switch
+    {
+        PivotItem item => item.Header,
+        Control => null,
+        var data => data,
+    };
 
     private void UpdateHeaderStates()
     {
@@ -415,20 +452,15 @@ public class Pivot : SelectingItemsControl
         }
     }
 
-    /// <summary>The first item shown, once the Pivot is in a window and its container is made: it loads.</summary>
-    private void LoadFirst(PivotItem? item = null)
-    {
-        item ??= SelectedIndex >= 0 ? ContainerFromIndex(SelectedIndex) as PivotItem : null;
-        if (item is null || !this.IsAttachedToVisualTree())
-            return;
-        _loaded = SelectedIndex;
-        PivotItemLoading?.Invoke(this, new PivotItemEventArgs(item));
-        PivotItemLoaded?.Invoke(this, new PivotItemEventArgs(item));
-    }
+    /// <summary>
+    /// Item <paramref name="index"/>'s container: the item itself when it is a <see cref="PivotItem"/>, which holds while
+    /// the items change and the containers' indices haven't caught up.
+    /// </summary>
+    private PivotItem? ContainerFor(int index) => ItemsView[index] as PivotItem ?? ContainerFromIndex(index) as PivotItem;
 
-    private void Raise(EventHandler<PivotItemEventArgs>? handler, int index)
+    private void RaiseFor(EventHandler<PivotItemEventArgs>? handler, PivotItem? item)
     {
-        if (handler is null || index < 0 || ContainerFromIndex(index) is not PivotItem item) return;
-        handler(this, new PivotItemEventArgs(item));
+        if (handler is not null && item is not null)
+            handler(this, new PivotItemEventArgs(item));
     }
 }

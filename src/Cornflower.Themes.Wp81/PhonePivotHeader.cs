@@ -43,7 +43,12 @@ internal static class PhonePivotHeader
         TranslationProperty.Changed.AddClassHandler<Visual>((visual, change) =>
         {
             var x = change.GetNewValue<double>();
-            visual.RenderTransform = x == 0 ? null : new TranslateTransform(x, 0);
+            if (x == 0)
+                visual.RenderTransform = null;
+            else if (visual.RenderTransform is TranslateTransform translate)
+                translate.X = x;                          // the transition's frames move the one transform
+            else
+                visual.RenderTransform = new TranslateTransform(x, 0);
         });
     }
 

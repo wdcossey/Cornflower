@@ -97,13 +97,18 @@ internal sealed class PivotMotion
     private TimeSpan _jumpAt;
     private bool _oldGone;
 
+    // A move under way, and which: a handler the move's events reach can start another, and the old one's frame then
+    // stops, so only one chain of frames runs.
+    private bool _moving;
+    private int _generation;
+
     public PivotMotion(Pivot pivot) => _pivot = pivot;
 
     /// <summary>Whether a finger is dragging the content.</summary>
     public bool IsDragging { get; private set; }
 
     /// <summary>Whether a move is under way after a release, a tap or a change from code.</summary>
-    public bool IsMoving => _frame is not null;
+    public bool IsMoving => _moving;
 
     /// <summary>The offset from the item the strip and content are laid out from, in view pixels, forward positive.</summary>
     public double Offset { get; private set; }
@@ -156,8 +161,9 @@ internal sealed class PivotMotion
         var steps = 0;
         if (_pivot.ItemCount > 1 && Offset != 0)
         {
-            if (Math.Abs(forward) >= FlickVelocity && Math.Sign(forward) == Math.Sign(Offset))
-                steps = Math.Sign(forward);
+            // A flick the way the drag went goes on; one back the other way stays; else half a page decides.
+            if (Math.Abs(forward) >= FlickVelocity)
+                steps = Math.Sign(forward) == Math.Sign(Offset) ? Math.Sign(forward) : 0;
             else if (Math.Abs(Offset) >= page / 2)
                 steps = Math.Sign(Offset);
         }
@@ -190,15 +196,13 @@ internal sealed class PivotMotion
     public void Finish()
     {
         if (!IsMoving) return;
-        if (_selectAt is not null)
-        {
-            _selectAt = null;
-            _pivot.SelectFromMotion(_target);
-        }
-
-        if (!_jumped && _steps != 0)
-            _pivot.OnItemCameIn(_origin, _target);
-        Rest(_target);
+        var target = _target;
+        var select = _selectAt is not null;
+        StopFrames();
+        if (select)
+            _pivot.SelectFromMotion(target);
+        if (!_moving && !IsDragging)
+            Rest(target);
     }
 
     /// <summary>Stops any frames without moving anything.</summary>
@@ -206,6 +210,8 @@ internal sealed class PivotMotion
     {
         _frame?.Dispose();
         _frame = null;
+        _moving = false;
+        _generation++;
     }
 
     /// <summary>
@@ -258,12 +264,14 @@ internal sealed class PivotMotion
         _selectAt = selectAfter;
         _jumped = false;
         _oldGone = false;
-        _frame = CornflowerClock.RequestFrame(_pivot, Step);
+        _moving = true;
+        var generation = ++_generation;
+        _frame = CornflowerClock.RequestFrame(_pivot, () => Step(generation));
     }
 
-    private void Step()
+    private void Step(int generation)
     {
-        _frame = null;
+        if (generation != _generation) return;
         var page = _pivot.PageWidth;
         var t = CornflowerClock.Now - _start;
         var offset = _from + (_steps * page - _from) * _curve.Ease(t / _duration);
@@ -272,6 +280,7 @@ internal sealed class PivotMotion
         {
             _selectAt = null;
             _pivot.SelectFromMotion(_target);
+            if (generation != _generation) return;        // a handler of the selection started something else
             if (_gesture || _steps < 0)
                 Jump(t);
         }
@@ -304,20 +313,18 @@ internal sealed class PivotMotion
         var done = t >= _duration && (_steps == 0 || (_jumped && t - _jumpAt - PhoneFrame >= SlideDuration));
         if (done)
         {
-            if (!_jumped && _steps != 0)
-                _pivot.OnItemCameIn(_origin, _target);
             Rest(_steps == 0 ? _origin : _target);
             return;
         }
 
-        _pivot.ApplyMotion();
-        _frame = CornflowerClock.RequestFrame(_pivot, Step);
+        _pivot.ApplyMotion();                             // the item events, if the new item came in
+        if (generation != _generation) return;            // a handler of them started something else
+        _frame = CornflowerClock.RequestFrame(_pivot, () => Step(generation));
     }
 
     private void Jump(TimeSpan t)
     {
         _jumped = true;
         _jumpAt = t;
-        _pivot.OnItemCameIn(_origin, _target);
     }
 }
