@@ -295,6 +295,57 @@ public class ItemClickTests
         Assert.Equal([(object)"item 3"], page.List.SelectedItems!.Cast<object>());
     }
 
+    // Multiple without Toggle, by the mouse and the keys: a Ctrl or Shift click clicks the item and selects nothing;
+    // Space clicks the focused item; Ctrl+A, which Avalonia's ListBox takes to select every item in any mode with
+    // Multiple, selects nothing. In the check mode Ctrl+A still selects every item, as Avalonia's does.
+    [AvaloniaFact]
+    public void Multiple_Without_Toggle_The_Mouse_And_Keys_Select_Nothing()
+    {
+        using var page = new ClickPage();
+        page.List.SelectionMode = SelectionMode.Multiple;
+        Dispatcher.UIThread.RunJobs();
+
+        page.Window.MouseDown(page.On(1), MouseButton.Left, RawInputModifiers.Control);
+        page.Window.MouseUp(page.On(1), MouseButton.Left, RawInputModifiers.Control);
+        page.Window.MouseDown(page.On(3), MouseButton.Left, RawInputModifiers.Shift);
+        page.Window.MouseUp(page.On(3), MouseButton.Left, RawInputModifiers.Shift);
+        Assert.True(page.Item(2).Focus());
+        page.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        page.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        page.Window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        page.Window.KeyRelease(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["item 1", "item 3", "item 2"], page.Clicked);
+        Assert.Empty(page.List.SelectedItems!);
+
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        page.Window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        page.Window.KeyRelease(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(12, page.List.SelectedItems!.Count);
+    }
+
+    // The select-all keys in a TextBox in an item are the TextBox's, in a list that clicks: its text is selected.
+    [AvaloniaFact]
+    public void Select_All_In_A_TextBox_In_An_Item_Is_The_TextBoxs()
+    {
+        var box = new TextBox { Text = "some text" };
+        var list = new ListBox { SelectionMode = SelectionMode.Multiple, Items = { new ListBoxItem { Content = box } } };
+        ListBoxOptions.SetIsItemClickEnabled(list, true);
+        using var scene = new Scene(list);
+        Assert.True(box.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        scene.Window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        scene.Window.KeyRelease(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal("some text", box.SelectedText);
+        Assert.Empty(list.SelectedItems!);
+    }
+
     // ----- Mouse and keys -----
 
     // The mouse: Avalonia's item selects on the left or right button's press; with item click on, neither selects, and

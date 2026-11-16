@@ -38,8 +38,9 @@ public sealed class ItemClickEventArgs : RoutedEventArgs
 /// <para>
 /// In the check mode, a <see cref="ListBox.SelectionMode"/> with both <see cref="SelectionMode.Multiple"/> and
 /// <see cref="SelectionMode.Toggle"/> (WinRT's <c>Multiple</c>), a tap checks the item as before and nothing is clicked.
-/// <see cref="SelectionMode.Multiple"/> alone, WinRT's <c>Extended</c>, isn't the check mode (#142): a tap clicks and
-/// selects nothing, as in <c>Single</c>. A selection set in code stands either way.
+/// <see cref="SelectionMode.Multiple"/> alone, WinRT's <c>Extended</c>, isn't the check mode (#145, after #142): a tap clicks and
+/// selects nothing, as in <c>Single</c>, and the select-all keys, which Avalonia's ListBox takes in any mode with
+/// <see cref="SelectionMode.Multiple"/>, select nothing. A selection set in code stands either way.
 /// </para>
 /// <para>
 /// A pointer's events are taken on the item's template root, by a class handler, so the root's own handlers don't see
@@ -91,6 +92,9 @@ public static class ListBoxOptions
         InputElement.KeyDownEvent.AddClassHandler<ListBoxItem>(OnKeyDown, RoutingStrategies.Tunnel);
         InputElement.KeyUpEvent.AddClassHandler<ListBoxItem>(OnKeyUp, RoutingStrategies.Tunnel);
 
+        // Avalonia's ListBox selects every item on the select-all keys in any mode with Multiple, on the list itself.
+        InputElement.KeyDownEvent.AddClassHandler<ListBox>(OnListKeyDown, RoutingStrategies.Tunnel);
+
         // A press is forgotten when its pointer is taken from the item (a pan) or held (a context menu), and a key's
         // when the item loses the focus, so that a release or a key let go later clicks nothing.
         InputElement.PointerCaptureLostEvent.AddClassHandler<Interactive>(OnCaptureLost, handledEventsToo: true);
@@ -104,11 +108,27 @@ public static class ListBoxOptions
 
     /// <summary>The item's list, if it clicks its items now: item click on, and out of the check mode (Multiple and Toggle).</summary>
     private static ListBox? Clicking(ListBoxItem item) =>
-        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list &&
-        GetIsItemClickEnabled(list) &&
-        !list.SelectionMode.HasFlag(SelectionMode.Multiple | SelectionMode.Toggle)
-            ? list
-            : null;
+        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list && Clicks(list) ? list : null;
+
+    /// <summary>Whether the list clicks its items now: item click on, and out of the check mode (Multiple and Toggle).</summary>
+    private static bool Clicks(ListBox list) =>
+        GetIsItemClickEnabled(list) && !list.SelectionMode.HasFlag(SelectionMode.Multiple | SelectionMode.Toggle);
+
+    /// <summary>
+    /// The select-all keys on a list that clicks, from the list or one of its own items, not from a control inside an
+    /// item (a TextBox's Ctrl+A is its own): taken, so that nothing is selected.
+    /// </summary>
+    private static void OnListKeyDown(ListBox list, KeyEventArgs e)
+    {
+        if (_enabled == 0 || !Clicks(list) ||
+            !(ReferenceEquals(e.Source, list) ||
+              e.Source is ListBoxItem item && ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(item), list)) ||
+            Application.Current?.PlatformSettings?.HotkeyConfiguration is not { } keys ||
+            !keys.SelectAll.Any(gesture => gesture.Matches(e)))
+            return;
+
+        e.Handled = true;
+    }
 
     /// <summary>
     /// The item whose template root this is, while some list has item click on, if the event comes from inside the
