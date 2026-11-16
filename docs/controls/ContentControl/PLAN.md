@@ -89,9 +89,12 @@ phone shows its style doesn't.
 | `IsTabStop` | `Control`'s default, true | `Focusable` false | 6, recorded (below) |
 | Clipping | an element arranged smaller than it asks is clipped to its slot | `ClipToBounds` true | kept as Avalonia's, unmeasured |
 | ContentPresenter in a template, nothing set | Stretch | Stretch | match: no theme |
-| ContentPresenter in a page | unread | Stretch | owed: a probe |
+| ContentPresenter in a page | not reached by the style (#114, run `20261115-2048-dev11`) | Stretch | match: no theme |
 
 ### Keyed, not by type: why
+
+*Superseded at the Tier 2 roll-up:* the user decided on 2026-11-15 to key it by type, with the three changes below
+made there ([README](README.md#by-type)). This section is the reason it first shipped keyed.
 
 A theme keyed `{x:Type ContentControl}` in Wp81 reaches every bare ContentControl. That breaks three things today, each
 outside this PR's own files (measured with the theme keyed by type: the full suite, and a frame of every templated
@@ -135,7 +138,8 @@ where an Avalonia app doesn't expect it.
 | An app's `ContentTemplate` is used and keeps its own line | the template | `An_Apps_ContentTemplate_Is_Used_And_Keeps_Its_Own_Line` |
 | Background and border not drawn; the padding takes no hits | the template binds none | `Background_And_Border_Draw_Nothing_And_The_Padding_Takes_No_Hits` (two cases) |
 | A `ContentTemplate` set later takes the line off the same, recycled text | `PhoneHeaderLine` | `A_ContentTemplate_Set_Later_Takes_The_Line_Off_The_Same_Text` |
-| A bare ContentControl keeps Avalonia's own (the decision above) | the holes' and the shell's frames | `A_Bare_ContentControl_Keeps_Avalonias_Own` |
+| A bare ContentControl wears the theme, by type (the roll-up; it kept Avalonia's own until then) | the phone's default style | `A_Bare_ContentControl_Wears_The_Phones_Theme` |
+| A hole's ContentControls keep Avalonia's own (`HoleParts.FallBackToOwn`) | the holes' and the shell's frames | `HoleContentControlPartsTests` |
 | A template's presenter with nothing set fills its slot, as the phone's do | the curtain presenters' dump | `A_Template_Presenter_With_Nothing_Set_Fills_Its_Slot_As_The_Phones_Do` |
 
 `tests/Cornflower.Tests/Sample/ContentControlPageTests.cs` holds the sample page (four tests).

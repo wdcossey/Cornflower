@@ -38,8 +38,8 @@ title's content, font and margin, and nothing else (the Pivot's headers and item
 | An app's `ContentTemplate` keeps its own line | **match** |
 | `ContentTransitions` | **deliberate difference**: Avalonia has none; the phone's default is none |
 | `IsTabStop` true | **deliberate difference**: Avalonia's ContentControl isn't focusable ([PLAN](PLAN.md#istabstop)) |
-| A bare ContentControl in the phone's look | **gap**: the theme is keyed until three changes outside this PR land ([README](README.md#turning-it-on-by-type)) |
-| A ContentPresenter written in a page | **gap**: unread on the phone; Avalonia's own (Stretch) stands |
+| A bare ContentControl in the phone's look | **match**, by type since the Tier 2 roll-up ([README](README.md#by-type)) |
+| A ContentPresenter written in a page | **match**: #114 read that the phone's style doesn't reach it (run `20261115-2048-dev11`); no theme here either |
 
 ## Tier 1 frames
 
@@ -51,4 +51,6 @@ RepeatButton, CheckBox, RadioButton, ProgressBar, ProgressRing, Slider, TextBox,
 icon) was the same. What changed were Simple's ComboBox, DataValidationErrors, MenuItem and the managed file dialog's
 trees and frames (NotificationCard's and TimePickerPresenter's frames change from run to run on their own). As shipped,
 keyed, the theme changes nothing it isn't set on: the full suite is green, and `A_Bare_ContentControl_Keeps_Avalonias_Own`
-holds it.
+holds it. *At the Tier 2 roll-up* the theme went in by type, with `HoleParts.FallBackToOwn` for the holes; the same
+check, on every frame saver's frames and every hole's and sample page's frame and tree, found nothing changed
+([README](README.md#by-type)), and that test became `A_Bare_ContentControl_Wears_The_Phones_Theme`.

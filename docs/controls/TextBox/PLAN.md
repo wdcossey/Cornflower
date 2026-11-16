@@ -227,8 +227,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/TextBoxTests.cs` unless name
   template's other presenters (the header, the placeholder, the inner content) take Avalonia's defaults back: they
   are the text's, and what an app's template or content makes keeps its own (the first review's finding). To reverse: drop the
   setter; the presenter then draws Selawik's line, 24.31.
-- **The `ScrollViewer` part has its own theme**, `Wp81TextBoxScrollViewerTheme`, rather than the `ScrollViewer` theme
-  by type: no bars, as the phone's `Hidden` draws none, and the text doesn't depend on a hole (Wp81 has no
+- **The `ScrollViewer` part has its own theme**, `Wp81TextBoxScrollViewerTheme` (*since the Tier 2 roll-up*
+  `Wp81ScrollViewerScrollBarlessTheme`, the same template, #116's), rather than the `ScrollViewer` theme by type: no bars, as the phone's `Hidden` draws none, and the text doesn't depend on a hole (Wp81 has no
   `ScrollViewer` theme yet; alone, the box would show nothing). Prefixed so it doesn't shadow Simple's keys. To
   reverse: delete the `Theme` attribute.
 - **`HoleParts` takes any templated control**, so the five templates' TextBoxes keep Simple's. To reverse: list the
