@@ -79,15 +79,15 @@ Cornflower's: `Wp81ScrollViewerScrollBarlessTheme` and `Wp81ContentControlTheme`
 
 Rung 5: new controls. `Pivot` is a `SelectingItemsControl`; `PivotItem` and `PivotHeaderItem` are `ContentControl`s;
 `PivotHeaderPanel` a `Panel`. The motion is the control's own (`PivotMotion`), as the phone's is its code's, not its
-template's. The theme's one helper is `PhonePivotHeader`, internal: the character spacing as a `LetterSpacing` binding,
-and the locked translation as a value a style can set and a transition run.
+template's. The theme's helpers are internal: `PhoneCharacterSpacing`, the character spacing as a `LetterSpacing` binding (the
+Hub's theme takes it too), and `PhonePivotHeader`, the locked translation as a value a style can set and a transition run.
 
 ## What Hub can take
 
 Hub (#122) is next, and has a header that moves with its sections (at 1/18 of their speed, #128) and the same
 bar-less ScrollViewer. From here it can take:
 
-- **`PivotSwipeGestureRecognizer`'s shape**: a recogniser on the control, in the ScrollViewer part's area, starting
+- **`PivotSwipeGestureRecognizer`'s shape** (since the Tier 2 roll-up, `SidewaysSwipeGestureRecognizer`, shared): a recogniser on the control, in the ScrollViewer part's area, starting
   past Avalonia's `ScrollGestureRecognizer` distance and on its axis, touch and pen only; so items' ScrollViewers and
   `PhoneNoManipulation` controls keep their drags. Hub's pan has no pages, so it would hand its offset on release to
   inertia rather than to a snap curve.
@@ -97,7 +97,7 @@ bar-less ScrollViewer. From here it can take:
 - **Holding the ScrollViewer** in `Wp81ScrollViewerScrollBarlessTheme` for its clip and the `Padding` as its margin,
   with scrolling off, if Hub's own motion is taken the same way; or, as the phone's Hub does, really scrolling it
   sideways and reading its offset, since Hub's pan has no wrap and Avalonia's inertia is #116's recorded deviation.
-- **The header's text**: `PhonePivotHeader.LetterSpacing` for any WinRT `CharacterSpacing` a style sets on a control
+- **The header's text**: `PhoneCharacterSpacing.LetterSpacing` for any WinRT `CharacterSpacing` a style sets on a control
   (if the Hub's styles set any), and `PhoneHeaderLine` for the line.
 - **The tests' harness**: `PivotTests`' gestures on a `TestClock` on the emulator's 15.625 ms grid, with the release
   on a frame, so per-frame fractions compare to the phone's.

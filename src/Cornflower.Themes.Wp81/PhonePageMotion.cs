@@ -54,34 +54,6 @@ internal interface IPhonePageMotion
 }
 
 /// <summary>
-/// The easing curves the phone's page transitions were fitted with (<c>tools/motion</c>): WinRT's
-/// <c>ExponentialEase</c>, whose ease-in is (e^(k x) − 1) / (e^k − 1) for an exponent k.
-/// </summary>
-internal static class PhoneEase
-{
-    /// <summary>WinRT's <c>ExponentialEase</c> with <c>EasingMode.EaseOut</c>, at <paramref name="progress"/> (0 to 1).</summary>
-    public static double ExponentialOut(double exponent, double progress)
-    {
-        progress = Math.Clamp(progress, 0, 1);
-        return (1 - Math.Exp(-exponent * progress)) / (1 - Math.Exp(-exponent));
-    }
-
-    /// <summary>WinRT's <c>ExponentialEase</c> with <c>EasingMode.EaseIn</c>, at <paramref name="progress"/> (0 to 1).</summary>
-    public static double ExponentialIn(double exponent, double progress)
-    {
-        progress = Math.Clamp(progress, 0, 1);
-        return (Math.Exp(exponent * progress) - 1) / (Math.Exp(exponent) - 1);
-    }
-
-    /// <summary>
-    /// How far a value falling from <paramref name="from"/> to 0 on an ease-out over <paramref name="length"/> still is,
-    /// <paramref name="time"/> in: from × (1 − ease).
-    /// </summary>
-    public static double Remaining(double from, double exponent, TimeSpan time, TimeSpan length) =>
-        from * (1 - ExponentialOut(exponent, time / length));
-}
-
-/// <summary>
 /// Runs a <see cref="IPhonePageMotion"/> between two pages, frame by frame on <see cref="CornflowerClock"/>, as
 /// Avalonia's <see cref="IPageTransition"/> contract has it: the page coming in is made visible at the start, and the
 /// page going out is hidden at the end. Each page's look is set at animation priority, over whatever its host or the app

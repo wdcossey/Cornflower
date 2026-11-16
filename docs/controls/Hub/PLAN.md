@@ -118,7 +118,7 @@ _none_
 | [x] | `HubHeaderMarginThickness` | `15,1,0,0` | same | yes | The host's `Margin` |
 | [x] | `HubHeaderFontSize` | `78` | same | yes | The host's `FontSize` |
 | [x] | `PhoneFontFamilyNormal` | `Segoe WP` | same | yes | The host's `FontFamily` (Selawik) |
-| [x] | `HubHeaderCharacterSpacing` | `-22` | same | yes | `LetterSpacing` −22 × `FontSize` / 1000 through `PhonePivotHeader` (Pivot's, theme-internal) |
+| [x] | `HubHeaderCharacterSpacing` | `-22` | same | yes | `LetterSpacing` −22 × `FontSize` / 1000 through `PhoneCharacterSpacing` (theme-internal, Pivot's too; `PhonePivotHeader` until the Tier 2 roll-up) |
 
 ### HubSection
 
@@ -139,7 +139,7 @@ WinRT `Windows.UI.Xaml.Controls.HubSection`; Avalonia none: a new control (rung 
 | [x] | Part `Header` (`ContentControl`) | `PART_Header` | In Wp81's `Wp81ContentControlTheme`, the phone's values set on it |
 | [-] | Part `StickyHeaderTransform` (`CompositeTransform`) | `PART_StickyHeaderTransform` | Nothing moves it in a Hub that pans sideways |
 | [x] | Part `ContentPresenter` | `PART_ContentPresenter` | The built content, inside the `Padding`, placed by the content alignments |
-| [x] | Resources `HubSectionMarginThickness` `19,0,0,0`, `HubSectionHeaderMarginThickness` `-1,5,0,31.5`, `PhoneFontFamilyNormal`, `HubSectionHeaderFontSize` 19, `HubSectionHeaderCharacterSpacing` −10 | yes, all | By `DynamicResource`; the spacing through `PhonePivotHeader` |
+| [x] | Resources `HubSectionMarginThickness` `19,0,0,0`, `HubSectionHeaderMarginThickness` `-1,5,0,31.5`, `PhoneFontFamilyNormal`, `HubSectionHeaderFontSize` 19, `HubSectionHeaderCharacterSpacing` −10 | yes, all | By `DynamicResource`; the spacing through `PhoneCharacterSpacing` |
 
 ## The phone's layout
 
@@ -242,8 +242,8 @@ drop the loop or give the panel a copy of the first section.
 
 ## The gesture
 
-`HubPanGestureRecognizer`, internal, the shape of Pivot's `PivotSwipeGestureRecognizer`: a `GestureRecognizer` on the
-Hub, in the ScrollViewer part, starting past Avalonia's `ScrollGestureRecognizer` distance (5) and only more sideways
+`SidewaysSwipeGestureRecognizer`, internal, Pivot's too (one recogniser since the Tier 2 roll-up; it was
+`HubPanGestureRecognizer`, a copy of Pivot's `PivotSwipeGestureRecognizer`): a `GestureRecognizer` on the Hub, in the ScrollViewer part, starting past Avalonia's `ScrollGestureRecognizer` distance (5) and only more sideways
 than up or down, touch and pen only. A section's ScrollViewer keeps a drag up or down; a Slider or ToggleSwitch keeps
 its drag (`PhoneNoManipulation`). A press on moving sections holds them where they are (not in the loop's last part,
 where only the header moves); let go without a drag, or taken by a list in a section, they go to the nearer start.

@@ -49,7 +49,7 @@ namespace Cornflower.Controls;
 [TemplatePart("PART_ItemsPresenter", typeof(ItemsPresenter))]
 [TemplatePart("PART_ScrollViewer", typeof(Control))]
 [PseudoClasses(PortraitPseudoClass, LandscapePseudoClass)]
-public class Pivot : SelectingItemsControl
+public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
 {
     /// <summary>Defines <see cref="Title"/>.</summary>
     public static readonly StyledProperty<object?> TitleProperty =
@@ -91,7 +91,7 @@ public class Pivot : SelectingItemsControl
     public Pivot()
     {
         _motion = new PivotMotion(this);
-        GestureRecognizers.Add(new PivotSwipeGestureRecognizer(this));
+        GestureRecognizers.Add(new SidewaysSwipeGestureRecognizer(this, this));
         AddHandler(TappedEvent, OnTapped);
         ItemsView.CollectionChanged += OnItemsChanged;
         UpdateOrientation();
@@ -159,11 +159,18 @@ public class Pivot : SelectingItemsControl
         return this.TranslatePoint(point, _swipeArea) is { } local && new Rect(_swipeArea.Bounds.Size).Contains(local);
     }
 
-    internal void BeginSwipe() => _motion.BeginDrag();
+    bool ISidewaysSwipeTarget.CanSwipe => CanSwipe;
 
-    internal void Swipe(double travel) => _motion.Drag(travel);
+    bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => IsInSwipeArea(point);
 
-    internal void EndSwipe(double velocity) => _motion.Release(velocity);
+    // A press while it moves ends the move when the drag begins (PivotMotion.BeginDrag), and holds nothing.
+    bool ISidewaysSwipeTarget.HoldsOnPress() => false;
+
+    void ISidewaysSwipeTarget.BeginDrag() => _motion.BeginDrag();
+
+    void ISidewaysSwipeTarget.Drag(double travel) => _motion.Drag(travel);
+
+    void ISidewaysSwipeTarget.Release(double velocity) => _motion.Release(velocity);
 
     /// <summary>The motion's selection change: the selection moves, and the motion goes on from it.</summary>
     internal void SelectFromMotion(int index)

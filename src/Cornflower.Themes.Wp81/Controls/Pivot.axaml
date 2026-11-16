@@ -99,7 +99,7 @@
     - :unselectedlocked, the phone's UnselectedLocked: the text gone (Opacity 0) and PhonePivotLockedTranslation (40)
       to the right, both over the phone's 0.33 s generated transition to and from it (on Avalonia's clock).
     The text's line is the phone's (PhoneHeaderLine). Its character spacing is the header's LetterSpacing, PivotHeaderItemCharacterSpacing
-    thousandths of its FontSize (PhonePivotHeader), which every text in it inherits, an app's template's too, as WinRT's
+    thousandths of its FontSize (PhoneCharacterSpacing), which every text in it inherits, an app's template's too, as WinRT's
     CharacterSpacing is inherited.
   -->
   <ControlTheme x:Key="{x:Type cfp:PivotHeaderItem}" TargetType="cfp:PivotHeaderItem">
@@ -110,11 +110,11 @@
     <Setter Property="Margin" Value="{DynamicResource PivotHeaderItemMargin}" />
     <Setter Property="Padding" Value="{DynamicResource PivotHeaderItemPadding}" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
-    <Setter Property="wp81:PhonePivotHeader.CharacterSpacing" Value="{DynamicResource PivotHeaderItemCharacterSpacing}" />
+    <Setter Property="wp81:PhoneCharacterSpacing.CharacterSpacing" Value="{DynamicResource PivotHeaderItemCharacterSpacing}" />
     <Setter Property="LetterSpacing">
-      <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+      <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
         <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
-        <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
       </MultiBinding>
     </Setter>
     <Setter Property="Template">
