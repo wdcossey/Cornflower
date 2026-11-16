@@ -41,8 +41,10 @@ void OnPopulating(object? sender, PopulatingEventArgs e) => ((AutoCompleteBox)se
   border and black text in both themes; rows 39.17 tall, 48.75 apart (the phone's ListViewItems, with the tilt).
 - **Its height**: its rows', up to 2.5 above the keyboard's top (Avalonia's `InputPane`), or above the window's bottom
   with no keyboard, and never over `MaxDropDownHeight`; the rest scroll.
-- **A key** asks the app 150 ms later (`Populating`), and the list opens if it gave anything; emptying the box asks
-  again. `Text` set from code doesn't open the list.
+- **A key** asks the app 150 ms after the last key (`Populating`), and the list opens if it gave anything; emptying
+  the box asks again. `Text` set from code doesn't open the list.
+- **While open** the list follows the box as the page lays out; a tap on the box goes to the box and the list stays;
+  with no room below the box the list closes.
 - **A tap on a suggestion** puts it in the box and closes the list; the box keeps the focus, so the keyboard stays.
 - **Back** closes the list and takes the focus from the box, before the page's `NavigationPage` sees it; the next Back
   is the page's. The keyboard going down (Android's keyboard takes the first Back itself) does the same.

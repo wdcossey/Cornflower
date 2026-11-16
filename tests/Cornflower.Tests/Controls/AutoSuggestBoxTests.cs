@@ -304,6 +304,72 @@ public class AutoSuggestBoxTests
         Assert.Equal(200, stage.InWindow(stage.List).Height, 0.01);
     }
 
+    // A keyboard that covers nothing, or one over the list's top (a box low on a page that, unlike the phone's, doesn't
+    // move up), is passed over: the list runs to the window's bottom rather than shrink to nothing.
+    [AvaloniaFact]
+    public void A_Keyboard_Covering_Nothing_Or_Over_The_Lists_Top_Is_Passed_Over()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(atTop: true, keyboard: keyboard);
+        var room = Scene.ReferenceHeight - KeyboardGap - ListTop;
+
+        keyboard.Show(default);
+        stage.Open(3);
+        Assert.Equal(room, stage.List.MaxHeight, 0.01);
+
+        keyboard.Show(new Rect(0, 30, 450, 770));
+        stage.Settle();
+        Assert.True(stage.Box.IsDropDownOpen);
+        Assert.Equal(room, stage.List.MaxHeight, 0.01);
+    }
+
+    // With no room at all below the box, the list closes rather than stay open and unseen.
+    [AvaloniaFact]
+    public void With_No_Room_Below_The_Box_The_List_Closes()
+    {
+        using var stage = new Stage();
+        // The box's bottom at or past the window's bottom.
+        stage.Slot.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
+        stage.Slot.Height = 200;
+        stage.Slot.Margin = new Thickness(19, Scene.ReferenceHeight - FocusedBoxBottom, 19, 0);
+        stage.Open(3);
+        Assert.True(stage.InWindow(stage.TextBox).Bottom >= Scene.ReferenceHeight);
+
+        Assert.False(stage.Box.IsDropDownOpen);
+    }
+
+    // While open, the list follows the box as the page lays it out again, and its room with it.
+    [AvaloniaFact]
+    public void The_Open_List_Follows_The_Box()
+    {
+        using var stage = new Stage(atTop: true);
+        stage.Open(3);
+
+        stage.Slot.Margin = new Thickness(19, 100 - Margin.Top, 19, 0);
+        stage.Settle();
+        stage.Settle();
+
+        Assert.Equal(ListTop + 100, stage.InWindow(stage.List).Y, 0.01);
+        Assert.Equal(Scene.ReferenceHeight - KeyboardGap - ListTop - 100, stage.List.MaxHeight, 0.01);
+    }
+
+    // A tap on the box with the list open goes to the box (its caret); the list stays.
+    [AvaloniaFact]
+    public void A_Tap_On_The_Box_Keeps_The_List()
+    {
+        using var stage = new Stage(atTop: true);
+        stage.Open(3);
+        var at = stage.InWindow(stage.TextBox).Center;
+
+        var touch = stage.Window.TouchBegin(at);
+        Dispatcher.UIThread.RunJobs();
+        stage.Window.TouchEnd(touch, at);
+        stage.Settle();
+
+        Assert.True(stage.Box.IsDropDownOpen);
+        Assert.True(stage.TextBox.IsFocused);
+    }
+
     // The grabs' pixels with three suggestions, dark and light: the focused box's accent border and white inside, the
     // borders on each other, the list's white inside and accent sides and bottom, the page under it, the text black.
     [AvaloniaTheory]
@@ -377,7 +443,8 @@ public class AutoSuggestBoxTests
 
         RunFor(5_000, () => asked is not null);
         Assert.NotNull(asked);
-        Assert.InRange(asked.Value, CueAfterKey, 5_000);
+        // Avalonia's timer against a stopwatch started before the key: a few milliseconds' slack for the timer's rounding.
+        Assert.InRange(asked.Value, CueAfterKey - 5, 5_000);
         stage.Settle();
         Assert.True(stage.Box.IsDropDownOpen);
         Assert.Equal(3, stage.Rows.Count);

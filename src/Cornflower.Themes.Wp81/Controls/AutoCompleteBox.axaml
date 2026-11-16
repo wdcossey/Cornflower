@@ -25,7 +25,9 @@
     - FilterMode None: the phone's control doesn't filter; the app gives the suggestions as ItemsSource.
     - MinimumPrefixLength 0: the phone tells the app of every change the user makes, to nothing too.
     - MinimumPopulateDelay 150 ms: the phone raises TextChanged (UserInput), the app's cue, 150 to 177 ms after the key
-      (#150); Avalonia's cue is Populating, and the list opens after it, so the list comes when the phone's does.
+      (#150); Avalonia's cue is Populating, and the list opens after it, so the list comes when the phone's does. It is
+      Avalonia's wait after the last key: a key within 150 ms of the one before starts it again (the phone's two quick
+      keys weren't read).
     - PhoneSuggestionList (internal): the list's place and height, and Back and the keyboard closing it.
 
     The phone's Orientation states change nothing. FocusAdorner is cleared: the box's Focused state is the focus look.
@@ -56,13 +58,15 @@
                    MaxLength="{TemplateBinding MaxLength}"
                    InnerLeftContent="{TemplateBinding InnerLeftContent}"
                    InnerRightContent="{TemplateBinding InnerRightContent}" />
-          <!-- The placement no positioner adjusts: PhoneSuggestionList gives the list the room it has below the box. -->
+          <!-- The placement no positioner adjusts: PhoneSuggestionList gives the list the room it has below the box. A tap
+               elsewhere closes the list (Avalonia's light dismiss); a tap on the box goes to the box, the list staying. -->
           <Popup x:Name="PART_Popup"
                  PlacementTarget="{Binding #PART_TextBox}"
                  Placement="Bottom"
                  PlacementConstraintAdjustment="None"
                  ShouldUseOverlayLayer="True"
-                 IsLightDismissEnabled="True">
+                 IsLightDismissEnabled="True"
+                 OverlayInputPassThroughElement="{Binding #PART_TextBox}">
             <Border x:Name="SuggestionsContainer"
                     Width="{Binding #PART_TextBox.Bounds.Width}"
                     Background="{DynamicResource AutoSuggestBackgroundThemeBrush}"

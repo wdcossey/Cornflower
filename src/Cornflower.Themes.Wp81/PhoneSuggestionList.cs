@@ -20,7 +20,8 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>How tall.</b> As tall as its suggestions, up to the room below the box: down to 2.5 above the keyboard's top
 /// while the keyboard is up (twelve suggestions run to 450.83, the keyboard's top 453.33), or above the window's bottom,
 /// inside its safe area, when there is none; and never over <see cref="AutoCompleteBox.MaxDropDownHeight"/> (WinRT's
-/// <c>MaxSuggestionListHeight</c>). Worked out as it opens and again when the keyboard or the window changes.</para>
+/// <c>MaxSuggestionListHeight</c>). Worked out as it opens, and again while it is open when the keyboard, the window,
+/// its safe area or the page's layout changes, the list placed again under the box if the page moved it.</para>
 /// <para><b>Back and the keyboard.</b> On the phone one Back hides the keyboard, closes the list and takes the focus from
 /// the box, in one frame, and the next Back reaches the app (#150). Here a class handler on
 /// <see cref="TopLevel.BackRequestedEvent"/> does it for a box that has the focus: it closes the list, clears the focus
@@ -79,10 +80,12 @@ internal static class PhoneSuggestionList
         (top.FocusManager?.GetFocusedElement() as Visual)?.GetSelfAndVisualAncestors()
             .OfType<AutoCompleteBox>().FirstOrDefault(GetIsEnabled);
 
-    /// <summary>What the phone does on Back or when its keyboard goes: the list closes and the box loses the focus.</summary>
+    /// <summary>
+    /// What the phone does on Back or when its keyboard goes: the box loses the focus, and so its list closes (Avalonia's
+    /// box closes it as it loses the focus).
+    /// </summary>
     private static void LetGo(AutoCompleteBox box)
     {
-        box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
         TopLevel.GetTopLevel(box)?.FocusManager?.Focus(null);
     }
 
@@ -93,6 +96,7 @@ internal static class PhoneSuggestionList
         private Popup? _popup;
         private TextBox? _textBox;
         private Control? _list;
+        private Point? _placedAt;
         private TopLevel? _top;
         private IPhoneKeyboard? _keyboard;
         private bool _keyboardWasOpen;
@@ -124,13 +128,21 @@ internal static class PhoneSuggestionList
         private void Take(Popup? popup, TextBox? textBox)
         {
             if (_popup is not null)
+            {
                 _popup.Opened -= OnOpened;
+                _popup.Closed -= OnClosed;
+            }
+            if (_textBox is not null)
+                _textBox.LayoutUpdated -= OnLaidOut;
             _list?.RemoveHandler(InputElement.PointerReleasedEvent, OnListReleased);
             _popup = popup;
             _textBox = textBox;
             _list = popup?.Child as Control;
             if (_popup is not null)
+            {
                 _popup.Opened += OnOpened;
+                _popup.Closed += OnClosed;
+            }
             _list?.AddHandler(InputElement.PointerReleasedEvent, OnListReleased, RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
@@ -155,6 +167,8 @@ internal static class PhoneSuggestionList
             if (_top is null)
                 return;
             _top.PropertyChanged += OnTopPropertyChanged;
+            if (_top.InsetsManager is { } insets)
+                insets.SafeAreaChanged += OnSafeAreaChanged;
             _keyboard = KeyboardOf(_top);
             if (_keyboard is not null)
             {
@@ -166,7 +180,11 @@ internal static class PhoneSuggestionList
         private void Detach()
         {
             if (_top is not null)
+            {
                 _top.PropertyChanged -= OnTopPropertyChanged;
+                if (_top.InsetsManager is { } insets)
+                    insets.SafeAreaChanged -= OnSafeAreaChanged;
+            }
             if (_keyboard is not null)
             {
                 _keyboard.Changed -= OnKeyboardChanged;
@@ -178,8 +196,7 @@ internal static class PhoneSuggestionList
 
         private void OnBoxPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.Property == AutoCompleteBox.IsDropDownOpenProperty && e.GetNewValue<bool>()
-                || e.Property == AutoCompleteBox.MaxDropDownHeightProperty)
+            if (e.Property == AutoCompleteBox.MaxDropDownHeightProperty)
                 Place();
         }
 
@@ -189,7 +206,24 @@ internal static class PhoneSuggestionList
                 Place();
         }
 
-        private void OnOpened(object? sender, EventArgs e) => Place();
+        private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => Place();
+
+        /// <summary>While the list is open, it follows the box as the page lays it out (a scroll, a resize).</summary>
+        private void OnOpened(object? sender, EventArgs e)
+        {
+            if (_textBox is not null)
+                _textBox.LayoutUpdated += OnLaidOut;
+            Place();
+        }
+
+        private void OnClosed(object? sender, EventArgs e)
+        {
+            _placedAt = null;
+            if (_textBox is not null)
+                _textBox.LayoutUpdated -= OnLaidOut;
+        }
+
+        private void OnLaidOut(object? sender, EventArgs e) => Place();
 
         private void OnKeyboardChanged(object? sender, EventArgs e)
         {
@@ -202,22 +236,36 @@ internal static class PhoneSuggestionList
                 Place();
         }
 
-        /// <summary>Hangs the list from the box's bottom border and gives it the room below, down to the keyboard.</summary>
+        /// <summary>
+        /// Hangs the open list from the box's bottom border and gives it the room below, down to the keyboard. A keyboard
+        /// that covers nothing, or whose top is at or above the list's, is passed over (the list then runs under it to
+        /// the window's bottom, as the page doesn't move up as the phone's does); with no room at all, the list closes
+        /// rather than stay open and unseen.
+        /// </summary>
         private void Place()
         {
-            if (_popup is null || _textBox is null || _top is null)
+            if (_popup is not { IsOpen: true } || _textBox is null || _top is null || _popup.Child is not Control list)
                 return;
-            _popup.VerticalOffset = -_textBox.BorderThickness.Bottom;
-            if (_popup.Child is not Control list)
+            if (_textBox.TranslatePoint(new Point(0, _textBox.Bounds.Height), _top) is not { } below)
                 return;
-            var below = _textBox.TranslatePoint(new Point(0, _textBox.Bounds.Height), _top);
-            if (below is not { } at)
-                return;
+            var offset = -_textBox.BorderThickness.Bottom;
+            // Avalonia places an open popup again only when its target's own bounds change, not when the page moves the
+            // target (a scroll, a margin); an offset change places it again, so the list stays hung from the box.
+            if (_placedAt is { } was && was != below)
+                _popup.VerticalOffset = offset - 1;
+            _popup.VerticalOffset = offset;
+            _placedAt = below;
+            var top = below.Y + offset;
             var bottom = new Rect(_top.ClientSize).Deflate(_top.InsetsManager?.SafeAreaPadding ?? default).Bottom;
-            if (_keyboard is { IsOpen: true } keyboard)
+            if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0 && keyboard.Occluded.Top - KeyboardGap > top)
                 bottom = Math.Min(bottom, keyboard.Occluded.Top);
-            var room = bottom - KeyboardGap - (at.Y + _popup.VerticalOffset);
-            list.MaxHeight = Math.Max(0, Math.Min(room, _box.MaxDropDownHeight));
+            var room = bottom - KeyboardGap - top;
+            if (room <= 0)
+            {
+                _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
+                return;
+            }
+            list.MaxHeight = Math.Min(room, _box.MaxDropDownHeight);
         }
     }
 

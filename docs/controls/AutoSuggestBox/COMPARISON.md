@@ -63,6 +63,7 @@ Raw pixels, the column at x 540 and the row at y 300 (y 160 at rest), read from 
 | Enter | `KeyDown` only | with the list open, Avalonia's commit closes it |
 | `Text` from code | `TextChanged` (`ProgrammaticChange`), the list stays shut | `TextChanged`, the list stays shut |
 | Back | hides the keyboard, closes the list, takes the focus, in one frame; the next reaches the app | closes the list, takes the focus (and so the keyboard); the next reaches the page. On Android the keyboard's own Back comes first, and its going down does the same |
+| A tap on the box, the list open | not read | the tap goes to the box (its caret); the list stays |
 | A tap off the box and list | the focus, the keyboard and the list go | the list goes (Avalonia's light dismiss); the focus stays where the tap leaves it (unmeasured whether the tap reaches the page) |
 
 ## Known gaps

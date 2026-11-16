@@ -9,7 +9,7 @@
              FontSize="{DynamicResource TextStyleLargeFontSize}">
   <!--
     The 8.1 AutoSuggestBox as Avalonia's AutoCompleteBox: no style, the header by cf:ControlHeader.Header (WinRT's
-    Header), WinRT's PlaceholderText. Type a letter: 150 ms later the page gives the fruits that start with what is
+    Header), WinRT's PlaceholderText. Type a letter: 150 ms after the last key the page gives the fruits that start with what is
     typed (Populating, the phone's TextChanged with UserInput) and the list hangs from the box; tap one to put it in the
     box. Back closes the list and takes the focus. The section headings are the type ramp's.
   -->

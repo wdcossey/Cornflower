@@ -35,9 +35,12 @@ Each has its test in `tests/Cornflower.Tests/Controls/AutoSuggestBoxTests.cs`, a
 | The list hangs from the box's bottom border (63.33, the borders on each other), the box's width; one suggestion 53.75 tall, three 151.25; rows 39.17 tall, 48.75 apart, the first 12.08 down; the phone's ListViewItems (they tilt) at 20.26 in black | the grabs; #150 | `The_List_Hangs_From_The_Boxs_Bottom_Border_As_Tall_As_Its_Rows` |
 | Twelve run it down to 2.5 above the keyboard's top (387.5 tall, to 450.83), the rest scrolled to | the `list-12` grab | `Twelve_Fill_The_List_Down_To_The_Keyboard` |
 | With no keyboard it may run to 2.5 above the window's bottom; it follows the keyboard; `MaxDropDownHeight` caps it | WinRT's `MaxSuggestionListHeight`; a desktop has no keyboard | `The_List_Takes_The_Room_Above_The_Keyboard_Or_The_Windows_Bottom_Up_To_Its_Max` |
+| A keyboard that covers nothing, or one over the list's top (a box low on a page that doesn't move up), is passed over; with no room at all the list closes rather than stay open unseen | Avalonia's `InputPane` can report either; the phone always moves the box up | `A_Keyboard_Covering_Nothing_Or_Over_The_Lists_Top_Is_Passed_Over`, `With_No_Room_Below_The_Box_The_List_Closes` |
+| While open, the list follows the box as the page lays it out again (Avalonia places a popup again only when its target's own bounds change) | the list hangs from the box | `The_Open_List_Follows_The_Box` |
+| A tap on the box with the list open goes to the box; the list stays | Avalonia's light dismiss passes the box through (`OverlayInputPassThroughElement`); the phone's not read | `A_Tap_On_The_Box_Keeps_The_List` |
 | The pixels: the focused box's accent border and white inside, the borders on each other, the list white with accent sides and bottom, the text black, in both themes | the grabs' rows 64 to 69, 152 to 157, 509 to 514; columns 46 to 51 | `Its_Pixels_Are_The_Phones` |
 | The app gives the suggestions; the box doesn't filter them | WinRT's API: no filter; the probe set `ItemsSource` in `TextChanged` | `The_App_Gives_The_Suggestions_And_The_Box_Doesnt_Filter_Them` |
-| A key asks the app 150 ms later, and the list opens then | #150: `TextChanged` (`UserInput`) 150 to 177 ms after `KeyDown`, the list opening as the app sets `ItemsSource` | `A_Key_Asks_The_App_150_Ms_Later_And_The_List_Opens_Then` |
+| A key asks the app 150 ms later (after the last key: a key within 150 ms starts the wait again), and the list opens then | #150: `TextChanged` (`UserInput`) 150 to 177 ms after `KeyDown`, the list opening as the app sets `ItemsSource` | `A_Key_Asks_The_App_150_Ms_Later_And_The_List_Opens_Then` |
 | Emptying the box asks the app again | the phone raises `TextChanged` for every change the user makes | `Emptying_The_Box_Asks_The_App_Again` |
 | A tap on a suggestion puts it in the box and closes the list; the box keeps the focus (the keyboard stays) | #150 case 3 | `A_Tap_On_A_Suggestion_Puts_It_In_The_Box_And_Closes_The_List` |
 | `Text` from code doesn't open the list | #150 case 5 (`ProgrammaticChange`) | `Text_From_Code_Doesnt_Open_The_List` |
@@ -103,7 +106,8 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 - **Every change asks the app** (`MinimumPrefixLength` 0), the box emptied too, as the phone's `TextChanged` comes for
   every change. To reverse: delete the setter (Avalonia's is 1).
 - **The cue 150 ms after the key** (`MinimumPopulateDelay`): the least of #150's 150 to 177 ms. The list opens with it, so
-  it opens when the phone's does. Avalonia's `TextChanged` still comes at once. To reverse: delete the setter.
+  it opens when the phone's does. Avalonia's wait restarts at each key, so quick keys give one cue after the last; the
+  phone's two quick keys weren't read. Avalonia's `TextChanged` still comes at once. To reverse: delete the setter.
 - **Not Flyout's popup host.** `PhonePopupHost` places a popup at the window's top or over all of it, dims and turns it
   in bands; the list hangs from the box, nothing dims, and no motion of the list was read. So the template's `Popup` is
   Avalonia's own, in the overlay layer (`ShouldUseOverlayLayer`, which the host would only have set), placed below the
@@ -129,7 +133,11 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
   target, the target's width, its height down to the keyboard), so the list can be hosted there with its motion; and
   its Back handler leaving the request to a focused text box first, so the order with `PhoneSuggestionList` is fixed.
 - **`CLAUDE.md`**: the rows for this PR (the theme, `PhoneSuggestionList`, the tests, the sample page, the captures'
-  folder's use), for the roll-up.
+  folder's use), for the roll-up; and in `HoleParts`'s sentence, "the file dialog its CheckBox, AutoCompleteBox,
+  CalendarDatePicker, ComboBox, the file dialogs and NumericUpDown their TextBoxes" loses "AutoCompleteBox, " (it is no
+  longer a hole).
+- **One area rule**: `PhonePopupHost`'s window area inside the safe area (`Area()`) as an internal helper both use;
+  `PhoneSuggestionList` repeats it today.
 
 ## For you to decide
 
@@ -145,7 +153,10 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 
 - The list's open and close motion: no recording reads it.
 - Landscape: the phone's template turns the list upward (`UpwardTransform`, `ListItemOrderTransform`); no grab.
-- A tap on the box while the list is open, and whether a tap off the box reaches the page: not read.
+- A tap on the box while the list is open (ours keeps the list), and whether a tap off the box reaches the page: not
+  read.
+- A keyboard that grows while up (another layout of keys): Avalonia's `InputPane` raises only its state, so the list's
+  room follows it when the window or the page lays out again, not before.
 - The device run on the Pixel 8 (the keyboard's rectangle and Back on Android) and the real-window run.
 
 ## Checklist
