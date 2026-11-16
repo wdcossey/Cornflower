@@ -909,6 +909,8 @@ public class PivotTests
             stage.Pivot.SelectedIndex = 3;
         };
         Swipe(stage, clock, 6.25);
+        clock.At(156.25 + 6 * Frame);                                         // the frame after the redirect
+        Assert.True(stage.Shown(1), "the new move starts from the item the swipe chose, which goes out first");
         clock.At(3000);
         Assert.Equal(3, stage.Pivot.SelectedIndex);
         Assert.False(stage.Pivot.Motion.IsMoving);
