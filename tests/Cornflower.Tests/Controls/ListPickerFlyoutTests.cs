@@ -166,6 +166,8 @@ public class ListPickerFlyoutTests
             Assert.True(PhonePickerFlyout.GetIsEnabled(stage.Presenter));
             Assert.NotNull(PhonePickerFlyout.HostOf(stage.Presenter));
             Assert.True(stage.Picker.Popup.ShouldUseOverlayLayer);
+            // Nothing outside it to tap: Back and its own buttons close it.
+            Assert.False(stage.Picker.Popup.IsLightDismissEnabled);
             Assert.Same(stage.Scene.Window, TopLevel.GetTopLevel(stage.Presenter));
         }
     }
@@ -201,6 +203,7 @@ public class ListPickerFlyoutTests
         Assert.Equal(18.14, title.FontSize, 0.001);
         Assert.Equal(FontWeight.SemiBold, title.FontWeight);
         Assert.Equal(Title, stage.InWindow(title).Position, new PointComparer(0.001));
+        Assert.Same(stage.Scene.Window.FindResource(ThemeVariant.Dark, "PhoneForegroundBrush"), title.Foreground);
     }
 
     [AvaloniaFact]
