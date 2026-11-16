@@ -305,79 +305,20 @@ namespace RefApp
         /// </summary>
         private async Task ListCheck(Grid host)
         {
-            var list = new ListView
+            var parts = await PlaceCheckList(host, false);
+            if (parts == null)
             {
-                Name = "list",
-                SelectionMode = ListViewSelectionMode.Multiple,
-                Margin = new Thickness(19, HeaderHeight + 20, 19, 0),
-                ItemTemplate = (DataTemplate)XamlReader.Load("<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"><TextBlock Text=\"{Binding}\" Style=\"{ThemeResource ListViewItemTextBlockStyle}\" /></DataTemplate>"),
-            };
-            for (var i = 0; i < 40; i++)
-            {
-                list.Items.Add("item " + i);
-            }
-
-            var header = Header();
-            var page = await Page(host, header, list);
-            var items = Enumerable.Range(0, 7).Select(i => list.ContainerFromIndex(i) as ListViewItem).ToList();
-            var sv = Find(list, "ScrollViewer") as ScrollViewer;
-            if (items.Any(item => item == null) || sv == null)
-            {
-                await Finish(sv == null ? "the ListView's template has no ScrollViewer" : "the ListView made no container for one of its first 7 items");
                 return;
             }
 
-            LogPointers(list, "list");
-            LogGestures(list, "list");
-            list.SelectionChanged += (s, e) => Log("selection", "added " + string.Join(",", e.AddedItems) + " removed " + string.Join(",", e.RemovedItems) + " now index " + list.SelectedIndex + ", " + list.SelectedItems.Count + " selected");
-            var boxes = new List<FrameworkElement>();
-            foreach (var item in items)
-            {
-                var index = list.IndexFromContainer(item);
-                item.Name = "item" + index;
-                var tilt = Find(item, "TiltContainer");
-                var box = Find(item, "CheckboxTiltContainer");
-                if (tilt == null || box == null)
-                {
-                    await Finish("no " + (tilt == null ? "TiltContainer" : "CheckboxTiltContainer") + " in item " + index + "'s template");
-                    return;
-                }
-
-                boxes.Add(box);
-                var b = Bounds(item);
-                var tb = Bounds(tilt);
-                var bb = Bounds(box);
-                Log("layout", "item" + index + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + " tilt " + Num(tb.X) + " " + Num(tb.Y) + " " + Num(tb.Width) + " " + Num(tb.Height) + " box " + Num(bb.X) + " " + Num(bb.Y) + " " + Num(bb.Width) + " " + Num(bb.Height));
-                WatchStates(item);
-                var t = tilt;
-                var c = box;
-                WatchValue("projection item" + index, sample => Read(t.Projection, sample));
-                WatchValue("transform item" + index, sample => Read(t.RenderTransform, sample));
-                WatchValue("projection box" + index, sample => Read(c.Projection, sample));
-                WatchValue("transform box" + index, sample => Read(c.RenderTransform, sample));
-            }
-
-            WatchFrames(() => new[] { sv.VerticalOffset }, now => "offset " + Num(now[0]));
-            var top = Offset(sv, 0);
-            Func<ListViewSelectionMode, Func<Task>> mode = m => async () =>
-            {
-                await top();
-                if (list.SelectionMode != m)
-                {
-                    list.SelectionMode = m;
-                    Log("setup", "SelectionMode " + m);
-                }
-            };
-            Func<int, double, double, Windows.Foundation.Point> at = (i, fx, fy) =>
-            {
-                var b = Bounds(items[i]);
-                return new Windows.Foundation.Point(b.X + b.Width * fx, b.Y + b.Height * fy);
-            };
-            Func<int, Windows.Foundation.Point> boxAt = i =>
-            {
-                var b = Bounds(boxes[i]);
-                return new Windows.Foundation.Point(b.X + b.Width / 2, b.Y + b.Height / 2);
-            };
+            var list = parts.List;
+            var items = parts.Items;
+            var sv = parts.ScrollViewer;
+            var page = parts.Page;
+            var header = parts.Band;
+            var mode = parts.Mode;
+            var at = parts.At;
+            var boxAt = parts.BoxAt;
 
             var multiple = mode(ListViewSelectionMode.Multiple);
             {
@@ -428,6 +369,119 @@ namespace RefApp
             }
 
             await RunScheduled(page, header);
+        }
+
+        /// <summary>What <see cref="PlaceCheckList"/> placed, and the helpers its touches are planned with.</summary>
+        private sealed class CheckList
+        {
+            public ListView List;
+            public List<ListViewItem> Items;
+            public ScrollViewer ScrollViewer;
+            public Grid Page;
+            public Border Band;
+
+            /// <summary>A setup that puts the list at its top and in a SelectionMode, logging the change.</summary>
+            public Func<ListViewSelectionMode, Func<Task>> Mode;
+
+            /// <summary>A point in item i, at fractions of its width and height, in the window.</summary>
+            public Func<int, double, double, Windows.Foundation.Point> At;
+
+            /// <summary>The centre of item i's check box, in the window.</summary>
+            public Func<int, Windows.Foundation.Point> BoxAt;
+        }
+
+        /// <summary>
+        /// <see cref="ListCheck"/>'s list, below the header band: 40 items, each a TextBlock in ListViewItemTextBlockStyle,
+        /// in SelectionMode Multiple, with item clicks as <paramref name="itemClick"/> says (each ItemClick logged). Its
+        /// pointer events, gestures and selection are logged; for its first 7 items, their places, their states and both
+        /// tilt containers' projections and transforms every frame; and the list's offset every frame. Null, with the
+        /// run finished, when a part is missing.
+        /// </summary>
+        private async Task<CheckList> PlaceCheckList(Grid host, bool itemClick)
+        {
+            var list = new ListView
+            {
+                Name = "list",
+                SelectionMode = ListViewSelectionMode.Multiple,
+                IsItemClickEnabled = itemClick,
+                Margin = new Thickness(19, HeaderHeight + 20, 19, 0),
+                ItemTemplate = (DataTemplate)XamlReader.Load("<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"><TextBlock Text=\"{Binding}\" Style=\"{ThemeResource ListViewItemTextBlockStyle}\" /></DataTemplate>"),
+            };
+            for (var i = 0; i < 40; i++)
+            {
+                list.Items.Add("item " + i);
+            }
+
+            var header = Header();
+            var page = await Page(host, header, list);
+            var items = Enumerable.Range(0, 7).Select(i => list.ContainerFromIndex(i) as ListViewItem).ToList();
+            var sv = Find(list, "ScrollViewer") as ScrollViewer;
+            if (items.Any(item => item == null) || sv == null)
+            {
+                await Finish(sv == null ? "the ListView's template has no ScrollViewer" : "the ListView made no container for one of its first 7 items");
+                return null;
+            }
+
+            LogPointers(list, "list");
+            LogGestures(list, "list");
+            list.SelectionChanged += (s, e) => Log("selection", "added " + string.Join(",", e.AddedItems) + " removed " + string.Join(",", e.RemovedItems) + " now index " + list.SelectedIndex + ", " + list.SelectedItems.Count + " selected");
+            list.ItemClick += (s, e) => Log("itemclick", (e.ClickedItem as string ?? "?") + ", mode " + list.SelectionMode);
+            var boxes = new List<FrameworkElement>();
+            foreach (var item in items)
+            {
+                var index = list.IndexFromContainer(item);
+                item.Name = "item" + index;
+                var tilt = Find(item, "TiltContainer");
+                var box = Find(item, "CheckboxTiltContainer");
+                if (tilt == null || box == null)
+                {
+                    await Finish("no " + (tilt == null ? "TiltContainer" : "CheckboxTiltContainer") + " in item " + index + "'s template");
+                    return null;
+                }
+
+                boxes.Add(box);
+                var b = Bounds(item);
+                var tb = Bounds(tilt);
+                var bb = Bounds(box);
+                Log("layout", "item" + index + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + " tilt " + Num(tb.X) + " " + Num(tb.Y) + " " + Num(tb.Width) + " " + Num(tb.Height) + " box " + Num(bb.X) + " " + Num(bb.Y) + " " + Num(bb.Width) + " " + Num(bb.Height));
+                WatchStates(item);
+                var t = tilt;
+                var c = box;
+                WatchValue("projection item" + index, sample => Read(t.Projection, sample));
+                WatchValue("transform item" + index, sample => Read(t.RenderTransform, sample));
+                WatchValue("projection box" + index, sample => Read(c.Projection, sample));
+                WatchValue("transform box" + index, sample => Read(c.RenderTransform, sample));
+            }
+
+            WatchFrames(() => new[] { sv.VerticalOffset }, now => "offset " + Num(now[0]));
+            var top = Offset(sv, 0);
+            return new CheckList
+            {
+                List = list,
+                Items = items,
+                ScrollViewer = sv,
+                Page = page,
+                Band = header,
+                Mode = m => async () =>
+                {
+                    await top();
+                    if (list.SelectionMode != m)
+                    {
+                        list.SelectionMode = m;
+                        Log("setup", "SelectionMode " + m);
+                    }
+                },
+                At = (i, fx, fy) =>
+                {
+                    var b = Bounds(items[i]);
+                    return new Windows.Foundation.Point(b.X + b.Width * fx, b.Y + b.Height * fy);
+                },
+                BoxAt = i =>
+                {
+                    var b = Bounds(boxes[i]);
+                    return new Windows.Foundation.Point(b.X + b.Width / 2, b.Y + b.Height / 2);
+                },
+            };
         }
 
         /// <summary>
