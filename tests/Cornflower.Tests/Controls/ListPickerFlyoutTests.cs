@@ -707,6 +707,14 @@ public class ListPickerFlyoutTests
 
         stage.OpenAtRest();
         Assert.Equal([true, false, false], stage.ListItems().Select(i => i.IsSelected));
+
+        // Both checked, both picked, and both checked again at the next opening.
+        stage.Tap(stage.ListItems()[2]);
+        stage.Tap(stage.Part<CommandBarButton>("PART_AcceptButton"));
+        stage.At(stage.Now + 500);
+        Assert.Equal(["a", "a"], picker.SelectedItems);
+        stage.OpenAtRest();
+        Assert.Equal([true, false, true], stage.ListItems().Select(i => i.IsSelected));
     }
 
     [AvaloniaFact]
