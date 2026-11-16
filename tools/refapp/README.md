@@ -1595,8 +1595,8 @@ Screen grabs and dumps from three `-Grab` runs: `20261116-1934-dev11` (`-Popups 
 what it missed, `20261116-1940-dev11` (the menu's pressed item, forced 700 ms after `Opened`) and `20261116-1944-dev11`
 (the AutoSuggestBox focused, and the dialog's TextBox focused 500 ms after `Opened`). A focused box's caret blinks,
 so its screen never held still for `vm\grab-loop.ps1`; the loop now counts a change only when more than 600 pixels of
-the window differ (`-MaxChangedPixels`; a blink is more than 64 and no more than 600 at the zoom that fits the VM's
-screen, as no blink was logged at 600). The PNGs are in `ref/wp81/<control>/`. View pixels throughout; positions in the
+the window differ (`-MaxChangedPixels`; a blink was more than 64, and at 600 every focused grab came back, at the zoom
+that fits the VM's screen). A change that small makes no new shot; the loop logs changes of 64 to 5,000 pixels. The PNGs are in `ref/wp81/<control>/`. View pixels throughout; positions in the
 window.
 
 ### AutoSuggestBox
@@ -1641,12 +1641,13 @@ own app bar in `20261109-2124-dev11`):
   DatePickerFlyout and TimePickerFlyout. ListPickerFlyout in `Single`, the ComboBox's full-screen picker and a
   PickerFlyout without the buttons have none: no buttons and no "...".
 - **It is the page's compact app bar:** the "..." dots' top row at 747.5 and their centres at 409.27, 418.15 and
-  427.10, as on a page's compact `BottomAppBar` (#23: its top at 737.08, 62.92 tall), and the same rings.
-- **Accept and cancel:** rings centred at x 187.50 and 261.25 (73.75 apart, about the bar's middle), y 768.34; each
-  41.17 across outside with a 2.68 stroke (the template says 38.5 and 2.5: the shell draws the bar about 7% larger,
-  as #23 found its height).
+  427.10, as on a page's compact `BottomAppBar` (#23: its top at 737.08, 62.92 tall), and the same rings (40.80).
+  The bar is the same colour as the picker behind it, so its top isn't seen in the pixels.
+- **Accept and cancel:** rings centred at x 187.50 and 261.25 (73.75 apart, about the bar's middle), y 768.33; each
+  40.80 across outside (the box of its outline at half ink) with a 2.68 stroke. The template says 38.5 and 2.5: the
+  shell draws the buttons about 6% larger, as it draws the bar 62.92 tall, not 57.5.
 - **The accept glyph (the check):** its box 20.00 × 17.23 dark, 19.92 × 17.12 light, centred within 0.13 of the ring's
-  centre. Its centre line runs from the left end (−8.31, −0.32) to the bottom corner (−1.93, +6.65) to the right end
+  centre. Its centre line runs from the left end (−8.32, −0.32) to the bottom corner (−1.93, +6.65) to the right end
   (+8.31, −6.22) from the ring's centre (light: ±8.53, the corner at +6.86). Its stroke is 3.37 dark and 2.94 light:
   the same outline, anti-aliased white on dark and black on light.
 - **The cancel glyph (the cross):** its box 16.06 × 15.87 dark (15.95 × 15.76 light), centred +0.19, +0.48 from the

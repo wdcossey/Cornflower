@@ -492,6 +492,8 @@ namespace RefApp
             {
                 under.Focus(FocusState.Programmatic);
                 await OpenDialog(false, true);
+                // ShowAsync puts the dialog's popups up a moment later: wait for them before logging their presses.
+                await Task.Delay(500);
                 LogOpenPopups("long dialog");
             }, 225, 600, 300);
             Case("long dialog: then Back", null, null);

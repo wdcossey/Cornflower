@@ -14,5 +14,6 @@ The names are the reference app's: `<theme>__MenuFlyout__<variant>__popup__scree
 - `long`: twenty-four items: the menu fills the screen.
 - `at-300`: four items, the target's top at 312.08: the menu below it.
 - `at-500`: four items, the target's top at 512.08: the menu above it.
+- `at-640` and `at-720`: the same with the target's top at 652.08 and 732.08: above it.
 
 What they show, in numbers, is in [`tools/refapp/README.md`](../../../tools/refapp/README.md), "MenuFlyout".

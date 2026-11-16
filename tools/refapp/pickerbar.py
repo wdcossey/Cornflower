@@ -9,7 +9,7 @@ DatePickerFlyout, TimePickerFlyout, a ComboBox of 6 or more), it looks at the bo
 bar's "..." (the right 160), and finds each ring: a connected piece of ink about 90 px across with a hole. For each
 ring it prints, in view pixels (raw / rawPixelsPerViewPixel from the run's index.json):
 
-- the ring's centre and outer diameter, and its stroke: the ink summed across the ring on the four lines out from
+- the ring's centre and outer diameter (the box of its outline at half ink), and its stroke: the ink summed across the ring on the four lines out from
   the centre (left, right, up, down), averaged;
 - the glyph inside it (the ink inside the ring's inner edge, less 2 px): its box, that of its outline at half ink, its
   centre against the ring's, its ink area, and its stroke, 2 A / P, A the ink area and P the length of the glyph's
@@ -100,22 +100,6 @@ def contour(ink, x0, y0, x1, y1, level=0.5):
     return total, (min(xs), min(ys), max(xs), max(ys))
 
 
-def extent(profile, half=0.5):
-    """First and last index whose ink passes `half`, refined to the fraction of the edge pixel."""
-    idx = [i for i, v in enumerate(profile) if v > 0.02]
-    if not idx:
-        return None
-    lo, hi = idx[0], idx[-1]
-    while lo < hi and profile[lo] < half:
-        lo += 1
-    while hi > lo and profile[hi] < half:
-        hi -= 1
-    # The edge pixel's partial cover moves the edge out by that fraction.
-    first = lo - (min(1.0, profile[lo - 1]) if lo > 0 else 0.0)
-    last = hi + 1 + (min(1.0, profile[hi + 1]) if hi + 1 < len(profile) else 0.0)
-    return first, last
-
-
 def ring_stroke(ink, cx, cy, r_out):
     """The ink summed along the four lines from the centre out past the ring, averaged."""
     n = int(r_out) + 4
@@ -156,11 +140,13 @@ def measure(path, scale):
         rings.append((min(xs), min(ys), max(xs), max(ys)))
     out = []
     for (x0, y0, x1, y1) in rings:
-        cols = [sum(ink[y][x] for y in range(y0, y1 + 1)) for x in range(x0 - 2, x1 + 3)]
-        rws = [sum(ink[y][x] for x in range(x0, x1 + 1)) for y in range(y0 - 2, y1 + 3)]
-        ex, ey = extent(cols), extent(rws)
-        left, right = x0 - 2 + ex[0], x0 - 2 + ex[1]
-        top, bottom = y0 - 2 + ey[0], y0 - 2 + ey[1]
+        # The ring's outer edge: the box of its outline at half ink, as the glyph's (a row or column sum of ink would put
+        # an edge that falls part-way through a pixel up to a pixel out).
+        pad = 3
+        region = [[ink[y][x] if 0 <= y < len(ink) and 0 <= x < len(ink[0]) else 0.0 for x in range(x0 - pad, x1 + pad + 1)]
+                  for y in range(y0 - pad, y1 + pad + 1)]
+        _, (left, top, right, bottom) = contour(region, 1, 1, len(region[0]) - 2, len(region) - 2)
+        left, right, top, bottom = left + x0 - pad, right + x0 - pad, top + y0 - pad, bottom + y0 - pad
         cx, cy = (left + right) / 2, (top + bottom) / 2
         diameter = ((right - left) + (bottom - top)) / 2
         stroke = ring_stroke(ink, cx, cy, diameter / 2)
@@ -242,12 +228,24 @@ def report(run):
 
 def selftest():
     """A ring and a cross drawn with known sizes, anti-aliased by 8 x 8 supersampling, measured back. The cross's
-    sharp corners read about 0.3 px inside at half ink, so its box is checked to 0.8 px."""
+    sharp corners read 0.3 to 0.9 px inside at half ink, by where they fall on the pixels, so its box is checked to 1 px."""
+    failures = []
+    # One on the pixel grid, and two with the centre and the edges part-way through pixels.
+    for cx, cy, r_out in ((150.0, 120.0, 46.0), (150.5, 120.0, 46.0), (150.3, 120.7, 46.4)):
+        failures += _selftest_one(cx, cy, r_out)
+    if failures:
+        print('selftest failed: ' + '; '.join(failures))
+        return 1
+    print('selftest passed: ring centre, diameter and stroke; the cross\'s box and stroke, on and off the pixel grid')
+    return 0
+
+
+def _selftest_one(cx, cy, r_out):
     import zlib
     import struct
     import tempfile
     W, H = 400, BAND
-    cx, cy, r_out, ring_w, stroke, arm = 150.0, 120.0, 46.0, 6.0, 7.0, 20.0
+    ring_w, stroke, arm = 6.0, 7.0, 20.0
 
     def inked(x, y):
         d = math.hypot(x - cx, y - cy)
@@ -278,6 +276,7 @@ def selftest():
             f.write(data)
         _, found, _, _ = measure(path, 1.0)
     failures = []
+    at = f' (ring at {cx}, {cy}, r {r_out})'
     if len(found) != 1:
         failures.append(f'{len(found)} rings, not 1')
     else:
@@ -286,16 +285,12 @@ def selftest():
         g = m['glyph']
         span = 2 * arm + stroke / math.sqrt(2)
         checks = [('centre x', rcx, cx, 0.2), ('centre y', rcy, cy, 0.2), ('diameter', dia, 2 * r_out, 0.3),
-                  ('ring stroke', rs, ring_w, 0.2), ('glyph width', g['right'] - g['left'], span, 0.8),
-                  ('glyph height', g['bottom'] - g['top'], span, 0.8), ('glyph stroke', m['stroke'], stroke, 0.35)]
+                  ('ring stroke', rs, ring_w, 0.2), ('glyph width', g['right'] - g['left'], span, 1.0),
+                  ('glyph height', g['bottom'] - g['top'], span, 1.0), ('glyph stroke', m['stroke'], stroke, 0.35)]
         for label, got, want, tol in checks:
             if abs(got - want) > tol:
-                failures.append(f'{label} {got:.3f}, want {want:.3f} within {tol}')
-    if failures:
-        print('selftest failed: ' + '; '.join(failures))
-        return 1
-    print('selftest passed: ring centre, diameter and stroke; the cross\'s box and stroke')
-    return 0
+                failures.append(f'{label} {got:.3f}, want {want:.3f} within {tol}{at}')
+    return failures
 
 
 def main():

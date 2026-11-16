@@ -77,11 +77,11 @@ public static class Watch {
         }
     }
 
-    // How many pixels differ; all of them if either is missing or the sizes differ.
-    public static int Changed(int[] a, int[] b) {
-        if (a == null || b == null || a.Length != b.Length) return int.MaxValue;
+    // How many pixels differ, counted up to cap; cap if either is missing or the sizes differ.
+    public static int Changed(int[] a, int[] b, int cap) {
+        if (a == null || b == null || a.Length != b.Length) return cap;
         var n = 0;
-        for (var i = 0; i < a.Length; i++) if (a[i] != b[i]) n++;
+        for (var i = 0; i < a.Length; i++) if (a[i] != b[i] && ++n >= cap) return cap;
         return n;
     }
 }
@@ -146,11 +146,12 @@ while (-not (Test-Path $StopFile)) {
     if ($h -eq [IntPtr]::Zero) { continue }
 
     $pixels = [Watch]::Pixels($h)
-    $changed = [Watch]::Changed($pixels, $last)
+    $changed = [Watch]::Changed($pixels, $last, 5000)
+    # A small change logged, whether it counts or not, to size -MaxChangedPixels by. On 2026-11-16 a blink was more than
+    # 64 pixels and 600 let every focused grab through; the window is at the zoom that fits the VM's screen, so another
+    # zoom needs another limit. A change of the limit or less makes no new shot.
+    if ($changed -gt 64 -and $changed -lt 5000) { Log "changed: $changed px" }
     if ($changed -gt $MaxChangedPixels) {
-        # A small change logged, to size -MaxChangedPixels by. On 2026-11-16 a blink was more than 64 and no more than
-        # 600 (none was logged at 600); the window is at the zoom that fits the VM's screen, so another zoom needs another limit.
-        if ($changed -lt 5000) { Log "changed: $changed px" }
         $last = $pixels
         $changedAt = [DateTime]::UtcNow
         $shot = $false

@@ -7,6 +7,7 @@ using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 
 namespace RefApp
@@ -317,11 +318,6 @@ namespace RefApp
 
         private static PopupSpecimen ListPicker(string variant, ListPickerFlyoutSelectionMode mode, int checkedItems = 0)
         {
-            // Items 2 and 4 of the five: no more than two can be checked this way.
-            if (checkedItems > 2)
-            {
-                throw new ArgumentOutOfRangeException(nameof(checkedItems), "the five items give at most two checked, the second and the fourth");
-            }
 
             return new PopupSpecimen
             {
@@ -339,6 +335,12 @@ namespace RefApp
                     if (checkedItems == 0)
                     {
                         p.SelectedIndex = 1;
+                    }
+
+                    // Items 2 and 4 of the five: no more than two can be checked this way; more fails this capture.
+                    if (checkedItems > 2)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(checkedItems), "the five items give at most two checked, the second and the fourth");
                     }
 
                     for (var i = 0; i < checkedItems; i++)
@@ -496,6 +498,7 @@ namespace RefApp
                     return d;
                 },
                 Close = (host, h) => ((ContentDialog)h).Hide(),
+                Fault = h => FocusManager.GetFocusedElement() is TextBox ? null : "the dialog's TextBox didn't take the focus",
             };
         }
 
@@ -578,7 +581,16 @@ namespace RefApp
                     return m;
                 },
                 Close = (host, h) => ((MenuFlyout)h).Hide(),
+                Fault = h => IsPressed(((MenuFlyout)h).Items[0]) ? null : "the first item isn't in its Pressed state",
             };
+        }
+
+        /// <summary>Whether a control's template is in its CommonStates group's Pressed state.</summary>
+        private static bool IsPressed(Control control)
+        {
+            var root = VisualTreeHelper.GetChildrenCount(control) > 0 ? VisualTreeHelper.GetChild(control, 0) as FrameworkElement : null;
+            var group = root != null ? VisualStateManager.GetVisualStateGroups(root).FirstOrDefault(g => g.Name == "CommonStates") : null;
+            return group != null && group.CurrentState != null && group.CurrentState.Name == "Pressed";
         }
 
         /// <summary>

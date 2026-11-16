@@ -1,6 +1,6 @@
 # AutoSuggestBox, from the emulator (#150)
 
-Screen grabs of `new AutoSuggestBox {{ Header = "auto suggest box", PlaceholderText = "type a fruit" }}` on a page the stage's theme ([`tools/refapp/app/Popups.cs`](../../../tools/refapp/app/Popups.cs), `Suggest`), from refapp run `20261116-1944-dev11` (`run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'`), dark and light.
+Screen grabs of `new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit" }` on a page the stage's theme ([`tools/refapp/app/Popups.cs`](../../../tools/refapp/app/Popups.cs), `Suggest`), from refapp run `20261116-1944-dev11` (`run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'`), dark and light.
 
 | | |
 |---|---|
