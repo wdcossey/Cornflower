@@ -35,14 +35,22 @@ namespace RefApp
             }
 
             _rtWatched = true;
-            CompositionTarget.Rendering += (s, e) =>
+            EventHandler<object> frame = null;
+            frame = (s, e) =>
             {
+                if (_finished)
+                {
+                    CompositionTarget.Rendering -= frame;
+                    return;
+                }
+
                 var args = e as RenderingEventArgs;
                 if (args != null)
                 {
                     _rt = args.RenderingTime.TotalMilliseconds;
                 }
             };
+            CompositionTarget.Rendering += frame;
         }
 
         private string Rt => "rt " + Num(_rt);
@@ -76,10 +84,16 @@ namespace RefApp
             TranslateTransform shift = null;
             WatchFrames(() =>
             {
+                // Each looked for on every frame until found: the template's parts can come a frame apart.
                 if (hostPart == null)
                 {
                     hostPart = Find(combo5, "ItemsPresenterHost");
-                    shift = Find(combo5, "ItemsPresenter") != null ? Find(combo5, "ItemsPresenter").RenderTransform as TranslateTransform : null;
+                }
+
+                if (shift == null)
+                {
+                    var presenter = Find(combo5, "ItemsPresenter");
+                    shift = presenter != null ? presenter.RenderTransform as TranslateTransform : null;
                 }
 
                 return new[] { hostPart != null ? hostPart.Height : double.NaN, hostPart != null ? hostPart.ActualHeight : double.NaN, shift != null ? shift.Y : double.NaN, combo5.ActualHeight };
@@ -178,7 +192,8 @@ namespace RefApp
         /// LoopingSelector's physics, and a press on a closed ComboBox (#149). On a dark page a ComboBox of five items is
         /// pressed and held 600 ms, and let go, which opens it inline; it is closed from code. Then a DatePickerFlyout
         /// (15 July 2014) is opened from code and its three LoopingSelectors (month, day, year) touched:
-        /// - month: a press held still 600 ms; a drag up of one item and a half at 0.2 px a ms, held 400 ms and let go;
+        /// - month (an item is the items' pitch, read from the layout first): a press held still 600 ms; a drag up of
+        ///   one item and a half at 0.2 px a ms, held 400 ms and let go;
         ///   a drag down of 0.4 of an item, held and let go; a drag up of 0.6 of an item, held and let go;
         /// - day: flicks up of 150 px in 100 ms and down of 300 px in 120 ms; a flick up of 300 px in 100 ms and a press
         ///   300 ms after its release, held 600 ms; a drag down of three items, held 400 ms, let go;
@@ -225,7 +240,11 @@ namespace RefApp
             }
 
             var boxes = found.Select(Bounds).ToArray();
-            var itemHeight = found[0].ItemHeight;
+            // The items' pitch, which the touches are planned in: ItemHeight scaled by the items' ContentScaleTransform,
+            // read as the gap between two realised items' tops (ItemHeight 123 gives 138.375 on the reference).
+            var tops = Items(found[0]).Select(i => Bounds(i).Y).OrderBy(y => y).ToList();
+            var pitch = tops.Count > 1 ? tops[1] - tops[0] : found[0].ItemHeight;
+            Log("layout", "pitch " + Num(pitch) + " from " + tops.Count + " realised items");
             for (var k = 0; k < found.Count; k++)
             {
                 var s = found[k];
@@ -251,7 +270,7 @@ namespace RefApp
             // The selected item's row: the item nearest the selector's vertical centre.
             var cy = boxes[0].Y + boxes[0].Height / 2;
             var cx = boxes.Select(b => b.X + b.Width / 2).ToArray();
-            var h = itemHeight;
+            var h = pitch;
             Func<Task> none = () => Task.FromResult(true);
 
             // The closed ComboBox: a press held, let go (it opens), then closed from code.
@@ -309,12 +328,25 @@ namespace RefApp
                 }
             }
 
-            if (found == null || found.Count != 3)
+            if (found == null || found.Count != 3 || !found.All(s => s.ActualHeight > 0 && Find(s, "ScrollViewer") is ScrollViewer))
             {
-                Log("error", "the opened DatePickerFlyout has no three laid out LoopingSelectors");
+                Log("error", "the opened DatePickerFlyout has no three laid out LoopingSelectors with a ScrollViewer");
                 return;
             }
 
+            try
+            {
+                WatchSelectors(found);
+            }
+            catch (Exception ex)
+            {
+                // An async void method's exception would take the app down: log it and go on.
+                Log("error", "watching the selectors: " + ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        private void WatchSelectors(List<LoopingSelector> found)
+        {
             for (var k = 0; k < found.Count; k++)
             {
                 var s = found[k];
@@ -327,32 +359,42 @@ namespace RefApp
                 sv.ViewChanging += (o, e) => Log("viewchanging", "next " + Num(e.NextView.VerticalOffset) + " final " + Num(e.FinalView.VerticalOffset) + " inertial " + e.IsInertial + " " + tag);
                 sv.ViewChanged += (o, e) => Log("viewchanged", Num(sv.VerticalOffset) + " intermediate " + e.IsIntermediate + " " + tag);
                 var states = new HashSet<LoopingSelectorItem>();
+                // Each item's number, read again only when the item is given other content (the panel recycles them).
+                var numbers = new Dictionary<LoopingSelectorItem, KeyValuePair<object, double>>();
                 WatchFrames(() =>
                 {
                     var key = new List<double> { sv.VerticalOffset };
-                    List<LoopingSelectorItem> items;
+                    List<KeyValuePair<LoopingSelectorItem, double>> items;
                     try
                     {
-                        items = Items(s).OrderBy(i => Bounds(i).Y).ToList();
+                        items = Items(s).Select(i => new KeyValuePair<LoopingSelectorItem, double>(i, Bounds(i).Y)).OrderBy(i => i.Value).ToList();
                     }
                     catch (ArgumentException)
                     {
                         return key.ToArray();
                     }
 
-                    foreach (var item in items)
+                    foreach (var pair in items)
                     {
+                        var item = pair.Key;
                         if (states.Add(item))
                         {
                             WatchItemStates(item, tag);
                         }
 
+                        KeyValuePair<object, double> known;
+                        if (!numbers.TryGetValue(item, out known) || !ReferenceEquals(known.Key, item.Content) || double.IsNaN(known.Value))
+                        {
+                            known = new KeyValuePair<object, double>(item.Content, ItemNumber(item));
+                            numbers[item] = known;
+                        }
+
                         var root = Root(item);
                         var scale = root != null ? root.RenderTransform as ScaleTransform : null;
-                        key.Add(Bounds(item).Y - top);
+                        key.Add(pair.Value - top);
                         key.Add(root != null ? root.Opacity : double.NaN);
                         key.Add(scale != null ? scale.ScaleY : double.NaN);
-                        key.Add(ItemNumber(item));
+                        key.Add(known.Value);
                     }
 
                     return key.ToArray();

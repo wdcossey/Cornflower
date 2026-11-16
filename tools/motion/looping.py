@@ -32,7 +32,8 @@ import motionlib as ml
 import scroll
 
 FRAME = re.compile(r'rt ([\d.]+) (sel\d) offset ([-\d.]+) items ?(.*)$')
-ITEM = re.compile(r'([-\d.NaN]+)@([-\d.]+):([-\d.]+)(?:x([-\d.]+))?')
+NUM = r'(?:NaN|-?[\d.]+)'
+ITEM = re.compile(r'(%s)@(%s):(%s)(?:x(%s))?' % (NUM, NUM, NUM, NUM))
 COLUMN = {'month': 'sel0', 'day': 'sel1', 'year': 'sel2'}
 
 
@@ -65,15 +66,19 @@ def fades(fs):
         ops = [o for _, _, o, _ in items]
         if len(ops) > 2:
             series.append((rt, max(set(ops), key=ops.count)))
-    out, cur, way = [], None, 0
+    out, cur, way, still = [], None, 0, 0
     for (ra, a), (rb, b) in zip(series, series[1:]):
         w = (b > a) - (b < a)
-        if w and cur is not None and w == way and rb - ra < 4.5 * ml.TICK:
-            cur.append((rb, b))
+        if cur is not None and rb - ra < 4.5 * ml.TICK and (w == way or (w == 0 and still == 0)):
+            # Two frames can fall on one tick, so one repeated value doesn't end a fade; a second does.
+            still = still + 1 if w == 0 else 0
+            if w:
+                cur.append((rb, b))
             continue
         if cur is not None:
             out.append(cur)
             cur = None
+        still = 0
         if w:
             # A frame is logged only when something changed: the one before the first change held the old value.
             cur, way = [(rb - ml.TICK, a), (rb, b)], w
@@ -82,8 +87,8 @@ def fades(fs):
     return [c for c in out if len(c) > 2]
 
 
-CURVES = (('constant deceleration (quadratic ease-out)', lambda u: 1 - (1 - u) ** 2),
-          ('cubic ease-out', lambda u: 1 - (1 - u) ** 3),
+CURVES = (('constant deceleration (quadratic ease-out)', ml.power_out(2)),
+          ('cubic ease-out', ml.power_out(3)),
           ('ExponentialEase out 2', ml.expo_out(2)), ('ExponentialEase out 4', ml.expo_out(4)),
           ('ExponentialEase out 6', ml.expo_out(6)),
           ('sine ease-in-out', lambda u: (1 - math.cos(math.pi * u)) / 2))
@@ -92,6 +97,8 @@ CURVES = (('constant deceleration (quadratic ease-out)', lambda u: 1 - (1 - u) *
 def best_curves(run_, fin, n=3):
     """The curves of CURVES that fit what is left to go best, from the run's first frame: (rms of the fraction,
     name, duration ms, phase in ticks), best first."""
+    if len(run_) < 2:
+        return []
     rt0, a = run_[0][0], run_[0][1] - fin
     if abs(a) < 1:
         return []
@@ -111,7 +118,8 @@ def main():
     rows = ml.probe(run)
     fs = frames(rows)
     for t, w, d in rows:
-        if w == 'layout' and d.startswith('selector') and ' item ' not in d.split(' x ')[0][:20]:
+        words = d.split()
+        if w == 'layout' and words[:1] == ['selector'] and words[2:3] != ['item']:
             print('layout: ' + d)
     p = {k: pitch(v) for k, v in fs.items()}
     for k in sorted(fs):
@@ -127,6 +135,7 @@ def main():
         col = COLUMN.get(label.split(' ')[0])
         if not mine or col is None or col not in fs:
             if label.startswith('combo'):
+                # The press, and the step that closes it from code: the inline opening and closing are in them.
                 combo(label, seg)
             continue
         press, release = mine[0]
@@ -135,7 +144,7 @@ def main():
         ev = ml.view_changes([r for r in seg if r[1] == 'viewchanging' and r[2].endswith(' ' + col)])
         before = [x for x in fs[col] if x[0] <= press]
         start = before[-1][2] if before else float('nan')
-        drag = [e for e in ev if not e[3] and e[0] >= press]
+        drag = [e for e in ev if not e[3] and press <= e[0] <= release]
         inert = [e for e in ev if e[3] and e[0] >= press]
         at_rel = inert[0][1] if inert else next((e[1] for e in reversed(drag) if e[0] <= release), start)
         last = [e for e in drag if drag and e[0] >= drag[-1][0] - 100]
@@ -148,19 +157,30 @@ def main():
                   % (inert[0][0] - release, fin - start, (fin - start) / pp))
             # The motion from the first inertial frame to rest, before any recentring jump.
             t_in = inert[0][0]
-            mv = [(t, rt, off) for t, rt, off, _ in fs[col] if t >= t_in - 1 and (t1 is None or t < t1)]
-            # Up to the first frame at FinalView (rest), or a frame that jumps by more than half an item (a press that
-            # took the touch again, or a recentring).
+            # Up to a second press (which holds the coast), or the segment's end: a motion cut off there is said so and
+            # not fitted.
+            stop = min([x[0] for x in mine[1:]] + ([t1] if t1 is not None else []) + [1e18])
+            mv = [(t, rt, off) for t, rt, off, _ in fs[col] if t_in - 1 <= t < stop]
+            # Up to the first frame at FinalView (rest): within 0.5 px, with the next frame the same or a jump of whole
+            # items (the recentring). A frame the app skipped can move the offset far mid-coast, so a jump doesn't end it.
             run_, jump = [], None
             for k, x in enumerate(mv):
-                if run_ and abs(x[2] - run_[-1][2]) > pp / 2:
-                    break
                 run_.append(x)
-                if abs(x[2] - fin) < 0.05:
-                    if k + 1 < len(mv) and abs(mv[k + 1][2] - x[2]) > pp / 2:
-                        jump = (x, mv[k + 1])
-                    break
-            if len(run_) >= 2:
+                if abs(x[2] - fin) < 0.5:
+                    nxt = mv[k + 1] if k + 1 < len(mv) else None
+                    if nxt is None or abs(nxt[2] - x[2]) < 0.01:
+                        break
+                    d = (nxt[2] - x[2]) / pp
+                    if abs(d) >= 0.9 and abs(d - round(d)) < 0.01:
+                        jump = (x, nxt)
+                        break
+            at_rest = bool(run_) and abs(run_[-1][2] - fin) < 0.5
+            if run_ and not at_rest:
+                rt0 = run_[0][1]
+                print('  cut off by %s after %d frames (%.0f ms of rt), at %+.1f px; not fitted' % (
+                    'a second press' if len(mine) > 1 and stop == mine[1][0] else 'the next step', len(run_),
+                    run_[-1][1] - rt0, run_[-1][2] - start))
+            if len(run_) >= 2 and at_rest:
                 rt0 = run_[0][1]
                 print('  %d frames from the first inertial one to rest at %+.1f px (%.0f ms of rt): %s' % (
                     len(run_), run_[-1][2] - start, run_[-1][1] - rt0,
@@ -201,21 +221,24 @@ def main():
     for k in sorted(fs):
         for run_ in fades(fs[k]):
             rt0 = run_[0][0]
+            first_t = next(t for t, r, _, _ in fs[k] if r >= rt0)
+            press = max((x[0] for x in touches if x[0] <= first_t), default=None)
             vals = [o for _, o in run_]
             n = (run_[-1][0] - rt0) / ml.TICK
             a, b = ml.linfit([(rt - rt0) / ml.TICK for rt, _ in run_], vals)
             worst = max(abs(a + b * (rt - rt0) / ml.TICK - o) for rt, o in run_)
-            press = max((t for t in (x[0] for x in touches) if t <= next(t for t, r, _, _ in fs[k] if r >= rt0)), default=None)
             print('%s fade from rt %.3f: %.3f to %.3f over %.0f frames (%.0f ms), %+.4f a frame, within %.4f of a straight '
                   'line; the last press %s' % (k, rt0, vals[0], vals[-1], n, n * ml.TICK, b, worst,
-                                               '-' if press is None else '%.0f ms before' % (next(t for t, r, _, _ in fs[k] if r >= rt0) - press)))
+                                               '-' if press is None else '%.0f ms before' % (first_t - press)))
 
 
 def combo(label, seg):
     """The closed ComboBox's press: its Background's projection, from the tree lines."""
     proj = [(t, d) for t, w, d in seg if w == 'tree' and 'Border#Background' in d and 'projection' in d]
     pressed = next((t for t, w, d in seg if w == 'pressed'), None)
-    print('%s: pressed at %s ms' % (label, '-' if pressed is None else '%.0f' % pressed))
+    print('%s: %s' % (label, 'no press; times from the step' if pressed is None else 'pressed at %.0f ms' % pressed))
+    if pressed is None:
+        pressed = next((t for t, w, d in seg if w in ('state', 'tree', 'event')), 0.0)
     for t, d in proj:
         m = re.search(r'projection rot ([-\d.]+) ([-\d.]+) ([-\d.]+) .* global [-\d.]+ [-\d.]+ ([-\d.]+)', d)
         if m:

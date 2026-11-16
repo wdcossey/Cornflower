@@ -932,7 +932,7 @@ to about a frame.
 | The popups' `Closed` after `Hide()` (#149): 9, 17, 22 and 30 ticks | RenderingTime, from the call's frame to the event's | as given |
 | When a popup is over on the recording, a top Flyout's vanishing and the dialog's (#149) | the recording, which keeps with the stopwatch (above) | times 1.0413, the run's factor |
 | The inline ComboBox's jump, 78 ms after the call (#149) | RenderingTime | as given |
-| LoopingSelector (#149): the snap and the coasts, frame by frame, and the columns' 333 ms fade | frames: RenderingTime | as given; the release's time is the stopwatch's |
+| LoopingSelector (#149): the snap and the coasts, frame by frame, and the columns' 333 ms fade (`20261116-1904-dev11`) | frames: RenderingTime | as given; the release's time is the stopwatch's |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
 
 **A PlaneProjection's camera** (`-Probe projections`, `20261110-0756-dev11`): a full-window panel given
@@ -1047,8 +1047,10 @@ first recorded change is within a frame or two of the call (−20 to +70 ms).
 
 ### LoopingSelector, and a press on a closed ComboBox (2026-11-16, device 11, #149)
 
-`20261116-1828-dev11` (`-Probe looping`, `looping.py`): a DatePickerFlyout (15 July 2014) opened from code, and its
-three LoopingSelectors touched. Every frame, each one's ScrollViewer offset and its items are logged.
+`20261116-1904-dev11` (`-Probe looping`, `looping.py`): a DatePickerFlyout (15 July 2014) opened from code, and its
+three LoopingSelectors touched, the distances in items planned with the items' pitch read from the layout. Every frame,
+each one's ScrollViewer offset and its items are logged. The first run, `20261116-1828-dev11`, planned its items as
+`ItemHeight` (123 px, 11% short); its readings are given beside where they add something.
 
 - **Layout.** Three selectors, 138.333 view px wide and 700 tall from y 37.083, at x 17.5, 155.833 and 294.167.
   `ItemWidth` and `ItemHeight` are 123; the items are 122.917 square, scaled 1.125 (`ContentScaleTransform`), and
@@ -1060,22 +1062,25 @@ three LoopingSelectors touched. Every frame, each one's ScrollViewer offset and 
   ways. The fade out starts about 100 ms after the other column's press. The first time a column expands it has no old
   state, and it is at 1 at once.
 - **A drag held still and let go.** It goes to the nearer item: FinalView is decided at the release, in whole items.
-  Let go 0.3 to 0.48 of an item past one, it first drifts on the drag's way, about 1.1 px a frame for 8 or 9 frames
-  (8.5 to 10.6 px), then goes back over 300 to 410 ms. No simple ease fits that within 1.7%. The whole takes 438 to
-  531 ms of RenderingTime.
-- **A drag let go moving toward an item** (3 items down, let go 45 px short at 0.31 px/ms): a constant deceleration to
-  it, 0.000967 px/ms², over 301 ms (within 0.15% of the way).
-- **A flick.** The coast is the ScrollViewer's inertia: #113's `a + c v²` fits each within 0.2 to 2.3 px, ending on an
-  item. 1.48 px/ms went 6 items in 1,156 ms; 2.45 px/ms, 13 items in 1,766 ms. Three flicks of 4 to 5 px/ms, 1.5 s
-  apart, each caught by the next, went 52 items in all, the last coast 2,062 ms.
-- **The wrap.** After each rest the offset jumps back by the items it moved (−1, +3, +52 items) as `SelectionChanged`
-  comes, so it stays in the middle of the extent. Month 7, flicked down 52 items, is month 3 (four times round 12).
-- **A press during a coast** holds it within a frame (0.0 px while held 595 ms). Let go, it goes to the nearer item (6
-  items, not the 13 the flick was heading for).
+  Let go 0.36 and 0.46 of an item past one, it first drifts on the drag's way, 1.2 to 1.3 px a frame for 7 or 8 frames
+  (9.1 to 9.5 px), then goes back over 341 to 399 ms. No simple ease fits that within 1.65%. The whole takes 500 ms of
+  RenderingTime (438 to 531 ms on the first run, let go 0.3 to 0.48 past). Let go 0.56 of an item past, it goes on to
+  the next one at a constant deceleration, 0.000834 px/ms², within 1.4% of the way, at rest in 328 ms.
+- **A drag let go moving toward an item.** 3 items down, let go 1.3 px short: at rest in 62 ms. On the first run, 45 px
+  short at 0.31 px/ms: a constant deceleration to it, 0.000967 px/ms², over 301 ms (within 0.15% of the way).
+- **A flick.** The coast is the ScrollViewer's inertia: #113's `a + c v²` fits each within 0.3 to 2.4 px, ending on an
+  item. 1.77 px/ms went 8 items in 1,391 ms; 2.45 px/ms, 14 items in 1,844 ms. Three flicks of 4 to 4.5 px/ms, 1.5 s
+  apart, each caught by the next, went 48 items in all, the last coast 2,062 ms. (First run: 6 items in 1,156 ms, 13
+  in 1,766, 52 in all.)
+- **The wrap.** After each rest the offset jumps back by the items it moved (−1, −1, −8, +14, +3, +48 items) as
+  `SelectionChanged` comes, so it stays in the middle of the extent. Flicked down 48 items, the month is the same, four
+  times round 12 (on the first run, 52 items took month 7 to 3).
+- **A press during a coast** holds it within a frame (0.0 px while held 592 ms). Let go, it goes to the nearer item
+  (on the first run 6 items, not the 13 the flick was heading for).
 - **A tap on an item** (two below, two above, and the selected one, in the year column) doesn't scroll and doesn't
   select: no `ViewChanging`, no `SelectionChanged`. It only makes the column active.
 - **A press on a closed ComboBox** (held 600 ms) goes to `Pressed`, whose `PointerDownThemeAnimation` on `Background`
-  is the Button's tilt: `RotationX` 3.6 then 2.1°, `RotationY` 3.0°, `GlobalOffsetZ` −17.6, within 135 ms, and held
+  is the Button's tilt: `RotationX` 3.6 then 2.1°, `RotationY` 3.0°, `GlobalOffsetZ` −17.6, within 108 to 135 ms, and held
   until the release. The release opens it (`DropDownOpened`), and the tilt is back at 0 on the next frame.
 
 ### Page transitions

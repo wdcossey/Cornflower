@@ -54,22 +54,17 @@ def row_edges(frame, page, w, h, thr=THR):
             out.append(None)
             continue
         xr = next(x for x in range(w - 1, -1, -1) if abs(a[x] - b[x]) > thr)
-        out.append((_sub(a, b, xl, 1), _sub(a, b, xr, -1) + 1))
+        out.append((_sub(a, b, xl, 1, thr), _sub(a, b, xr, -1, thr) + 1))
     return out
 
 
-def _sub(a, b, x, step):
+def _sub(a, b, x, step, thr=THR):
     """The edge's sub-pixel position at pixel x, which is the first (step 1) or last (step -1) to differ: the pixel's
     share of the next one in's difference is the share of it the popup covers."""
     full = abs(a[x + step] - b[x + step]) if 0 <= x + step < len(a) else 0
     part = abs(a[x] - b[x])
-    frac = min(1.0, part / full) if full > THR else 1.0
+    frac = min(1.0, part / full) if full > thr else 1.0
     return x + (1 - frac) if step > 0 else x - (1 - frac)
-
-
-def _line(ys, vs):
-    """Least squares v = a + b y."""
-    return ml.linfit(ys, vs)
 
 
 def _worst(ys, vs):
@@ -123,8 +118,8 @@ def trapezoids(edges, w, tol=TOL, min_rows=MIN_ROWS):
             split(rows[:best])
             split(rows[best:])
             return
-        al, bl = _line(ys, [r[1] for r in rows])
-        ar, br = _line(ys, [r[2] for r in rows])
+        al, bl = ml.linfit(ys, [r[1] for r in rows])
+        ar, br = ml.linfit(ys, [r[2] for r in rows])
         y0, y1 = ys[0], ys[-1] + 1
         out.append((y0, y1, al + bl * y0, ar + br * y0, al + bl * y1, ar + br * y1, cut_below(y1)))
 
@@ -191,10 +186,10 @@ def flash_time(rec):
     raise SystemExit('no frame shows the header flash')
 
 
-def calls(run):
-    """(app ms, name, open|close) for each "call" line."""
+def calls(rows):
+    """(app ms, name, open|close) for each "call" line of the log's rows."""
     out = []
-    for t, what, d in ml.probe(run):
+    for t, what, d in rows:
         if what == 'call':
             words = d.split(' rt ')[0].rsplit(' ', 1)
             out.append((t, words[0], words[1]))
@@ -257,38 +252,47 @@ def band_report(name, kind, readings, ncalls, factor):
             centre, len(vals), ' '.join('%+.1f' % v for v in vals), rate, ' '.join(str(g) for g in gaps), when))
         if len(vals) < 4:
             continue
-        linear = all(g in (1, 2) for g in gaps)
-        if linear:
-            ticks = [0]
-            for g in gaps:
-                ticks.append(ticks[-1] + g)
+        # Linear when every gap is one tick or two (one no call showed) and a straight line through them is within
+        # 1.5 degrees of each; else the exponential fits.
+        ticks = [0]
+        for g in gaps:
+            ticks.append(ticks[-1] + g)
+        worst = float('inf')
+        if all(g in (1, 2) for g in gaps):
             a, b = ml.linfit(ticks, [abs(v) for v in vals])
             worst = max(abs(a + b * k - abs(v)) for k, v in zip(ticks, vals))
+        if worst <= 1.5:
             print('    linear: %.2f degrees a tick, within %.2f degrees; %.1f ticks from 80 degrees to 0, %.1f from 0 to 90'
                   % (abs(b), worst, 80 / abs(b), 90 / abs(b)))
+        elif kind == 'close':
+            print('    not a straight line: too few or too scattered angles to fit')
         else:
-            _, ticks = ml.tick_numbers([abs(v) for v in vals])
-            ml.print_fits([abs(v) for v in vals], ticks, unit=' deg')
+            # The ratio test needs no zero: an angle that rounds to 0.0 is left out.
+            nz = [abs(v) for v in vals if abs(v) >= 0.05]
+            if len(nz) >= 4:
+                _, ticks = ml.tick_numbers(nz)
+                ml.print_fits(nz, ticks, unit=' deg')
     if not shown:
         print('  no band turns')
 
 
 def main():
     (run,), opts = ml.parse_args(__doc__, options=('--popup', '--lag'), flags=('--frames',))
+    rows = ml.probe(run)
     with ml.Recording(run) as rec:
         if opts['--lag'] is not None:
             lag = float(opts['--lag'])
         else:
-            flash = next((t for t, w, d in ml.probe(run) if w == 'flash' and d == 'on'), None)
+            flash = next((t for t, w, d in rows if w == 'flash' and d == 'on'), None)
             if flash is None:
                 raise SystemExit('the log has no flash; give --lag')
             lag = flash / 1000 - flash_time(rec)
-        rts = [(t, float(d.split(' rt ')[1])) for t, w, d in ml.probe(run) if w == 'call' and ' rt ' in d]
+        rts = [(t, float(d.split(' rt ')[1])) for t, w, d in rows if w == 'call' and ' rt ' in d]
         factor = ml.linfit([x[0] for x in rts], [x[1] for x in rts])[1] if len(rts) > 2 else 1.0
         print('%s: recording time = app time - %.3f s; RenderingTime runs %.5f times the stopwatch' % (run, lag, factor))
         s = rec.s
         pooled, ncalls, over = {}, {}, {}
-        for t, name, kind in calls(run):
+        for t, name, kind in calls(rows):
             if opts['--popup'] and name != opts['--popup']:
                 continue
             tr = t / 1000 - lag
@@ -310,18 +314,15 @@ def main():
                 print('%s %s at %.0f ms (recording %.3f s), %.1f wide at rest' % (name, kind, t, tr, width))
             # When it is over: the last frame that differs from its end (rest after an opening, the page after a closing),
             # by more than 1 level on average over every 7th pixel, and the frame after it.
-            end = rec.frame(rest_i if kind == 'open' else page_i)
+            end = rec.frame(rest_i if kind == 'open' else page_i)[::7]
+            begin = (page if kind == 'open' else rec.frame(rest_i))[::7]
             last, first_moved = None, None
             for i, ft, fr in rec.frames(tr - 0.04, tr + 0.9):
-                d = sum(abs(a - b) for a, b in zip(fr[::7], end[::7])) / len(end[::7])
-                b0 = sum(abs(a - b) for a, b in zip(fr[::7], (page if kind == 'open' else rec.frame(rest_i))[::7])) / len(end[::7])
-                if d > 1.0:
+                small = fr[::7]
+                if sum(abs(a - b) for a, b in zip(small, end)) / len(end) > 1.0:
                     last = (ft - tr) * 1000
-                if first_moved is None and b0 > 1.0:
+                if first_moved is None and sum(abs(a - b) for a, b in zip(small, begin)) / len(end) > 1.0:
                     first_moved = (ft - tr) * 1000
-            nxt = next(((t2 - tr) * 1000 for t2 in rec.times if last is not None and (t2 - tr) * 1000 > last + 1e-6), None)
-            over.setdefault((name, kind), []).append((first_moved, last, nxt))
-            for i, ft, fr in rec.frames(tr - 0.04, tr + 0.9):
                 traps = trapezoids(row_edges(fr, page, rec.w, rec.h), rec.w)
                 ss = [strip(tz, s, width) for tz in traps]
                 if opts['--frames']:
@@ -330,6 +331,8 @@ def main():
                             '' if x[6] is None else ', near end %.1f,%+.1f' % x[6],)) for x in ss) or '-'))
                 for x in ss:
                     pooled.setdefault((name, kind), []).append(((ft - tr) * 1000, x))
+            nxt = next(((t2 - tr) * 1000 for t2 in rec.times if last is not None and (t2 - tr) * 1000 > last + 1e-6), None)
+            over.setdefault((name, kind), []).append((first_moved, last, nxt))
         for key in ncalls:
             name, kind = key
             band_report(name, kind, pooled.get(key, []), ncalls[key], factor)

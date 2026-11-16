@@ -976,6 +976,34 @@ def looping_snap_coast_recentring_and_fade():
     assert re.search(r'sel1 fade from rt [\d.]+: 1\.000 to 0\.000 over 2\d frames \(\d+ ms\), -0\.04[67]\d a frame', out), out
 
 
+@check
+def looping_and_strips_edges():
+    # The first review's cases (#149): a fade with one value repeated (two frames on one tick) is one fade; an item
+    # logged with opacity NaN is kept; a run of one frame isn't fitted; and a band whose angles end at 0.0 and aren't
+    # linear is reported, not stopped by the ratio test.
+    import looping
+    import strips
+    items = lambda o: [(1.0, 0.0, 1.0, 1.0), (2.0, 138.0, o, 1.0), (3.0, 276.0, o, 1.0)]
+    ops = [1.0, 0.95, 0.9, 0.9, 0.85, 0.8, 0.75]
+    fs = [(100.0 + 15 * k, 1000.0 + ml.TICK * k, 0.0, items(o)) for k, o in enumerate(ops)]
+    runs = looping.fades(fs)
+    assert len(runs) == 1 and runs[0][-1][1] == 0.75, runs
+    m = looping.FRAME.match('rt 1 sel0 offset 5 items 7@1:NaN 8@139:0x1.125')
+    got = [x for x in looping.ITEM.findall(m.group(4))]
+    assert len(got) == 2 and got[0][2] == 'NaN', got
+    assert looping.best_curves([(0.0, 100.0)], 50.0) == []
+    import contextlib
+    import io as _io
+    buf = _io.StringIO()
+    readings = []
+    for call in range(3):
+        for k, a in enumerate([45.0, 35.6, 27.7, 21.1, 15.7, 11.4, 7.8, 5.2, 0.0]):
+            readings.append((k * 15.6, (0, 0, 0, 0, a + 0.01 * call, 96.9, None)))
+    with contextlib.redirect_stdout(buf):
+        strips.band_report('dialog', 'open', readings, 3, 1.0)
+    assert 'band about y 96.9' in buf.getvalue() and 'eased' in buf.getvalue(), buf.getvalue()
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)
