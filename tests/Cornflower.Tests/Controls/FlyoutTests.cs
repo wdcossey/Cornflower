@@ -516,6 +516,56 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
+    public void A_Presenter_Given_Another_Theme_Mid_Close_Closes_And_Loses_Every_Wp81_Value()
+    {
+        // As an app's FlyoutPresenterTheme does: the Wp81 theme's values go, the behaviour's last among them, and the
+        // flyout it was closing closes, with no value left behind.
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        var template = stage.Presenter.Template;
+
+        stage.Flyout.Hide();
+        stage.Presenter.Theme = new ControlTheme(typeof(FlyoutPresenter));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(stage.Flyout.Popup.IsOpen);
+        Assert.False(PhoneFlyout.GetIsEnabled(stage.Presenter));
+        Assert.NotSame(template, stage.Presenter.Template);
+        Assert.Null(stage.Presenter.Background);
+        Assert.NotEqual(MinHeight, stage.Presenter.MinHeight);
+        Assert.False(stage.Flyout.Popup.ShouldUseOverlayLayer);
+    }
+
+    [AvaloniaFact]
+    public void A_Top_Flyout_Closed_Mid_Opening_Rests_Until_It_Goes()
+    {
+        using var stage = new Stage();
+        stage.Open();
+        stage.At(16 + 32);
+        Assert.NotNull(stage.Presenter.RenderTransform);
+
+        stage.Flyout.Hide();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Null(stage.Presenter.RenderTransform);
+        Assert.True(stage.Flyout.Popup.IsOpen);
+        stage.At(16 + 32 + TopGoneAfterHide);
+        Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Flyout_Whose_Button_Leaves_Closes_With_It()
+    {
+        // Placed against the window, the popup still closes when its own target goes, as Avalonia's does.
+        using var stage = new Stage();
+        stage.OpenAtRest();
+
+        ((Panel)stage.Button.Parent!).Children.Remove(stage.Button);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void A_Full_Flyout_Closed_Mid_Opening_Swings_Out_From_Where_It_Was()
     {
         using var stage = new Stage(full: true);

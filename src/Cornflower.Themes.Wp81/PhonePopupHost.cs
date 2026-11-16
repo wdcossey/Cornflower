@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Controls.Shapes;
 using Avalonia.Data;
+using Avalonia.Diagnostics;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -103,8 +104,11 @@ internal sealed class PhonePopupHost : IDisposable
         _popup = popup;
         _content = content;
         _close = close;
+        // Only a local value is given back as one; a styled or bound one comes back when the host's local value goes.
         foreach (var property in Taken)
-            _given.Add((property, popup.IsSet(property) ? popup.GetValue(property) : AvaloniaProperty.UnsetValue));
+            _given.Add((property, popup.GetDiagnostic(property).Priority == BindingPriority.LocalValue
+                ? popup.GetValue(property)
+                : AvaloniaProperty.UnsetValue));
         _popup.ShouldUseOverlayLayer = true;
         _popup.Opened += OnOpened;
         _popup.Closed += OnClosed;
@@ -178,10 +182,16 @@ internal sealed class PhonePopupHost : IDisposable
         _frame = null;
         _start = null;
         _closeFrom = _angle;
-        // A top popup stays where it is, then goes in one frame; a full one swings out.
-        _frame = _placement == PhonePopupPlacement.Top
-            ? CornflowerClock.Schedule(Finish, PhonePopupMotion.TopCloseDelay)
-            : CornflowerClock.RequestFrame(_content, Step);
+        if (_placement == PhonePopupPlacement.Top)
+        {
+            // At rest, mid-opening too, until it goes in one frame.
+            Rest();
+            _frame = CornflowerClock.Schedule(Finish, PhonePopupMotion.TopCloseDelay);
+        }
+        else
+        {
+            _frame = CornflowerClock.RequestFrame(_content, Step);
+        }
     }
 
     private void OnOpened(object? sender, EventArgs e)
@@ -195,7 +205,6 @@ internal sealed class PhonePopupHost : IDisposable
         _phase = Phase.Opening;
         Open.Add(this);
         _top.PropertyChanged += OnTopPropertyChanged;
-        _top.Closed += OnTopClosed;
         _insets = _top.InsetsManager;
         if (_insets is not null)
             _insets.SafeAreaChanged += OnSafeAreaChanged;
@@ -215,11 +224,7 @@ internal sealed class PhonePopupHost : IDisposable
         _frame?.Dispose();
         _frame = null;
         if (_top is not null)
-        {
             _top.PropertyChanged -= OnTopPropertyChanged;
-            _top.Closed -= OnTopClosed;
-        }
-
         if (_insets is not null)
             _insets.SafeAreaChanged -= OnSafeAreaChanged;
         _top = null;
@@ -228,9 +233,6 @@ internal sealed class PhonePopupHost : IDisposable
         Rest();
         _content.ClearValue(IsLandscapeProperty);
     }
-
-    /// <summary>A window closed with the popup open: the host lets go of it.</summary>
-    private void OnTopClosed(object? sender, EventArgs e) => OnClosed(sender, e);
 
     private void Step()
     {

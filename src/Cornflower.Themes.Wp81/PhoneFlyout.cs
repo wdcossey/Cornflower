@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Threading;
 using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
@@ -36,8 +37,10 @@ internal static class PhoneFlyout
         {
             if (Binders.TryGetValue(presenter, out var old))
             {
+                // From the dispatcher: a theme going unsets this first, and taking values off the presenter (and closing
+                // its flyout) in the middle of that would stop the rest being unset (CLAUDE.md, the Avalonia facts).
                 Binders.Remove(presenter);
-                old.Dispose();
+                Dispatcher.UIThread.Post(old.Dispose);
             }
 
             if (change.GetNewValue<bool>() && presenter.Parent is Popup popup)
@@ -62,22 +65,28 @@ internal static class PhoneFlyout
     private sealed class Binder : IDisposable
     {
         private readonly Popup _popup;
+        private readonly bool _lightDismiss;
         private Flyout? _flyout;
         private bool _closing;
 
         public Binder(FlyoutPresenter presenter, Popup popup)
         {
             _popup = popup;
+            _lightDismiss = popup.IsLightDismissEnabled;
             Host = new PhonePopupHost(popup, presenter, Close);
         }
 
         public PhonePopupHost Host { get; }
 
-        /// <summary>Lets go of the flyout; one asked to close and still in its closing motion closes now.</summary>
+        /// <summary>
+        /// Lets go of the flyout, giving its popup back its light dismiss; one asked to close and still in its closing
+        /// motion closes now.
+        /// </summary>
         public void Dispose()
         {
             var closing = Host.IsClosing;
             Host.Dispose();
+            _popup.IsLightDismissEnabled = _lightDismiss;
             if (closing)
                 Close();
             if (_flyout is not null)

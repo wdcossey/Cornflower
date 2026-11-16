@@ -27,8 +27,8 @@ namespace Cornflower.Themes.Wp81;
 /// </remarks>
 internal static class PhonePopupMotion
 {
-    /// <summary>The camera's distance in front of the screen, in view px (the projections probe, 999).</summary>
-    internal const double EyeDistance = 999;
+    /// <summary>The camera's distance in front of the screen, in view px: the tilt's, the projections probe's 999.</summary>
+    internal const double EyeDistance = TiltModel.EyeDistance;
 
     /// <summary>The top popup's opening: at rest by 150 ms (99% of the way at 142 ms, ±25).</summary>
     internal static readonly TimeSpan TopOpenLength = TimeSpan.FromMilliseconds(150);

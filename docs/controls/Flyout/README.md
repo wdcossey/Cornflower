@@ -60,7 +60,8 @@ the date and time pickers (#156) host their popups the same way, through these i
   - opens it with the swing, and closes it through `Dismiss()`: the closing motion, then the owner's close. Close
     through `Dismiss()`, not the popup: anything else that closes it ends the motion where it is;
   - takes Back: a class handler on `TopLevel.BackRequestedEvent` runs before any handler an element adds (Avalonia's
-    `PageNavigationHost`'s included), dismisses the window's topmost open host and marks the request handled;
+    `PageNavigationHost`'s included), dismisses the window's topmost open host that isn't already closing, and marks
+    the request handled; with every popup closing, Back is the page's again (PENDING #150);
   - sets `PhonePopupHost.IsLandscape` on the moved element while the window is wider than tall, for a theme's
     landscape values.
 - **`PhonePopupMotion`**: the swing (a turn about the top edge, seen from the phone's camera) and the lengths the
