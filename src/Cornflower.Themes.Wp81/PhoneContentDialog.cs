@@ -20,8 +20,8 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>Opening</b> (#149, run <c>20261116-1835-dev11</c>): one band, the dialog, turned about its centre line from
 /// <see cref="OpenFrom"/> to 0 on WinRT's ExponentialEase, out, exponent <see cref="OpenExponent"/>, over
 /// <see cref="OpenLength"/> (tick 9, 141 ms). The host turns a top popup the Flyout's way, linearly from 80°, so the
-/// dialog's angle is set over the host's in each frame, after it; the host's band rests at 134 ms, between the
-/// phone's ticks 8 and 9, where this curve is within 2.2° of 0.</para>
+/// dialog's angle is set over the host's in each frame, after it; the host's band rests at 134.4 ms, between the
+/// phone's ticks 8 and 9, where this curve has under 0.8° to go.</para>
 /// <para><b>Closing</b>: the dialog's events and result come at once, in the call's frame (#150); it is drawn as it is
 /// and goes in one frame <see cref="GoneAfter"/> later (#149: 95 to 120 ms), the dim layer with it, when the popup is
 /// closed. The host's own close (gone at 110 ms, closed at 140.6) is pre-empted.</para>
