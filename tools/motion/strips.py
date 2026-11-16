@@ -25,6 +25,7 @@ values: one per 15.625 ms step of the animation clock where many calls are poole
 
 Python 3 standard library only.
 """
+import bisect
 import math
 import os
 import statistics
@@ -167,7 +168,7 @@ def strip(trap, s, width, d=EYE, cy=CY):
     return yt, zt, yb, zb, deg, cross, near
 
 
-def project(yt, zt, yb, zb, width, d=EYE, cy=CY, xc=225.0):
+def project(yt, zt, yb, zb, width, d=EYE, cy=CY):
     """The inverse of strip(), for the self-test: a strip's top and bottom edges (y, z) seen on the screen, as
     (top y', width', bottom y', width'), view px."""
     out = []
@@ -214,7 +215,7 @@ def bands(readings, tol=8.0, min_angle=4.0):
 def steps(vals):
     """The size of one tick's turn from a band's distinct angles in order: the median gap, then the gaps within a third
     of it averaged (a gap of about two is a tick no call showed). Returns (degrees a tick, ticks between each pair)."""
-    gaps = [abs(b - a) for a, b in zip(vals, vals[1:])]
+    gaps = [abs(abs(b) - abs(a)) for a, b in zip(vals, vals[1:])]
     if not gaps:
         return float('nan'), []
     m = ml.median(gaps)
@@ -233,7 +234,8 @@ def band_report(name, kind, readings, ncalls, factor):
     found = [(c, n) for c, n in bands(readings) if 0 <= c <= 800]
     shown = 0
     for centre, n in found:
-        mine = [(t, x) for t, x in readings if abs(x[5] - centre) <= 8.0 and x[5] == x[5] and abs(x[4]) < 90]
+        # A piece turned less than 2 degrees has a line that could be anywhere: it isn't counted to a band.
+        mine = [(t, x) for t, x in readings if abs(x[5] - centre) <= 8.0 and x[5] == x[5] and 2.0 <= abs(x[4]) < 90]
         vals = ml.distinct([x[4] for _, x in mine], decimals=1, tol=0.6)
         vals = sorted(vals, key=abs, reverse=(kind == 'open'))
         if len(vals) < 2:
@@ -241,15 +243,8 @@ def band_report(name, kind, readings, ncalls, factor):
         shown += 1
         rate, gaps = steps(vals)
         tick = ml.TICK / factor  # a tick in recording ms
-        if kind == 'open':
-            ends = [t + abs(x[4]) / rate * tick for t, x in mine]
-            when = 'at rest %.0f ms after the call' % ml.median(ends)
-        else:
-            starts = [t - abs(x[4]) / rate * tick for t, x in mine]
-            when = 'starting %.0f ms after the call, at 90 degrees %.0f ms after it' % (
-                ml.median(starts), ml.median(starts) + 90 / rate * tick)
-        print('  band about y %.1f: %d distinct angles, %s; %.2f degrees a tick (gaps in ticks %s); %s' % (
-            centre, len(vals), ' '.join('%+.1f' % v for v in vals), rate, ' '.join(str(g) for g in gaps), when))
+        print('  band about y %.1f: %d distinct angles, %s; %.2f degrees a tick (gaps in ticks %s)' % (
+            centre, len(vals), ' '.join('%+.1f' % v for v in vals), rate, ' '.join(str(g) for g in gaps)))
         if len(vals) < 4:
             continue
         # Linear when every gap is one tick or two (one no call showed) and a straight line through them is within
@@ -262,10 +257,17 @@ def band_report(name, kind, readings, ncalls, factor):
             a, b = ml.linfit(ticks, [abs(v) for v in vals])
             worst = max(abs(a + b * k - abs(v)) for k, v in zip(ticks, vals))
         if worst <= 1.5:
-            print('    linear: %.2f degrees a tick, within %.2f degrees; %.1f ticks from 80 degrees to 0, %.1f from 0 to 90'
-                  % (abs(b), worst, 80 / abs(b), 90 / abs(b)))
+            # Only a linear band's readings can be moved along it to its rest or its start.
+            if kind == 'open':
+                when = 'at rest %.0f ms after the call' % ml.median([t + abs(x[4]) / abs(b) * tick for t, x in mine])
+            else:
+                st = ml.median([t - abs(x[4]) / abs(b) * tick for t, x in mine])
+                when = 'starting %.0f ms after the call, at 90 degrees %.0f ms after it' % (st, st + 90 / abs(b) * tick)
+            print('    linear: %.2f degrees a tick, within %.2f degrees; %.1f ticks from 80 degrees to 0, %.1f from 0 to 90; %s'
+                  % (abs(b), worst, 80 / abs(b), 90 / abs(b), when))
         elif kind == 'close':
-            print('    not a straight line: too few or too scattered angles to fit')
+            print('    not a straight line: %s' % ('a gap of %d ticks' % max(gaps) if max(gaps) > 2 else
+                                                   'the angles are %.1f degrees from one, too scattered to fit' % worst))
         else:
             # The ratio test needs no zero: an angle that rounds to 0.0 is left out.
             nz = [abs(v) for v in vals if abs(v) >= 0.05]
@@ -302,20 +304,20 @@ def main():
             else:
                 page_i = rec.index_at(tr + 1.2)
                 rest_i = max(rec.index_at(tr - 0.03) - 1, 0)
-            page = rec.frame(page_i)
-            ncalls[(name, kind)] = ncalls.get((name, kind), 0) + 1
-            rest = [e for e in row_edges(rec.frame(rest_i), page, rec.w, rec.h) if e is not None]
+            page, rest_frame = rec.frame(page_i), rec.frame(rest_i)
+            rest = [e for e in row_edges(rest_frame, page, rec.w, rec.h) if e is not None]
             if not rest:
                 print('%s %s at %.0f ms: nothing differs from the page' % (name, kind, t))
                 continue
+            ncalls[(name, kind)] = ncalls.get((name, kind), 0) + 1
             # The popup's width at rest: its rows' median (a full-screen popup's is the screen's).
             width = statistics.median(r[1] - r[0] for r in rest) * s
             if opts['--frames']:
                 print('%s %s at %.0f ms (recording %.3f s), %.1f wide at rest' % (name, kind, t, tr, width))
             # When it is over: the last frame that differs from its end (rest after an opening, the page after a closing),
             # by more than 1 level on average over every 7th pixel, and the frame after it.
-            end = rec.frame(rest_i if kind == 'open' else page_i)[::7]
-            begin = (page if kind == 'open' else rec.frame(rest_i))[::7]
+            end = (rest_frame if kind == 'open' else page)[::7]
+            begin = (page if kind == 'open' else rest_frame)[::7]
             last, first_moved = None, None
             for i, ft, fr in rec.frames(tr - 0.04, tr + 0.9):
                 small = fr[::7]
@@ -331,7 +333,8 @@ def main():
                             '' if x[6] is None else ', near end %.1f,%+.1f' % x[6],)) for x in ss) or '-'))
                 for x in ss:
                     pooled.setdefault((name, kind), []).append(((ft - tr) * 1000, x))
-            nxt = next(((t2 - tr) * 1000 for t2 in rec.times if last is not None and (t2 - tr) * 1000 > last + 1e-6), None)
+            k = bisect.bisect_right(rec.times, tr + last / 1000 + 1e-9) if last is not None else len(rec.times)
+            nxt = (rec.times[k] - tr) * 1000 if k < len(rec.times) else None
             over.setdefault((name, kind), []).append((first_moved, last, nxt))
         for key in ncalls:
             name, kind = key

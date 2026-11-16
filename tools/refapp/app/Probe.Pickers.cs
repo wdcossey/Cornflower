@@ -82,6 +82,7 @@ namespace RefApp
             var page = await Page(host, header, opener, combo6, combo5);
             FrameworkElement hostPart = null;
             TranslateTransform shift = null;
+            FrameworkElement presenter = null;
             WatchFrames(() =>
             {
                 // Each looked for on every frame until found: the template's parts can come a frame apart.
@@ -90,9 +91,10 @@ namespace RefApp
                     hostPart = Find(combo5, "ItemsPresenterHost");
                 }
 
-                if (shift == null)
+                if (presenter == null)
                 {
-                    var presenter = Find(combo5, "ItemsPresenter");
+                    // Looked for until found, once: if its transform is no TranslateTransform, shift stays NaN.
+                    presenter = Find(combo5, "ItemsPresenter");
                     shift = presenter != null ? presenter.RenderTransform as TranslateTransform : null;
                 }
 
@@ -241,10 +243,18 @@ namespace RefApp
 
             var boxes = found.Select(Bounds).ToArray();
             // The items' pitch, which the touches are planned in: ItemHeight scaled by the items' ContentScaleTransform,
-            // read as the gap between two realised items' tops (ItemHeight 123 gives 138.375 on the reference).
-            var tops = Items(found[0]).Select(i => Bounds(i).Y).OrderBy(y => y).ToList();
-            var pitch = tops.Count > 1 ? tops[1] - tops[0] : found[0].ItemHeight;
-            Log("layout", "pitch " + Num(pitch) + " from " + tops.Count + " realised items");
+            // read as the median gap between neighbouring realised items' tops over the three selectors (ItemHeight 123
+            // gives 138.375 on the reference).
+            var gaps = new List<double>();
+            foreach (var sel in found)
+            {
+                var ys = Items(sel).Select(i => Bounds(i).Y).OrderBy(y => y).ToList();
+                gaps.AddRange(ys.Zip(ys.Skip(1), (a, b) => b - a).Where(g => g > 1));
+            }
+
+            gaps.Sort();
+            var pitch = gaps.Count > 0 ? gaps[gaps.Count / 2] : found[0].ItemHeight;
+            Log("layout", "pitch " + Num(pitch) + ", the median of " + gaps.Count + " gaps between realised items");
             for (var k = 0; k < found.Count; k++)
             {
                 var s = found[k];
@@ -359,8 +369,10 @@ namespace RefApp
                 sv.ViewChanging += (o, e) => Log("viewchanging", "next " + Num(e.NextView.VerticalOffset) + " final " + Num(e.FinalView.VerticalOffset) + " inertial " + e.IsInertial + " " + tag);
                 sv.ViewChanged += (o, e) => Log("viewchanged", Num(sv.VerticalOffset) + " intermediate " + e.IsIntermediate + " " + tag);
                 var states = new HashSet<LoopingSelectorItem>();
-                // Each item's number, read again only when the item is given other content (the panel recycles them).
-                var numbers = new Dictionary<LoopingSelectorItem, KeyValuePair<object, double>>();
+                // Each item's first TextBlock, kept, and its number parsed again only when its text changes: the panel
+                // recycles items, and a recycled item's text can follow its new content a frame late.
+                var texts = new Dictionary<LoopingSelectorItem, TextBlock>();
+                var numbers = new Dictionary<TextBlock, KeyValuePair<string, double>>();
                 WatchFrames(() =>
                 {
                     var key = new List<double> { sv.VerticalOffset };
@@ -382,11 +394,27 @@ namespace RefApp
                             WatchItemStates(item, tag);
                         }
 
-                        KeyValuePair<object, double> known;
-                        if (!numbers.TryGetValue(item, out known) || !ReferenceEquals(known.Key, item.Content) || double.IsNaN(known.Value))
+                        TextBlock text;
+                        if (!texts.TryGetValue(item, out text) || text == null)
                         {
-                            known = new KeyValuePair<object, double>(item.Content, ItemNumber(item));
-                            numbers[item] = known;
+                            var found2 = new List<TextBlock>();
+                            Collect(item, found2);
+                            text = found2.FirstOrDefault();
+                            texts[item] = text;
+                        }
+
+                        var number = double.NaN;
+                        if (text != null)
+                        {
+                            KeyValuePair<string, double> known;
+                            if (!numbers.TryGetValue(text, out known) || known.Key != text.Text)
+                            {
+                                double n;
+                                known = new KeyValuePair<string, double>(text.Text, double.TryParse(text.Text, out n) ? n : double.NaN);
+                                numbers[text] = known;
+                            }
+
+                            number = known.Value;
                         }
 
                         var root = Root(item);
@@ -394,14 +422,14 @@ namespace RefApp
                         key.Add(pair.Value - top);
                         key.Add(root != null ? root.Opacity : double.NaN);
                         key.Add(scale != null ? scale.ScaleY : double.NaN);
-                        key.Add(known.Value);
+                        key.Add(number);
                     }
 
                     return key.ToArray();
                 }, v =>
                 {
                     var text = tag + " offset " + Num(v[0]) + " items";
-                    for (var i = 1; i + 3 < v.Length + 1; i += 4)
+                    for (var i = 1; i + 3 < v.Length; i += 4)
                     {
                         text += " " + Num(v[i + 3]) + "@" + Num(v[i]) + ":" + Num(v[i + 1]) + (v[i + 2] != 1 && !double.IsNaN(v[i + 2]) ? "x" + Num(v[i + 2]) : "");
                     }

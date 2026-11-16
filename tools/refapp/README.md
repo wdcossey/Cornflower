@@ -1062,15 +1062,15 @@ each one's ScrollViewer offset and its items are logged. The first run, `2026111
   ways. The fade out starts about 100 ms after the other column's press. The first time a column expands it has no old
   state, and it is at 1 at once.
 - **A drag held still and let go.** It goes to the nearer item: FinalView is decided at the release, in whole items.
-  Let go 0.36 and 0.46 of an item past one, it first drifts on the drag's way, 1.2 to 1.3 px a frame for 7 or 8 frames
+  Let go 0.34 and 0.43 of an item past one (the drag's last offset before the release), it first drifts on the drag's way, 1.2 to 1.3 px a frame for 7 or 8 frames
   (9.1 to 9.5 px), then goes back over 341 to 399 ms. No simple ease fits that within 1.65%. The whole takes 500 ms of
-  RenderingTime (438 to 531 ms on the first run, let go 0.3 to 0.48 past). Let go 0.56 of an item past, it goes on to
+  RenderingTime (438 to 531 ms on the first run, let go 0.3 to 0.48 past). Let go 0.52 of an item past, it goes on to
   the next one at a constant deceleration, 0.000834 px/ms², within 1.4% of the way, at rest in 328 ms.
-- **A drag let go moving toward an item.** 3 items down, let go 1.3 px short: at rest in 62 ms. On the first run, 45 px
+- **A drag let go moving toward an item.** 3 items down, let go 5.2 px short: at rest 62 ms after the first inertial frame. On the first run, 45 px
   short at 0.31 px/ms: a constant deceleration to it, 0.000967 px/ms², over 301 ms (within 0.15% of the way).
 - **A flick.** The coast is the ScrollViewer's inertia: #113's `a + c v²` fits each within 0.3 to 2.4 px, ending on an
   item. 1.77 px/ms went 8 items in 1,391 ms; 2.45 px/ms, 14 items in 1,844 ms. Three flicks of 4 to 4.5 px/ms, 1.5 s
-  apart, each caught by the next, went 48 items in all, the last coast 2,062 ms. (First run: 6 items in 1,156 ms, 13
+  apart, each caught by the next after about 1,550 ms of coast, went 48 items in all, the last coast 2,062 ms. (First run: 6 items in 1,156 ms, 13
   in 1,766, 52 in all.)
 - **The wrap.** After each rest the offset jumps back by the items it moved (−1, −1, −8, +14, +3, +48 items) as
   `SelectionChanged` comes, so it stays in the middle of the extent. Flicked down 48 items, the month is the same, four

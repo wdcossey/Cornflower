@@ -140,13 +140,19 @@ def main():
             continue
         press, release = mine[0]
         pp = p[col]
+        # The touch's span: from its step to the next touch's press. A step is logged 1.2 s before its press, so the
+        # next step can come while this touch's coast still runs.
+        later = [x[0] for x in touches if x[0] > press and x not in mine]
+        until = min(later) if later else 1e18
+        span = [r for r in rows if t0 <= r[0] < until]
         # This column's ViewChangings: the probe ends each line with its selector's tag.
-        ev = ml.view_changes([r for r in seg if r[1] == 'viewchanging' and r[2].endswith(' ' + col)])
+        ev = ml.view_changes([r for r in span if r[1] == 'viewchanging' and r[2].endswith(' ' + col)])
         before = [x for x in fs[col] if x[0] <= press]
         start = before[-1][2] if before else float('nan')
         drag = [e for e in ev if not e[3] and press <= e[0] <= release]
         inert = [e for e in ev if e[3] and e[0] >= press]
-        at_rel = inert[0][1] if inert else next((e[1] for e in reversed(drag) if e[0] <= release), start)
+        # The offset at the release: the drag's last ViewChanging before it, else the first inertial one's NextView.
+        at_rel = drag[-1][1] if drag else (inert[0][1] if inert else start)
         last = [e for e in drag if drag and e[0] >= drag[-1][0] - 100]
         speed = ml.linfit([e[0] for e in last], [e[1] for e in last])[1] if len(last) >= 3 else float('nan')
         print('%s (%s): pressed %.0f ms, held %.0f ms; offset %.3f at the press, %+.1f px (%+.2f items) at the release, '
@@ -159,8 +165,8 @@ def main():
             t_in = inert[0][0]
             # Up to a second press (which holds the coast), or the segment's end: a motion cut off there is said so and
             # not fitted.
-            stop = min([x[0] for x in mine[1:]] + ([t1] if t1 is not None else []) + [1e18])
-            mv = [(t, rt, off) for t, rt, off, _ in fs[col] if t_in - 1 <= t < stop]
+            cut = min([x[0] for x in mine[1:]] + [until])
+            mv = [(t, rt, off) for t, rt, off, _ in fs[col] if t_in - 1 <= t < cut]
             # Up to the first frame at FinalView (rest): within 0.5 px, with the next frame the same or a jump of whole
             # items (the recentring). A frame the app skipped can move the offset far mid-coast, so a jump doesn't end it.
             run_, jump = [], None
@@ -178,7 +184,7 @@ def main():
             if run_ and not at_rest:
                 rt0 = run_[0][1]
                 print('  cut off by %s after %d frames (%.0f ms of rt), at %+.1f px; not fitted' % (
-                    'a second press' if len(mine) > 1 and stop == mine[1][0] else 'the next step', len(run_),
+                    'a second press' if len(mine) > 1 and cut == mine[1][0] else 'the next touch', len(run_),
                     run_[-1][1] - rt0, run_[-1][2] - start))
             if len(run_) >= 2 and at_rest:
                 rt0 = run_[0][1]
@@ -193,12 +199,12 @@ def main():
                 if abs(fin - start) > pp / 2 and peak == 0 and len(fits) > 8:
                     pts = [(rt - fits[0][0], off) for rt, off in fits]
                     cd = scroll.fit_constant_deceleration(pts)
-                    v0, a, c, e, stop = scroll.fit_drag(pts)
+                    v0, a, c, e, ends = scroll.fit_drag(pts)
                     if cd:
                         print('  a constant deceleration: from %.3f px/ms, %.6f px/ms^2, rms %.2f px, stopping at %.0f ms'
                               % cd)
                     print('  a deceleration a + c v^2 (scroll.py): from %.3f px/ms, a %.6f px/ms^2, c %.6f /px, rms %.2f px,'
-                          ' stopping at %.0f ms' % (v0, a, c, e, stop))
+                          ' stopping at %.0f ms' % (v0, a, c, e, ends))
                 for e, name, d, ph in best_curves(fits[peak:], fin):
                     print('  %s%s over %.0f ms, its start %.2f frames before the %s, within %.4f of the way' % (
                         '' if peak == 0 else 'back: ', name, d, ph, 'first inertial frame' if peak == 0 else 'turn', e))
@@ -208,12 +214,15 @@ def main():
                     b[1], b[2] - a[2], (b[2] - a[2]) / pp))
         else:
             print('  no inertial ViewChanging: %s' % ('no ViewChanging at all' if not ev else '%d ViewChanging' % len(ev)))
-        sc = [d for t, w, d in seg if w == 'event' and d.startswith(col + ' SelectionChanged')]
+        sc = [d for t, w, d in span if w == 'event' and d.startswith(col + ' SelectionChanged')]
         print('  selection: %s' % ('; '.join(s.split(' ', 1)[1] for s in sc) or 'unchanged'))
         if len(mine) > 1:
             p2, r2 = mine[1]
             during = [(t, off) for t, rt, off, _ in fs[col] if p2 <= t <= r2]
-            at = max((x for x in fs[col] if x[0] <= p2), key=lambda x: x[0])
+            at = max((x for x in fs[col] if x[0] <= p2), key=lambda x: x[0], default=None)
+            if at is None:
+                print('  a second press %.0f ms after the release, with no frame of this column before it' % (p2 - release))
+                continue
             moved = max((abs(off - at[2]) for _, off in during), default=0.0)
             print('  a second press %.0f ms after the release, held %.0f ms: offset %.3f at it, moved %.1f px while held' % (
                 p2 - release, r2 - p2, at[2], moved))
