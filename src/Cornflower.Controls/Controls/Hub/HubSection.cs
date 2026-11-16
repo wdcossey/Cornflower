@@ -215,7 +215,8 @@ public class HubSection : TemplatedControl
             if (_presenter is { } presenter && ReferenceEquals(presenter.Content, _content))
                 presenter.Content = null;
             _content = null;
-            ShowContent();
+            if (_presenter is not null)
+                ShowContent();                            // otherwise when templated, with its data inherited by then
         }
     }
 

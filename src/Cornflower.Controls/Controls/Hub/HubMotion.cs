@@ -96,6 +96,9 @@ internal sealed class HubMotion
     /// <summary>Whether the move under way is the loop past the end.</summary>
     public bool IsLooping { get; private set; }
 
+    /// <summary>Whether the sections themselves are moving: not in the loop's last part, where only the header is.</summary>
+    public bool AreSectionsMoving => _moving && !(IsLooping && CornflowerClock.Now - _start >= LoopDuration);
+
     /// <summary>How far the sections have moved left, in view pixels.</summary>
     public double Offset { get; private set; }
 
@@ -103,7 +106,7 @@ internal sealed class HubMotion
     public double HeaderX { get; private set; }
 
     /// <summary>Where the move under way ends: a section's start, or 0 for the loop.</summary>
-    public double Target => IsLooping ? 0 : _to;
+    public double Target => _to;
 
     /// <summary>Puts everything at rest at <paramref name="offset"/>, stopping any move, and draws it.</summary>
     public void Rest(double offset)
@@ -193,7 +196,7 @@ internal sealed class HubMotion
     public void Finish()
     {
         if (!_moving) return;
-        Rest(IsLooping ? 0 : _to);
+        Rest(_to);
     }
 
     /// <summary>
@@ -208,14 +211,15 @@ internal sealed class HubMotion
         }
         else if (IsDragging)
         {
-            var starts = _hub.SectionStarts;
+            // The nearest start, or past the end the first section's place after the last (L), which is 0 again.
             var nearest = 0.0;
-            foreach (var start in starts)
+            foreach (var start in _hub.SectionStarts)
             {
                 if (Math.Abs(start - Offset) < Math.Abs(nearest - Offset)) nearest = start;
             }
 
-            Rest(nearest);
+            var length = _hub.SectionsLength;
+            Rest(length > 0 && Math.Abs(length - Offset) < Math.Abs(nearest - Offset) ? 0 : nearest);
         }
     }
 

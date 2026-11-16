@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -105,8 +106,10 @@ public class Hub : TemplatedControl
         _motion = new HubMotion(this);
         _sectionHeaders = new SectionHeaderList(_sections);
         GestureRecognizers.Add(new HubPanGestureRecognizer(this));
+        _sections.Validate = ValidateSection;
         _sections.CollectionChanged += OnSectionsChanged;
-        AddHandler(RequestBringIntoViewEvent, OnRequestBringIntoView);
+        // A ScrollViewer in a section may have scrolled down to the control already, and handled the request.
+        AddHandler(RequestBringIntoViewEvent, OnRequestBringIntoView, RoutingStrategies.Bubble, handledEventsToo: true);
         UpdateBackgroundState();
     }
 
@@ -312,6 +315,9 @@ public class Hub : TemplatedControl
     /// </summary>
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
+        // A move or a drag ends on the layout it was in, so it rests at the section it meant; placed again below.
+        if ((_motion.IsMoving || _motion.IsDragging) && LayoutDiffers())
+            _motion.Stop();
         var changed = UpdateLayoutOfSections();
         if (!IsLaidOut)
         {
@@ -319,8 +325,6 @@ public class Hub : TemplatedControl
                 _motion.Rest(0);                          // no sections: none in view
             return;                                       // hidden, or not laid out yet: keep what is to be shown
         }
-        if (changed && (_motion.IsMoving || _motion.IsDragging))
-            _motion.Stop();                               // rests where it was going; placed again below
         if (_motion.IsMoving || _motion.IsDragging)
             return;
 
@@ -427,7 +431,16 @@ public class Hub : TemplatedControl
         if (_pending is not null && !_sections.Contains(_pending))
             _pending = null;
         _motion.Stop();
+        _starts = [];                                     // read again once the panel has laid the new sections out
         InvalidateMeasure();
+    }
+
+    /// <summary>A section joins one Hub, once.</summary>
+    private void ValidateSection(HubSection section)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        if (section.Owner is not null)
+            throw new InvalidOperationException("The section is in a Hub already: take it out of that one first.");
     }
 
     private void Detach(HubSection section)
@@ -449,19 +462,30 @@ public class Hub : TemplatedControl
         return index >= 0 && index < _starts.Length ? _starts[index] : 0;
     }
 
-    /// <summary>Reads where the panel laid the sections out; whether that changed. Allocates only when it did.</summary>
-    private bool UpdateLayoutOfSections()
+    /// <summary>Whether the panel has laid the sections out other than as last read.</summary>
+    private bool LayoutDiffers()
     {
         var count = _sections.Count;
         var origin = count > 0 ? _sections[0].Bounds.X - _sections[0].Margin.Left : 0;
         var length = count > 0 ? _sections[count - 1].Bounds.Right + _sections[count - 1].Margin.Right - origin : 0;
-        var view = _scrollViewer is { Bounds.Width: > 0 } scroll ? scroll.Bounds.Width : Bounds.Width;
-        var changed = count != _starts.Length || length != _length || view != _view;
+        var changed = count != _starts.Length || length != _length || ViewOfPanel() != _view;
         for (var i = 0; i < count && !changed; i++)
             changed = _sections[i].Bounds.X - _sections[i].Margin.Left - origin != _starts[i];
-        if (!changed)
+        return changed;
+    }
+
+    private double ViewOfPanel() => _scrollViewer is { Bounds.Width: > 0 } scroll ? scroll.Bounds.Width : Bounds.Width;
+
+    /// <summary>Reads where the panel laid the sections out; whether that changed. Allocates only when it did.</summary>
+    private bool UpdateLayoutOfSections()
+    {
+        if (!LayoutDiffers())
             return false;
 
+        var count = _sections.Count;
+        var origin = count > 0 ? _sections[0].Bounds.X - _sections[0].Margin.Left : 0;
+        var length = count > 0 ? _sections[count - 1].Bounds.Right + _sections[count - 1].Margin.Right - origin : 0;
+        var view = ViewOfPanel();
         var starts = new double[count];
         for (var i = 0; i < count; i++)
             starts[i] = _sections[i].Bounds.X - _sections[i].Margin.Left - origin;
@@ -477,16 +501,19 @@ public class Hub : TemplatedControl
         if (e.TargetObject is not Visual target || !IsLaidOut || _motion.IsDragging)
             return;
         var section = target as HubSection ?? target.FindAncestorOfType<HubSection>();
-        if (section is null || !ReferenceEquals(section.Owner, this) || _inView.Contains(section) && IsWhollyInView(section))
+        if (section is null || !ReferenceEquals(section.Owner, this) || IsInView(target, e.TargetRect))
             return;
         ScrollToSection(section);
         e.Handled = true;
     }
 
-    private bool IsWhollyInView(HubSection section)
+    /// <summary>Whether the part of <paramref name="target"/> asked for is across the view already.</summary>
+    private bool IsInView(Visual target, Rect rect)
     {
-        var x = section.TranslatePoint(default, this)?.X ?? double.NaN;
-        return x >= 0 && x + section.Bounds.Width <= _view + 0.5;
+        var area = rect.Width > 0 ? rect : new Rect(target.Bounds.Size);
+        var left = target.TranslatePoint(area.TopLeft, this)?.X ?? double.NaN;
+        var right = target.TranslatePoint(area.TopRight, this)?.X ?? double.NaN;
+        return left >= -0.5 && right <= _view + 0.5;
     }
 
     private void UpdateBackgroundState()

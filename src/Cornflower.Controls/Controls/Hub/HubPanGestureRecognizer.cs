@@ -44,14 +44,11 @@ internal sealed class HubPanGestureRecognizer : GestureRecognizer
         _dragging = false;
         _moves.Clear();
 
-        // A finger on moving sections holds them where they are, as the phone's DirectManipulation does; the Hub takes
-        // it at once, so it hears the release however the finger goes.
-        _held = _hub.Motion.IsMoving;
+        // A finger on moving sections holds them where they are, as the phone's DirectManipulation does. If something
+        // in a section takes the finger, this hears PointerCaptureLost and lets them go on.
+        _held = _hub.Motion.AreSectionsMoving;
         if (_held)
-        {
-            Capture(e.Pointer);
             _hub.Motion.BeginDrag();
-        }
     }
 
     protected override void PointerMoved(PointerEventArgs e)

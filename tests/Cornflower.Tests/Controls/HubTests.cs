@@ -477,6 +477,127 @@ public class HubTests
         Assert.Equal(810, stage.Offset, 0.01);
     }
 
+    [AvaloniaFact]
+    public void A_Control_Down_A_Sections_List_Brought_Into_View_Brings_The_Section_Too()
+    {
+        var hub = Stage.Make(3);
+        var lines = new StackPanel();
+        for (var i = 0; i < 60; i++) lines.Children.Add(new TextBlock { Text = "line " + i });
+        var button = new Button { Content = "at the bottom" };
+        lines.Children.Add(button);
+        var scroller = new ScrollViewer { Content = lines };
+        hub.Sections[1].ContentTemplate = new FuncDataTemplate<object?>((_, _) => scroller);
+        using var stage = new Stage(hub: hub);
+        button.BringIntoView();                                              // the list scrolls down and handles it
+        stage.Window.UpdateLayout();
+        Assert.True(scroller.Offset.Y > 100);
+        Assert.Equal(SectionWidth, stage.Offset, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void A_Control_Already_In_View_Brought_Into_View_Leaves_The_Hub()
+    {
+        var hub = Stage.Make(3);
+        var button = new Border { Width = 20, Height = 20, HorizontalAlignment = HorizontalAlignment.Left };
+        hub.Sections[1].ContentTemplate = new FuncDataTemplate<object?>((_, _) => button);
+        using var stage = new Stage(hub: hub);
+        Assert.InRange(button.TranslatePoint(default, stage.Hub)!.Value.X, 405, 430);   // in the second's edge, on screen
+        button.BringIntoView();
+        stage.Window.UpdateLayout();
+        Assert.Equal(0, stage.Offset, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void A_Drag_Ended_By_A_New_Layout_Rests_On_The_Section_It_Was_On()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        stage.Hub.ScrollToSection(stage.Section(3));
+        clock.At(100);
+        var touch = stage.Window.TouchBegin(stage.At(100, 440), RawInputModifiers.None);
+        clock.At(110);
+        stage.Window.TouchMove(touch, stage.At(115, 440), RawInputModifiers.None);
+        Assert.Equal(1200, stage.Offset, 0.01);
+        stage.Hub.Width = 900;
+        stage.Hub.HorizontalAlignment = HorizontalAlignment.Left;
+        stage.Window.UpdateLayout();
+        Assert.False(stage.Hub.Motion.IsDragging);
+        Assert.Equal(3 * 810, stage.Offset, 0.5);                            // the fourth, at its new place
+        stage.Window.TouchEnd(touch, stage.At(115, 440), RawInputModifiers.None);
+    }
+
+    [AvaloniaFact]
+    public void A_Drag_Cut_Short_Near_The_Loops_End_Rests_On_The_First_Section()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        stage.Hub.ScrollToSection(stage.Section(3));
+        clock.At(100);
+        var touch = stage.Window.TouchBegin(stage.At(420, 440), RawInputModifiers.None);
+        clock.At(110);
+        stage.Window.TouchMove(touch, stage.At(20, 440), RawInputModifiers.None);
+        Assert.Equal(1615, 1215 - stage.SectionX(3), 0.01);                  // the first 5 px from its place
+        var grid = (Grid)stage.Hub.Parent!;
+        grid.Children.Remove(stage.Hub);
+        grid.Children.Add(stage.Hub);
+        stage.Window.UpdateLayout();
+        Assert.Equal(0, stage.SectionX(0), 0.01);
+    }
+
+    [AvaloniaFact]
+    public void A_Tap_While_Only_The_Header_Comes_Back_Is_The_Contents()
+    {
+        using var clock = PhoneClock();
+        var hub = Stage.Make(4);
+        var clicks = 0;
+        var button = new Button { Content = "tap me" };
+        button.Click += (_, _) => clicks++;
+        hub.Sections[0].ContentTemplate = new FuncDataTemplate<object?>((_, _) => button);
+        using var stage = new Stage(hub: hub);
+        stage.Hub.ScrollToSection(stage.Section(3));
+        Swipe(stage, clock, 250);
+        clock.At(250 + 22 * Frame);                                          // past the reset, the header still easing
+        Assert.True(stage.Hub.Motion.IsLooping);
+        stage.Render();
+        var at = button.TranslatePoint(new Point(10, 10), stage.Window)!.Value;
+        var touch = stage.Window.TouchBegin(at, RawInputModifiers.None);
+        stage.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        Assert.Equal(1, clicks);
+    }
+
+    [AvaloniaFact]
+    public void A_Sections_Content_Is_Built_With_The_Data_It_Gets_In_The_Hub()
+    {
+        var section = new HubSection { ContentTemplate = new FuncDataTemplate<object?>((data, _) => new TextBlock { Text = data as string ?? "no data" }) };
+        var hub = new Hub { DataContext = "the hub's data" };
+        hub.Sections.Add(section);
+        using var stage = new Stage(hub: hub);
+        Assert.Equal("the hub's data", ((TextBlock)section.BuiltContent!).Text);
+    }
+
+    [AvaloniaFact]
+    public void A_Section_Joins_One_Hub_Once()
+    {
+        var hub = Stage.Make(2);
+        var other = new Hub();
+        Assert.Throws<ArgumentNullException>(() => hub.Sections.Add(null!));
+        Assert.Throws<InvalidOperationException>(() => other.Sections.Add(hub.Sections[0]));
+        Assert.Throws<InvalidOperationException>(() => hub.Sections.Add(hub.Sections[0]));
+        Assert.Equal(2, hub.Sections.Count);
+        Assert.Empty(other.Sections);
+        Assert.Same(hub, hub.Sections[0].Owner);
+    }
+
+    [AvaloniaFact]
+    public void A_Section_Replaced_Is_Read_Again_Before_Anything_Is_Placed()
+    {
+        using var stage = new Stage();
+        stage.Hub.Sections[1] = Stage.MakeSection("new");
+        Assert.Empty(stage.Hub.SectionStarts);                               // the old places aren't trusted
+        stage.Window.UpdateLayout();
+        Assert.Equal([0, 405, 810, 1215], stage.Hub.SectionStarts);
+    }
+
     // ---- The header against the sections (#128) ----
 
     [AvaloniaFact]
