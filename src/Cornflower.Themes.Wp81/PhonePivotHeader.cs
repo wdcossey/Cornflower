@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
@@ -34,6 +35,9 @@ internal static class PhonePivotHeader
     /// </summary>
     public static readonly IMultiValueConverter LetterSpacing = new LetterSpacingConverter();
 
+    /// <summary>The transform each element was given, to move and take back only that one.</summary>
+    private static readonly ConditionalWeakTable<Visual, TranslateTransform> Made = new();
+
     /// <summary>How far right the element is drawn, in view pixels.</summary>
     public static readonly AttachedProperty<double> TranslationProperty =
         AvaloniaProperty.RegisterAttached<Visual, double>("Translation", typeof(PhonePivotHeader));
@@ -42,13 +46,24 @@ internal static class PhonePivotHeader
     {
         TranslationProperty.Changed.AddClassHandler<Visual>((visual, change) =>
         {
+            // Only the transform this made is moved or taken away: one an app set is left alone.
             var x = change.GetNewValue<double>();
+            var own = Made.TryGetValue(visual, out var made) && ReferenceEquals(visual.RenderTransform, made) ? made : null;
             if (x == 0)
-                visual.RenderTransform = null;
-            else if (visual.RenderTransform is TranslateTransform translate)
-                translate.X = x;                          // the transition's frames move the one transform
-            else
-                visual.RenderTransform = new TranslateTransform(x, 0);
+            {
+                if (own is not null)
+                    visual.RenderTransform = null;
+            }
+            else if (own is not null)
+            {
+                own.X = x;                                // the transition's frames move the one transform
+            }
+            else if (visual.RenderTransform is null)
+            {
+                made = new TranslateTransform(x, 0);
+                Made.AddOrUpdate(visual, made);
+                visual.RenderTransform = made;
+            }
         });
     }
 

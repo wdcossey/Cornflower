@@ -272,7 +272,9 @@ public class Pivot : SelectingItemsControl
         _knownCount = ItemCount;
         BuildHeaders();
         // Rest on the selected item where it now is: the selection may not have caught up with the change yet.
-        var at = _selected is null ? -1 : ItemsView.IndexOf(_selected);
+        var at = SelectedIndex >= 0 && SelectedIndex < ItemCount && ReferenceEquals(ItemsView[SelectedIndex], _selected)
+            ? SelectedIndex
+            : _selected is null ? -1 : ItemsView.IndexOf(_selected);
         _motion.Rest(at >= 0 ? at : Math.Max(SelectedIndex, 0));
         UpdateHeaderStates();
     }
@@ -281,7 +283,8 @@ public class Pivot : SelectingItemsControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
-        _header?.Children.Clear();
+        if (_header is { } oldHeader)
+            ClearHeaders(oldHeader);
         _header = e.NameScope.Find<PivotHeaderPanel>("PART_Header");
         if (_itemsPresenter is { } old && ReferenceEquals(old.RenderTransform, _itemsTranslation))
             old.RenderTransform = null;
@@ -352,7 +355,11 @@ public class Pivot : SelectingItemsControl
         var fromMotion = _selectingFromMotion;
         _selectingFromMotion = false;
         var item = to >= 0 && to < ItemCount ? ItemsView[to] : null;
-        var same = ReferenceEquals(item, _selected) && item is not null;
+        var previous = _selected;
+        // The same item at a new index, the items having changed round it (not an equal item elsewhere: the old index
+        // no longer holds it).
+        var same = item is not null && ReferenceEquals(item, previous) &&
+                   !(from >= 0 && from < ItemCount && ReferenceEquals(ItemsView[from], previous));
         _selected = item;
         if (same)
         {
@@ -362,8 +369,15 @@ public class Pivot : SelectingItemsControl
             return;
         }
 
-        RaiseFor(PivotItemUnloading, from >= 0 && from < ItemCount ? ContainerFor(from) : null);
-        RaiseFor(PivotItemLoading, to >= 0 ? ContainerFor(to) : null);
+        // Nothing shown yet, the first item to show raises its own Loading.
+        if (_shown is not null)
+        {
+            var going = previous as PivotItem ??
+                        (from >= 0 && from < ItemCount && ReferenceEquals(ItemsView[from], previous) ? ContainerFor(from) : null);
+            RaiseFor(PivotItemUnloading, going);
+            RaiseFor(PivotItemLoading, to >= 0 && to < ItemCount ? ContainerFor(to) : null);
+        }
+
         if (fromMotion)
             return;
 
@@ -407,7 +421,8 @@ public class Pivot : SelectingItemsControl
         var from = SelectedIndex;
         var steps = PivotHeaderPanel.Wrap(tapped.Index - from, ItemCount);
         SelectFromMotion(tapped.Index);
-        _motion.MoveTo(from, steps);
+        if (SelectedIndex == tapped.Index && !_motion.IsMoving)      // unless a handler of the selection moved it on
+            _motion.MoveTo(from, steps);
     }
 
     private void OnTopLevelPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -427,9 +442,7 @@ public class Pivot : SelectingItemsControl
     private void BuildHeaders()
     {
         if (_header is not { } header) return;
-        foreach (var child in header.Children)
-            ((PivotHeaderItem)child).Content = null;      // a header that is a control goes to the new strip
-        header.Children.Clear();
+        ClearHeaders(header);
         for (var i = 0; i < ItemCount; i++)
             header.Children.Add(new PivotHeaderItem { Index = i, Content = HeaderFor(i), ContentTemplate = HeaderTemplate });
     }
@@ -441,6 +454,14 @@ public class Pivot : SelectingItemsControl
         Control => null,
         var data => data,
     };
+
+    /// <summary>Empties a strip, its headers letting go of their content first, so a header that is a control can go to the next.</summary>
+    private static void ClearHeaders(PivotHeaderPanel header)
+    {
+        foreach (var child in header.Children)
+            ((PivotHeaderItem)child).Content = null;
+        header.Children.Clear();
+    }
 
     private void UpdateHeaderStates()
     {

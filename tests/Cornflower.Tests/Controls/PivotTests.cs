@@ -742,6 +742,12 @@ public class PivotTests
         Assert.Equal(40, ((TranslateTransform)border.RenderTransform!).X);
         PhonePivotHeader.SetTranslation(border, 0);
         Assert.Null(border.RenderTransform);
+
+        var apps = new ScaleTransform(2, 2);
+        var other = new Border { RenderTransform = apps };
+        PhonePivotHeader.SetTranslation(other, 40);
+        PhonePivotHeader.SetTranslation(other, 0);
+        Assert.Same(apps, other.RenderTransform);
     }
 
     // ---- The items' events ----
@@ -916,5 +922,80 @@ public class PivotTests
         Assert.False(stage.Pivot.Motion.IsMoving);
         Assert.Equal(0, clock.Pending);
         Assert.True(stage.Shown(3));
+    }
+
+    // ---- The second review ----
+
+    [AvaloniaFact]
+    public void A_Control_As_A_Header_Survives_A_New_Template()
+    {
+        var pivot = new Pivot();
+        pivot.Items.Add(new PivotItem { Header = new TextBlock { Text = "one" } });
+        pivot.Items.Add(new PivotItem { Header = "two" });
+        using var stage = new Stage(pivot: pivot);
+        var template = pivot.Template!;
+        pivot.Template = null;
+        stage.Layout();
+        pivot.Template = template;
+        stage.Layout();
+        Assert.IsType<TextBlock>(stage.Header(0).Content);
+    }
+
+    [AvaloniaFact]
+    public void A_Tap_Whose_Selection_Handler_Selects_Again_Goes_Where_The_Handler_Said()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var redirected = false;
+        stage.Pivot.SelectionChanged += (_, _) =>
+        {
+            if (redirected) return;
+            redirected = true;
+            stage.Pivot.SelectedIndex = 3;
+        };
+        Tap(stage, clock, 1000, HeaderCentre(stage, 1));
+        clock.At(3000);
+        Assert.Equal(3, stage.Pivot.SelectedIndex);
+        Assert.True(stage.Shown(3));
+    }
+
+    [AvaloniaFact]
+    public void Removing_The_Selected_Item_Unloads_It_And_Goes_At_Once()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        stage.Pivot.SelectedIndex = 1;
+        stage.Pivot.Motion.Finish();
+        var log = LogEvents(stage.Pivot);
+        stage.Pivot.Items.RemoveAt(1);
+        Assert.False(stage.Pivot.Motion.IsMoving);
+        Assert.DoesNotContain("unloading three", log);
+        clock.At(1000);
+        stage.Layout();
+        Assert.True(stage.Shown(stage.Pivot.SelectedIndex));
+    }
+
+    [AvaloniaFact]
+    public void Equal_Data_Items_Are_Still_Selected_Anew()
+    {
+        using var clock = PhoneClock();
+        var pivot = new Pivot { ItemsSource = new[] { "one", "two", "one" } };
+        using var stage = new Stage(pivot: pivot);
+        var log = new List<string>();
+        pivot.PivotItemLoading += (_, e) => log.Add("loading");
+        pivot.SelectedIndex = 2;
+        Assert.True(pivot.Motion.IsMoving);
+        Assert.Equal(["loading"], log);
+    }
+
+    [AvaloniaFact]
+    public void The_First_Item_Loads_Once_With_The_Handler_Set_Before_The_Items()
+    {
+        var pivot = new Pivot();
+        var log = LogEvents(pivot);
+        pivot.Items.Add(new PivotItem { Header = "one" });
+        pivot.Items.Add(new PivotItem { Header = "two" });
+        using var stage = new Stage(pivot: pivot);
+        Assert.Equal(["loading one", "loaded one"], log);
     }
 }
