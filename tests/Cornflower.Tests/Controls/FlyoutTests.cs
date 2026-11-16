@@ -125,6 +125,8 @@ public class FlyoutTests
         using var stage = new Stage();
         stage.OpenAtRest();
 
+        // Headless draws every popup in the overlay layer, so the frame can't tell; a desktop window wouldn't, unless asked.
+        Assert.True(stage.Flyout.Popup.ShouldUseOverlayLayer);
         Assert.True(stage.Flyout.Popup.IsUsingOverlayLayer);
         Assert.Same(stage.Scene.Window, TopLevel.GetTopLevel(stage.Presenter));
     }
@@ -496,6 +498,100 @@ public class FlyoutTests
         Assert.Null(stage.Presenter.RenderTransform);
         stage.Flyout.Hide();
         Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Flyout_Whose_Theme_Goes_Mid_Close_Closes()
+    {
+        using var stage = new Stage();
+        stage.OpenAtRest();
+
+        stage.Flyout.Hide();
+        Assert.True(stage.Flyout.Popup.IsOpen);
+        PhoneFlyout.SetIsEnabled(stage.Presenter, false);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(stage.Flyout.Popup.IsOpen);
+        Assert.False(stage.Flyout.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Full_Flyout_Closed_Mid_Opening_Swings_Out_From_Where_It_Was()
+    {
+        using var stage = new Stage(full: true);
+        stage.Open();
+        stage.At(16 + 48);
+        var height = stage.Presenter.Bounds.Height;
+        var before = Draw(stage.Presenter.RenderTransform!.Value, new Point(225, height)).Y;
+        Assert.True(before < height - 1);
+
+        stage.Flyout.Hide();
+        stage.At(16 + 48 + 16);
+
+        // Its first closing frame is where the opening was, not flat.
+        var after = Draw(stage.Presenter.RenderTransform!.Value, new Point(225, height)).Y;
+        Assert.Equal(before, after, 0.5);
+    }
+
+    [AvaloniaFact]
+    public void A_Second_Back_While_The_Flyout_Closes_Is_The_Pages()
+    {
+        var first = new ContentPage();
+        var second = new ContentPage();
+        var nav = new NavigationPage();
+        using var stage = new Stage(root: new PageNavigationHost { Page = nav });
+        _ = nav.PushAsync(first);
+        _ = nav.PushAsync(second, null);
+        Dispatcher.UIThread.RunJobs();
+        second.Content = stage.Button;
+        Dispatcher.UIThread.RunJobs();
+        stage.OpenAtRest();
+
+        stage.Scene.Window.RaiseEvent(new RoutedEventArgs(TopLevel.BackRequestedEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(second, nav.CurrentPage);
+        var again = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+        stage.Scene.Window.RaiseEvent(again);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(again.Handled);
+        Assert.Same(first, nav.CurrentPage);
+    }
+
+    [AvaloniaFact]
+    public void A_Window_Closed_With_A_Flyout_Open_Lets_Go_Of_It()
+    {
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        var host = PhoneFlyout.HostOf(stage.Presenter)!;
+        Assert.True(host.IsOpen);
+
+        stage.Scene.Window.Close();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(host.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Disposed_Host_Gives_The_Popup_Back_What_It_Set()
+    {
+        using var clock = new TestClock();
+        var content = new Border { Height = 100 };
+        var popup = new Popup { Child = content, Width = 200, Placement = PlacementMode.Bottom };
+        var target = new Panel { Children = { popup } };
+        using var scene = new Scene(target);
+        var host = new PhonePopupHost(popup, content, () => popup.Close());
+        popup.Open();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(450, popup.Width);
+        popup.Close();
+
+        host.Dispose();
+
+        Assert.Equal(200, popup.Width);
+        Assert.Equal(PlacementMode.Bottom, popup.Placement);
+        Assert.False(popup.IsSet(Popup.PlacementTargetProperty));
+        Assert.False(popup.ShouldUseOverlayLayer);
     }
 
     private sealed class RectComparer(double tolerance) : IEqualityComparer<Rect>

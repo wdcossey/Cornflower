@@ -55,7 +55,7 @@ internal static class PhoneFlyout
 
     public static void SetIsEnabled(FlyoutPresenter presenter, bool value) => presenter.SetValue(IsEnabledProperty, value);
 
-    /// <summary>The host of one presenter's popup, and the flyout that opened it.</summary>
+    /// <summary>The host of one presenter's popup, if the theme has turned this on for it.</summary>
     internal static PhonePopupHost? HostOf(FlyoutPresenter presenter) =>
         Binders.TryGetValue(presenter, out var binder) ? binder.Host : null;
 
@@ -73,12 +73,16 @@ internal static class PhoneFlyout
 
         public PhonePopupHost Host { get; }
 
+        /// <summary>Lets go of the flyout; one asked to close and still in its closing motion closes now.</summary>
         public void Dispose()
         {
+            var closing = Host.IsClosing;
+            Host.Dispose();
+            if (closing)
+                Close();
             if (_flyout is not null)
                 _flyout.Closing -= OnClosing;
             _flyout = null;
-            Host.Dispose();
         }
 
         /// <summary>The flyout opening this popup: its placement, its tap outside, and its closing.</summary>

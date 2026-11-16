@@ -62,9 +62,12 @@ internal static class PhonePopupMotion
     internal static double OpeningAngle(PhonePopupPlacement placement, TimeSpan time) =>
         PhoneEase.Remaining(OpenFrom, OpenExponent, time, OpenLength(placement));
 
-    /// <summary>The angle <paramref name="time"/> into the full popup's closing, in degrees: 0 at its start.</summary>
-    internal static double ClosingAngle(TimeSpan time) =>
-        CloseTo * PhoneEase.ExponentialIn(CloseExponent, time / FullCloseLength);
+    /// <summary>
+    /// The angle <paramref name="time"/> into the full popup's closing, in degrees, from <paramref name="from"/>: the
+    /// angle it was at when asked to close (0 at rest; mid-opening, wherever the opening had got to).
+    /// </summary>
+    internal static double ClosingAngle(double from, TimeSpan time) =>
+        from + (CloseTo - from) * PhoneEase.ExponentialIn(CloseExponent, time / FullCloseLength);
 
     /// <summary>
     /// Where a point of a popup of <paramref name="size"/> is drawn, turned <paramref name="degrees"/> about its top edge
