@@ -18,7 +18,6 @@ Then whether every Hub's entrance had the same values a frame.
 
 Python 3 standard library only.
 """
-import math
 import os
 import re
 import sys

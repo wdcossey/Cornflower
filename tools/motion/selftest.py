@@ -774,6 +774,38 @@ def release_decisions_and_a_second_press():
 
 
 @check
+def release_on_a_hub():
+    # A synthetic -Probe hubrelease run (#148): touch.log with a decimal comma, as a VM in such a culture writes it; the
+    # page the sections' pitch, 380 here, read from the frames (the first frame's layout is mid-entrance, 300); a swipe
+    # right at the first section that loops to the end, which is no count of pages; a stray press far from any touch,
+    # left out of the lag; and ScrollToSection, whose frames count only those with a new offset.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46,1 ms (planned      0) down 30 30 -> 36,36\n    86,1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046,1 ms (planned   2000) down 70 500 -> 84,600\n  2196,1 ms (planned   2150) up 270 500 -> 324,600\n')
+        fr = '%.1f\tframe\trt %g offset %g header 15 [none] | section 1 %g | section 2 %g | section 3 0 | section 4 0\n'
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\tsection section 1 5 76 300 708\n')
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tfirst section: swipe right\n')
+            f.write(fr % (2900.0, 100, 0, 0, 380))
+            f.write('3000.0\tpressed\thub 70 500 ts 1\n2400.0\tpressed\thub 1 1 ts 2\n')
+            f.write(fr % (3050.0, 105, 0, 40, -1100))
+            f.write('3400.0\tviewchanging\tnext 0 final 1140 inertial True\n')
+            f.write(fr % (3900.0, 200, 1140, -1140, -760))
+            f.write('5000.0\tstep\tScrollToSection 2\n5000.5\tsetup\tScrollToSection 2, offset 1140 before the call, 380 after\n')
+            f.write(fr % (5010.0, 300, 380, -380, 0))
+            f.write(fr % (5030.0, 316, 380, -380, 0.5))
+        code, out = run_script('release.py', run)
+    assert code == 0, out
+    assert 'a Hub, a page 380 px' in out, out
+    assert 'a press at 2400.0 ms is 600 ms from the nearest touch in touch.log: left out of the lag' in out, out
+    assert re.search(r'first section: swipe right +150 .* to \+1140\.0 \(a loop, not \+3 pages\)', out), out
+    assert 'ScrollToSection 2: ScrollToSection 2, offset 1140 before the call, 380 after; 1 frames with a new offset: 10:380.0' in out, out
+
+
+@check
 def hub_entrance_fit():
     # A synthetic -Probe hubentrance run (#148): two Hubs placed, each turning from RotationY -90 by an ExponentialEase
     # of 5 over 750 ms (48 ticks), the second with a frame missing; the fit finds 5 and 750 ms, and the two the same.

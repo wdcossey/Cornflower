@@ -384,7 +384,7 @@ namespace RefApp
                 Log("layout", "after the entrance: hub " + Num(hub.ActualWidth) + " x " + Num(hub.ActualHeight) + string.Concat(parts.Select(part => ", " + part.Name + " " + Num(part.ActualWidth) + " x " + Num(part.ActualHeight) + " at " + Num(Left(part)))));
             }
 
-            WatchHub(hub, sv, headerHost, parts);
+            WatchHub(hub, sv, headerHost, image ? parts : null);
             var y = 500.0;
             var start = OffsetX(sv, 0);
             Func<Task> none = () => Task.FromResult(true);
@@ -423,11 +423,16 @@ namespace RefApp
         /// Logs a Hub's view changes and layout, and watches every frame (see the class summary): the offset, the header's
         /// left edge and transform and each section's left edge; with the background's parts (the template's Background
         /// grid, WrapBackground and MainBackground, in that order), each one's left edge, width and transform, the grid's
-        /// opacity and WrapBackground's visibility. <paramref name="parts"/> is empty for a Hub read without them.
+        /// opacity and WrapBackground's visibility. <paramref name="parts"/> is null for a Hub read without them.
         /// </summary>
         private void WatchHub(Hub hub, ScrollViewer sv, FrameworkElement headerHost, FrameworkElement[] parts)
         {
-            var image = parts.Length == 3;
+            var image = parts != null;
+            if (image && parts.Length != 3)
+            {
+                throw new ArgumentException("the background's parts are Background, WrapBackground and MainBackground", nameof(parts));
+            }
+
             var bg = image ? parts[0] : null;
             var wrap = image ? parts[1] : null;
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.HorizontalOffset) + " final " + Num(e.FinalView.HorizontalOffset) + " inertial " + e.IsInertial);
@@ -543,7 +548,7 @@ namespace RefApp
         /// </summary>
         private async Task AppBarProbe(Grid host, bool light = false)
         {
-            await WithAppBar(host, new[] { "first menu item", "second menu item" }, light, AppBarTouches);
+            await WithAppBar(host, new[] { "first menu item", "second menu item" }, light, (h, bar) => AppBarTouches(h, bar, light));
         }
 
         /// <summary>
@@ -551,7 +556,7 @@ namespace RefApp
         /// add, favorite (a toggle) and delete, and a secondary command for each label; every Click, Opened and Closed
         /// logged; in the light theme with <paramref name="light"/>. Taken off after the run.
         /// </summary>
-        private async Task WithAppBar(Grid host, string[] secondary, bool light, Func<Grid, CommandBar, bool, Task> touches)
+        private async Task WithAppBar(Grid host, string[] secondary, bool light, Func<Grid, CommandBar, Task> touches)
         {
             var frame = Window.Current.Content as Frame;
             var shell = frame != null ? frame.Content as Page : null;
@@ -591,7 +596,7 @@ namespace RefApp
             shell.BottomAppBar = bar;
             try
             {
-                await touches(host, bar, light);
+                await touches(host, bar);
             }
             finally
             {

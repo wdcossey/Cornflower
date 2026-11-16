@@ -25,6 +25,7 @@ before and after the call (its own `setup` line) and the frames that follow, so 
 
 Python 3 standard library only.
 """
+import bisect
 import os
 import re
 import sys
@@ -33,7 +34,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
 FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: index (-?\d+))?')
-TOUCH = re.compile(r'^\s*([\d.]+) ms \(planned\s+[\d.]+\) (down|up) ')
+# touch.ps1 writes its times with PowerShell's -f, in the VM's culture: a decimal comma is read too.
+TOUCH = re.compile(r'^\s*([\d.,]+) ms \(planned\s+[\d.,]+\) (down|up) ')
 
 
 def touch_times(path):
@@ -44,10 +46,11 @@ def touch_times(path):
             m = TOUCH.match(line)
             if not m:
                 continue
+            ms = float(m.group(1).replace(',', '.'))
             if m.group(2) == 'down':
-                down = float(m.group(1))
+                down = ms
             elif down is not None:
-                out.append((down, float(m.group(1))))
+                out.append((down, ms))
                 down = None
     return out
 
@@ -56,7 +59,7 @@ def touches(rows, played):
     """Each touch but the start tap as (press, release) in the app's ms. touch.log's times are moved onto the app's
     clock by the start tap's press (the `go` line), then by the median lag of the app's `pressed` lines to the nearest
     planned press: a press the ScrollViewer still holds from the touch before reaches no pointer handler, so not every
-    touch has a `pressed` line. A pressed line over 150 ms from every touch stops the script."""
+    touch has a `pressed` line. A pressed line over 150 ms from every touch is left out of the lag, and said so."""
     go = next((t for t, w, d in rows if w == 'go'), None)
     if go is None or not played:
         raise SystemExit('no go line in the log, or no touch in touch.log')
@@ -66,7 +69,8 @@ def touches(rows, played):
     for t in (t for t, w, d in rows if w == 'pressed'):
         near = min(planned, key=lambda p: abs(p[0] - t))
         if abs(near[0] - t) > 150:
-            raise SystemExit('a press at %.1f ms is %.0f ms from the nearest touch in touch.log' % (t, near[0] - t))
+            print('a press at %.1f ms is %.0f ms from the nearest touch in touch.log: left out of the lag' % (t, near[0] - t))
+            continue
         lags.append(t - near[0])
     lag = ml.median(lags) if lags else 0.0
     return [(a + lag, b + lag) for a, b in planned]
@@ -84,8 +88,8 @@ def offset_at(events, t, before):
 
 def read_touch(seg, t0, t1, all_touches, page, all_frames):
     """What the touches between t0 and t1 (None: the end) did: a dict, or None with none. The offset at the press is
-    the last frame before it in the whole log (`all_frames`, (ms, offset) pairs): a frame is logged only when something
-    changed, so a touch's segment can start with none."""
+    the last frame before it in the whole log (`all_frames`, (ms, offset) pairs in time order): a frame is logged only
+    when something changed, so a touch's segment can start with none."""
     mine = [p for p in all_touches if p[0] >= t0 and (t1 is None or p[0] < t1)]
     if not mine:
         return None
@@ -93,8 +97,8 @@ def read_touch(seg, t0, t1, all_touches, page, all_frames):
     events = ml.view_changes(seg)
     frames = [(t, float(m.group(2)), int(m.group(3)) if m.group(3) is not None else None)
               for t, w, d in seg if w == 'frame' for m in [FRAME.match(d)] if m]
-    before = [f for f in all_frames if f[0] <= press]
-    start = before[-1][1] if before else next((n for t, n, _, _ in events if t >= press), float('nan'))
+    k = bisect.bisect_right([f[0] for f in all_frames], press) if all_frames else 0
+    start = all_frames[k - 1][1] if k else next((n for t, n, _, _ in events if t >= press), float('nan'))
     after_press = [e for e in events if e[0] >= press]
     first_inertial = next((e for e in after_press if e[3]), None)
     # The release's offset is the first inertial ViewChanging's `next`: the last moves of a drag can reach the phone
@@ -129,9 +133,31 @@ def read_touch(seg, t0, t1, all_touches, page, all_frames):
 
 
 def verdict(r):
+    """Where the release went: back, on a page either way, or, more than a page and a half away, to the offset it went
+    to (a Hub looping backwards from its first section goes to the end, which is no count of pages)."""
     if r['pages'] is None:
         return 'no inertial ViewChanging after the press'
+    if abs(r['pages']) > 1:
+        return 'to %+.1f (a loop, not %+d pages)' % (r['final'], r['pages'])
     return 'back' if r['pages'] == 0 else 'on %+d' % r['pages']
+
+
+SECTIONS = re.compile(r'\| section 1 ([-\d.]+) \| section 2 ([-\d.]+)')
+
+
+def page_width(rows, pivot):
+    """A page's width: for a Pivot the ScrollViewer's viewport, from the layout line that gives the scroll extent; for
+    a Hub the second section's left edge less the first's, the median over the frames where it is positive (the layout
+    lines can be read during the entrance, under its projection, and the loop moves section 2 to the left). 450 and
+    405, the reference profile's, if the log has neither."""
+    if pivot:
+        for t, w, d in rows:
+            if w == 'layout' and ' scroll extent ' in d and ' viewport ' in d:
+                return float(d.split()[-1])
+        return 450.0
+    pitches = [float(m.group(2)) - float(m.group(1)) for t, w, d in rows if w == 'frame' for m in [SECTIONS.search(d)] if m]
+    pitches = [p for p in pitches if p > 0]
+    return ml.median(pitches) if pitches else 405.0
 
 
 def main():
@@ -139,10 +165,10 @@ def main():
     rows = ml.probe(run)
     all_touches = touches(rows, touch_times(os.path.join(run, 'touch.log')))
     pivot = any(w == 'frame' and ' index ' in d for t, w, d in rows)
-    page = 450.0 if pivot else 405.0
+    page = page_width(rows, pivot)
     print('%s: a %s, a page %.0f px; offsets in view px, times in ms by the stopwatch' % (run, 'Pivot' if pivot else 'Hub', page))
     print('\n%-62s %7s %8s %7s %9s %9s %s' % ('touch', 'held', 'travel', 'px/ms', 'decided', 'final', 'goes'))
-    all_frames = [(t, float(m.group(2))) for t, w, d in rows if w == 'frame' for m in [FRAME.match(d)] if m]
+    all_frames = sorted((t, float(m.group(2))) for t, w, d in rows if w == 'frame' for m in [FRAME.match(d)] if m)
     for label, t0, t1, seg in ml.step_segments(rows, times=True):
         r = read_touch(seg, t0, t1, all_touches, page, all_frames)
         if r is None:
@@ -177,9 +203,15 @@ def main():
             if not label.startswith('ScrollToSection '):
                 continue
             said = next((d for t, w, d in seg if w == 'setup'), '-')
-            frames = [(t - t0, float(m.group(2))) for t, w, d in seg if w == 'frame' for m in [FRAME.match(d)] if m]
-            print('  %s: %s; %d frames with the offset changing: %s' % (label, said, len(frames),
-                                                                          ' '.join('%.0f:%.1f' % f for f in frames[:12])))
+            # A frame is logged when anything changed (the header, a section): only those where the offset did count.
+            frames, last = [], None
+            for t, w, d in seg:
+                m = FRAME.match(d) if w == 'frame' else None
+                if m and float(m.group(2)) != last:
+                    last = float(m.group(2))
+                    frames.append((t - t0, last))
+            print('  %s: %s; %d frames with a new offset: %s' % (label, said, len(frames),
+                                                                   ' '.join('%.0f:%.1f' % f for f in frames[:12])))
 
 
 if __name__ == '__main__':

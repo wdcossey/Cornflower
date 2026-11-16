@@ -23,20 +23,10 @@ namespace RefApp
         /// <summary>The ms a release's touch moves at the given speed (px a ms) over the given distance (px).</summary>
         private static double MoveMs(double distance, double speed) => Math.Abs(distance) / speed;
 
-        /// <summary>
-        /// A setup that sets a ScrollViewer's horizontal offset from code at once, clamped to the content (double.MaxValue
-        /// for the end), and logs it as "offset N": <see cref="Offset"/> across.
-        /// </summary>
+        /// <summary>A setup that sets a ScrollViewer's horizontal offset from code at once: <see cref="Offset"/> across.</summary>
         private Func<Task> OffsetX(ScrollViewer sv, double offset)
         {
-            return () =>
-            {
-                var target = Math.Min(offset, sv.ScrollableWidth);
-                // ChangeView returns false when the offset is already there.
-                var ok = sv.ChangeView(target, null, null, true);
-                Log("setup", "offset " + Num(target) + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
+            return SetOffset(sv, true, offset, 0);
         }
 
         /// <summary>
@@ -55,8 +45,9 @@ namespace RefApp
 
         /// <summary>
         /// A touch along a path of (x, y, ms) points: pressed at the first, then moved to each next one in a straight line
-        /// over its ms, a step about every 10 ms (a point where the last one was is a hold for its ms), and released at the
-        /// last; <paramref name="gapMs"/> before the next press. The setup runs 1.2 s before the press.
+        /// over its ms, a step about every 10 ms (a point where the last one was is a hold for its ms; one with no time,
+        /// a jump the next step lands at), and released at the last; <paramref name="gapMs"/> before the next press. The
+        /// setup runs 1.2 s before the press. <see cref="Press"/> is one.
         /// </summary>
         private void PathTouch(UIElement target, string label, Func<Task> setup, double gapMs, params double[][] points)
         {
@@ -68,7 +59,16 @@ namespace RefApp
                 double x0 = points[k - 1][0], y0 = points[k - 1][1], x1 = points[k][0], y1 = points[k][1], ms = points[k][2];
                 if (x0 == x1 && y0 == y1)
                 {
-                    Wait(ms);
+                    if (ms > 0)
+                    {
+                        Wait(ms);
+                    }
+
+                    continue;
+                }
+
+                if (ms <= 0)
+                {
                     continue;
                 }
 
@@ -189,7 +189,7 @@ namespace RefApp
             LogPointers(hub, "hub");
             // The layout lines once the entrance is over, not under its projection.
             await Task.Delay(1500);
-            WatchHub(hub, sv, headerHost, new FrameworkElement[0]);
+            WatchHub(hub, sv, headerHost, null);
             Func<double, Func<Task>> at = offset => OffsetX(sv, offset);
             var start = at(0);
             const double y = 500, gap = 3000;
@@ -259,10 +259,20 @@ namespace RefApp
                     return new[] { double.NaN };
                 }
 
+                // Each part looked for again on every frame until it is found: the template's root can come a frame
+                // before its parts.
                 if (root == null && VisualTreeHelper.GetChildrenCount(current) > 0)
                 {
                     root = VisualTreeHelper.GetChild(current, 0) as FrameworkElement;
+                }
+
+                if (root != null && headerHost == null)
+                {
                     headerHost = Find(current, "HeaderHost");
+                }
+
+                if (root != null && bg == null)
+                {
                     bg = Find(current, "Background");
                 }
 
@@ -447,7 +457,7 @@ namespace RefApp
         }
 
         /// <summary><see cref="AppBarLongProbe"/>'s page and touches, with the bar on the page.</summary>
-        private async Task AppBarLongTouches(Grid host, CommandBar bar, bool light)
+        private async Task AppBarLongTouches(Grid host, CommandBar bar)
         {
             var header = Header();
             var page = await AppBarPage(host, header, bar);

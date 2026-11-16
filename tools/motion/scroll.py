@@ -37,6 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
 FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: root ([-\d.]+) bar ([-\d.]+) thumb ([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+) mode (\w+))?')
+
+
 def frames(seg):
     """(stopwatch ms, rt ms, offset, indicator or None) for every frame line; the indicator is (root opacity, bar opacity,
     thumb x, y, w, h, mode)."""

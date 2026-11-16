@@ -831,7 +831,9 @@ logged: the same tilts, offsets and states, within the ranges below. `tools/moti
 
 ### ListView: `ItemClick` in each `SelectionMode` (2026-11-16, device 11, #148)
 
-`20261116-1717-dev11` (`-Probe listclick`): the list of `-Probe listcheck` with `IsItemClickEnabled`. Taps in each mode
+`20261116-1717-dev11` (`-Probe listclick`): the list of `-Probe listcheck` with `IsItemClickEnabled`. Again after
+review, `20261116-1809-dev11`, after the probes' touch planning moved into one helper: the same `gestures.txt`, to the
+byte, and the same `ItemClick`s and selections. Taps in each mode
 (the list at its top before each):
 
 - `Multiple`: on item 1's box, on its text, on item 2's text, and a 600 ms press on item 3.
@@ -1231,7 +1233,8 @@ events come before the new item has slid in.
 
 ### Hub: the entrance, a plain colour, an image narrower than the screen, and `Stretch` (2026-11-16, device 11, #148)
 
-`20261116-1721-dev11` (`-Probe hubentrance -Record`) places a Hub three times, each from code on a page with only the
+`20261116-1721-dev11` (`-Probe hubentrance -Record`; again after review, `20261116-1811-dev11`, the same frame for
+frame) places a Hub three times, each from code on a page with only the
 header band: with no background, with a plain colour (`#FF603090`), swiped left and back, and with a 1600 × 800 image.
 `tools/motion/entrance.py` prints the entrance. `20261116-1720-dev11` and, after review, `20261116-1754-dev11` (`-Probe
 hubstretch`; the second gives each brush a picture of its own, loaded afresh, and reads the layout after the entrance:

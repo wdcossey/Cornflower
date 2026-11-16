@@ -549,11 +549,20 @@ namespace RefApp
         /// </summary>
         private Func<Task> Offset(ScrollViewer sv, double offset, double less = 0)
         {
+            return SetOffset(sv, false, offset, less);
+        }
+
+        /// <summary>
+        /// <see cref="Offset"/> and <see cref="OffsetX"/>: a setup that sets the offset across or down from code at once,
+        /// clamped to the content, plus <paramref name="less"/>, and logs it as "offset N", which the scripts read.
+        /// </summary>
+        private Func<Task> SetOffset(ScrollViewer sv, bool across, double offset, double less)
+        {
             return () =>
             {
-                var target = Math.Min(offset, sv.ScrollableHeight) + less;
+                var target = Math.Min(offset, across ? sv.ScrollableWidth : sv.ScrollableHeight) + less;
                 // ChangeView returns false when the offset is already there.
-                var ok = sv.ChangeView(null, target, null, true);
+                var ok = across ? sv.ChangeView(target, null, null, true) : sv.ChangeView(null, target, null, true);
                 Log("setup", "offset " + Num(target) + (ok ? "" : " (ChangeView returned false)"));
                 return Task.FromResult(true);
             };
@@ -575,32 +584,8 @@ namespace RefApp
         /// </summary>
         private void Press(UIElement target, string label, Func<Task> setup, double x, double y, double stillMs, double dx, double dy, double moveMs, double holdMs, double gapMs)
         {
-            _touches++;
-            var at = _plannedMs;
-            _schedule.Add(new Scheduled { At = at - 1200, Label = label, Action = setup, Touch = true });
-            Step("down", x, y, target);
-            if (stillMs > 0)
-            {
-                Wait(stillMs);
-            }
-
-            if (moveMs > 0)
-            {
-                var n = Math.Max(2, (int)Math.Round(moveMs / 10));
-                for (var i = 1; i <= n; i++)
-                {
-                    Wait(moveMs / n);
-                    Step("move", x + dx * i / n, y + dy * i / n);
-                }
-            }
-
-            if (holdMs > 0)
-            {
-                Wait(holdMs);
-            }
-
-            Step("up", x + dx, y + dy);
-            Wait(gapMs);
+            // A hold of no time adds no wait, so these points plan the same steps as before PathTouch (#148).
+            PathTouch(target, label, setup, gapMs, new[] { x, y, 0 }, new[] { x, y, stillMs }, new[] { x + dx, y + dy, moveMs }, new[] { x + dx, y + dy, holdMs });
         }
 
         /// <summary>
