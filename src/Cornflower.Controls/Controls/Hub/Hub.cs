@@ -54,7 +54,6 @@ namespace Cornflower.Controls;
 [TemplatePart("PART_Panel", typeof(Panel))]
 [TemplatePart("PART_HeaderHost", typeof(Control))]
 [TemplatePart("PART_Background", typeof(Control))]
-[TemplatePart("PART_MainBackground", typeof(Control))]
 [TemplatePart("PART_WrapBackground", typeof(Control))]
 [PseudoClasses(BackgroundHiddenPseudoClass, BackgroundShowingPseudoClass)]
 public class Hub : TemplatedControl
@@ -98,6 +97,7 @@ public class Hub : TemplatedControl
     private Size _size;
     private HubSection? _restSection;
     private HubSection? _pending;
+    private bool _placed;
 
     /// <summary>Initialises an empty Hub.</summary>
     public Hub()
@@ -106,6 +106,7 @@ public class Hub : TemplatedControl
         _sectionHeaders = new SectionHeaderList(_sections);
         GestureRecognizers.Add(new HubPanGestureRecognizer(this));
         _sections.CollectionChanged += OnSectionsChanged;
+        AddHandler(RequestBringIntoViewEvent, OnRequestBringIntoView);
         UpdateBackgroundState();
     }
 
@@ -130,8 +131,8 @@ public class Hub : TemplatedControl
     }
 
     /// <summary>
-    /// The index of the section shown first, at the left, when the Hub is shown in a window. 0 by default; an index
-    /// past the last shows the last.
+    /// The index of the section shown first, at the left, when the Hub is first laid out with sections. 0 by default; an
+    /// index past the last shows the last. Later changes don't move the Hub.
     /// </summary>
     public int DefaultSectionIndex
     {
@@ -160,8 +161,11 @@ public class Hub : TemplatedControl
     /// <summary>The width of the view the sections move in.</summary>
     internal double ViewWidth => _view;
 
-    /// <summary>Whether a finger can pan the Hub now: enabled, with somewhere to go.</summary>
-    internal bool CanPan => IsEffectivelyEnabled && _starts.Length > 1 && _view > 0;
+    /// <summary>Whether a finger can pan the Hub now: enabled, laid out, with somewhere to go.</summary>
+    internal bool CanPan => IsEffectivelyEnabled && _starts.Length > 1 && IsLaidOut;
+
+    /// <summary>Whether the sections' places are known: one start each, and a view and sections with width.</summary>
+    private bool IsLaidOut => _starts.Length == _sections.Count && _starts.Length > 0 && _length > 0 && _view > 0;
 
     /// <summary>Whether <paramref name="point"/>, in the Hub's coordinates, is in the part a pan starts in.</summary>
     internal bool IsInPanArea(Point point)
@@ -176,9 +180,10 @@ public class Hub : TemplatedControl
         ArgumentNullException.ThrowIfNull(section);
         if (!_sections.Contains(section)) return;
         _restSection = section;
-        if (_starts.Length == _sections.Count && _starts.Length > 0)
+        if (IsLaidOut)
         {
             _pending = null;
+            _placed = true;
             _motion.Rest(StartOf(section));
         }
         else
@@ -198,18 +203,23 @@ public class Hub : TemplatedControl
         _headerTranslation.X = _motion.HeaderX;
 
         var wrapped = _starts.Length > 1 && offset >= _starts[1];
-        if (_sections.Count > 0)
-            _sections[0].WrapTranslation = wrapped ? _length : 0;
+        for (var i = 0; i < _sections.Count; i++)
+            _sections[i].WrapTranslation = i == 0 && wrapped ? _length : 0;
 
         ApplyBackground(offset);
         UpdateSectionsInView(offset, wrapped);
 
-        if (!_motion.IsMoving && !_motion.IsDragging && _starts.Length == _sections.Count)
+        // The section the Hub is at, or going to: where it rests again if the layout changes.
+        if (!_motion.IsDragging && IsLaidOut)
         {
+            var at = _motion.IsMoving ? _motion.Target : offset;
             for (var i = 0; i < _starts.Length; i++)
             {
-                if (_starts[i] == offset)
+                if (_starts[i] == at)
+                {
                     _restSection = _sections[i];
+                    break;
+                }
             }
         }
     }
@@ -263,8 +273,7 @@ public class Hub : TemplatedControl
         if (_headerHost is not null) _headerHost.RenderTransform = _headerTranslation;
         if (_background is not null) _background.RenderTransform = _backgroundTranslation;
         if (_wrapBackground is not null) _wrapBackground.RenderTransform = _wrapTranslation;
-        if (_motion.IsMoving || _motion.IsDragging)
-            _motion.Finish();
+        _motion.Stop();
     }
 
     /// <inheritdoc />
@@ -292,7 +301,9 @@ public class Hub : TemplatedControl
     protected override Size ArrangeOverride(Size finalSize)
     {
         _size = finalSize;
-        return base.ArrangeOverride(finalSize);
+        var result = base.ArrangeOverride(finalSize);
+        ApplyBackground(_motion.Offset);                  // a brush that isn't an image follows the Hub's size
+        return result;
     }
 
     /// <summary>
@@ -302,15 +313,23 @@ public class Hub : TemplatedControl
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
         var changed = UpdateLayoutOfSections();
-        if (_motion.IsMoving && changed)
-            _motion.Finish();
-
-        if (_motion.IsMoving || _motion.IsDragging || _starts.Length != _sections.Count)
+        if (!IsLaidOut)
+        {
+            if (changed && _sections.Count == 0)
+                _motion.Rest(0);                          // no sections: none in view
+            return;                                       // hidden, or not laid out yet: keep what is to be shown
+        }
+        if (changed && (_motion.IsMoving || _motion.IsDragging))
+            _motion.Stop();                               // rests where it was going; placed again below
+        if (_motion.IsMoving || _motion.IsDragging)
             return;
 
+        // Laid out with sections for the first time, the Hub shows its default section, unless code asked for another.
+        if (!_placed)
+            _pending ??= DefaultSection();
+        _placed = true;
         var section = _pending ?? _restSection;
-        if (_pending is not null && _starts.Length > 0)
-            _pending = null;
+        _pending = null;
         var offset = section is null ? 0 : StartOf(section);
         if (changed || offset != _motion.Offset)
             _motion.Rest(offset);
@@ -324,8 +343,9 @@ public class Hub : TemplatedControl
         if (_topLevel is not null)
             _topLevel.PropertyChanged += OnTopLevelPropertyChanged;
         LayoutUpdated += OnLayoutUpdated;
-        // Shown in a window, the Hub starts at its default section, unless code asked for another.
-        _pending ??= DefaultSection();
+        if (_imageBrush is not null)
+            _imageBrush.PropertyChanged += OnImageBrushPropertyChanged;
+        UpdateBackgroundState();
         InvalidateMeasure();
     }
 
@@ -337,10 +357,9 @@ public class Hub : TemplatedControl
             _topLevel.PropertyChanged -= OnTopLevelPropertyChanged;
         _topLevel = null;
         LayoutUpdated -= OnLayoutUpdated;
-        if (_motion.IsMoving || _motion.IsDragging)
-            _motion.Finish();
-        _motion.StopFrames();
-        _pending = null;
+        if (_imageBrush is not null)
+            _imageBrush.PropertyChanged -= OnImageBrushPropertyChanged;
+        _motion.Stop();
     }
 
     /// <inheritdoc />
@@ -349,10 +368,12 @@ public class Hub : TemplatedControl
         base.OnPropertyChanged(change);
         if (change.Property == BackgroundProperty)
         {
-            if (_imageBrush is not null)
+            // Held only while in a window, so a brush that outlives the Hub doesn't keep it.
+            var attached = this.IsAttachedToVisualTree();
+            if (_imageBrush is not null && attached)
                 _imageBrush.PropertyChanged -= OnImageBrushPropertyChanged;
             _imageBrush = change.GetNewValue<IBrush?>() as ImageBrush;
-            if (_imageBrush is not null)
+            if (_imageBrush is not null && attached)
                 _imageBrush.PropertyChanged += OnImageBrushPropertyChanged;
             UpdateBackgroundState();
             ApplyBackground(_motion.Offset);
@@ -405,8 +426,7 @@ public class Hub : TemplatedControl
             _restSection = null;
         if (_pending is not null && !_sections.Contains(_pending))
             _pending = null;
-        if (_motion.IsMoving || _motion.IsDragging)
-            _motion.Finish();
+        _motion.Stop();
         InvalidateMeasure();
     }
 
@@ -429,36 +449,49 @@ public class Hub : TemplatedControl
         return index >= 0 && index < _starts.Length ? _starts[index] : 0;
     }
 
-    /// <summary>Reads where the panel laid the sections out; whether that changed.</summary>
+    /// <summary>Reads where the panel laid the sections out; whether that changed. Allocates only when it did.</summary>
     private bool UpdateLayoutOfSections()
     {
-        var starts = new double[_sections.Count];
-        double length = 0;
-        for (var i = 0; i < _sections.Count; i++)
-        {
-            var section = _sections[i];
-            starts[i] = section.Bounds.X - section.Margin.Left;
-            length = section.Bounds.Right + section.Margin.Right;
-        }
-
-        if (starts.Length > 0)
-        {
-            var origin = starts[0];
-            for (var i = 0; i < starts.Length; i++) starts[i] -= origin;
-            length -= origin;
-        }
-
+        var count = _sections.Count;
+        var origin = count > 0 ? _sections[0].Bounds.X - _sections[0].Margin.Left : 0;
+        var length = count > 0 ? _sections[count - 1].Bounds.Right + _sections[count - 1].Margin.Right - origin : 0;
         var view = _scrollViewer is { Bounds.Width: > 0 } scroll ? scroll.Bounds.Width : Bounds.Width;
-        var changed = !starts.AsSpan().SequenceEqual(_starts) || length != _length || view != _view;
+        var changed = count != _starts.Length || length != _length || view != _view;
+        for (var i = 0; i < count && !changed; i++)
+            changed = _sections[i].Bounds.X - _sections[i].Margin.Left - origin != _starts[i];
+        if (!changed)
+            return false;
+
+        var starts = new double[count];
+        for (var i = 0; i < count; i++)
+            starts[i] = _sections[i].Bounds.X - _sections[i].Margin.Left - origin;
         _starts = starts;
         _length = length;
         _view = view;
-        return changed;
+        return true;
+    }
+
+    /// <summary>A control in a section asks to be seen (keyboard focus, say): the Hub moves to its section.</summary>
+    private void OnRequestBringIntoView(object? sender, RequestBringIntoViewEventArgs e)
+    {
+        if (e.TargetObject is not Visual target || !IsLaidOut || _motion.IsDragging)
+            return;
+        var section = target as HubSection ?? target.FindAncestorOfType<HubSection>();
+        if (section is null || !ReferenceEquals(section.Owner, this) || _inView.Contains(section) && IsWhollyInView(section))
+            return;
+        ScrollToSection(section);
+        e.Handled = true;
+    }
+
+    private bool IsWhollyInView(HubSection section)
+    {
+        var x = section.TranslatePoint(default, this)?.X ?? double.NaN;
+        return x >= 0 && x + section.Bounds.Width <= _view + 0.5;
     }
 
     private void UpdateBackgroundState()
     {
-        var hidden = Background is ImageBrush { Source: null };
+        var hidden = Background is IImageBrush { Source: null };
         PseudoClasses.Set(BackgroundHiddenPseudoClass, hidden);
         PseudoClasses.Set(BackgroundShowingPseudoClass, !hidden);
     }
@@ -471,7 +504,7 @@ public class Hub : TemplatedControl
     private void ApplyBackground(double offset)
     {
         if (_background is not { } background) return;
-        if (Background is ImageBrush { Source: Bitmap bitmap })
+        if (Background is IImageBrush { Source: Bitmap bitmap })
         {
             var width = (double)bitmap.PixelSize.Width;
             var height = _topLevel?.ClientSize.Height ?? _size.Height;
@@ -495,26 +528,45 @@ public class Hub : TemplatedControl
         if (element.Height != height) element.Height = height;
     }
 
+    /// <summary>
+    /// Works out the sections in view, left to right: in order, but the first last while it is wrapped past the end.
+    /// Allocates only when they change.
+    /// </summary>
     private void UpdateSectionsInView(double offset, bool wrapped)
     {
         if (_starts.Length != _sections.Count) return;
-        var now = new List<(double X, HubSection Section)>();
-        for (var i = 0; i < _sections.Count; i++)
+        var count = _sections.Count;
+        var same = true;
+        var seen = 0;
+        for (var k = 0; k < count && same; k++)
         {
-            var section = _sections[i];
-            var x = _starts[i] - offset + (i == 0 && wrapped ? _length : 0);
-            var end = (i + 1 < _starts.Length ? _starts[i + 1] : _length) - _starts[i];
-            if (x < _view && x + end > 0)
-                now.Add((x, section));
+            var i = wrapped ? (k + 1) % count : k;
+            if (!InView(i, offset, wrapped)) continue;
+            same = seen < _inView.Count && ReferenceEquals(_inView[seen], _sections[i]);
+            seen++;
         }
 
-        var inView = now.OrderBy(p => p.X).Select(p => p.Section).ToList();
-        if (inView.SequenceEqual(_inView)) return;
+        if (same && seen == _inView.Count) return;
+        var inView = new List<HubSection>();
+        for (var k = 0; k < count; k++)
+        {
+            var i = wrapped ? (k + 1) % count : k;
+            if (InView(i, offset, wrapped))
+                inView.Add(_sections[i]);
+        }
+
         var added = inView.Where(s => !_inView.Contains(s)).ToList();
         var removed = _inView.Where(s => !inView.Contains(s)).ToList();
         _inView = inView;
         if (added.Count > 0 || removed.Count > 0)
             SectionsInViewChanged?.Invoke(this, new SectionsInViewChangedEventArgs(added, removed));
+    }
+
+    private bool InView(int index, double offset, bool wrapped)
+    {
+        var x = _starts[index] - offset + (index == 0 && wrapped ? _length : 0);
+        var width = (index + 1 < _starts.Length ? _starts[index + 1] : _length) - _starts[index];
+        return x < _view && x + width > 0;
     }
 
     private static void ClearTransform(Control? element, Transform transform)

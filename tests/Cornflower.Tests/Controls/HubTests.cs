@@ -32,10 +32,10 @@ public class HubTests
         private readonly Scene _scene;
 
         public Stage(int sections = 4, ThemeVariant? variant = null, double width = Scene.ReferenceWidth, Hub? hub = null,
-            double band = ProbeTop)
+            double band = ProbeTop, double below = 0)
         {
             Hub = hub ?? Make(sections);
-            var grid = new Grid { RowDefinitions = new RowDefinitions($"{band},*") };
+            var grid = new Grid { RowDefinitions = new RowDefinitions($"{band},*,{below}") };
             Grid.SetRow(Hub, 1);
             grid.Children.Add(Hub);
             _scene = new Scene(grid, variant, width: width);
@@ -374,8 +374,10 @@ public class HubTests
         stage.Render();
         Point Centre(Control c) => c.TranslatePoint(new Point(c.Bounds.Width / 2, c.Bounds.Height / 2), stage.Window)!.Value;
 
-        // Each click somewhere else, so none is a double click.
-        var plain = Centre(Stage.Part(stage.Section(1), "PART_Header"));
+        // Each click somewhere else, so none is a double click. The second section's header shows at the right edge.
+        var second = Stage.Part(stage.Section(1), "PART_Header");
+        var plain = second.TranslatePoint(new Point(4, second.Bounds.Height / 2), stage.Window)!.Value;
+        Assert.InRange(plain.X, 400, 449);
         stage.Window.MouseDown(plain, MouseButton.Left);
         stage.Window.MouseUp(plain, MouseButton.Left);
         Assert.Empty(clicks);                                                // not interactive: nothing
@@ -389,6 +391,90 @@ public class HubTests
         stage.Window.MouseDown(content, MouseButton.Left);
         stage.Window.MouseUp(content, MouseButton.Left);
         Assert.Single(clicks);                                               // the content isn't the header
+    }
+
+    [AvaloniaFact]
+    public void A_Section_Put_First_While_Wrapped_Leaves_The_Old_First_At_Its_Place()
+    {
+        using var stage = new Stage();
+        stage.Hub.ScrollToSection(stage.Section(3));                        // wrapped: the first past the last
+        var oldFirst = stage.Section(0);
+        Assert.NotNull(oldFirst.RenderTransform);
+        stage.Hub.Sections.Insert(0, Stage.MakeSection("new"));
+        stage.Window.UpdateLayout();
+        Assert.Equal(1620, stage.Offset, 0.01);                              // still at the old last, now the fifth
+        Assert.Null(oldFirst.RenderTransform);
+        Assert.Equal(SectionWidth, oldFirst.TranslatePoint(default, stage.Hub)!.Value.X + 1620, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void A_Hub_Laid_Out_Hidden_Opens_On_Its_Default_Section()
+    {
+        var hub = Stage.Make(4);
+        hub.DefaultSectionIndex = 2;
+        hub.IsVisible = false;
+        using var stage = new Stage(hub: hub);
+        hub.IsVisible = true;
+        stage.Window.UpdateLayout();
+        Assert.Equal(810, stage.Offset, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void Sections_Added_After_The_Hub_Is_Shown_Open_On_The_Default()
+    {
+        var hub = new Hub { Header = "hub", DefaultSectionIndex = 2 };
+        using var stage = new Stage(hub: hub);
+        for (var i = 1; i <= 4; i++)
+            hub.Sections.Add(Stage.MakeSection("section " + i));
+        stage.Window.UpdateLayout();
+        Assert.Equal(810, stage.Offset, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void Shown_Again_The_Hub_Keeps_Its_Place_And_A_Drag_Cut_Short_Ends()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var grid = (Grid)stage.Hub.Parent!;
+        stage.Hub.ScrollToSection(stage.Section(3));
+        clock.At(100);
+        var touch = stage.Window.TouchBegin(stage.At(300, 440), RawInputModifiers.None);
+        clock.At(110);
+        stage.Window.TouchMove(touch, stage.At(250, 440), RawInputModifiers.None);
+        Assert.True(stage.Hub.Motion.IsDragging);
+        grid.Children.Remove(stage.Hub);                                     // away mid-drag
+        Assert.False(stage.Hub.Motion.IsDragging);
+        grid.Children.Add(stage.Hub);
+        stage.Window.UpdateLayout();
+        Assert.Equal(1215, stage.Offset, 0.01);                              // where it was, not the default
+        stage.Hub.ScrollToSection(stage.Section(1));
+        stage.Window.UpdateLayout();
+        Assert.Equal(405, stage.Offset, 0.01);
+    }
+
+    [AvaloniaFact]
+    public void A_New_Width_Mid_Swipe_Ends_On_The_Section_It_Was_Going_To()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        Swipe(stage, clock, 250);
+        clock.At(250 + 5 * Frame);
+        stage.Hub.Width = 400;
+        stage.Window.UpdateLayout();
+        Assert.False(stage.Hub.Motion.IsMoving);
+        Assert.Equal(360, stage.Offset, 0.5);                                // the second section, at its new place
+    }
+
+    [AvaloniaFact]
+    public void A_Control_Brought_Into_View_Brings_Its_Section()
+    {
+        var hub = Stage.Make(4);
+        var button = new Button { Content = "in the third" };
+        hub.Sections[2].ContentTemplate = new FuncDataTemplate<object?>((_, _) => button);
+        using var stage = new Stage(hub: hub);
+        button.BringIntoView();
+        stage.Window.UpdateLayout();
+        Assert.Equal(810, stage.Offset, 0.01);
     }
 
     // ---- The header against the sections (#128) ----
@@ -704,8 +790,6 @@ public class HubTests
     public void The_Background_Is_Clipped_At_The_Hubs_Edge()
     {
         var hub = Stage.Make(2);
-        hub.Height = 400;
-        hub.VerticalAlignment = VerticalAlignment.Top;
         var image = new WriteableBitmap(new PixelSize(900, 800), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Premul);
         using (var buffer = image.Lock())
         {
@@ -715,13 +799,41 @@ public class HubTests
         }
 
         hub.Background = new ImageBrush(image) { Stretch = Stretch.Fill };
-        using var stage = new Stage(hub: hub);
+        using var stage = new Stage(hub: hub, below: 340);
+        Assert.Equal(400, hub.Bounds.Height, 0.001);
         Assert.Equal(ViewHeight, stage.Part("PART_Background").Bounds.Height, 0.001);
         using var frame = stage.Window.CaptureRenderedFrame()!;
         var inside = stage.At(200, 390);
         var below = stage.At(200, 420);
         Assert.Equal(0xFFFFFFFFu, Frames.PixelAt(frame, (int)(inside.X * 2.4), (int)(inside.Y * 2.4)).ToUInt32());
         Assert.NotEqual(0xFFFFFFFFu, Frames.PixelAt(frame, (int)(below.X * 2.4), (int)(below.Y * 2.4)).ToUInt32());
+    }
+
+    [AvaloniaFact]
+    public void Any_Image_Brush_Is_Drawn_As_The_Phones_Image()
+    {
+        var hub = Stage.Make(4);
+        hub.Background = (IBrush)new ImageBrush(Image(900, 400)).ToImmutable();               // not an ImageBrush
+        using var stage = new Stage(hub: hub);
+        Assert.Equal(900, stage.Part("PART_Background").Bounds.Width, 0.001);
+        Assert.True(stage.Part("PART_WrapBackground").IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void The_Hub_Hears_Its_Brush_Only_In_A_Window()
+    {
+        var brush = new ImageBrush();
+        var hub = Stage.Make(2);
+        hub.Background = brush;
+        using var stage = new Stage(hub: hub);
+        var grid = (Grid)hub.Parent!;
+        grid.Children.Remove(hub);
+        brush.Source = Image(900, 400);
+        Assert.Contains(":backgroundhidden", hub.Classes);                   // not listening out of the window
+        grid.Children.Add(hub);
+        Assert.Contains(":backgroundshowing", hub.Classes);                  // and up to date when back
+        brush.Source = null;
+        Assert.Contains(":backgroundhidden", hub.Classes);
     }
 
     // Not read on the phone: a brush that isn't an image fills the Hub and doesn't move (decided; PLAN.md).
@@ -738,6 +850,9 @@ public class HubTests
         Assert.Contains(":backgroundshowing", hub.Classes);
         stage.Hub.ScrollToSection(stage.Section(2));
         Assert.Equal(0, stage.BackgroundX, 0.001);
+        hub.Height = 500;
+        stage.Window.UpdateLayout();
+        Assert.Equal(500, background.Bounds.Height, 0.001);                  // it follows the Hub's height
     }
 
     // ---- In view ----
@@ -794,6 +909,37 @@ public class HubTests
 
         Swipe(stage, clock, 1000, from: 300);
         Assert.True(stage.Offset > 100);
+
+        // A finger on the moving sections holds them, and the Hub hears its release even when it then goes up the list.
+        clock.At(1000 + 3 * Frame);
+        touch = stage.Window.TouchBegin(stage.At(200, 500), RawInputModifiers.None);
+        for (var i = 1; i <= 5; i++)
+        {
+            clock.At(1100 + i * 10);
+            stage.Window.TouchMove(touch, stage.At(200, 500 - i * 15), RawInputModifiers.None);
+        }
+
+        stage.Window.TouchEnd(touch, stage.At(200, 425), RawInputModifiers.None);
+        Assert.False(stage.Hub.Motion.IsDragging);
+        clock.At(3000);
+        Assert.Contains(stage.Offset, stage.Hub.SectionStarts);
+    }
+
+    [AvaloniaFact]
+    public void A_Drag_More_Up_Than_Across_Doesnt_Pan()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        clock.At(100);
+        var touch = stage.Window.TouchBegin(stage.At(300, 500), RawInputModifiers.None);
+        for (var i = 1; i <= 10; i++)
+        {
+            clock.At(100 + i * 10);
+            stage.Window.TouchMove(touch, stage.At(300 - i * 2, 500 - i * 15), RawInputModifiers.None);
+            Assert.Equal(0, stage.Offset, 0.0001);                           // 20 across, 150 up: not the Hub's
+        }
+
+        stage.Window.TouchEnd(touch, stage.At(280, 350), RawInputModifiers.None);
     }
 
     [AvaloniaFact]

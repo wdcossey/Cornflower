@@ -102,6 +102,9 @@ internal sealed class HubMotion
     /// <summary>How far right of its place the header is drawn, in view pixels.</summary>
     public double HeaderX { get; private set; }
 
+    /// <summary>Where the move under way ends: a section's start, or 0 for the loop.</summary>
+    public double Target => IsLooping ? 0 : _to;
+
     /// <summary>Puts everything at rest at <paramref name="offset"/>, stopping any move, and draws it.</summary>
     public void Rest(double offset)
     {
@@ -191,6 +194,29 @@ internal sealed class HubMotion
     {
         if (!_moving) return;
         Rest(IsLooping ? 0 : _to);
+    }
+
+    /// <summary>
+    /// Ends whatever is under way at once: a move where it was going, a drag at the nearer section start (the Hub is
+    /// leaving its window, or its sections or template changed).
+    /// </summary>
+    public void Stop()
+    {
+        if (_moving)
+        {
+            Finish();
+        }
+        else if (IsDragging)
+        {
+            var starts = _hub.SectionStarts;
+            var nearest = 0.0;
+            foreach (var start in starts)
+            {
+                if (Math.Abs(start - Offset) < Math.Abs(nearest - Offset)) nearest = start;
+            }
+
+            Rest(nearest);
+        }
     }
 
     /// <summary>Stops any frames without moving anything.</summary>

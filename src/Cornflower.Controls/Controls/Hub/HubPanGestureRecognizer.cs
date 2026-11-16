@@ -44,10 +44,14 @@ internal sealed class HubPanGestureRecognizer : GestureRecognizer
         _dragging = false;
         _moves.Clear();
 
-        // A finger on moving sections holds them where they are, as the phone's DirectManipulation does.
+        // A finger on moving sections holds them where they are, as the phone's DirectManipulation does; the Hub takes
+        // it at once, so it hears the release however the finger goes.
         _held = _hub.Motion.IsMoving;
         if (_held)
+        {
+            Capture(e.Pointer);
             _hub.Motion.BeginDrag();
+        }
     }
 
     protected override void PointerMoved(PointerEventArgs e)
@@ -63,9 +67,11 @@ internal sealed class HubPanGestureRecognizer : GestureRecognizer
                 return;
 
             _dragging = true;
-            Capture(e.Pointer);
             if (!_held)
+            {
+                Capture(e.Pointer);
                 _hub.Motion.BeginDrag();
+            }
         }
 
         Track(point.X);

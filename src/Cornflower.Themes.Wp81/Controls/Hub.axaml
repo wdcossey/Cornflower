@@ -8,8 +8,8 @@
     is the phone's resource key, by DynamicResource. docs/controls/Hub/PLAN.md has the values and their sources.
 
     The Hub's template is the phone's, part for part (our names PART_):
-    - PART_HubRoot, a Grid of two rows, clipped to the Hub (the phone clips the background and the header with two
-      rectangles its code sets);
+    - PART_HubRoot, a Grid of two rows; the Hub clips to its bounds (ClipToBounds, set here though Avalonia's own
+      default), where the phone clips the background and the header with two rectangles its code sets;
     - over both rows a Canvas holding PART_Background, a Grid the Hub sizes and moves (the phone's
       BackgroundParallaxTransform), with PART_WrapBackground, the image's copy for the loop, and PART_MainBackground,
       both drawing the Background, BorderBrush and BorderThickness;
@@ -27,9 +27,10 @@
   -->
   <ControlTheme x:Key="{x:Type cf:Hub}" TargetType="cf:Hub">
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="ClipToBounds" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
-        <Grid x:Name="PART_HubRoot" RowDefinitions="Auto,*" ClipToBounds="True">
+        <Grid x:Name="PART_HubRoot" RowDefinitions="Auto,*">
           <Canvas Grid.RowSpan="2">
             <Grid x:Name="PART_Background">
               <Border x:Name="PART_WrapBackground"
