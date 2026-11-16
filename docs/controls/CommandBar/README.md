@@ -1,6 +1,6 @@
 # CommandBar, AppBarButton, AppBarToggleButton and AppBarSeparator
 
-Status: done · [#118](https://github.com/wdcossey/CornflowerUI/issues/118) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `fedf781`: cold 751 ms, the page opened in 329 ms, the compact bar drawn with its three commands (checked and disabled among them) and the ellipsis) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the commandbar page opened in 46 ms with 119 elements)
+Status: done · [#118](https://github.com/wdcossey/CornflowerUI/issues/118), and [#141](https://github.com/wdcossey/CornflowerUI/issues/141) (the shell's press, the open bar's stepped height, the opening and closing motion) · owed: the device run on the Pixel 8, and owed: the real-window run, for #141 · before #141: device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `fedf781`: cold 751 ms, the page opened in 329 ms, the compact bar drawn with its three commands (checked and disabled among them) and the ellipsis) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the commandbar page opened in 46 ms with 119 elements)
 
 The Windows Phone 8.1 page's app bar: Avalonia 12's `CommandBar`, `CommandBarButton`, `CommandBarToggleButton` and
 `CommandBarSeparator`, themed by `Wp81Theme` in `src/Cornflower.Themes.Wp81/Controls/CommandBar.axaml` as the
@@ -49,14 +49,19 @@ The phone's shell draws the page's bar over the page and keeps its closed height
 - **Closed, compact**: 62.9166 tall, the bar's colour (`CommandBarBackgroundThemeBrush`), the primary commands as
   circles 40.75 across in 73.75 slots, centred, and the ellipsis at the top right. No labels.
 - **Closed, minimal** (`ClosedDisplayMode` Minimal): 26.25 tall, the ellipsis alone.
-- **Open** (`IsOpen`, or a tap on the ellipsis), either mode: the circles where they were with their labels under
-  them, then the secondary commands as a list of words in `PhoneFontFamilySemiLight` 27.92, a line 59.1666 each, and
-  the bar's foot (none without secondary commands); the bar as tall as that, growing upwards, and a list longer than
-  the room scrolls. The ellipsis closes it; so does invoking a command, and a press anywhere outside it, unless
-  `IsSticky`.
+- **Open** (`IsOpen`, a tap on the ellipsis, or on the minimal bar anywhere), either mode: the circles where they
+  were with their labels under them, then the secondary commands as a list of words in `PhoneFontFamilySemiLight`
+  27.92, a line 59.1666 each. The bar grows upwards to the shell's height for the list's lines: 89.1666 with none,
+  167.5 with one, 285.4166 with two or three, 418.75 with four or more, the most; a longer list scrolls. The ellipsis
+  closes it; so does invoking a command, and a press anywhere outside it, unless `IsSticky`.
+- **The motion**: opening, the bar's top rises into place over 420 ms, most of the way in the first 200; closing, it
+  falls over 200 ms, still showing its labels and its list. Frame by frame on `CornflowerClock`, as the shell's
+  recording reads. The bar's layout height changes at once, so a page sees no motion; only the drawing moves.
 - **The ellipsis always shows**: the phone's opens a bar with no secondary commands to show its labels.
-- **States**: pressed fills the circle and shows the icon in the bar's colour; a checked toggle is filled the same,
-  and shows the ring alone while pressed; disabled is the whole command at 0.451, as one layer.
+- **States**: pressed fills the whole circle with the accent and shows the icon white, the circle sunk a little
+  (smaller, and with the icon 2.08 higher), checked or not; a checked toggle is filled with the ring's colour and
+  shows the icon in the bar's; disabled is the whole command at 0.451, as one layer. A pressed line of the list tilts
+  and keeps its colours.
 - **`CommandBarSeparator`** draws nothing and takes no room: the phone has no style for `AppBarSeparator`.
 - An app's `DefaultLabelPosition` shows the labels closed too, the bar as tall as its commands; the theme sets
   Collapsed closed and Bottom open.
@@ -77,37 +82,46 @@ default) or `Minimal` (1), WinRT's `AppBar.ClosedDisplayMode` and its 8.1 member
 
 `CommandBarBackgroundThemeBrush`, `CommandBarForegroundThemeBrush`,
 `AppBarItemForegroundThemeBrush`, `AppBarItemBackgroundThemeBrush`, `AppBarToggleButtonCheckedBorderThemeBrush`,
-`AppBarToggleButtonCheckedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedBorderThemeBrush`,
-`AppBarToggleButtonCheckedPressedBackgroundThemeBrush`, `AppBarToggleButtonCheckedPressedForegroundThemeBrush`,
-`PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`, `Wp81.Glyph.AppBarEllipsis`. The theme's own:
+`AppBarToggleButtonCheckedBackgroundThemeBrush`, `PhoneAccentBrush` and `PhoneButtonBasePressedForegroundBrush` (the
+press), `PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`, `Wp81.Glyph.AppBarEllipsis`. The theme's own:
 `Wp81CommandBarCompactHeight` (62.9166) and `Wp81CommandBarMinimalHeight` (26.25), the closed bar's heights. The themes of the bar's own parts are
 keyed `Wp81CommandBarItemsTheme` (its `ItemsControl`s) and `Wp81CommandBarEllipsisButtonTheme` (the ellipsis).
 
 ## The ladder
 
-Rung 1, a theme, for the four types; rung 2 for `ClosedDisplayMode`, an attached property, and for closing the bar
-when a command is invoked (`PhoneAppBarClose`, internal to the theme). No type substitution.
+Rung 1, a theme, for the four types; rung 2 for `ClosedDisplayMode`, an attached property, for closing the bar
+when a command is invoked (`PhoneAppBarClose`, internal to the theme), and for what the shell's bar does that XAML
+can't (`PhoneAppBar`, internal to the theme): it counts the list's lines for the height's steps, runs the motion, and
+opens the minimal bar on a tap. The menu lines' tilt is `cf:Tilt`. No type substitution.
 
 ## Known gaps
 
 - **The icons are Lucide's**, at `LucideIcon`'s 20 × 20: smaller than the shell's Segoe UI Symbol glyphs (the plus
   inks 32 raw px where the shell's inks 51).
-- **The opening and closing motion** isn't read; the bar opens at once.
-- **The open bar with other numbers of secondary commands** isn't read: ours keeps the foot the shell draws under two
-  for any number, draws none with none, and scrolls a list longer than the room.
-- **A pressed command and a pressed secondary command** on the shell's bar aren't read: the pressed command is the
-  template's state with the bar's colour; a secondary command shows no press.
-- **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as Avalonia documents
-  `IsSticky`; it isn't read on the emulator. A command with a `Flyout` leaves it open, and a bound `Command` runs
-  before it closes.
+- **The pressed circle rises the same open or closed**: 2.08 view px, the closed bar's. The shell's rises toward the
+  screen's centre, so on the open bar it rises 0.83 and ours is 1.25 higher. The press jumps there and back: the
+  recording holds the press and doesn't show its edges. The pressed look is read in dark only; light is the same.
+- **A checked toggle, pressed**, shows the shell's press as an unchecked one does; the shell's isn't read (the
+  recording holds an unchecked command), and the template's ring alone isn't drawn.
+- **A list of more than five lines** scrolls inside the 418.75 bar; whether the shell's scrolls isn't read (its sixth
+  line runs off the screen). Why the shell's heights step as they do isn't modelled (COMPARISON, "Are the open bar's
+  steps whole menu lines?"): a style per count sets the read height.
+- **The motion's clock**: the recording's times are taken as they are; whether they are the phone's stopwatch or its
+  animation time is open (ADR 0005), at most 4%, 17 ms of the opening. Changing `ClosedDisplayMode` on a closed bar
+  isn't moved (the shell moves it over 36 to 134 ms). A bar whose app sets its `Height` doesn't move.
+- **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as the phone's does. A command
+  with a `Flyout` leaves it open, and a bound `Command` runs before it closes: the phone raises `Closed`, then `Click`
+  2 to 21 ms later; ours raises `Click`, then closes.
+- **A tap on the compact bar away from its commands** does nothing: the shell's isn't read. On the minimal bar it
+  opens the bar, as read.
 - **At most four primary commands**, as on the phone: without dynamic overflow a fifth runs under the ellipsis,
   which then takes the presses there.
 - **Avalonia's `Content`** is drawn at the bar's left, under the commands: the phone's bar has none, and the commands
   stay centred on the bar.
-- **A toggle among the secondary commands** shows no checked state, and a pressed line no press: the phone's menu has
-  no toggles, and its pressed line isn't read.
+- **A toggle among the secondary commands** shows no checked state: the phone's menu has no toggles.
 - **`Bounds.Height` is the drawn 62.9166**, where the phone's `ActualHeight` is 57.5, and the open bar's control
-  grows where the phone's stays 57.5.
+  grows where the phone's stays 57.5. While the bar moves, its drawing (the template's `LayoutRoot`) is above or
+  below its bounds' top: closing, it reaches above the closed bar until it is down.
 - **A command off a bar** looks as on the bar, where the phone's template draws a smaller one
   ([`ref/wp81/AppBarButton/`](../../../ref/wp81/AppBarButton/README.md)).
 - **The checked circle in dark** is 98 raw px across; the phone's is 94 (98 in light).

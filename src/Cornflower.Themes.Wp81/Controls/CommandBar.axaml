@@ -15,10 +15,11 @@
     151 raw px): layout rounds a size up to the raw grid, and the full fraction would round it a pixel over.
 
     The bar, closed: compact 62.9166 tall (151 raw), the commands' circles and the ellipsis; minimal 26.25 (63 raw),
-    the ellipsis alone, by CommandBarOptions.ClosedDisplayMode. Open, in either mode, the bar is as tall as what it
-    shows and grows upwards from its bottom: the circles where they were, their labels under them, then the
-    secondary commands as a list of words. A page lays the bar over its content, so the open bar covers the page
-    as the shell's does (docs/controls/CommandBar/README.md, "On a page").
+    the ellipsis alone, by CommandBarOptions.ClosedDisplayMode. Open, in either mode, the bar grows upwards from its
+    bottom, to a height that steps with the lines of its list: the circles where they were, their labels under them,
+    then the secondary commands as a list of words. It moves there and back as the shell's does (PhoneAppBar). A page
+    lays the bar over its content, so the open bar covers the page as the shell's does
+    (docs/controls/CommandBar/README.md, "On a page").
   -->
 
   <!--
@@ -66,6 +67,13 @@
     PART_OverflowPopup holds nothing: the open bar is drawn in the bar itself, and the popup is the light dismiss,
     Avalonia's own, while the bar is open (Avalonia's CommandBar turns it on unless IsSticky): a press anywhere
     outside the bar closes it, and the bar itself (OverlayInputPassThroughElement) takes its own presses.
+
+    PhoneAppBar, the theme's own behaviour, does what XAML can't: it counts the list's lines (MenuLines), moves the
+    bar open and closed frame by frame, and opens the minimal bar on a tap away from its ellipsis. The bar's heights
+    key on IsOpen, so its layout follows IsOpen at once; its open look (the labels and the list) keys on ShowsOpen,
+    true from the moment it opens until its closing motion ends, so it closes with them. While it moves, the
+    template's LayoutRoot is given a top margin that puts its top where the motion has the bar's. PhoneAppBarClose
+    closes the bar when a command is invoked.
   -->
   <ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar">
     <Setter Property="Background" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
@@ -89,6 +97,7 @@
     <Setter Property="ItemWidthCollapsed" Value="73.75" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="wp81:PhoneAppBarClose.IsEnabled" Value="True" />
+    <Setter Property="wp81:PhoneAppBar.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
         <Grid x:Name="LayoutRoot" Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
@@ -137,9 +146,9 @@
                   UseLayoutRounding="False" />
           </Button>
           <!--
-            The secondary commands, open: a list of words under the labels, and the bar's foot under it, 81.7467,
-            which puts the bar's top where the shell's is with two. In a ScrollViewer in the row that takes what is
-            left, so a list taller than the bar's room scrolls rather than pushing the bar off the top.
+            The secondary commands, open: a list of words under the labels, in a ScrollViewer in the row that takes
+            what the open bar's height leaves, so a list taller than the room scrolls. What is left under the list is
+            the bar's foot.
           -->
           <ScrollViewer x:Name="OverflowScrollViewer"
                         Grid.Row="1"
@@ -166,16 +175,12 @@
       </ControlTemplate>
     </Setter>
 
-    <!-- Open, compact or minimal: as tall as what it shows, the labels and the secondary commands with it. -->
-    <Style Selector="^[IsOpen=True]">
+    <!-- Open, compact or minimal, and while it closes: the labels and the secondary commands. -->
+    <Style Selector="^[(wp81|PhoneAppBar.ShowsOpen)=True]">
       <Setter Property="DefaultLabelPosition" Value="Bottom" />
       <Style Selector="^ /template/ ScrollViewer#OverflowScrollViewer">
         <Setter Property="IsVisible" Value="True" />
       </Style>
-    </Style>
-
-    <Style Selector="^ /template/ ItemsControl#PART_OverflowPresenter">
-      <Setter Property="Margin" Value="0,0,0,81.7467" />
     </Style>
 
     <!-- With no secondary commands, no list and no foot under the labels (not read on the phone). -->
@@ -183,22 +188,49 @@
       <Setter Property="IsVisible" Value="False" />
     </Style>
 
-    <!-- The labels shown, open or by an app's DefaultLabelPosition: the bar as tall as what it shows. -->
-    <Style Selector="^[DefaultLabelPosition=Bottom], ^[DefaultLabelPosition=Right]">
-      <Setter Property="Height" Value="NaN" />
+    <!-- The labels shown closed by an app's DefaultLabelPosition: the bar as tall as what it shows. -->
+    <Style Selector="^[(wp81|PhoneAppBar.ShowsOpen)=False]">
+      <Style Selector="^[DefaultLabelPosition=Bottom], ^[DefaultLabelPosition=Right]">
+        <Setter Property="Height" Value="NaN" />
+      </Style>
     </Style>
 
-    <!-- Minimal and closed: a thin bar, the ellipsis alone. -->
-    <Style Selector="^[IsOpen=False][(cf|CommandBarOptions.ClosedDisplayMode)=Minimal]">
-      <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
-      <Style Selector="^ /template/ ItemsControl#PART_PrimaryCommands">
-        <Setter Property="IsVisible" Value="False" />
+    <!--
+      Open: the shell's heights, which step with the lines of the list (PhoneAppBar.MenuLines, 4 for 4 or more), read
+      with 0, 1, 2, 3, 4, 5 and 10 (run 20261116-0005-dev11): 89.1666 (214 raw), 167.5 (402), 285.4166 (685) for 2
+      or 3, and 418.75 (1005) from 4, the most. Everything sits where it does with two, from the bar's top.
+    -->
+    <Style Selector="^[IsOpen=True]">
+      <Setter Property="Height" Value="89.1666" />
+      <Style Selector="^[(wp81|PhoneAppBar.MenuLines)=1]">
+        <Setter Property="Height" Value="167.5" />
       </Style>
-      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="IsVisible" Value="False" />
+      <Style Selector="^[(wp81|PhoneAppBar.MenuLines)=2]">
+        <Setter Property="Height" Value="285.4166" />
       </Style>
-      <Style Selector="^ /template/ Button#PART_OverflowButton">
+      <Style Selector="^[(wp81|PhoneAppBar.MenuLines)=3]">
+        <Setter Property="Height" Value="285.4166" />
+      </Style>
+      <Style Selector="^[(wp81|PhoneAppBar.MenuLines)=4]">
+        <Setter Property="Height" Value="418.75" />
+      </Style>
+    </Style>
+
+    <!-- Minimal and closed: a thin bar, the ellipsis alone, once the bar is down. -->
+    <Style Selector="^[(cf|CommandBarOptions.ClosedDisplayMode)=Minimal]">
+      <Style Selector="^[IsOpen=False]">
         <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
+      </Style>
+      <Style Selector="^[(wp81|PhoneAppBar.ShowsOpen)=False]">
+        <Style Selector="^ /template/ ItemsControl#PART_PrimaryCommands">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^ /template/ Button#PART_OverflowButton">
+          <Setter Property="Height" Value="{StaticResource Wp81CommandBarMinimalHeight}" />
+        </Style>
       </Style>
     </Style>
   </ControlTheme>
@@ -216,10 +248,13 @@
     at 27.92 (an x-height of 33.5 raw px), a line 59.1666 tall (142 raw), 20.8333 from the bar's left (50 raw px,
     which puts Selawik's first letter's ink at 51, where the shell's is).
 
-    The states, as the phone's template has them, with the shell's colours where its screenshots show them:
-    - Pressed: the circle filled with the ring's colour and the icon in the bar's, as the checked one is drawn
-      (the shell's screenshots show no pressed command; the template's AppBarItemPressedForegroundThemeBrush is the
-      page's colour, the colour behind the circle on its page, as the bar's is on the bar).
+    The states, as the shell draws them (run 20261115-2354-dev11's recording, ref/wp81/CommandBar/):
+    - Pressed: the whole circle, ring and all, filled with the accent (PhoneAccentBrush: #3E65FE recorded, Cobalt
+      #FF3E65FF), the icon white (PhoneButtonBasePressedForegroundBrush, PhoneTextOverAccentColor), and the circle
+      sunk: drawn 0.9376 the size (its ink 45.85 recording px across, from its area, where it is 48.9 at rest) and,
+      with the icon, 2.0833 higher (5 raw px; 2.5 recording px on the closed bar). The icon keeps its size and the
+      label doesn't change. The press jumps there and back: the recording holds the press, and doesn't show its edges.
+    - Pressed in the list (IsInOverflow): the line tilts (cf:Tilt, on PART_Ink) and keeps its colours.
     - Disabled: the command at 0.451 (0x73 / 0xFF), drawn as one layer: the ring #FF848484 on the dark bar and
       #FF797979 on the light, the icon and label #FF848484 and #FF868686. The template's
       AppBarItemDisabledForegroundThemeBrush (PhoneDisabledColor, 0x66) is 11 levels off on the bar.
@@ -237,7 +272,7 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Panel x:Name="PART_Root" Background="{TemplateBinding Background}" RenderOptions.RequiresFullOpacityHandling="True">
-          <Panel x:Name="PART_Ink">
+          <Panel x:Name="PART_Ink" cf:Tilt.IsTarget="True">
             <StackPanel x:Name="PART_LayoutRoot">
               <Panel x:Name="PART_ContentRoot"
                      Width="40.75"
@@ -282,6 +317,7 @@
     </Style>
 
     <Style Selector="^[IsInOverflow=True]">
+      <Setter Property="cf:Tilt.IsEnabled" Value="True" />
       <Setter Property="Width" Value="NaN" />
       <Setter Property="Height" Value="59.1666" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -294,11 +330,16 @@
     </Style>
 
     <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Panel#PART_ContentRoot">
+        <Setter Property="RenderTransform" Value="translate(0px, -2.0833px)" />
+      </Style>
       <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Fill" Value="{DynamicResource AppBarItemForegroundThemeBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource PhoneAccentBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource PhoneAccentBrush}" />
+        <Setter Property="RenderTransform" Value="scale(0.9376)" />
       </Style>
       <Style Selector="^ /template/ ContentPresenter#PART_Content">
-        <Setter Property="Foreground" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
       </Style>
     </Style>
 
@@ -310,9 +351,9 @@
   <!--
     A toggle command: the same, and its checked states. Checked: the circle filled, AppBarToggleButtonCheckedBorder-
     and BackgroundThemeBrush, and the icon in the bar's colour (the shell's screenshots; the template's
-    AppBarToggleButtonCheckedForegroundThemeBrush is the page's). CheckedPressed: the ring alone, as the template's
-    keys set it. CheckedDisabled: the checked look at 0.451, as the shell dims a command. Indeterminate looks
-    unchecked: the phone's toggle has no third state.
+    AppBarToggleButtonCheckedForegroundThemeBrush is the page's). Pressed, checked or not: the shell's press, as the
+    command's (the recording holds an unchecked command; the template's CheckedPressed, the ring alone, isn't read
+    on the shell's bar). CheckedDisabled: the checked look at 0.451, as the shell dims a command. Indeterminate looks unchecked: the phone's toggle has no third state.
   -->
   <ControlTheme x:Key="{x:Type CommandBarToggleButton}" TargetType="CommandBarToggleButton">
     <Setter Property="Foreground" Value="{DynamicResource CommandBarForegroundThemeBrush}" />
@@ -327,7 +368,7 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Panel x:Name="PART_Root" Background="{TemplateBinding Background}" RenderOptions.RequiresFullOpacityHandling="True">
-          <Panel x:Name="PART_Ink">
+          <Panel x:Name="PART_Ink" cf:Tilt.IsTarget="True">
             <StackPanel x:Name="PART_LayoutRoot">
               <Panel x:Name="PART_ContentRoot"
                      Width="40.75"
@@ -372,6 +413,7 @@
     </Style>
 
     <Style Selector="^[IsInOverflow=True]">
+      <Setter Property="cf:Tilt.IsEnabled" Value="True" />
       <Setter Property="Width" Value="NaN" />
       <Setter Property="Height" Value="59.1666" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -380,15 +422,6 @@
       </Style>
       <Style Selector="^ /template/ TextBlock#PART_MenuText">
         <Setter Property="IsVisible" Value="True" />
-      </Style>
-    </Style>
-
-    <Style Selector="^:pressed">
-      <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Fill" Value="{DynamicResource AppBarItemForegroundThemeBrush}" />
-      </Style>
-      <Style Selector="^ /template/ ContentPresenter#PART_Content">
-        <Setter Property="Foreground" Value="{DynamicResource CommandBarBackgroundThemeBrush}" />
       </Style>
     </Style>
 
@@ -402,13 +435,18 @@
       </Style>
     </Style>
 
-    <Style Selector="^:checked:pressed">
+    <!-- Pressed, checked or not: the shell's press, after the checked look so it shows over it. -->
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Panel#PART_ContentRoot">
+        <Setter Property="RenderTransform" Value="translate(0px, -2.0833px)" />
+      </Style>
       <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Stroke" Value="{DynamicResource AppBarToggleButtonCheckedPressedBorderThemeBrush}" />
-        <Setter Property="Fill" Value="{DynamicResource AppBarToggleButtonCheckedPressedBackgroundThemeBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource PhoneAccentBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource PhoneAccentBrush}" />
+        <Setter Property="RenderTransform" Value="scale(0.9376)" />
       </Style>
       <Style Selector="^ /template/ ContentPresenter#PART_Content">
-        <Setter Property="Foreground" Value="{DynamicResource AppBarToggleButtonCheckedPressedForegroundThemeBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
       </Style>
     </Style>
 

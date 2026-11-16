@@ -51,6 +51,7 @@ public class CommandBarPageTests
     [AvaloniaFact]
     public void A_Command_Shows_Its_Label_And_The_Ellipsis_Opens_The_Bar()
     {
+        using var clock = new TestClock();
         var page = new CommandBarPage();
         using var scene = new Scene(page);
         var bar = page.FindControl<CommandBar>("Bar")!;
@@ -60,6 +61,9 @@ public class CommandBarPageTests
 
         Tap(scene.Window, CentreOf(bar.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "PART_OverflowButton"), scene.Window));
         Assert.True(bar.IsOpen);
+        scene.Window.UpdateLayout();
+        // The bar rises into place: once it is there, its list is where the finger goes.
+        clock.At(1000);
         scene.Window.UpdateLayout();
         Tap(scene.Window, CentreOf(page.FindControl<CommandBarButton>("Second")!, scene.Window));
         Assert.Equal("second menu item", page.FindControl<TextBlock>("State")!.Text);
