@@ -547,6 +547,54 @@ public class ItemClickTests
         Assert.Empty(page.Clicked);
     }
 
+    // A press whose pointer is taken from the item (as a pan takes it) is forgotten: let go back on the item, it clicks
+    // nothing.
+    [AvaloniaFact]
+    public void A_Press_Whose_Pointer_Is_Taken_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        IPointer? pointer = null;
+        page.Window.AddHandler(InputElement.PointerPressedEvent, (_, e) => pointer = e.Pointer, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+        page.Window.MouseDown(page.On(2), MouseButton.Left);
+        pointer!.Capture(null);
+        page.Window.MouseUp(page.On(2), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
+        Assert.Equal(0, page.SelectionChanges);
+    }
+
+    // A release something in the item handled forgets the press too, so a later release of the same pointer, with no
+    // press on the item, clicks nothing.
+    [AvaloniaFact]
+    public void A_Release_Something_In_The_Item_Took_Forgets_The_Press()
+    {
+        using var page = new ClickPage();
+        page.List.ItemTemplate = new FuncDataTemplate<string>((text, _) =>
+        {
+            var eater = new Border { Name = "Eater", Height = 20, Background = Brushes.Transparent };
+            eater.AddHandler(InputElement.PointerReleasedEvent, (_, e) => e.Handled = true);
+            return new StackPanel { Children = { new TextBlock { Text = text }, eater } };
+        });
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var text = item.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "item 1");
+        var onEater = item.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "Eater").TranslatePoint(new Point(5, 5), page.Window)!.Value;
+
+        page.Window.MouseDown(onEater, MouseButton.Left);
+        page.Window.MouseUp(onEater, MouseButton.Left);
+        EventHandler<PointerPressedEventArgs> letGo = (_, e) => e.Pointer.Capture(null);
+        page.Window.AddHandler(InputElement.PointerPressedEvent, letGo, RoutingStrategies.Bubble, handledEventsToo: true);
+        page.Window.MouseDown(page.On(3), MouseButton.Left);
+        var onText = text.TranslatePoint(new Point(5, 5), page.Window)!.Value;
+        page.Window.MouseMove(onText);
+        page.Window.MouseUp(onText, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
+    }
+
     // A release with no press on the item (the mouse pressed off it, its capture let go, and let go on the item) clicks
     // nothing.
     [AvaloniaFact]

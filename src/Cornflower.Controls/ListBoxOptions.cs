@@ -213,9 +213,8 @@ public static class ListBoxOptions
 
     private static void OnKeyDown(ListBoxItem item, KeyEventArgs e)
     {
-        if (ReferenceEquals(e.Source, item) &&
-            Clicking(item) is not null &&
-            ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
+        // Avalonia's rule takes a key only from the item itself, so a key on a control inside it is that control's.
+        if (Clicking(item) is not null && ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
         {
             e.Handled = true;
             item.SetValue(KeyDownProperty, e.Key);

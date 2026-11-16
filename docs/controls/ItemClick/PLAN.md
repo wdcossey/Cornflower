@@ -114,7 +114,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 9. **The mouse clicks on the left button's release and selects nothing**, the item pressed meanwhile; the right button clicks nothing.
    `A_Mouse_Clicks_On_The_Left_Buttons_Release_And_Selects_Nothing`; let go off the item, nothing,
    `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; a release with no press on the item, nothing,
-   `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; the right button clicked while the left is held, nothing,
+   `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; a press whose pointer is taken, nothing,
+   `A_Press_Whose_Pointer_Is_Taken_Clicks_Nothing`; a release something in the item took forgets the press,
+   `A_Release_Something_In_The_Item_Took_Forgets_The_Press`; the right button clicked while the left is held, nothing,
    `A_Right_Click_While_The_Left_Is_Held_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
    release, neither button selects, `With_Hold_On_The_Mouse_Neither_Button_Selects`.
 10. **Space and Enter click the focused item once, as they are let go**, a held key's repeats included.
