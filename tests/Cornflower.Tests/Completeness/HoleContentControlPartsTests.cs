@@ -63,8 +63,10 @@ public class HoleContentControlPartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
+        Assert.Contains(nameof(ComboBox), fellBack);
         Assert.Contains(nameof(DataValidationErrors), fellBack);
         Assert.Contains(nameof(MenuItem), fellBack);
+        Assert.Contains("ManagedFileChooser", fellBack);
     }
 
     // A MenuItem's icon slot, Simple's ContentControl: as large and as placed as with Simple alone.
@@ -126,6 +128,32 @@ public class HoleContentControlPartsTests
 
         Assert.Same(underContent, Plain(host).Single().Theme);
     }
+
+    // The empty theme is for the part's own style key: a control with a key of its own whose Wp81 theme sets the flags
+    // gets an empty theme for that key, not ContentControl's.
+    [AvaloniaFact]
+    public void The_Empty_Theme_Is_For_The_Parts_Own_Style_Key()
+    {
+        var wp81 = new Wp81Theme();
+        wp81.Resources[typeof(Note)] = new ControlTheme(typeof(Note))
+        {
+            Setters = { new Setter(HoleParts.FallBackToOwnProperty, true), new Setter(HoleParts.FallBackProperty, true) },
+        };
+        var host = new HolePartsTests.AppControl();
+        var template = new FuncControlTemplate<HolePartsTests.AppControl>((_, _) => new Border { Child = new Note { Name = "Inner" } });
+        var under = new Styles
+        {
+            Resources = { [typeof(HolePartsTests.AppControl)] = new ControlTheme(typeof(HolePartsTests.AppControl)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } } },
+        };
+        using var scene = new Scene(host, themes: [under, wp81]);
+
+        var note = host.GetVisualDescendants().OfType<Note>().Single();
+        Assert.Equal(typeof(Note), note.Theme?.TargetType);
+        Assert.Empty(note.Theme!.Setters);
+    }
+
+    /// <summary>A ContentControl with a style key of its own.</summary>
+    public class Note : ContentControl;
 
     // An app's own templated control isn't a hole: a plain ContentControl in its template wears Wp81's.
     [AvaloniaFact]
