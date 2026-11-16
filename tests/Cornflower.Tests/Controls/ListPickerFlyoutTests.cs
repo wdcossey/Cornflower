@@ -668,6 +668,20 @@ public class ListPickerFlyoutTests
         Assert.Equal(-1, picker.SelectedIndex);
         Assert.Null(picker.SelectedItem);
         Assert.Empty(picker.SelectedItems);
+
+        // An item not in the items is none.
+        picker.SelectedItem = "zed";
+        Assert.Null(picker.SelectedItem);
+        Assert.Empty(picker.SelectedItems);
+
+        // Several picked: those in the new items stay.
+        picker.ItemsSource = Items;
+        picker.SelectedItems.Add("two");
+        picker.SelectedItems.Add("four");
+        picker.ItemsSource = new[] { "three", "four" };
+        Assert.Equal(["four"], picker.SelectedItems);
+        Assert.Equal("four", picker.SelectedItem);
+        Assert.Equal(1, picker.SelectedIndex);
     }
 
     [AvaloniaFact]
@@ -719,6 +733,86 @@ public class ListPickerFlyoutTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Contains(stage.Presenter.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "PLAIN");
+    }
+
+    [AvaloniaFact]
+    public void A_Second_Accept_By_The_Keyboard_While_It_Closes_Is_Nothing()
+    {
+        var picker = Picker();
+        using var stage = new Stage(picker);
+        var log = new Log(stage);
+        stage.OpenAtRest();
+        var accept = stage.Part<CommandBarButton>("PART_AcceptButton");
+
+        accept.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        accept.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Single(log.Names, n => n == "Confirmed");
+    }
+
+    [AvaloniaFact]
+    public void Open_The_Picker_Follows_Its_Title_Items_And_Buttons()
+    {
+        var list = ListPicker();
+        using (var stage = new Stage(list))
+        {
+            stage.OpenAtRest();
+            PickerFlyoutBase.SetTitle(list, "NEW");
+            list.ItemsSource = new[] { "x", "y" };
+            Dispatcher.UIThread.RunJobs();
+            stage.At(stage.Now + 50);
+
+            Assert.Equal("NEW", stage.Part<TextBlock>("TitlePresenter").Text);
+            Assert.Equal(2, stage.ListItems().Count);
+        }
+
+        var picker = Picker(buttons: false);
+        using (var stage = new Stage(picker))
+        {
+            stage.OpenAtRest();
+            picker.ConfirmationButtonsVisible = true;
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(stage.Part<CommandBar>("PickerBar").IsVisible);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_Closed_Picker_Flyout_Lets_Go_Of_Its_Content()
+    {
+        var text = new TextBlock { Text = "mine" };
+        var picker = new PickerFlyout { Content = text };
+        using var stage = new Stage(picker);
+        stage.OpenAtRest();
+        picker.Hide();
+        stage.At(stage.Now + 500);
+
+        Assert.Null(text.GetVisualParent());
+        ((Panel)stage.Button.Parent!).Children.Add(text);
+        Assert.NotNull(text.GetVisualParent());
+    }
+
+    [AvaloniaFact]
+    public void A_Template_Applied_Again_Keeps_What_Is_Checked()
+    {
+        var picker = ListPicker(ListPickerFlyoutSelectionMode.Multiple);
+        using var stage = new Stage(picker);
+        var result = picker.ShowAtAsync(stage.Button);
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Now + 500);
+        stage.Tap(stage.ListItems()[2]);
+
+        var template = stage.Presenter.Template;
+        stage.Presenter.Template = null;
+        stage.Presenter.ApplyTemplate();
+        stage.Presenter.Template = template;
+        stage.Presenter.ApplyTemplate();
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Now + 50);
+        stage.Tap(stage.Part<CommandBarButton>("PART_AcceptButton"));
+
+        Assert.Equal(["three"], result.Result!);
     }
 
     // ---- The list's data ----

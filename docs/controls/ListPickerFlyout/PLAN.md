@@ -55,6 +55,10 @@ Each has its test in `tests/Cornflower.Tests/Controls/ListPickerFlyoutTests.cs`,
 | A second tap while it closes picks nothing more: the popup takes no taps once its bands move | the host's (#161) | `A_Second_Tap_While_It_Closes_Picks_Nothing_More` |
 | `ShowAtAsync` at another target while open ends the first wait and waits for the new opening | WinRT's async contract | `ShowAtAsync_At_Another_Target_While_Open_Waits_For_The_New_Opening` |
 | The picker flyout presenter's `ContentTemplate` shows its content | WinRT's `ContentControl` | `The_Picker_Flyout_Presenters_ContentTemplate_Shows_Its_Content` |
+| A second accept by the keyboard while it closes is nothing | one answer an opening | `A_Second_Accept_By_The_Keyboard_While_It_Closes_Is_Nothing` |
+| Open, the picker follows its title, items and buttons | WinRT's properties | `Open_The_Picker_Follows_Its_Title_Items_And_Buttons` |
+| A closed picker flyout lets go of its content | a control has one parent | `A_Closed_Picker_Flyout_Lets_Go_Of_Its_Content` |
+| A template applied again keeps what is checked | the list's own state | `A_Template_Applied_Again_Keeps_What_Is_Checked` |
 | `ItemTemplate` and `DisplayMemberBinding` show the items | WinRT's `ItemTemplate`, `DisplayMemberPath` | `The_Items_Are_Shown_By_Their_ItemTemplate_Or_DisplayMemberBinding` |
 | Opening and closing are the full Flyout's bands | #149 for PickerFlyout; ListPickerFlyout below | `A_Picker_Opens_And_Closes_As_The_Full_Flyout_Does` |
 | Under Simple alone the popup is Avalonia's; a theme going mid-close closes it | the Flyout's | `Simple_Alone_Keeps_Avalonias_Own_Popup_And_The_Picker_Still_Closes`, `A_Picker_Whose_Theme_Goes_Mid_Close_Closes` |

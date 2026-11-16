@@ -71,7 +71,11 @@ public class ListPickerFlyoutPresenter : PickerPresenterBase
         base.OnApplyTemplate(e);
         _buttons.Find(e.NameScope);
         if (_items is not null)
+        {
+            // A template applied again keeps what is checked now.
+            _checked = CheckedItems();
             _items.RemoveHandler(ListBoxOptions.ItemClickEvent, OnItemClick);
+        }
         _items = e.NameScope.Find<ListBox>("PART_ItemsHost");
         if (_items is not null)
             _items.AddHandler(ListBoxOptions.ItemClickEvent, OnItemClick);
@@ -91,15 +95,20 @@ public class ListPickerFlyoutPresenter : PickerPresenterBase
         if (_multiple)
         {
             // Each item picked checks the first place holding it not yet checked: equal items stay apart.
-            var taken = new HashSet<int>();
+            var places = new Dictionary<object, Queue<int>>();
+            for (var i = 0; i < _items.ItemCount; i++)
+            {
+                if (_items.Items[i] is not { } each)
+                    continue;
+                if (!places.TryGetValue(each, out var queue))
+                    places[each] = queue = new Queue<int>();
+                queue.Enqueue(i);
+            }
+
             foreach (var item in _checked)
             {
-                var index = Enumerable.Range(0, _items.ItemCount)
-                    .FirstOrDefault(i => !taken.Contains(i) && Equals(_items.Items[i], item), -1);
-                if (index < 0)
-                    continue;
-                taken.Add(index);
-                _items.Selection.Select(index);
+                if (places.TryGetValue(item, out var queue) && queue.TryDequeue(out var index))
+                    _items.Selection.Select(index);
             }
         }
 

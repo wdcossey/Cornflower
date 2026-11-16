@@ -22,6 +22,8 @@ namespace Cornflower.Controls;
 /// </remarks>
 public abstract class PickerFlyoutBase : PopupFlyoutBase
 {
+    private bool _answered;
+
     /// <summary>
     /// The title a picker shows above its content: WinRT's <c>PickerFlyoutBase.Title</c>, attached, as WinRT's, and read
     /// from the picker. None by default, and then no title is shown.
@@ -55,6 +57,41 @@ public abstract class PickerFlyoutBase : PopupFlyoutBase
             PreparePresenter(presenter);
     }
 
+    /// <inheritdoc />
+    protected override void OnOpened()
+    {
+        _answered = false;
+        base.OnOpened();
+    }
+
+    /// <summary>Asked to close: from now on the picker takes no accept or pick, while its closing motion runs.</summary>
+    protected override void OnClosing(CancelEventArgs args)
+    {
+        base.OnClosing(args);
+        _answered = true;
+    }
+
+    /// <summary>
+    /// Whether the picker may take an answer (an accept or a pick) now: it is open and has taken none, nor been asked to
+    /// close. True once an opening, so a second accept by the keyboard while it closes is nothing.
+    /// </summary>
+    protected bool TakeAnswer()
+    {
+        if (!IsOpen || _answered)
+            return false;
+        _answered = true;
+        return true;
+    }
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        // Open, the title follows; reading Popup while closed would make it.
+        if (change.Property == TitleProperty && IsOpen && Popup.Child is PickerPresenterBase presenter)
+            PickerPresenterOptions.SetTitle(presenter, GetTitle(this));
+    }
+
     /// <summary>
     /// Sets the presenter up for an opening: its title and whether it shows its buttons. A picker adds its own content.
     /// </summary>
@@ -69,7 +106,7 @@ public abstract class PickerFlyoutBase : PopupFlyoutBase
     {
         presenter.Confirmed += (_, _) =>
         {
-            if (IsOpen)
+            if (TakeAnswer())
                 OnConfirmed();
         };
         presenter.Dismissed += (_, _) => Hide();

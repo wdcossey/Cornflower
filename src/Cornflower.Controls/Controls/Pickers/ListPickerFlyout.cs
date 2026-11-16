@@ -170,7 +170,7 @@ public class ListPickerFlyout : PickerFlyoutBase
         var presenter = Hook(new ListPickerFlyoutPresenter());
         presenter.ItemClicked += (_, item) =>
         {
-            if (IsOpen && SelectionMode == ListPickerFlyoutSelectionMode.Single)
+            if (SelectionMode == ListPickerFlyoutSelectionMode.Single && TakeAnswer())
                 Pick([item]);
         };
         return presenter;
@@ -208,6 +208,11 @@ public class ListPickerFlyout : PickerFlyoutBase
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        // Open, the list follows its items, template and mode, as it would open anew; reading Popup while closed would make it.
+        if ((change.Property == ItemsSourceProperty || change.Property == ItemTemplateProperty
+                || change.Property == DisplayMemberBindingProperty || change.Property == SelectionModeProperty)
+            && IsOpen && Popup.Child is ListPickerFlyoutPresenter open)
+            PreparePresenter(open);
         if (_syncing)
             return;
         if (change.Property == SelectedIndexProperty)
@@ -225,17 +230,19 @@ public class ListPickerFlyout : PickerFlyoutBase
         }
         else if (change.Property == ItemsSourceProperty)
         {
-            // New items: the item picked keeps its place in them, or an index set before them takes its item.
+            // New items: the items picked that are in them stay; or an index set before them takes its item.
             Sync(() =>
             {
-                if (SelectedItem is { } picked)
+                if (_selectedItems.Count > 0)
                 {
-                    SelectedIndex = IndexOf(picked);
-                    if (SelectedIndex < 0 && ItemsSource is not null)
-                    {
-                        SelectedItem = null;
-                        Only(null);
-                    }
+                    if (ItemsSource is null)
+                        return;
+                    var kept = _selectedItems.Where(i => IndexOf(i) >= 0).ToList();
+                    _selectedItems.Clear();
+                    _selectedItems.AddRange(kept);
+                    var first = kept.Count > 0 ? kept[0] : null;
+                    SelectedItem = first;
+                    SelectedIndex = IndexOf(first);
                 }
                 else if (SelectedIndex >= 0)
                 {
@@ -253,6 +260,9 @@ public class ListPickerFlyout : PickerFlyoutBase
             Sync(() =>
             {
                 SelectedIndex = IndexOf(item);
+                // An item not in the items is none; with no items yet, it waits for them.
+                if (SelectedIndex < 0 && ItemsSource is not null)
+                    item = SelectedItem = null;
                 Only(item);
             });
         }

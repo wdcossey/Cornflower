@@ -49,7 +49,9 @@ public partial class ListPickerFlyoutPage : UserControl
         State.Text = await Picker.ShowAtAsync(OpenPicker) ? "picker accepted" : "picker cancelled";
 
     private static string Shown(string name, IReadOnlyList<object>? picked) =>
-        picked is null ? $"{name}: nothing picked" : $"{name}: {string.Join(", ", picked)}";
+        picked is null ? $"{name}: nothing picked"
+        : picked.Count == 0 ? $"{name}: none"
+        : $"{name}: {string.Join(", ", picked)}";
 
     private void OnLightChanged(object? sender, RoutedEventArgs e) =>
         Scope.RequestedThemeVariant = Light.IsChecked == true ? ThemeVariant.Light : null;

@@ -95,6 +95,9 @@ public class PickerFlyout : PickerFlyoutBase
     {
         _result?.TrySetResult(false);
         _result = null;
+        // The closed presenter lets go of the content, which may be put elsewhere; the next opening gives it back.
+        if (Popup.Child is PickerFlyoutPresenter presenter)
+            presenter.Content = null;
         base.OnClosed();
     }
 
@@ -105,5 +108,7 @@ public class PickerFlyout : PickerFlyoutBase
         // Only while open: reading Popup makes it, and an opening copies the content anyway.
         if (change.Property == ContentProperty && IsOpen && Popup.Child is PickerFlyoutPresenter presenter)
             presenter.Content = change.NewValue;
+        else if (change.Property == ConfirmationButtonsVisibleProperty && IsOpen && Popup.Child is PickerFlyoutPresenter open)
+            PickerPresenterOptions.SetShowsConfirmationButtons(open, change.GetNewValue<bool>());
     }
 }
