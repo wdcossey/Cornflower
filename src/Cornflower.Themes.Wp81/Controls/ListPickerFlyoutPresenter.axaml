@@ -1,0 +1,100 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ListPickerFlyout: Cornflower's ListPickerFlyoutPresenter in the default style of the 8.1
+    Update 1 runtime (listpickerflyoutpresenter.json, which equals the SDK's generic.xaml), re-expressed as an Avalonia
+    ControlTheme, with the list the runtime puts in it and the pickers' bar the shell draws over it
+    (docs/controls/ListPickerFlyout/PLAN.md has the values and their sources).
+
+    The phone's template is a Border, Background, round a Grid, ContentPanel, set in by
+    PickerFlyoutContentPanelPortraitThemeMargin (19,37,19,0; PickerFlyoutContentPanelLandscapeThemeMargin in landscape),
+    of two rows: the title, TitlePresenter, in FlyoutPickerTitleTextBlockStyle above PickerFlyoutTitleThemeMargin's 32.5,
+    and ItemsHostPanel, at the top of the rest, FlyoutContentThemeMargin round it. The runtime puts a ListView there:
+    here the template's ListBox, PART_ItemsHost, Wp81's ListView, which the picker fills. Its items, as the runtime draws
+    them (run 20261116-1934-dev11's dumps): ListPickerFlyoutPresenterItemMargin under each (19), the text in
+    PhoneFontFamilySemiLight at TextStyleExtraLargeFontSize (25.5), the check box at
+    ListPickerFlyoutPresenterMultiselectCheckBoxMargin, and in Multiple the content 25.5 to the right (the ListView's
+    40.5 elsewhere), so the text starts at the box's edge, x 44.67; the selected item in Single drawn as the rest. The
+    list ends in ListPickerFlyoutFooterThemeHeight's 80 below its last item.
+
+    With the buttons (Multiple), the content ends at the bar's top, 737.08, and the bar is laid over the foot; without,
+    the content goes to the window's foot and there's no bar. Where it sits, how it opens and closes, and Back are the
+    popup's: PhonePickerFlyout, turned on below.
+  -->
+  <ControlTheme x:Key="{x:Type cf:ListPickerFlyoutPresenter}" TargetType="cf:ListPickerFlyoutPresenter">
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <!-- The phone's presenter inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set,
+         as the FlyoutPresenter's is. -->
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="wp81:PhonePickerFlyout.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Background"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid RowDefinitions="*,Auto">
+            <Grid x:Name="ContentPanel"
+                  Margin="{DynamicResource PickerFlyoutContentPanelPortraitThemeMargin}"
+                  RowDefinitions="Auto,*">
+              <TextBlock x:Name="TitlePresenter"
+                         Theme="{DynamicResource FlyoutPickerTitleTextBlockStyle}"
+                         Margin="{DynamicResource PickerFlyoutTitleThemeMargin}"
+                         Text="{TemplateBinding (cf:PickerPresenterOptions.Title)}"
+                         IsVisible="{TemplateBinding (cf:PickerPresenterOptions.Title), Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <Grid x:Name="ItemsHostPanel"
+                    Grid.Row="1"
+                    Margin="{DynamicResource FlyoutContentThemeMargin}"
+                    VerticalAlignment="Top">
+                <!-- Padding: ListPickerFlyoutFooterThemeHeight (80) below the last item; a Thickness can't take the key. -->
+                <ListBox x:Name="PART_ItemsHost" Padding="0,0,0,80">
+                  <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                      <Setter Property="Margin" Value="{DynamicResource ListPickerFlyoutPresenterItemMargin}" />
+                      <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilySemiLight}" />
+                      <Setter Property="FontSize" Value="{DynamicResource TextStyleExtraLargeFontSize}" />
+                    </Style>
+                    <Style Selector="ListBoxItem /template/ Border#CheckboxTiltContainer">
+                      <Setter Property="Margin" Value="{DynamicResource ListPickerFlyoutPresenterMultiselectCheckBoxMargin}" />
+                    </Style>
+                    <!-- The check mode: the content beside the box, 25.5 over (the box's own width), not the ListView's 40.5. -->
+                    <Style Selector="ListBoxItem[(wp81|PhoneListMultiSelect.IsOn)=True] /template/ Border#ContentBorder">
+                      <Setter Property="RenderTransform" Value="translateX(25.5px)" />
+                    </Style>
+                  </ListBox.Styles>
+                </ListBox>
+              </Grid>
+            </Grid>
+            <!-- The pickers' bar (Controls/PickerBar.axaml): its closed height kept free at the foot, the bar over it. -->
+            <Panel x:Name="PickerBarSpace" Grid.Row="1" Height="{DynamicResource Wp81CommandBarCompactHeight}" IsVisible="False" />
+            <CommandBar x:Name="PickerBar" Grid.RowSpan="2" VerticalAlignment="Bottom" IsVisible="False">
+              <CommandBarButton x:Name="PART_AcceptButton" Label="done">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerAcceptGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+              <CommandBarButton x:Name="PART_DismissButton" Label="cancel">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerCancelGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+            </CommandBar>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(cf|PickerPresenterOptions.ShowsConfirmationButtons)=True]">
+      <Style Selector="^ /template/ Panel#PickerBarSpace">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^ /template/ CommandBar#PickerBar">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ Grid#ContentPanel">
+      <Setter Property="Margin" Value="{DynamicResource PickerFlyoutContentPanelLandscapeThemeMargin}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

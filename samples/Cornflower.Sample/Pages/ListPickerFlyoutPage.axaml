@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ListPickerFlyoutPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 full-screen pickers, as an 8.1 page opens them: ShowAtAsync, awaited. The list picker in Single picks on a
+    tap; in Multiple it has check boxes and the pickers' bar, accept and cancel. The picker flyout shows any content, with
+    the bar. Each fills the window and swings in; Back or cancel closes it with nothing picked. What came back last is
+    shown, and the switch makes the page light.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <ScrollViewer>
+        <StackPanel Margin="19,12,19,24">
+          <sample:SamplePageHeader x:Name="Header" />
+
+          <TextBlock Text="last" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+          <TextBlock x:Name="State" Text="none" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+          <Button x:Name="OpenSingle" Content="list picker" Margin="0,12,0,0" Click="OnOpenSingle" />
+          <Button x:Name="OpenMultiple" Content="list picker, multiple" Click="OnOpenMultiple" />
+          <Button x:Name="OpenPicker" Content="picker flyout" Click="OnOpenPicker" />
+
+          <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" Margin="0,12,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>
