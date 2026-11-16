@@ -799,9 +799,10 @@ view px), without item clicks, in `SelectionMode` `Multiple` (the check mode). T
 `CheckboxTiltContainer`, the 25.42 px box at the item's left. Presses held 600 ms on item 1's box, on its text, at 95%
 across and at 10% and 90% down; taps on item 4's box and text and on item 5's text. Then `Extended`: taps on items 1, 2
 and 2 again. Then `None`: a tap and a 600 ms press on item 3. Then `Single`, the offset at 0, and `SelectedIndex` set from
-code to 30, 5 and 39, 3 s apart, with no touch. `tools/motion/listpress.py` prints the presses.
+code to 30, 5 and 39, 3 s apart, with no touch. Again after review, `20261116-0040-dev11`, with the offset resets
+logged: the same tilts, offsets and states, within the ranges below. `tools/motion/listpress.py` prints the presses.
 
-- **A press on the box goes to `CheckboxPressed` (0.9 and 39.7 ms after the press) and tilts only the box.** It tilts about the box's own centre: a press at
+- **A press on the box goes to `CheckboxPressed` (0.6 to 39.7 ms after the press) and tilts only the box.** It tilts about the box's own centre: a press at
   its centre holds `RotationX` −2.70° (the screen-position bias), `RotationY` 0.15° and `GlobalOffsetZ` −20.86. The
   depth follows the item's rule: −25 × (1 − (|`RotationX`| + |`RotationY`|) / 17.19°). The box's `CompositeTransform`
   is the item's (−0.167, 209 for item 1). The first frame shows the depth with almost no angle (0.28°, −24.39), the
@@ -812,7 +813,7 @@ code to 30, 5 and 39, 3 s apart, with no touch. `tools/motion/listpress.py` prin
   down. `CommonStates` goes to `Pressed` within 0.7 to 4.5 ms, and the whole item tilts, box included. Item 1 holds
   −2.13° at its centre and `RotationY` −8.10° at 95% across, as in [an item's press](#listview-an-items-press-2026-11-15-device-11-113).
   On release the item holds, then returns through the Button's fractions (0.9412, 0.8039, … 0.0163) one a frame. The
-  first change comes 178 to 193 ms after the release, and `Pressed` > `Normal` 346 to 362 ms after it.
+  first change comes 178 to 193 ms after the release of a 600 ms hold, and `Pressed` > `Normal` 346 to 362 ms after it.
 - **In the check mode every tap toggles its item**, on the box or off it. The selection changes at the release, with
   `Tapped`. `ItemClick` doesn't fire (`IsItemClickEnabled` is false).
 - **Leaving `Multiple` turns every item's `MultiSelectStates` to `NoMultiSelect`** at once (the boxes go).
@@ -1242,7 +1243,8 @@ For #133. Two runs:
   unchecked and delete enabled. The touches go where the screenshots draw things, planned with no target, since the
   shell's bar is outside the app's tree. The app logs the bar's `Opened` and `Closed` and each command's `Click`. The
   recording shows the bar. `tools/motion/appbar.py` reads the bar's top edge in each recorded frame from a strip at the
-  screen's left, paired with the log by the header's flash.
+  screen's left, paired with the log by the header's flash. Again after review, `20261116-0042-dev11`, the bar taken
+  off only after the run: the same events, and the ranges below cover both.
 - `20261116-0005-dev11` (`-Popups only -Only BottomAppBar -Grab`): the bar open with 0, 1, 3, 4, 5 and 10 secondary
   commands, dark and light, each with a screenshot. The screenshots and the recording's stills are in
   [`ref/wp81/CommandBar/`](../../ref/wp81/CommandBar/README.md).
@@ -1250,7 +1252,7 @@ For #133. Two runs:
 What a touch does:
 
 - **Invoking a command closes the open bar.** That holds for a primary command, a secondary one (a menu line) and the
-  toggle. `Closed` comes first, as the finger lifts, and `Click` 14 to 21 ms after it. The toggle is checked by then.
+  toggle. `Closed` comes first, as the finger lifts, and `Click` 2 to 21 ms after it. The toggle is checked by then.
   On the closed bar a command's `Click` comes and the bar stays closed.
 - **A tap on the ellipsis opens the closed bar and closes the open one.** A tap on the page above the open bar closes it.
 - **A tap on the minimal bar away from the ellipsis opens it**, as a tap on its ellipsis does.
@@ -1267,11 +1269,11 @@ What a press looks like (stills from the recording, 540 × 960, 1.2 recording px
 The motion, from the recording (`appbar.py`). The bar's top moves; the bar doesn't fade.
 
 - **Opening**: the top rises from 737.08 (compact) or 773.75 (minimal) to 514.58. The rest of the way falls about
-  exponentially, by e every 76 to 90 ms (seven openings). It is 90% there 145 to 255 ms after the last frame at rest,
-  and at rest 400 to 455 ms after it.
-- **Closing** is faster: by e every 27 to 44 ms, 90% there by 72 to 127 ms, at rest by 163 to 218 ms (seven closings).
-- **Changing `ClosedDisplayMode`** while closed moves the top in 36 ms (compact to minimal) or 91 ms (back).
-- **Taking the bar off the page** slides it down off the screen in about 145 ms.
+  exponentially, by e every 76 to 92 ms (fourteen openings). It is 90% there 145 to 255 ms after the last frame at
+  rest, and at rest 384 to 455 ms after it.
+- **Closing** is faster: by e every 27 to 52 ms, 90% there by 67 to 127 ms, at rest by 163 to 233 ms (fourteen
+  closings).
+- **Changing `ClosedDisplayMode`** while closed moves the top in 36 to 50 ms (compact to minimal) or 91 to 134 ms (back).
 - Clocks: these are the recording's (the VM's), its frames 18 to 36 ms apart, and good to about a frame (35 ms).
   Whether the VM's clock runs with the emulator's is open, as for the popups' times ([which clock](#motion-2026-11-10-device-11-24)).
   The pairing is good to about 35 ms: one opening's first move came 35 ms before the setup that caused it.

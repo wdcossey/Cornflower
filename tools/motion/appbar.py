@@ -40,7 +40,7 @@ HOLD = 1000.0  # ms: how long the probe holds each "hold" touch
 
 
 def decode(run, exe):
-    w, h = ml.recording_size(run)
+    _, h = ml.recording_size(run)
     out = os.path.join(run, 'analysis')
     os.makedirs(out, exist_ok=True)
     subprocess.run([exe, '-hide_banner', '-loglevel', 'error', '-i', os.path.join(run, 'record.mkv'), '-vf',
@@ -103,7 +103,7 @@ def time_constant(m):
                 pts.append((t, math.log(left)))
     if len(pts) < 2:
         return float('nan')
-    a, b = ml.linfit([p[0] for p in pts], [p[1] for p in pts])
+    _, b = ml.linfit([p[0] for p in pts], [p[1] for p in pts])
     return -1 / b if b < 0 else float('nan')
 
 
@@ -158,9 +158,10 @@ def main():
                   % (tau, t90, m[-1][0] - t0))
             summary.append(('opens' if end < start else 'closes', abs(span), tau, t90, m[-1][0] - t0))
     if summary:
-        print('\nEach motion over 100 px: travel; time constant, 90%, at rest (ms from the last frame at rest)')
+        print('\nEach motion over 100 px with a time constant (two frames or more from 90% to 1.5% to go): travel; time')
+        print('constant, 90%, at rest (ms from the last frame at rest)')
         for kind in ('opens', 'closes'):
-            got = [x for x in summary if x[0] == kind]
+            got = [x for x in summary if x[0] == kind and x[2] == x[2]]
             if got:
                 print('  %s, %d: %s; time constants %.0f to %.0f ms, 90%% by %.0f to %.0f, at rest %.0f to %.0f'
                       % (kind, len(got), ', '.join('%.0f px' % x[1] for x in got), min(x[2] for x in got), max(x[2] for x in got),

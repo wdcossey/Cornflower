@@ -151,7 +151,8 @@ namespace RefApp
             {
                 var other = names[1 - k];
                 Rect b;
-                if (parts.AtRest[k].TryGetValue(other, out b))
+                // Only a header that starts at least 10 px inside the screen can be tapped.
+                if (parts.AtRest[k].TryGetValue(other, out b) && b.X < 440)
                 {
                     var x = b.X + (Math.Min(b.X + b.Width, 449) - b.X) / 2;
                     Drag(pivot, "tap header " + other + " from " + k, Select(pivot, k), x, b.Y + b.Height / 2, b.Y + b.Height / 2, 0, 80, 3000);
@@ -552,7 +553,20 @@ namespace RefApp
             bar.Opened += (s, e) => Log("bar", "Opened");
             bar.Closed += (s, e) => Log("bar", "Closed");
             shell.BottomAppBar = bar;
+            try
+            {
+                await AppBarTouches(host, bar);
+            }
+            finally
+            {
+                // After the run, so the bar sliding away isn't one of its reads.
+                shell.BottomAppBar = null;
+            }
+        }
 
+        /// <summary><see cref="AppBarProbe"/>'s page and touches, with the bar on the page.</summary>
+        private async Task AppBarTouches(Grid host, CommandBar bar)
+        {
             var header = Header();
             var page = await Page(host, header);
             LogPointers(page, "page");
@@ -579,7 +593,6 @@ namespace RefApp
             var open = state(AppBarClosedDisplayMode.Compact, true);
             var minimal = state(AppBarClosedDisplayMode.Minimal, false);
             var minimalOpen = state(AppBarClosedDisplayMode.Minimal, true);
-            Func<Task> none = () => Task.FromResult(true);
 
             // The bar is the shell's, outside the page: the touches are planned with no target, so they aren't hit-tested.
             const double gap = 2500;
@@ -596,7 +609,6 @@ namespace RefApp
             Press(null, "minimal: tap the ellipsis, bar open", minimalOpen, 420, 527, 0, 0, 0, 0, 80, gap);
             Code("closed again", closed, 2000);
             await RunScheduled(page, header);
-            shell.BottomAppBar = null;
         }
 
         /// <summary>A horizontal touch: <see cref="Press"/> at (x, y), moved by dx over moveMs, held holdMs and let go; gapMs before the next. Its arguments are Press's, in Press's order, without the still time and dy.</summary>

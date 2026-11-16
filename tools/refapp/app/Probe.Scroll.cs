@@ -46,7 +46,10 @@ namespace RefApp
             public string Label;
             public Func<Task> Action;
 
-            /// <summary>A touch's setup, logged as a "step" (which the scripts cut the log at); else an "action" during one.</summary>
+            /// <summary>
+            /// Logged as a "step", which the scripts cut the log at: a touch's setup, or a step from code with no touch
+            /// (<see cref="Code"/>); else an "action" during a touch.
+            /// </summary>
             public bool Touch;
         }
 
@@ -355,16 +358,15 @@ namespace RefApp
             }
 
             WatchFrames(() => new[] { sv.VerticalOffset }, now => "offset " + Num(now[0]));
-            Func<ListViewSelectionMode, Func<Task>> mode = m => () =>
+            var top = Offset(sv, 0);
+            Func<ListViewSelectionMode, Func<Task>> mode = m => async () =>
             {
-                sv.ChangeView(null, 0, null, true);
+                await top();
                 if (list.SelectionMode != m)
                 {
                     list.SelectionMode = m;
                     Log("setup", "SelectionMode " + m);
                 }
-
-                return Task.FromResult(true);
             };
             Func<int, double, double, Windows.Foundation.Point> at = (i, fx, fy) =>
             {

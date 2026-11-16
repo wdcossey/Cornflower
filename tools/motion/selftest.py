@@ -637,8 +637,8 @@ def pivot_header_and_slide():
                 off = 1000 + 70 * k
                 d = 1.6546 * (off - 1000)
                 f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - d, 760.42 - d))
-            # The reorder can come on a frame where the offset hasn't moved: the jump still ends the line.
-            f.write(line % (280.0, 1078.125, 1350, 0, 1000, -350, 15.84 - 1.6546 * 350 + 1200, 760.42 - 1.6546 * 350))
+            # The reorder can come on a frame where the offset is still or goes back a little: the jump still ends the line.
+            f.write(line % (280.0, 1078.125, 1340, 0, 1000, -340, 15.84 - 1.6546 * 350 + 1200, 760.42 - 1.6546 * 350))
             f.write('290.0\tselection\tindex 1\n')
             f.write(line % (300.0, 1093.75, 1450, 1, 1450, 0, 15.84 - 1.6546 * 450 + 1200, 15.84))
         code, out = run_script('pivot.py', run)

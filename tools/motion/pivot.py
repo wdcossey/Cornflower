@@ -92,15 +92,16 @@ def pivot(rows, segs):
         # The header selected at the start, against the offset, until the panel is laid out again.
         h = names[start[3]] if start[3] < len(names) else None
         # The header items are put in a new order once the new item is chosen, the selected one first: the frames
-        # before this header's left edge jumps (by over 100 px) the way the offset went, or with the offset still.
-        # Against the offset it can move faster than that: a header wider than the screen moves 1.65 px a px (#136).
+        # before this header's left edge jumps, by over 100 px and over 2.5 px for each px the offset moved, either
+        # way. A header follows the offset at its pitch over 450, which is 1.65 px a px for one wider than the screen
+        # (#136), so its frames can move it over 100 px, but never 2.5 times the offset's move.
         span = []
         for f in [start] + [f for f in moving if f is not start]:
             if f[4] != start[4] or h not in f[6]:
                 break
             if span:
                 dh, doff = f[6][h] - span[-1][6][h], f[2] - span[-1][2]
-                if abs(dh) > 100 and dh * doff >= 0:
+                if abs(dh) > 100 and abs(dh) > 2.5 * abs(doff):
                     break
             span.append(f)
         if h is not None and len(span) >= 3:
