@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -13,8 +14,10 @@ namespace Cornflower.Tests.Sample;
 /// The pictures for <c>PREVIEW.md</c>: every page of the sample, in the sample's shell at the reference view (450 ×
 /// 800, without the desktop's Back rail, as on a phone), dark and light, and the pages that show the accent in two
 /// more of the phone's accents; <c>PREVIEW.md</c> and <c>README.md</c> show a chosen set of them, committed under
-/// <c>docs/preview/</c>. Drawn headless with Skia, as every comparison frame is, so they are the theme's own pixels on
-/// any OS. By hand, as the <c>*Frames</c> savers are: it does nothing unless <c>CORNFLOWER_PREVIEW</c> names a folder.
+/// <c>docs/preview/</c>. Drawn headless with Skia, as the comparison frames are, so they are the theme's own pixels
+/// on any OS; at a render scaling of 2, not the reference profile's 2.4, so a picture may differ from a comparison
+/// frame by a pixel of rounding. By hand, as the <c>*Frames</c> savers are: it does nothing unless
+/// <c>CORNFLOWER_PREVIEW</c> names a new or empty folder.
 /// <code>
 /// CORNFLOWER_PREVIEW=/absolute/folder dotnet test tests/Cornflower.Tests --filter FullyQualifiedName~PreviewGallery
 /// </code>
@@ -37,6 +40,15 @@ public class PreviewGallery
     /// <summary>The header of the switch some pages have that turns the page light; set to match the picture.</summary>
     private const string LightSwitchHeader = "light theme";
 
+    /// <summary>The pages known to have that switch: the gallery stops if one has lost it, rather than draw it Off.</summary>
+    private static readonly string[] LightSwitchPages = ["commandbar", "pivot", "hub"];
+
+    /// <summary>
+    /// Real time to let pass before each picture: past the longest Avalonia transition in the theme, the ToggleSwitch
+    /// knob's 370 ms (<c>KnobTransitions</c>). A longer one needs this raised.
+    /// </summary>
+    private static readonly TimeSpan RealTimeSettle = TimeSpan.FromMilliseconds(600);
+
     [AvaloniaFact]
     public void Save()
     {
@@ -49,6 +61,10 @@ public class PreviewGallery
             !SampleShell.Pages.Any(page => string.Equals(page.Title, title, StringComparison.OrdinalIgnoreCase))).ToList();
         if (missing.Count > 0)
             throw new InvalidOperationException($"No sample page is titled {string.Join(", ", missing)}: update AccentPages.");
+
+        // A fresh folder, so a picture of a page since renamed or removed can't sit beside the new ones.
+        if (Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Any())
+            throw new InvalidOperationException($"CORNFLOWER_PREVIEW must be a new or empty folder; '{folder}' isn't.");
 
         Directory.CreateDirectory(folder);
         foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
@@ -83,22 +99,26 @@ public class PreviewGallery
             shell.Open(open);
 
         ShellTurns.Settle(clock);
-        // A page with its own light switch says what the picture shows, rather than "Off" on a light page.
+        // A page with its own light switch says what the picture shows, rather than "Off" on a light page. Set as a
+        // tap sets it (SetCurrentValue), so a binding on it, as the Hub page's, carries the change to its model.
+        var switches = shell.GetVisualDescendants().OfType<ToggleSwitch>()
+            .Where(toggle => Equals(ControlHeader.GetHeader(toggle), LightSwitchHeader)).ToList();
+        if (open is not null && LightSwitchPages.Contains(open.Title, StringComparer.OrdinalIgnoreCase) && switches.Count == 0)
+            throw new InvalidOperationException($"The {open.Title} page has no '{LightSwitchHeader}' switch: update LightSwitchPages.");
         if (variant == ThemeVariant.Light)
         {
-            foreach (var toggle in shell.GetVisualDescendants().OfType<ToggleSwitch>())
-            {
-                if (Equals(ControlHeader.GetHeader(toggle), LightSwitchHeader))
-                    toggle.IsChecked = true;
-            }
+            foreach (var toggle in switches)
+                toggle.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+        }
 
-            // The knob slides on an Avalonia transition (370 ms), timed by the render loop's own clock, not the
-            // TestClock: draw frames over half a second of real time so it is at rest.
-            for (var tick = 0; tick < 10; tick++)
-            {
-                Thread.Sleep(50);
-                ShellTurns.Draw();
-            }
+        // Avalonia's own transitions (the ToggleSwitch knob's 370 ms, the ListView check box's) run on the render
+        // loop's clock, which is real time, not the TestClock's: draw frames over RealTimeSettle of it, on every
+        // picture, so each is at rest.
+        var settled = DateTime.UtcNow + RealTimeSettle;
+        while (DateTime.UtcNow < settled)
+        {
+            Thread.Sleep(50);
+            ShellTurns.Draw();
         }
 
         using var frame = scene.Capture();
