@@ -280,8 +280,17 @@ public class ChecklistTests
         Assert.Equal(typeof(Avalonia.Controls.Presenters.ContentPresenter), new AvaloniaSide("ContentPresenter").Type);
         Assert.Equal(typeof(Avalonia.Controls.Presenters.ScrollContentPresenter),
             new AvaloniaSide("ScrollContentPresenter").Type);
-        // A name in Avalonia.Controls still wins over one further down the list.
-        Assert.Equal(typeof(Avalonia.Controls.ContentControl), new AvaloniaSide("ContentControl").Type);
+    }
+
+    [Fact]
+    public void A_Name_In_Two_Of_The_Namespaces_Is_An_Error_Not_A_Guess()
+    {
+        // No name is in two of them at Avalonia 12.1.4; a clash in a later Avalonia must stop the tool, not pick one.
+        var clash = Assert.Throws<InvalidOperationException>(() => AvaloniaSide.ByShortName(
+            [typeof(Avalonia.Controls.ContentControl), typeof(Avalonia.Controls.Presenters.ContentPresenter),
+             typeof(Avalonia.Controls.Shapes.Path), typeof(System.IO.Path)]));
+        Assert.Contains("Avalonia.Controls.Shapes.Path", clash.Message);
+        Assert.Contains("System.IO.Path", clash.Message);
     }
 
     [Theory]

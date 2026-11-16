@@ -79,19 +79,39 @@ internal sealed class AvaloniaSide
         }
     }
 
-    /// <summary>The namespaces Avalonia's controls are looked for in, in order.</summary>
-    private static readonly string[] Namespaces =
+    /// <summary>
+    /// The namespaces Avalonia's controls are looked for in: <c>Avalonia.Controls</c>, <c>.Primitives</c> and
+    /// <c>.Presenters</c> (<c>ContentPresenter</c>, <c>ItemsPresenter</c>, <c>ScrollContentPresenter</c>,
+    /// <c>TextPresenter</c>). The templated controls a checklist is for are all in these three.
+    /// </summary>
+    internal static readonly string[] Namespaces =
         ["Avalonia.Controls", "Avalonia.Controls.Primitives", "Avalonia.Controls.Presenters"];
 
     /// <summary>
-    /// Avalonia's type of that name in <c>Avalonia.Controls</c>, then <c>.Primitives</c>, then <c>.Presenters</c>
-    /// (<c>ContentPresenter</c>, <c>ItemsPresenter</c>, <c>ScrollContentPresenter</c>, <c>TextPresenter</c>).
+    /// Every exported type in <see cref="Namespaces"/> by its short name, built once. No name is in two of them in
+    /// the Avalonia this tool is built against; if a later Avalonia puts one in two, this throws rather than pick.
     /// </summary>
-    private static Type? FindType(string name) =>
-        Controls.GetExportedTypes()
-            .Where(t => t.Name == name && Array.IndexOf(Namespaces, t.Namespace) >= 0)
-            .OrderBy(t => Array.IndexOf(Namespaces, t.Namespace))
-            .FirstOrDefault();
+    private static readonly Lazy<IReadOnlyDictionary<string, Type>> ByName = new(() => ByShortName(
+        Controls.GetExportedTypes().Where(t => t.Namespace is not null && Namespaces.Contains(t.Namespace))));
+
+    /// <summary>The types by short name; throws on a name two of them share.</summary>
+    internal static IReadOnlyDictionary<string, Type> ByShortName(IEnumerable<Type> types)
+    {
+        var byName = new Dictionary<string, Type>(StringComparer.Ordinal);
+        foreach (var type in types)
+        {
+            if (!byName.TryAdd(type.Name, type))
+            {
+                throw new InvalidOperationException(
+                    $"{type.Name} is both {byName[type.Name].FullName} and {type.FullName}: say which in AvaloniaSide.");
+            }
+        }
+
+        return byName;
+    }
+
+    /// <summary>Avalonia's type of that name in one of <see cref="Namespaces"/>, or null.</summary>
+    private static Type? FindType(string name) => ByName.Value.GetValueOrDefault(name);
 
     /// <summary>Avalonia's control, or null for a control Avalonia doesn't have.</summary>
     public Type? Type => _type;
