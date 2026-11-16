@@ -109,7 +109,11 @@ opens the minimal bar on a tap. The menu lines' tilt is `cf:Tilt`. No type subst
 - **The motion's clock**: the recording's times are taken as they are; whether they are the phone's stopwatch or its
   animation time is open (ADR 0005), at most 4%, 17 ms of the opening. Changing `ClosedDisplayMode` on a closed bar
   isn't moved (the shell moves it over 36 to 134 ms). A bar whose app sets its `Height` doesn't move. While it
-  closes, the bar takes no presses; the shell's isn't read.
+  closes, what is drawn above the closed bar takes no presses (Avalonia hit-tests a control within its bounds), so a
+  press there reaches the page; the shell's isn't read. A bar with an app's own `DefaultLabelPosition` falls to the
+  compact height and then takes its own, taller one, at once.
+- **A window shorter than the open bar** cuts its top, ellipsis and all: the heights are the shell's, and the phone's
+  view is never shorter than 450 (landscape), above the 418.75 limit.
 - **Closing draws above the closed bar**: a host that clips the bar to its bounds (a `Border` or a cell with
   `ClipToBounds`) cuts the falling bar, which then looks shut at once. The ContentPage's bars don't clip.
 - **The open heights are the shell's, fixed by the count**: a label that wraps to a second line, or an app's

@@ -183,7 +183,7 @@
       </Style>
     </Style>
 
-    <!-- With no secondary commands, no list and no foot under the labels (not read on the phone). -->
+    <!-- With no secondary commands, no list: the open bar's height for no lines, below, leaves 18.3 under the labels. -->
     <Style Selector="^[HasSecondaryCommands=False] /template/ ScrollViewer#OverflowScrollViewer">
       <Setter Property="IsVisible" Value="False" />
     </Style>

@@ -109,7 +109,7 @@ internal static class PhoneAppBar
         private IDisposable? _frame;
         private bool _moving;
         private bool _opening;
-        private TimeSpan _start;
+        private TimeSpan? _start;
         private double _from;
 
         public Mover(CommandBar bar)
@@ -161,17 +161,19 @@ internal static class PhoneAppBar
         }
 
         /// <summary>
-        /// The bar's height shown now, from its foot: the motion's place between the height shown when it started and
-        /// the bar's height now, which its layout gives it at once.
+        /// How far the height shown is still short of the bar's height now (negative closing, as it falls to a lower
+        /// height): the ease's remainder of the way from the height shown when the motion started. Its time 0 is its
+        /// first frame, as the phone's motions are read from the last frame at rest, so a slow first layout doesn't eat
+        /// the start of it.
         /// </summary>
-        private double Shown()
+        private double Lag()
         {
             if (!_moving)
-                return _bar.Bounds.Height;
-            var eased = _opening
-                ? PhoneEase.ExponentialOut(OpenExponent, (CornflowerClock.Now - _start) / OpenLength)
-                : PhoneEase.ExponentialOut(CloseExponent, (CornflowerClock.Now - _start) / CloseLength);
-            return _from + (_bar.Bounds.Height - _from) * eased;
+                return 0;
+            var time = _start is { } start ? CornflowerClock.Now - start : TimeSpan.Zero;
+            return _opening
+                ? PhoneEase.Remaining(_bar.Bounds.Height - _from, OpenExponent, time, OpenLength)
+                : PhoneEase.Remaining(_bar.Bounds.Height - _from, CloseExponent, time, CloseLength);
         }
 
         private void Move(bool open)
@@ -189,14 +191,11 @@ internal static class PhoneAppBar
 
             // From the height shown now: mid-motion, wherever the motion has got to; at rest, the bar's own, which is
             // still the old one, as the bar isn't laid out again until the next layout.
-            _from = Shown();
+            _from = _bar.Bounds.Height - Lag();
             _opening = open;
-            _start = CornflowerClock.Now;
+            _start = null;
             _moving = true;
             _bar.SetValue(ShowsOpenProperty, true);
-            // Closing, the bar takes no presses: a falling line isn't a command any more, and the page under it gets
-            // the press.
-            _root.IsHitTestVisible = open;
             Apply();
             _frame ??= CornflowerClock.RequestFrame(_bar, Step);
         }
@@ -206,7 +205,8 @@ internal static class PhoneAppBar
             _frame = null;
             if (!_moving)
                 return;
-            if (CornflowerClock.Now - _start >= (_opening ? OpenLength : CloseLength))
+            var start = _start ??= CornflowerClock.Now;
+            if (CornflowerClock.Now - start >= (_opening ? OpenLength : CloseLength))
             {
                 var opening = _opening;
                 Rest();
@@ -223,19 +223,18 @@ internal static class PhoneAppBar
         {
             if (_root is null)
                 return;
-            var margin = new Thickness(0, _bar.Bounds.Height - Shown(), 0, 0);
+            var margin = new Thickness(0, Lag(), 0, 0);
             if (_root.Margin != margin)
                 _root.Margin = margin;
         }
 
-        /// <summary>Stops the motion and gives the layout root back its own margin and hit testing.</summary>
+        /// <summary>Stops the motion and gives the layout root back its own margin.</summary>
         private void Rest()
         {
             _frame?.Dispose();
             _frame = null;
             _moving = false;
             _root?.ClearValue(Layoutable.MarginProperty);
-            _root?.ClearValue(InputElement.IsHitTestVisibleProperty);
         }
 
         private void OnSizeChanged(object? sender, SizeChangedEventArgs e)

@@ -761,12 +761,15 @@ public class CommandBarTests
     }
 
     /// <summary>
-    /// As tools/motion/appbar.py reads a motion: the time constant of a straight line through the log of the fraction
-    /// to go, from 90% to 1.5% to go; when it is 90% there; when it is at rest (within half a recording px, 0.4167 view
-    /// px, of its end).
+    /// As tools/motion/appbar.py reads a motion, its times from the last frame at rest: the time constant of a straight
+    /// line through the log of the fraction to go, from 90% to 1.5% to go; when it is 90% there; when it is at rest
+    /// (within half a recording px, 0.4167 view px, of its end).
     /// </summary>
     private static (double TimeConstant, double Ninety, double AtRest) Read(List<(double Ms, double Top)> tops)
     {
+        var lastAtRest = tops.FindIndex(t => t.Top != tops[0].Top) - 1;
+        Assert.True(lastAtRest >= 0, "the bar never moved");
+        tops = tops.Skip(lastAtRest).Select(t => (t.Ms - tops[lastAtRest].Ms, t.Top)).ToList();
         var start = tops[0].Top;
         var end = tops[^1].Top;
         var toGo = tops.Select(t => (t.Ms, Fraction: (t.Top - end) / (start - end))).ToList();
@@ -847,7 +850,7 @@ public class CommandBarTests
         Assert.True(Part<ItemsControl>(page.Bar, "PART_PrimaryCommands").IsEffectivelyVisible);
         Assert.True(page.DrawnTop < MinimalTop / Scale);
 
-        page.At(start + 220);
+        page.At(start + 240);
         Assert.False(label.IsVisible);
         Assert.False(list.IsVisible);
         Assert.False(Part<ItemsControl>(page.Bar, "PART_PrimaryCommands").IsVisible);
@@ -867,6 +870,23 @@ public class CommandBarTests
         var inked = Enumerable.Range(foot + 1, 120).SelectMany(y => Enumerable.Range(0, 1080).Where(x => Frames.PixelAt(frame, x, y) != Page(true)).Select(x => (x, y))).ToList();
         Assert.True(inked.Count == 0, $"{inked.Count} pixels drawn below the bar, the first at {inked.FirstOrDefault()}");
         page.Settle();
+    }
+
+    [AvaloniaFact]
+    public void A_Slow_First_Frame_Doesnt_Eat_The_Start_Of_The_Motion()
+    {
+        // The motion's time 0 is its first frame, as the phone's are read from the last frame at rest.
+        using var page = new AppBarPage();
+        page.Clock.FrameInterval = TimeSpan.FromMilliseconds(100);
+        page.Bar.IsOpen = true;
+        page.Window.UpdateLayout();
+        page.At(100);
+        Assert.Equal(CompactTop / Scale, page.DrawnTop, 0.001);
+        page.Clock.FrameInterval = TimeSpan.FromMilliseconds(16);
+        page.At(200);
+        Assert.True(page.DrawnTop < CompactTop / Scale - 1);
+        page.Settle();
+        Assert.Equal(OpenTop / Scale, page.DrawnTop, 0.001);
     }
 
     [AvaloniaFact]
@@ -943,6 +963,30 @@ public class CommandBarTests
         Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
         Assert.False(Part<TextBlock>(page.Add, "PART_TextLabel").IsVisible);
         Assert.Equal(CompactTop / Scale, page.DrawnTop, 0.001);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Another_Theme_Takes_Every_Value_Of_The_Bars_Theme_Away(bool moving)
+    {
+        // CLAUDE.md, "Avalonia facts": a handler that takes a value away while a theme's values are unset can stop the
+        // rest. PhoneAppBar's own values go after the theme's.
+        using var page = new AppBarPage();
+        page.Bar.IsOpen = true;
+        page.Window.UpdateLayout();
+        if (!moving)
+            page.Settle();
+
+        page.Bar.Theme = new ControlTheme(typeof(CommandBar));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(page.Bar.Background);
+        Assert.True(double.IsNaN(page.Bar.Height));
+        Assert.Equal(CommandBarOverflowButtonVisibility.Auto, page.Bar.OverflowButtonVisibility);
+        Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetIsEnabled(page.Bar));
+        Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+        Assert.Equal(0, Cornflower.Themes.Wp81.PhoneAppBar.GetMenuLines(page.Bar));
     }
 
     [AvaloniaFact]
