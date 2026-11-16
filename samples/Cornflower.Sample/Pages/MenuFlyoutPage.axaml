@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.MenuFlyoutPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 MenuFlyout, as an 8.1 page writes one: a Button's Flyout holding items (MenuItems here), a toggle item
+    (ToggleType CheckBox: it draws the same checked or not), a separator (it draws nothing) and a disabled item. The menu
+    opens below its Button if it fits, else above it, its line spreading out and the menu unfolding from it; a tap on an
+    item, above or below the menu, or Back closes it at once. What happened last is shown, and the switch makes the page
+    light.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <DockPanel Margin="19,12,19,24">
+        <StackPanel DockPanel.Dock="Top">
+          <sample:SamplePageHeader x:Name="Header" />
+
+          <TextBlock Text="last" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+          <TextBlock x:Name="State" Text="none" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+          <Button x:Name="OpenMenu" Content="menu" Margin="0,12,0,0">
+            <Button.Flyout>
+              <MenuFlyout Opened="OnOpened" Closed="OnClosed">
+                <MenuItem Header="first item" Click="OnClick" />
+                <MenuItem x:Name="Toggle" Header="toggle item" ToggleType="CheckBox" Click="OnClick" />
+                <Separator />
+                <MenuItem Header="disabled item" IsEnabled="False" />
+                <MenuItem Header="last item" Click="OnClick" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+
+          <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" Margin="0,12,0,0" />
+        </StackPanel>
+
+        <!-- At the page's foot, so its menu opens above it. -->
+        <Button x:Name="OpenLow" Content="menu above" DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
+          <Button.Flyout>
+            <MenuFlyout Opened="OnOpened" Closed="OnClosed">
+              <MenuItem Header="share" Click="OnClick" />
+              <MenuItem Header="rename" Click="OnClick" />
+              <MenuItem Header="delete" Click="OnClick" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+      </DockPanel>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>

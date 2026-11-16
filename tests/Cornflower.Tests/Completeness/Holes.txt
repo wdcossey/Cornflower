@@ -31,7 +31,6 @@ Label
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
 Menu
-MenuFlyoutPresenter
 MenuItem
 NotificationCard
 NumericUpDown
