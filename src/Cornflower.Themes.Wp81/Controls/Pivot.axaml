@@ -1,0 +1,151 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:cfp="using:Cornflower.Controls.Primitives"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 Pivot, PivotItem and PivotHeaderItem: the default styles of the 8.1 Update 1 runtime
+    (pivot.json, pivotitem.json, pivotheaderitem.json, which equal the SDK's generic.xaml), re-expressed as Avalonia
+    ControlThemes for Cornflower's own controls. Every value is the phone's resource key, by DynamicResource.
+    docs/controls/Pivot/PLAN.md has the values and their sources.
+
+    The Pivot's template is the phone's, part for part (our names PART_):
+    - PART_RootElement, a Grid of two rows, the Background;
+    - PART_TitleContentControl in the first, the Title in the phone's PivotTitleContentControlStyle (PhoneFontFamilyNormal,
+      SemiBold, TextStyleLargeFontSize), in Wp81's ContentControl theme, inset PivotPortraitThemePadding (19,38,0,0), or
+      PivotLandscapeThemePadding while :landscape, the phone's Orientation states;
+    - PART_ScrollViewer in the second, inset by the Pivot's Padding, the phone's ScrollViewerScrollBarlessTemplate
+      (Wp81ScrollViewerScrollBarlessTheme): no indicators; it clips the strip and the items to the view. It doesn't
+      scroll: the Pivot moves its parts itself (Cornflower.Controls' PivotMotion), so both bars are Disabled;
+    - in it, the phone's PivotPanel, here a Grid of two rows: PART_Header, the header strip (PivotHeaderPanel), and
+      PART_ItemsPresenter, the items, in a Grid as the phone's ItemsPanel is. The Pivot slides both by their render
+      transforms, as the phone's code moves HeaderTranslateTransform and ItemsPresenterTranslateTransform.
+  -->
+  <ControlTheme x:Key="{x:Type cf:Pivot}" TargetType="cf:Pivot">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <Grid />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_RootElement" RowDefinitions="Auto,*" Background="{TemplateBinding Background}">
+          <ContentControl x:Name="PART_TitleContentControl"
+                          Theme="{DynamicResource Wp81ContentControlTheme}"
+                          FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                          FontWeight="SemiBold"
+                          FontSize="{DynamicResource TextStyleLargeFontSize}"
+                          Margin="{DynamicResource PivotPortraitThemePadding}"
+                          Content="{TemplateBinding Title}"
+                          ContentTemplate="{TemplateBinding TitleTemplate}" />
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        Grid.Row="1"
+                        Theme="{DynamicResource Wp81ScrollViewerScrollBarlessTheme}"
+                        Margin="{TemplateBinding Padding}"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Disabled">
+            <Grid x:Name="PART_Panel" RowDefinitions="Auto,*">
+              <cfp:PivotHeaderPanel x:Name="PART_Header" />
+              <ItemsPresenter x:Name="PART_ItemsPresenter" Grid.Row="1" ItemsPanel="{TemplateBinding ItemsPanel}" />
+            </Grid>
+          </ScrollViewer>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:landscape /template/ ContentControl#PART_TitleContentControl">
+      <Setter Property="Margin" Value="{DynamicResource PivotLandscapeThemePadding}" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    The PivotItem: the phone's, a Grid with the Background and a ContentPresenter placed by the content alignment
+    (Stretch), inside the Padding, the item inset PivotItemMargin (19,22.5,19,0) from the page. Data's text gets the
+    phone's line (PhoneHeaderLine): a WinRT presenter doesn't recognise access keys. Its Pivot states (Right, Left,
+    Center) change nothing, so there are none here.
+  -->
+  <ControlTheme x:Key="{x:Type cf:PivotItem}" TargetType="cf:PivotItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Margin" Value="{DynamicResource PivotItemMargin}" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="{TemplateBinding Background}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    The PivotHeaderItem: the phone's, a Grid with no Background (the phone's binds none) and a ContentPresenter, at
+    PivotHeaderItemFontSize (57) in PivotHeaderItemFontFamily, its characters PivotHeaderItemCharacterSpacing (-25)
+    apart, inset PivotHeaderItemPadding below and PivotHeaderItemMargin (16,-6.5,0,0) from the next, unselected in
+    PivotHeaderForegroundUnselectedBrush. HorizontalContentAlignment is Center, WinRT's Control's own default.
+    - :selected, the phone's Selected: the text in PivotHeaderForegroundSelectedBrush, the Grid's Background
+      PivotHeaderBackgroundSelectedBrush;
+    - :unselectedlocked, the phone's UnselectedLocked: the text gone (Opacity 0) and PhonePivotLockedTranslation (40)
+      to the right, both over the phone's 0.33 s generated transition to and from it (on Avalonia's clock).
+    The text's line is the phone's (PhoneHeaderLine). Its character spacing is the header's LetterSpacing, PivotHeaderItemCharacterSpacing
+    thousandths of its FontSize (PhonePivotHeader), which every text in it inherits, an app's template's too, as WinRT's
+    CharacterSpacing is inherited.
+  -->
+  <ControlTheme x:Key="{x:Type cfp:PivotHeaderItem}" TargetType="cfp:PivotHeaderItem">
+    <Setter Property="FontSize" Value="{DynamicResource PivotHeaderItemFontSize}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PivotHeaderItemFontFamily}" />
+    <Setter Property="Background" Value="{DynamicResource PivotHeaderBackgroundUnselectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PivotHeaderForegroundUnselectedBrush}" />
+    <Setter Property="Margin" Value="{DynamicResource PivotHeaderItemMargin}" />
+    <Setter Property="Padding" Value="{DynamicResource PivotHeaderItemPadding}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="wp81:PhonePivotHeader.CharacterSpacing" Value="{DynamicResource PivotHeaderItemCharacterSpacing}" />
+    <Setter Property="LetterSpacing">
+      <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+        <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_Grid">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True">
+            <ContentPresenter.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.33" />
+                <DoubleTransition Property="(wp81:PhonePivotHeader.Translation)" Duration="0:0:0.33" />
+              </Transitions>
+            </ContentPresenter.Transitions>
+          </ContentPresenter>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PivotHeaderForegroundSelectedBrush}" />
+    </Style>
+    <Style Selector="^:selected /template/ Grid#PART_Grid">
+      <Setter Property="Background" Value="{DynamicResource PivotHeaderBackgroundSelectedBrush}" />
+    </Style>
+    <Style Selector="^:unselectedlocked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="wp81:PhonePivotHeader.Translation" Value="{DynamicResource PhonePivotLockedTranslation}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

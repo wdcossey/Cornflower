@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             x:Class="Cornflower.Sample.Pages.PivotPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 Pivot, as an 8.1 page writes one: a Pivot as the page, full width, with no style. Its title stands for the
+    page's header. Swipe left or right to go round the four items (the last wraps to the first), or tap a header.
+    The first item shows the selection and locks the Pivot or makes the page light; the second scrolls up and down
+    inside the item while a swipe across it still turns the page; the third holds a Slider, whose drag stays its own;
+    the fourth is the last.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <cf:Pivot x:Name="Pivot" Title="CORNFLOWER · PIVOT" SelectionChanged="OnSelectionChanged">
+        <cf:PivotItem Header="one">
+          <StackPanel>
+            <TextBlock Text="swipe, or tap a header" Theme="{DynamicResource BodyTextBlockStyle}" />
+            <TextBlock x:Name="State" Text="one, the first of four" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+            <ToggleSwitch x:Name="Locked" cf:ControlHeader.Header="locked" IsCheckedChanged="OnLockedChanged" Margin="0,12,0,0" />
+            <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" />
+          </StackPanel>
+        </cf:PivotItem>
+        <cf:PivotItem Header="two">
+          <ScrollViewer x:Name="Lines">
+            <StackPanel x:Name="LineList" />
+          </ScrollViewer>
+        </cf:PivotItem>
+        <cf:PivotItem Header="three">
+          <StackPanel>
+            <TextBlock Text="a slider keeps its drag" Theme="{DynamicResource BodyTextBlockStyle}" />
+            <Slider x:Name="Slider" Maximum="100" Value="30" cf:ControlHeader.Header="volume" />
+          </StackPanel>
+        </cf:PivotItem>
+        <cf:PivotItem Header="four">
+          <TextBlock Text="the last item: swipe on to wrap round to the first" Theme="{DynamicResource BodyTextBlockStyle}" />
+        </cf:PivotItem>
+      </cf:Pivot>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>
