@@ -25,12 +25,6 @@ public class CheckBoxHolePartsTests
     private static ControlTheme ThemeOf(IResourceNode theme, Type type) =>
         theme.TryGetResource(type, ThemeVariant.Dark, out var found) ? (ControlTheme)found! : throw new InvalidOperationException($"No {type.Name} theme.");
 
-    /// <summary>Every hole that can be shown on its own in a window, as <c>HoleTogglePartsTests</c> shows them.</summary>
-    private static IEnumerable<Type> ShowableHoles() =>
-        Holes.TemplatedControls(new SimpleTheme())
-            .Where(type => Holes.Listed().Contains(type.Name))
-            .Where(type => !typeof(TopLevel).IsAssignableFrom(type) && type != typeof(OverlayPopupHost) && type.GetConstructor(Type.EmptyTypes) is not null);
-
     // Every hole shown with Simple then Wp81: as many plain CheckBoxes as with Simple alone, each in Simple's CheckBox
     // theme, none in Wp81's. So a template that gains one in an Avalonia upgrade is checked too. Today, only the file
     // dialog's.
@@ -40,7 +34,7 @@ public class CheckBoxHolePartsTests
         var problems = new List<string>();
         var found = new List<string>();
 
-        foreach (var type in ShowableHoles())
+        foreach (var type in Holes.Showable())
         {
             var alone = (Control)Activator.CreateInstance(type)!;
             int expected;

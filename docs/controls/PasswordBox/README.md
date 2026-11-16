@@ -47,7 +47,7 @@ line, the reveal button and the phone's pointer-over look.
 
 The TextBox's (#36's README), and `RichEditBoxTextThemeMargin` (the content's inset), `TextBoxForegroundHeaderThemeBrush`
 (the CheckBox's text) and `PasswordBoxCheckBoxThemeMargin` (its 6.5 lift), all in `Tokens/`. The theme's key is
-`PasswordBox`; the CheckBox's text is `Wp81PasswordBoxRevealText`. It shares the TextBox's `Wp81TextBoxScrollViewerTheme`.
+`PasswordBox`; the CheckBox's text is `Wp81PasswordBoxRevealText`. It shares the TextBox's ScrollViewer theme, `Wp81ScrollViewerScrollBarlessTheme`.
 
 ## The template's parts
 

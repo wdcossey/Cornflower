@@ -644,7 +644,7 @@ public class TextBoxTests
         using var stage = new Stage(themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Wp81Theme(), app]);
         var viewer = ScrollViewerOf(stage.Box);
 
-        Assert.Same(stage.Window.FindResource("Wp81TextBoxScrollViewerTheme"), viewer.Theme);
+        Assert.Same(stage.Window.FindResource("Wp81ScrollViewerScrollBarlessTheme"), viewer.Theme);
         Assert.DoesNotContain(viewer.GetVisualDescendants(), v => v is ScrollBar || v is Border { Name: "AppsScrollViewer" });
         Assert.Contains(viewer.GetVisualDescendants(), v => v is ScrollContentPresenter);
         Assert.Equal(Padding, Part<ScrollContentPresenter>(viewer, "PART_ContentPresenter").Margin);

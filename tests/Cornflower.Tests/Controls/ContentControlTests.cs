@@ -222,19 +222,22 @@ public class ContentControlTests
         }
     }
 
-    // The theme is keyed: a bare ContentControl keeps Avalonia's own template under Wp81, which binds the Background, so
-    // the controls Wp81 doesn't theme yet keep their ContentControls as Simple lays them out, and an app's page host
-    // stretches its page. docs/controls/ContentControl/README.md says what turning it on by type takes.
+    // On the phone every ContentControl has the default style: a bare one wears the theme, by type, based on the keyed
+    // one, its content at the top left at its own size. (The controls Wp81 doesn't theme yet keep theirs as Simple lays
+    // them out: HoleContentControlPartsTests.)
     [AvaloniaFact]
-    public void A_Bare_ContentControl_Keeps_Avalonias_Own()
+    public void A_Bare_ContentControl_Wears_The_Phones_Theme()
     {
         var control = new ContentControl { Content = new Border { Width = 60, Height = 40 }, Width = 200, Height = 100 };
         using var scene = new Scene(new Canvas { Children = { control } });
 
         Assert.Null(control.Theme);
-        Assert.False(ThemedByType(scene, typeof(ContentControl)));
-        Assert.Equal(HorizontalAlignment.Stretch, control.HorizontalContentAlignment);
-        Assert.Equal(new Rect(0, 0, 200, 100), BoundsIn(PresenterOf(control), control));
+        var byType = Assert.IsType<ControlTheme>(scene.Window.FindResource(typeof(ContentControl)));
+        Assert.Same(scene.Window.FindResource(Key), byType.BasedOn);
+        Assert.Equal(HorizontalAlignment.Left, control.HorizontalContentAlignment);
+        Assert.Equal(VerticalAlignment.Top, control.VerticalContentAlignment);
+        Assert.Equal(new Rect(0, 0, 60, 40), BoundsIn(PresenterOf(control), control));
+        Assert.True(PhoneHeaderLine.GetIsEnabled(PresenterOf(control)));
     }
 
     // The phone's ContentPresenter style (Left, Top) isn't applied to a presenter in a template: the ToggleSwitch's

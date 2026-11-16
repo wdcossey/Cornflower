@@ -72,11 +72,12 @@ Every later Tier 2 control (ListView, Pivot, Hub, Page) holds this ScrollViewer.
 - **Inside a ScrollViewer**: a control whose drag isn't a scroll (Slider, ToggleSwitch) sets `PhoneNoManipulation`, as
   the phone sets `ManipulationMode="None"`.
 
-**TextBox** keeps its own ScrollViewer theme, `Wp81TextBoxScrollViewerTheme` (#101). The phone's TextBox holds a plain
-ScrollViewer with both bars `Hidden`, so it draws nothing; Avalonia's TextBox sets its ScrollViewer's horizontal
-visibility itself (`Auto` with `AcceptsReturn`), so on this theme a multi-line TextBox would show an indicator the
-phone's doesn't. Its theme is the bar-less one by another name; the PR proposes it move onto
-`Wp81ScrollViewerScrollBarlessTheme`, so the presenter, and the physics if they become a part, are in one place.
+**TextBox** and the PasswordBox set `Wp81ScrollViewerScrollBarlessTheme` on their ScrollViewer part (since the Tier 2
+roll-up; #101's `Wp81TextBoxScrollViewerTheme`, the same presenter without the bar-less theme's `Grid` and its `ContentTemplate` and snap point bindings, is gone). The phone's TextBox
+holds a plain ScrollViewer with both bars `Hidden`, so it draws nothing; Avalonia's TextBox sets its ScrollViewer's
+horizontal visibility itself (`Auto` with `AcceptsReturn`), so on the indicator theme a multi-line TextBox would show
+an indicator the phone's doesn't. So the TextBox takes the bar-less theme, and its presenter, and the physics if they
+become a part, are in one place.
 
 ## Resource keys
 

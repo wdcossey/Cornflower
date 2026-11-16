@@ -1,24 +1,36 @@
 # ContentControl and ContentPresenter
 
-Status: done, keyed (turning it on by type waits on the roll-up, [below](#turning-it-on-by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page contentcontrol` on `main` at `c5ee6fb`: cold 762 ms, the page opened in 252 ms, every specimen drawn) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the contentcontrol page opened in 8 ms with 53 elements)
+Status: done, by type since the Tier 2 roll-up, #139 ([below](#by-type)) · [#117](https://github.com/wdcossey/CornflowerUI/issues/117) · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page contentcontrol` on `main` at `c5ee6fb`: cold 762 ms, the page opened in 252 ms, every specimen drawn) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the contentcontrol page opened in 8 ms with 53 elements)
 
-The Windows Phone 8.1 ContentControl: Avalonia's `ContentControl` in `Wp81ContentControlTheme`, the phone's default
-style and template, in `src/Cornflower.Themes.Wp81/Controls/ContentControl.axaml`. The bare `ContentPresenter` keeps
+The Windows Phone 8.1 ContentControl: Avalonia's `ContentControl` in the phone's default style and template, keyed by
+type and as `Wp81ContentControlTheme`, in `src/Cornflower.Themes.Wp81/Controls/ContentControl.axaml`. The bare `ContentPresenter` keeps
 Avalonia's own: the phone's style for it doesn't reach a template's presenter. The plan, with every value and its
 source, is [PLAN.md](PLAN.md); the phone's capture beside ours is in [COMPARISON.md](COMPARISON.md).
 
 ## Usage
 
-On the phone a `ContentControl` with no style is the phone's. Here, for now, it takes the theme by its key:
+A `ContentControl` with no style is the phone's, as on the phone:
 
 ```xml
-<!-- 8.1 -->
+<!-- 8.1, and Avalonia with Wp81Theme in Application.Styles -->
 <ContentControl Content="content" />
-<!-- Avalonia, with Wp81Theme in Application.Styles -->
-<ContentControl Theme="{DynamicResource Wp81ContentControlTheme}" Content="content" />
 ```
 
-A ContentControl with no theme is Avalonia's own, as with Simple alone.
+A template can also set the keyed theme by name, `Theme="{DynamicResource Wp81ContentControlTheme}"`. A ContentControl
+in the template of a control Wp81 doesn't theme yet keeps Avalonia's own, as with Simple alone ([below](#by-type)). An
+app that hosts its pages in a ContentControl sets both content alignments to Stretch, as the phone's `Frame` has them:
+
+```xml
+<ContentControl x:Name="Host" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+```
+
+**What changes for an app** since the theme went in by type: a ContentControl of its own (a page or view host, a
+`ContentControl Content="{Binding CurrentPage}"`) puts its content at the top left at its own size, and draws no
+`Background` or border, so a transparent background no longer takes taps. Set the two alignments to Stretch to fill,
+or give it an empty theme to keep Avalonia's own template:
+`<ControlTheme x:Key="PlainContentControl" TargetType="ContentControl" />` and
+`Theme="{StaticResource PlainContentControl}"`. A ContentControl in the template of a theme added after Wp81 counts as
+the app's, and wears Wp81's too.
 
 ## Behaviours
 
@@ -50,60 +62,31 @@ internal, existing). No type is substituted. `ContentTransitions` and `IsTabStop
 
 None.
 
-## Turning it on by type
+## By type
 
-On the phone every ContentControl has this style. Keyed by type here, it would also reach three things outside this
-control's files, so the theme is keyed until the roll-up makes these changes (each tried in this PR's worktree: with
-all four, the full suite is green, and every hole's frame and tree are as with the theme keyed):
+On the phone every ContentControl has this style, and so it is here, since the Tier 2 roll-up, #139 (the user's decision of
+2026-11-15). Keyed by type it also reaches three things outside this control's files, changed with it:
 
-1. `src/Cornflower.Themes.Wp81/HoleParts.cs`: a second internal flag, `FallBackToOwn`. A part in a template written
-   for the theme under Wp81 whose type has no theme there (Simple has none for ContentControl) takes an empty
-   `ControlTheme` for its type, so Avalonia's own template and defaults, as under that theme alone:
+1. **The holes.** Simple's templates for ComboBox, DataValidationErrors, MenuItem and the managed file dialog hold plain
+   ContentControls. `HoleParts` keeps them as Simple lays them out: the type-keyed theme sets `HoleParts.FallBack` and
+   `HoleParts.FallBackToOwn`, so a part in a template written for the theme under Wp81 takes that theme's
+   ContentControl theme, or, as Simple has none, an empty `ControlTheme` for its type, which gives it Avalonia's own
+   template and defaults. `HoleContentControlPartsTests` holds it.
+2. **The sample's page host**, `SampleShell`'s `Host`, stretches its page, as the phone's `Frame` does (`frame.json`:
+   both content alignments Stretch).
+3. **`TiltTests`' fixture** that presses a ContentControl's transparent background gives it Avalonia's own template,
+   which draws it.
 
-   ```csharp
-   public static readonly AttachedProperty<bool> FallBackToOwnProperty =
-       AvaloniaProperty.RegisterAttached<TemplatedControl, bool>("FallBackToOwn", typeof(HoleParts));
-   private static readonly ConditionalWeakTable<Type, ControlTheme> Bare = new();
-   // in Check, after the theme under Wp81 is looked for:
-   if (ThemeFor(control.StyleKey, below, variant) is { } fallback)
-       control.Theme = fallback;
-   else if (control.GetValue(FallBackToOwnProperty))
-       control.Theme = Bare.GetValue(control.StyleKey, key => new ControlTheme(key));
-   ```
-
-   Not for the existing parts: `HoleToggleParts`' test that a part with no theme for its type under Wp81 keeps Wp81's
-   holds for them.
-2. `samples/Cornflower.Sample/SampleShell.axaml`: the page host stretches its page, as the phone's `Frame` does
-   (`frame.json`: both content alignments Stretch):
-
-   ```xml
-   <ContentControl x:Name="Host" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-   ```
-3. `tests/Cornflower.Tests/Behaviours/TiltTests.cs`, `An_Outer_Tilt_Returning_Doesnt_Move_An_Inner_Ones_Eye`: the item
-   whose transparent background the test presses keeps Avalonia's template, which draws it:
-   `Theme = new ControlTheme(typeof(ContentControl))`.
-4. `Controls/ContentControl.axaml`: the type-keyed theme, on the keyed one:
-
-   ```xml
-   <ControlTheme x:Key="{x:Type ContentControl}" TargetType="ContentControl" BasedOn="{StaticResource Wp81ContentControlTheme}">
-     <Setter Property="wp81:HoleParts.FallBackToOwn" Value="True" />
-     <Setter Property="wp81:HoleParts.FallBack" Value="True" />
-   </ControlTheme>
-   ```
-
-   with `ContentControlTests.A_Bare_ContentControl_Keeps_Avalonias_Own` turned round (a bare one wears it), a test that
-   every hole's ContentControls keep Avalonia's own (as `HolePartsTests` does for Buttons), and the sample page's
-   `Theme` setter dropped.
-
-An app that hosts its pages in a ContentControl then sets Stretch on it, as a phone app's `Frame` has.
+Checked when it went in: every frame saver's 253 frames, and every hole's, every sample page's and a TextBox's frame and
+tree, dark and light, were the same before and after (the ProgressRing page, NotificationCard and TimePickerPresenter
+change from run to run on their own).
 
 ## Known gaps
 
-- **Keyed, not by type**, until the changes above.
-- **A ContentPresenter written in a page**: whether the phone's style (Left, Top) reaches it is unread; Avalonia's
-  Stretch stands. Owed: a probe.
-- **No capture of a bare ContentControl**: the comparison uses Pivot's title, which the default style lays out. Owed:
-  a capture with a background, a padding and a small element.
+- **A ContentPresenter written in a page**: read by #114 (run `20261115-2048-dev11`): the phone's style (Left, Top)
+  doesn't reach it either, so no ContentPresenter theme stands. Not compared pixel for pixel.
+- **A bare ContentControl**: #114 captured one with a background and a padding (run `20261115-2048-dev11`); it draws
+  no background, as ours doesn't. The comparison still uses Pivot's title; the new capture isn't in `ref/wp81/` yet.
 - **The text is Selawik**: "CORNFLOWER" in Semibold is 1.7% wider.
 - **`IsTabStop`**: the phone's ContentControl is a tab stop; Avalonia's isn't focusable, and stays so.
 - **The checklist generator** looks for Avalonia's type in `Avalonia.Controls` only, so it called ContentPresenter (in

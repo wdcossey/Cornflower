@@ -836,7 +836,8 @@ public class TiltTests
         using var clock = new TestClock();
         var button = new Button { Content = "inner", Width = 200, Height = 80 };
         CfTilt.SetIsEnabled(button, true);
-        var item = new ContentControl { Content = button, Padding = new Thickness(20), Background = Brushes.Transparent };
+        // Avalonia's own template, which draws the transparent background this test presses (Wp81's draws none).
+        var item = new ContentControl { Content = button, Padding = new Thickness(20), Background = Brushes.Transparent, Theme = new ControlTheme(typeof(ContentControl)) };
         CfTilt.SetIsEnabled(item, true);
         var canvas = new Canvas { Children = { item } };
         Canvas.SetLeft(item, 50);

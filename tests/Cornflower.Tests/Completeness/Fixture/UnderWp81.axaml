@@ -1,0 +1,17 @@
+<!-- A theme an app brings in from a file with StyleInclude, under Wp81: a PipsPager template holding a plain Button
+     and a plain ContentControl, for HoleContentControlPartsTests. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type PipsPager}" TargetType="PipsPager">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <StackPanel>
+            <Button Name="Inner" Content="inner" />
+            <ContentControl Name="InnerContent" Content="inner" />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

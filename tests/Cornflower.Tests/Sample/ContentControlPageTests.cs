@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
+using Cornflower.Themes.Wp81;
 
 namespace Cornflower.Tests.Sample;
 
@@ -37,20 +38,23 @@ public class ContentControlPageTests
         Assert.Equal("contentcontrol", page.FindControl<SamplePageHeader>("Header")!.Title);
     }
 
-    // Every specimen wears the theme; each one's content is at its top left, but the centred one's.
+    // Every specimen wears the theme, by type, as every ContentControl does; each one's content is at its top left, but the centred one's.
     [AvaloniaFact]
     public void Every_Specimen_Has_The_Phones_Theme_And_Its_Content_At_The_Top_Left()
     {
         var page = new ContentControlPage();
         using var scene = new Scene(page);
         var theme = Assert.IsType<ControlTheme>(scene.Window.FindResource("Wp81ContentControlTheme"));
+        var byType = Assert.IsType<ControlTheme>(scene.Window.FindResource(typeof(ContentControl)));
+        Assert.Same(theme, byType.BasedOn);
 
         var specimens = page.GetVisualDescendants().OfType<ContentControl>().Where(c => c.Classes.Contains("specimen")).ToList();
         Assert.Equal(6, specimens.Count);
         foreach (var specimen in specimens)
         {
-            Assert.Same(theme, specimen.Theme);
+            Assert.Null(specimen.Theme);
             var presenter = Assert.IsType<ContentPresenter>(specimen.Presenter);
+            Assert.True(PhoneHeaderLine.GetIsEnabled(presenter), $"{specimen.Name}'s presenter isn't the theme's");
             var at = presenter.TranslatePoint(default, specimen)!.Value;
             if (specimen.Name == "Centred")
                 Assert.True(at.X > 100 && at.Y > 20, $"{specimen.Name}'s content at {at}");
