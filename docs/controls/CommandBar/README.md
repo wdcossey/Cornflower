@@ -99,7 +99,7 @@ opens the minimal bar on a tap. The menu lines' tilt is `cf:Tilt`. No type subst
 - **The icons are Lucide's**, at `LucideIcon`'s 20 × 20: smaller than the shell's Segoe UI Symbol glyphs (the plus
   inks 32 raw px where the shell's inks 51).
 - **The pressed circle rises the same open or closed**: 2.08 view px, the closed bar's. The shell's rises toward the
-  screen's centre, so on the open bar it rises 0.83 and ours is 1.25 higher. The press jumps there and back: the
+  screen's centre, so on the open bar it rises 0.83 and ours is 1.25 view px higher (1.4 as the frames measure it). The press jumps there and back: the
   recording holds the press and doesn't show its edges. The pressed look is read in dark only; light is the same.
 - **A checked toggle, pressed**, shows the shell's press as an unchecked one does; the shell's isn't read (the
   recording holds an unchecked command), and the template's ring alone isn't drawn.
@@ -108,7 +108,12 @@ opens the minimal bar on a tap. The menu lines' tilt is `cf:Tilt`. No type subst
   steps whole menu lines?"): a style per count sets the read height.
 - **The motion's clock**: the recording's times are taken as they are; whether they are the phone's stopwatch or its
   animation time is open (ADR 0005), at most 4%, 17 ms of the opening. Changing `ClosedDisplayMode` on a closed bar
-  isn't moved (the shell moves it over 36 to 134 ms). A bar whose app sets its `Height` doesn't move.
+  isn't moved (the shell moves it over 36 to 134 ms). A bar whose app sets its `Height` doesn't move. While it
+  closes, the bar takes no presses; the shell's isn't read.
+- **Closing draws above the closed bar**: a host that clips the bar to its bounds (a `Border` or a cell with
+  `ClipToBounds`) cuts the falling bar, which then looks shut at once. The ContentPage's bars don't clip.
+- **The open heights are the shell's, fixed by the count**: a label that wraps to a second line, or an app's
+  `Content`, can be cut by them (with no list, the bar is 89.1666), where #133's bar grew to fit.
 - **Invoking a command closes the bar** (`PhoneAppBarClose`, internal to the theme), as the phone's does. A command
   with a `Flyout` leaves it open, and a bound `Command` runs before it closes: the phone raises `Closed`, then `Click`
   2 to 21 ms later; ours raises `Click`, then closes.

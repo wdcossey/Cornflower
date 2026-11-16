@@ -829,6 +829,18 @@ public class CommandBarTests
         page.Window.UpdateLayout();
         // The minimal bar's height at once, for the page; the labels, the list and the circles while it falls.
         Assert.Equal(MinimalHeight, page.Bar.Bounds.Height, 0.001);
+        page.At(start + 32);
+        // A command still falling isn't one any more: a press on it reaches the page.
+        var clicks = 0;
+        var pagePresses = 0;
+        page.Add.Click += (_, _) => clicks++;
+        page.Page.PointerPressed += (_, _) => pagePresses++;
+        var at = page.CentreOf(page.Add);
+        Assert.True(at.Y < MinimalTop / Scale);
+        page.Tap(at);
+        Assert.Equal(0, clicks);
+        Assert.Equal(1, pagePresses);
+        Assert.False(page.Bar.IsOpen);
         page.At(start + 150);
         Assert.True(label.IsEffectivelyVisible);
         Assert.True(list.IsEffectivelyVisible);
@@ -910,6 +922,30 @@ public class CommandBarTests
     }
 
     [AvaloniaFact]
+    public void A_New_Template_Ends_The_Motion_Where_The_Bar_Was_Going()
+    {
+        using var page = new AppBarPage();
+        page.Bar.IsOpen = true;
+        page.Settle();
+        page.Bar.IsOpen = false;
+        page.Window.UpdateLayout();
+        page.At(page.Clock.Now.TotalMilliseconds + 32);
+        Assert.True(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+
+        var oldRoot = Part<Grid>(page.Bar, "LayoutRoot");
+        var template = page.Bar.Template;
+        page.Bar.Template = null;
+        page.Window.UpdateLayout();
+        page.Bar.Template = template;
+        page.Window.UpdateLayout();
+        Assert.NotSame(oldRoot, Part<Grid>(page.Bar, "LayoutRoot"));
+
+        Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+        Assert.False(Part<TextBlock>(page.Add, "PART_TextLabel").IsVisible);
+        Assert.Equal(CompactTop / Scale, page.DrawnTop, 0.001);
+    }
+
+    [AvaloniaFact]
     public void A_Tap_On_The_Minimal_Bar_Away_From_The_Ellipsis_Opens_It()
     {
         using var page = new AppBarPage(configure: bar => CommandBarOptions.SetClosedDisplayMode(bar, AppBarClosedDisplayMode.Minimal));
@@ -932,6 +968,15 @@ public class CommandBarTests
         page.Tap(AppBarPage.Raw(1003, MinimalTop + 31));
         Assert.True(page.Bar.IsOpen);
         Assert.Equal(2, opened);
+    }
+
+    [AvaloniaFact]
+    public void A_Tap_On_The_Compact_Bar_Away_From_Its_Commands_Leaves_It_Closed()
+    {
+        // Not read on the phone: only the minimal bar's tap was. Decided for #141; the README says so.
+        using var page = new AppBarPage();
+        page.Tap(AppBarPage.Raw(100, CompactTop + 31));
+        Assert.False(page.Bar.IsOpen);
     }
 
     private sealed class RunCommand(Action run) : System.Windows.Input.ICommand

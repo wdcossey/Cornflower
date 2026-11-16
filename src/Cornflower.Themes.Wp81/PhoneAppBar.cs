@@ -121,10 +121,12 @@ internal static class PhoneAppBar
             _bar.AddHandler(InputElement.TappedEvent, OnTapped);
             if (_bar.OverflowItems is INotifyCollectionChanged items)
                 items.CollectionChanged += OnItemsChanged;
+            // A new template ends a motion: the bar is where it was going.
             _parts = TemplateParts.Watch(bar, find => _root = find("LayoutRoot"), () =>
             {
                 Rest();
                 _root = null;
+                _bar.SetValue(ShowsOpenProperty, _bar.IsOpen);
             });
             Count();
             _bar.SetValue(ShowsOpenProperty, _bar.IsOpen);
@@ -192,6 +194,9 @@ internal static class PhoneAppBar
             _start = CornflowerClock.Now;
             _moving = true;
             _bar.SetValue(ShowsOpenProperty, true);
+            // Closing, the bar takes no presses: a falling line isn't a command any more, and the page under it gets
+            // the press.
+            _root.IsHitTestVisible = open;
             Apply();
             _frame ??= CornflowerClock.RequestFrame(_bar, Step);
         }
@@ -223,13 +228,14 @@ internal static class PhoneAppBar
                 _root.Margin = margin;
         }
 
-        /// <summary>Stops the motion and gives the layout root back its own margin: none.</summary>
+        /// <summary>Stops the motion and gives the layout root back its own margin and hit testing.</summary>
         private void Rest()
         {
             _frame?.Dispose();
             _frame = null;
             _moving = false;
             _root?.ClearValue(Layoutable.MarginProperty);
+            _root?.ClearValue(InputElement.IsHitTestVisibleProperty);
         }
 
         private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -253,7 +259,6 @@ internal static class PhoneAppBar
             if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(v => v != _bar).Any(v => v is Button))
                 return;
             _bar.SetCurrentValue(CommandBar.IsOpenProperty, true);
-            e.Handled = true;
         }
     }
 }

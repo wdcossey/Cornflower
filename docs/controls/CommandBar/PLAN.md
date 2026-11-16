@@ -125,8 +125,8 @@ px where the template's is 45): Lucide's shapes and sizes are its own (ADR 0001,
 | Invoking a command, primary or secondary, closes the open bar, unless sticky | Avalonia's `IsSticky` documentation ("stays open after a command is invoked"); read on the phone for #141: a primary command, a menu line and the toggle | `Invoking_A_Command_Closes_The_Open_Bar`, `A_Sticky_Bar_Stays_Open_After_A_Command` |
 | A list longer than the bar's room scrolls, and the ellipsis stays reachable | the shell's stops at 418.75 (#141); whether its list scrolls isn't read | `A_Long_List_Scrolls_Inside_The_Page` |
 | The open bar's height steps with its lines: 0, 1, 2 or 3, 4 or more; everything sits where it does with two | the screenshots of `20261116-0005-dev11` (#141) | `The_Open_Bars_Height_Steps_With_Its_Lines` (0, 1, 2, 3, 4, 5, 10), `Separators_And_Hidden_Commands_Are_Not_Lines` |
-| Opening and closing move the bar's top on the shell's curves; the bar keeps its open look while it closes | the recording (#141) | `The_Bar_Opens_And_Closes_As_The_Shells_Does` (compact, minimal), `Closing_Keeps_The_Open_Look_Until_The_Bar_Is_Down`, `A_Motion_Turned_Back_Goes_On_From_Where_The_Bar_Is`, `While_It_Moves_Nothing_Is_Drawn_Below_The_Bar`, `Out_Of_A_Window_Or_With_The_Apps_Height_The_Bar_Goes_Straight_There` |
-| A tap on the minimal bar away from the ellipsis opens it | the recording (#141) | `A_Tap_On_The_Minimal_Bar_Away_From_The_Ellipsis_Opens_It` |
+| Opening and closing move the bar's top on the shell's curves; the bar keeps its open look while it closes | the recording (#141) | `The_Bar_Opens_And_Closes_As_The_Shells_Does` (compact, minimal), `Closing_Keeps_The_Open_Look_Until_The_Bar_Is_Down`, `A_Motion_Turned_Back_Goes_On_From_Where_The_Bar_Is`, `While_It_Moves_Nothing_Is_Drawn_Below_The_Bar`, `A_New_Template_Ends_The_Motion_Where_The_Bar_Was_Going`, `Out_Of_A_Window_Or_With_The_Apps_Height_The_Bar_Goes_Straight_There` |
+| A tap on the minimal bar away from the ellipsis opens it; on the compact bar, not read, it does nothing | the recording (#141) | `A_Tap_On_The_Minimal_Bar_Away_From_The_Ellipsis_Opens_It`, `A_Tap_On_The_Compact_Bar_Away_From_Its_Commands_Leaves_It_Closed` |
 | A pressed menu line tilts and keeps its colours | the recording's still (#141) | `A_Pressed_Menu_Line_Tilts_And_Keeps_Its_Colours` |
 | The closed heights are keys a page can read | for #120 | `The_Closed_Heights_Are_Keys_A_Page_Can_Read` |
 | The phone's keys, dark and light | the template, the screenshots | `The_Bar_Takes_The_Phones_Keys` |
@@ -160,7 +160,8 @@ The rise differs closed and open, and the right shift is the same: both point at
 view px, by 0.58% of the way (the closed circle's centre is 368 view px below it, the open one's 145). That is a push
 back in depth, as a tilt's, but far smaller than the tilt's 25 (it would be 5.8 at the tilt's 999 eye), and the circle
 shrinks much more than such a push would shrink it, while the icon doesn't. Ours draws the closed bar's rise on both:
-the open bar's circle is 1.25 view px higher than the shell's. A line of the list, pressed, tilts (its ink moves from
+the open bar's circle is 1.25 view px higher than the shell's by the numbers (2.0833 against 0.83; 1.4 as the frames
+measure it, COMPARISON). A line of the list, pressed, tilts (its ink moves from
 x 26..239, y 743..768 to x 29..239, y 740..766 recording px) and keeps its colours: ours turns `cf:Tilt` on for a
 command in the list, on `PART_Ink`.
 
@@ -201,7 +202,7 @@ How ours moves: the bar's own height follows `IsOpen` at once, as before, so a p
 reserve (#134) see what they saw. `PhoneAppBar` gives the template's `LayoutRoot` a top margin of the bar's height less
 the height shown, frame by frame on `CornflowerClock`, and what doesn't fit in the root is cut at the bar's foot: opening, the open layout rises
 into view; closing, the root reaches above the closed bar, and the bar keeps its labels and its list
-(`PhoneAppBar.ShowsOpen`) until it is down. A motion turned back goes on from where the top is. Out of a window, and
+(`PhoneAppBar.ShowsOpen`) until it is down, taking no presses (a press there reaches the page). A motion turned back goes on from where the top is. Out of a window, and
 for a bar whose app sets its `Height` (its heights are the app's), the bar goes straight there.
 
 **Touches** (the recording): invoking a command, a primary one, a menu line or the toggle, closes the open bar
