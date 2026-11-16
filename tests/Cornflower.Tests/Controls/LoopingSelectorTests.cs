@@ -271,6 +271,11 @@ public class LoopingSelectorTests
         // At the left of the tile: the phone's StackPanel margin, 5, and the line's own 0.8, inside the border.
         var primary = texts[0].TranslatePoint(default, Stage.Part(Stage.Item(stage.Day, 15), "Border"))!.Value;
         Assert.Equal(2.5 + 5 + 0.8, primary.X, 3);
+
+        // At the bottom: the second line ends the phone's 5 and 0.8 inside the border, whatever the panel's Center.
+        var root = Stage.Part(Stage.Item(stage.Day, 15), "Root");
+        var bottom = texts[1].TranslatePoint(new Point(0, texts[1].Bounds.Height), root)!.Value.Y;
+        Assert.Equal(113 - 2.5 - 5 + 0.8, bottom, 3);
     }
 
     // ---- The tap and the active wheel ----
@@ -514,5 +519,46 @@ public class LoopingSelectorTests
         Assert.Equal(40, stage.Year.ItemHeight);
         Tap(stage, clock, stage.Year, ColumnHeight / 2 + 2 * stage.Year.ItemHeight, 0);
         Assert.Equal(2016, stage.Year.SelectedValue);
+    }
+
+    [AvaloniaFact]
+    public void A_Finger_Moving_Sideways_Or_A_Mouse_Drags_Nothing()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var offset = stage.Day.Offset;
+        var touch = stage.Window.TouchBegin(stage.At(stage.Day, 350), RawInputModifiers.None);
+        for (var i = 1; i <= 10; i++)
+        {
+            clock.At(i * 10);
+            stage.Window.TouchMove(touch, stage.At(stage.Day, 350) + new Point(i * 6, -i * 3), RawInputModifiers.None);
+        }
+
+        Assert.Equal(offset, stage.Day.Offset);
+        stage.Window.TouchEnd(touch, stage.At(stage.Day, 350) + new Point(60, -30), RawInputModifiers.None);
+
+        stage.Window.MouseDown(stage.At(stage.Day, 350), MouseButton.Left);
+        for (var i = 1; i <= 10; i++)
+            stage.Window.MouseMove(stage.At(stage.Day, 350 - i * 10));
+        Assert.Equal(offset, stage.Day.Offset);
+        stage.Window.MouseUp(stage.At(stage.Day, 250), MouseButton.Left);
+        clock.At(1000);
+        Assert.Equal(15, stage.Day.SelectedValue);
+    }
+
+    [AvaloniaFact]
+    public void Out_Of_Its_Window_A_Move_Ends_Where_It_Was_Going()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var rest = stage.Day.Offset.Y;
+        var release = Drag(stage, clock, stage.Day, 150, y: 500, step: 15, holdMs: 0);
+        var wheel = PhoneLoopingSelector.Of(stage.Day)!;
+        var items = (int)Math.Round((wheel.Motion!.Target - rest) / Pitch);
+        clock.At(release + 100);
+        stage.Canvas.Children.Remove(stage.Day);
+        Assert.False(wheel.IsCoasting);
+        Assert.False(PhoneLoopingSelector.GetIsMoving(stage.Day));
+        Assert.Equal((15 - 1 + items) % 31 + 1, stage.Day.SelectedValue);
     }
 }
