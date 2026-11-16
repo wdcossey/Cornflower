@@ -724,6 +724,121 @@ def appbar_motion():
     near(int(m.group(1)), 80, 6, 'the time constant')
     assert 'tap the ellipsis, bar closed: setup Compact, closed; bar Opened' in out, out
 
+
+@check
+def release_decisions_and_a_second_press():
+    # A synthetic -Probe pivotrelease run (#148). The start tap and two touches in touch.log; the app logs a press only
+    # for the first touch (the second's is held by the ScrollViewer), 5 ms after its planned time, so touch.log's times
+    # go onto the app's clock by the go line and that lag. Touch 1: a drag to +180 whose last 20 px reach the phone with
+    # the release, then back (FinalView the start). Touch 2: a swipe on (FinalView +450), and a press 100 ms after its
+    # release, held still 600 ms. Item events after the selection.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46.1 ms (planned      0) down 30 30 -> 36,36\n    86.1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046.1 ms (planned   2000) down 400 450 -> 480,540\n  2446.1 ms (planned   2400) move 220 450 -> 1,1\n')
+            f.write('  2846.1 ms (planned   2800) up 200 450 -> 240,540\n')
+            f.write('  6046.1 ms (planned   6000) down 380 450 -> 456,540\n  6196.1 ms (planned   6150) up 180 450 -> 216,540\n')
+            f.write('  6296.1 ms (planned   6250) down 225 450 -> 270,540\n  6896.1 ms (planned   6850) up 225 450 -> 270,540\n')
+        vc = '%.1f\tviewchanging\tnext %g final %g inertial %s\n'
+        fr = '%.1f\tframe\trt %g offset %g index %d panel none items none itemsAt 0\n'
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tslow left 200 px, held\n')
+            f.write(fr % (2900.0, 100, 900, 0))
+            f.write('3005.0\tpressed\tpivot 400 450 ts 1\n3030.0\tcapturelost\tpivot 400 450 ts 1\n')
+            for k in range(1, 19):
+                f.write(vc % (3000 + 20 * k, 900 + 10 * k, 900 + 10 * k, 'False'))
+            f.write(vc % (3810.0, 1100, 900, 'True'))
+            f.write(fr % (3812.0, 200, 1100, 0))
+            f.write(fr % (4300.0, 300, 900, 0))
+            f.write('5800.0\tstep\tswipe left, then a press held 600 ms 100 ms after the release\n')
+            for k in range(1, 8):
+                f.write(vc % (7000 + 20 * k, 900 + 25 * k, 900 + 25 * k, 'False'))
+            f.write(vc % (7155.0, 1100, 1350, 'True'))
+            f.write('7160.0\tselection\tindex 1\n7161.0\tpivotitem\tUnloading one, index 1\n7161.5\tpivotitem\tLoaded two, index 1\n')
+            f.write(vc % (7240.0, 1200, 1350, 'True'))
+            f.write(fr % (7250.0, 400, 1200, 1))
+            f.write(fr % (7500.0, 420, 1200, 1))
+            f.write(vc % (7860.0, 1250, 1350, 'True'))
+            f.write(fr % (8100.0, 500, 1350, 1))
+        code, out = run_script('release.py', run)
+    assert code == 0, out
+    # Touch 1: pressed at 3005 by the lag, released 800 ms later; the release's offset is the inertial line's +200, not
+    # the last drag line's +180; the speed over the drag's last 100 ms 0.5 px a ms; FinalView the start: back.
+    assert re.search(r'slow left 200 px, held +800 +\+200\.0 +0\.500 +\+5 +\+0\.0 back, index 0', out), out
+    assert re.search(r'then a press held 600 ms 100 ms after the release +150 +\+200\.0 +1\.250 +\+0 +\+450\.0 on \+1, index 1', out), out
+    assert ('the second press 100 ms after the release, the offset +300.0 from the start; it moved 0.0 px during the '
+            '600 ms press; inertial again 5 ms after its release; at the end +450.0') in out, out
+    assert '+1.0  Unloading one, index 1' in out and '+1.5  Loaded two, index 1' in out, out
+
+
+@check
+def release_on_a_hub():
+    # A synthetic -Probe hubrelease run (#148): touch.log with a decimal comma, as a VM in such a culture writes it; the
+    # page the sections' pitch, 380 here, read from the frames (the first frame's layout is mid-entrance, 300); a swipe
+    # right at the first section that loops to the end, which is no count of pages; a stray press far from any touch,
+    # left out of the lag; and ScrollToSection, whose frames count only those with a new offset.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46,1 ms (planned      0) down 30 30 -> 36,36\n    86,1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046,1 ms (planned   2000) down 70 500 -> 84,600\n  2196,1 ms (planned   2150) up 270 500 -> 324,600\n')
+        fr = '%.1f\tframe\trt %g offset %g header 15 [none] | section 1 %g | section 2 %g | section 3 0 | section 4 0\n'
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\tsection section 1 5 76 300 708\n')
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tfirst section: swipe right\n')
+            f.write(fr % (2900.0, 100, 0, 0, 380))
+            f.write('3000.0\tpressed\thub 70 500 ts 1\n2400.0\tpressed\thub 1 1 ts 2\n')
+            f.write(fr % (3050.0, 105, 0, 40, -1100))
+            f.write('3400.0\tviewchanging\tnext 0 final 1140 inertial True\n')
+            f.write(fr % (3900.0, 200, 1140, -1140, -760))
+            f.write('5000.0\tstep\tScrollToSection 2\n5000.5\tsetup\tScrollToSection 2, offset 1140 before the call, 380 after\n')
+            f.write(fr % (5010.0, 300, 380, -380, 0))
+            f.write(fr % (5030.0, 316, 380, -380, 0.5))
+        code, out = run_script('release.py', run)
+    assert code == 0, out
+    assert 'a Hub, a page 380 px' in out, out
+    assert 'a press at 2400.0 ms is 600 ms from the nearest touch in touch.log: left out of the lag' in out, out
+    assert re.search(r'first section: swipe right +150 .* to \+1140\.0 \(a loop, not \+3 pages\)', out), out
+    assert 'ScrollToSection 2: ScrollToSection 2, offset 1140 before the call, 380 after; 1 frames with a new offset: 10:380.0' in out, out
+
+
+@check
+def hub_entrance_fit():
+    # A synthetic -Probe hubentrance run (#148): two Hubs placed, each turning from RotationY -90 by an ExponentialEase
+    # of 5 over 750 ms (48 ticks), the second with a frame missing; the fit finds 5 and 750 ms, and the two the same.
+    import tempfile
+    f = ml.expo_out(5)
+    line = ('%.1f\tframe\trt %g hub proj rot 0 %g 0 centreX -0.5 localX 0 global 0 0 0 | op 1 hubop 1 | header 15 flyin 0'
+            ' | section1 0 | bg op 1 0 x 800 at 0\n')
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as fp:
+            for n, t0 in enumerate((1000.0, 5000.0)):
+                fp.write('%.1f\tstep\tplace a Hub, %d\n' % (t0, n))
+                fp.write(line % (t0 + 5, t0, 0))
+                for k in range(49):
+                    if n == 1 and k == 3:
+                        continue
+                    v = -90 * (1 - f(k * ml.TICK / 750)) if k < 48 else 0
+                    fp.write(line % (t0 + 20 + 15 * k, t0 + ml.TICK * (k + 1), round(v, 3)))
+        code, out = run_script('entrance.py', run)
+    assert code == 0, out
+    assert 'RotationY -90 at tick 0, 0 at tick 48 (750.0 ms of rt)' in out, out
+    assert 'ExponentialEase 5.00 over 750.0 ms, the first frame its start' in out, out
+    assert 'The 2 entrances have the same RotationY on every tick each shows' in out, out
+    # A turn the segment cuts off before 0 isn't fitted.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as fp:
+            fp.write('5000.0\tstep\tplace a Hub, cut off\n')
+            for k in range(20):
+                fp.write(line % (5020 + 15 * k, 5000 + ml.TICK * k, round(-90 * (1 - f(k * ml.TICK / 750)), 3)))
+        code, out = run_script('entrance.py', run)
+    assert code == 0, out
+    assert 'place a Hub, cut off: RotationY -90 at tick 0, never back to 0 in the segment' in out, out
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)

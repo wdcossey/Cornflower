@@ -37,7 +37,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
 FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: root ([-\d.]+) bar ([-\d.]+) thumb ([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+) mode (\w+))?')
-CHANGING = re.compile(r'next ([-\d.]+) final ([-\d.]+) inertial (True|False)')
 
 
 def frames(seg):
@@ -57,17 +56,6 @@ def frames(seg):
     return out
 
 
-def changing(seg):
-    """(stopwatch ms, next, final, inertial) for every ViewChanging."""
-    out = []
-    for t, what, d in seg:
-        if what == 'viewchanging':
-            m = CHANGING.match(d)
-            if m:
-                out.append((t, float(m.group(1)), float(m.group(2)), m.group(3) == 'True'))
-    return out
-
-
 def inertia(seg):
     """The touch's inertia, or None: (rt of its first frame, [(t, offset)] with t in ms of rt from it, the first inertial
     FinalView, the stopwatch time of its last frame). Its first frame is the one before the first inertial frame (the
@@ -77,7 +65,7 @@ def inertia(seg):
     press = next((r[0] for r in seg if r[1] == 'pressed'), None)
     if press is None:
         return None
-    vc = [c for c in changing(seg) if c[0] > press]
+    vc = [c for c in ml.view_changes(seg) if c[0] > press]
     first = next((c for c in vc if c[3]), None)
     if first is None:
         return None

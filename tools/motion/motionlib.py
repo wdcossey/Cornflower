@@ -12,6 +12,7 @@ Python 3 standard library only.
 import glob
 import math
 import os
+import re
 import statistics
 import sys
 
@@ -56,6 +57,21 @@ def step_segments(rows, ignore=('snapshot ',), times=False):
     if label is not None:
         out.append((label, start, None, cur))
     return out if times else [(l, c) for l, _, _, c in out]
+
+
+VIEW_CHANGING = re.compile(r'next ([-\d.]+) final ([-\d.]+) inertial (True|False)')
+
+
+def view_changes(seg):
+    """(stopwatch ms, next, final, inertial) for every ViewChanging line in the rows, as the scroll and shell probes log
+    them ("next <offset> final <offset> inertial <True|False>", and anything after)."""
+    out = []
+    for t, what, d in seg:
+        if what == 'viewchanging':
+            m = VIEW_CHANGING.match(d)
+            if m:
+                out.append((t, float(m.group(1)), float(m.group(2)), m.group(3) == 'True'))
+    return out
 
 
 def frame_times(run):
