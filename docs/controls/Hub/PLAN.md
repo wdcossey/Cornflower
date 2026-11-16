@@ -52,7 +52,7 @@ WinRT `Windows.UI.Xaml.Controls.Hub`; Avalonia none: a new control (rung 5), on 
 | [-] | `Orientation` | `Orientation` | none | The phone's template binds it to the panel, but its ScrollViewer can't scroll down (`VerticalScrollMode` Disabled, `HorizontalAlignment` Left): a vertical Hub on the phone is a stack that doesn't move, and none was read. Left out rather than half there |
 | [x] | `HeaderTemplate` | `DataTemplate` | none | `Hub.HeaderTemplate` (`IDataTemplate`), the header host's template |
 | [x] | `Header` | `Object` | none | `Hub.Header`, in `PART_HeaderHost` |
-| [x] | `DefaultSectionIndex` | `Int32` | none | The section at the left when the Hub is shown in a window; clamped to the sections |
+| [x] | `DefaultSectionIndex` | `Int32` | none | The section at the left the first time the Hub is laid out with sections (hidden, or with no sections yet, it waits); clamped; later changes don't move it |
 | [x] | `SectionHeaders` (read-only) (not a dependency property) | `IObservableVector<Object>` | none | `IReadOnlyList<object?>`, each section's header as it is now; not observable |
 | [x] | `Sections` (read-only) (not a dependency property) | `IList<HubSection>` | none | `IList<HubSection>`, the Hub's `[Content]`; the sections are the Hub's logical children, in its panel |
 | [x] | `SectionsInView` (read-only) (not a dependency property) | `IList<HubSection>` | none | `IReadOnlyList<HubSection>`, the sections any part of which is in view, left to right |
@@ -68,7 +68,7 @@ WinRT `Windows.UI.Xaml.Controls.Hub`; Avalonia none: a new control (rung 5), on 
 
 | ✓ | WinRT | Avalonia | Action |
 |---|---|---|---|
-| [x] | `void ScrollToSection(HubSection section)` | none | Moves at once (not read: owed); before the Hub is shown, wins over `DefaultSectionIndex` |
+| [x] | `void ScrollToSection(HubSection section)` | none | Moves at once (not read: owed); before the Hub is shown, wins over `DefaultSectionIndex`. A control in a section brought into view (keyboard focus) moves the Hub to its section the same way |
 | [-] | `void InitializeViewChange()` | none | `ISemanticZoomInformation`: no `SemanticZoom` |
 | [-] | `void CompleteViewChange()` | none | The same |
 | [-] | `void MakeVisible(SemanticZoomLocation item)` | none | The same |
@@ -168,7 +168,10 @@ Each is a test in `tests/Cornflower.Tests/Controls/HubTests.cs` (named in bracke
 6. **The API**: `SectionHeaders`, sections added and removed, `ScrollToSection`, `DefaultSectionIndex`, and the two
    together (`SectionHeaders_Are_The_Sections_Headers_As_They_Are`, `Sections_Added_And_Removed_Join_And_Leave_The_Hub`,
    `ScrollToSection_Moves_The_Sections_At_Once`, `DefaultSectionIndex_Is_The_Section_Shown_First`,
-   `ScrollToSection_Before_The_Hub_Is_Shown_Wins_Over_The_Default`).
+   `ScrollToSection_Before_The_Hub_Is_Shown_Wins_Over_The_Default`, `A_Hub_Laid_Out_Hidden_Opens_On_Its_Default_Section`,
+   `Sections_Added_After_The_Hub_Is_Shown_Open_On_The_Default`, `Shown_Again_The_Hub_Keeps_Its_Place_And_A_Drag_Cut_Short_Ends`,
+   `A_Section_Put_First_While_Wrapped_Leaves_The_Old_First_At_Its_Place`, `A_New_Width_Mid_Swipe_Ends_On_The_Section_It_Was_Going_To`,
+   `A_Control_Brought_Into_View_Brings_Its_Section`).
 7. **`SectionHeaderClick`**: on an interactive header only, not on the content
    (`A_Tap_On_An_Interactive_Header_Raises_SectionHeaderClick`).
 8. **The header at 1/18** of the sections (#128) (`The_Header_Moves_At_An_Eighteenth_Of_The_Sections_Speed`).
@@ -195,11 +198,14 @@ Each is a test in `tests/Cornflower.Tests/Controls/HubTests.cs` (named in bracke
     (`The_Background_Is_Clipped_At_The_Hubs_Edge`).
 16. **`BackgroundImageLoadStates`**: hidden at 0 until the image is there, then showing
     (`The_Background_Is_Hidden_Until_The_Image_Is_There`); a brush that isn't an image fills the Hub and stays
-    (decided) (`A_Brush_That_Isnt_An_Image_Fills_The_Hub_And_Stays`).
+    (decided) (`A_Brush_That_Isnt_An_Image_Fills_The_Hub_And_Stays`); any `IImageBrush` is an image
+    (`Any_Image_Brush_Is_Drawn_As_The_Phones_Image`); the Hub listens to its brush only in a window
+    (`The_Hub_Hears_Its_Brush_Only_In_A_Window`).
 17. **`SectionsInView`** and its event (`SectionsInView_Follows_The_Sections_And_Says_When_It_Changes`).
 18. **Who takes the finger**: not a mouse; a section's ScrollViewer keeps a drag up and a swipe across it pans; one
-    section doesn't pan (`A_Mouse_Drag_Doesnt_Pan`, `A_Drag_Up_A_Sections_ScrollViewer_Scrolls_It_And_A_Swipe_Across_It_Pans`,
-    `One_Section_Doesnt_Pan`).
+    section doesn't pan; a drag more up than across isn't the Hub's (`A_Mouse_Drag_Doesnt_Pan`,
+    `A_Drag_Up_A_Sections_ScrollViewer_Scrolls_It_And_A_Swipe_Across_It_Pans`, `One_Section_Doesnt_Pan`,
+    `A_Drag_More_Up_Than_Across_Doesnt_Pan`).
 
 ## The motion, as modelled
 
@@ -235,8 +241,8 @@ drop the loop or give the panel a copy of the first section.
 `HubPanGestureRecognizer`, internal, the shape of Pivot's `PivotSwipeGestureRecognizer`: a `GestureRecognizer` on the
 Hub, in the ScrollViewer part, starting past Avalonia's `ScrollGestureRecognizer` distance (5) and only more sideways
 than up or down, touch and pen only. A section's ScrollViewer keeps a drag up or down; a Slider or ToggleSwitch keeps
-its drag (`PhoneNoManipulation`). A press on moving sections holds them where they are; let go without a drag, they go
-to the nearer start.
+its drag (`PhoneNoManipulation`). A press on moving sections holds them where they are, and the Hub takes that finger
+at once, so it hears its release whatever else wants it; let go without a drag, they go to the nearer start.
 
 ## Avalonia against the phone
 

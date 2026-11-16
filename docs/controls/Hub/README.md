@@ -55,6 +55,9 @@ doesn't pan, as Avalonia's ScrollViewer doesn't; it taps interactive headers.
 - **The finger**: a section's ScrollViewer keeps a drag up or down, and a Slider or ToggleSwitch its drag, through
   Avalonia's gesture arbitration; a press on moving sections holds them.
 - **`SectionHeaderClick`**: a tap or click on an interactive section's header.
+- **Keyboard focus**: a control in a section off screen brought into view moves the Hub to its section, at once.
+- **Where it opens**: on `DefaultSectionIndex` the first time it is laid out with sections; shown again (a page cached
+  and navigated back to), where it was.
 
 The tests are `tests/Cornflower.Tests/Controls/HubTests.cs` and `Sample/HubPageTests.cs`; PLAN.md lists each behaviour
 beside its test.
