@@ -26,7 +26,7 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>Which templates.</b> The templated parent's own template decides: a control falls back when that template
 /// is one a <c>ControlTheme</c> under Wp81 sets (in its setters or its nested styles) and none of Wp81's does. So it
 /// is the theme the parent wears that counts, not its type: an app's subclass with a theme of its own, an app's theme
-/// for a control Wp81 doesn't theme, and a control Wp81 themes all keep Wp81's Button (or TextBox) in their templates, and a
+/// for a control Wp81 doesn't theme, and a control Wp81 themes all keep Wp81's Button (or TextBox, or ContentControl) in their templates, and a
 /// control given a theme from under Wp81 explicitly falls back. A new template (a new theme, or the theme stack
 /// changing at run time) makes new parts, which are checked as they are styled.</para>
 /// <para><b>Under Wp81</b> is Avalonia's lookup order: the styles before <see cref="Wp81Theme"/> in the
@@ -39,9 +39,12 @@ namespace Cornflower.Themes.Wp81;
 /// RepeatButton's, CheckBox's, TextBox's and ContentControl's) and <see cref="FallBackToOwnProperty"/>
 /// (ContentControl's): they are internal, with no accessors. It goes false when that theme leaves
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
-/// given. It costs only the controls whose theme sets it (every Button, CheckBox, TextBox and plain ContentControl in
-/// Wp81's themes), and no global rule (<c>StyleBudgetTests</c>). One with no templated parent returns at once; one in
-/// a template of Wp81's, after one walk up its styling parents.</para>
+/// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>): every Wp81
+/// Button, CheckBox, TextBox and plain ContentControl, in any template, an app's included. One with no templated parent
+/// returns at once; one in a template of Wp81's, after one walk up its styling parents; one in any other template also
+/// reads the templates under Wp81 (a theme's once, a plain group's each time).</para>
+/// <para><b>Included files.</b> A <c>StyleInclude</c> is read as what it loaded: Wp81 found inside one, and a file under
+/// Wp81 read as a theme under it.</para>
 /// </remarks>
 internal static class HoleParts
 {
@@ -154,6 +157,8 @@ internal static class HoleParts
             {
                 Wp81Theme theme => theme,
                 Styles group => Find(group, below),
+                StyleInclude { Loaded: Wp81Theme theme } => theme,       // a file whose root is Wp81
+                StyleInclude { Loaded: Styles group } => Find(group, below),
                 _ => null,
             };
             if (found is null)
@@ -170,19 +175,16 @@ internal static class HoleParts
     /// <summary>Every template a <c>ControlTheme</c> in <paramref name="node"/> sets, read once per node.</summary>
     private static HashSet<object> TemplatesOf(object node)
     {
-        // A StyleInclude's file is loaded once: its styles are read once too, kept beside what it loaded.
-        var loaded = node is StyleInclude include ? include.Loaded : null;
-        if (loaded is not null)
-            node = loaded;
         if (Templates.TryGetValue(node, out var known))
             return known;
 
         var found = new HashSet<object>(ReferenceEqualityComparer.Instance);
         Collect(node, found, new HashSet<object>(ReferenceEqualityComparer.Instance));
 
-        // A theme (Wp81Theme, SimpleTheme, any Styles subclass) is read once. What an app holds and can change
-        // as it runs, a plain group of styles or a host's own resources, is read each time: it is small.
-        if (loaded is not null || node is Styles theme && theme.GetType() != typeof(Styles))
+        // A theme (Wp81Theme, SimpleTheme, any Styles subclass), or a StyleInclude whose file's root is one, is read once.
+        // What an app holds and can change as it runs, a plain group of styles (an included file's too) or a host's
+        // own resources, is read each time: it is small.
+        if ((node is StyleInclude { Loaded: { } loaded } ? loaded : node) is Styles theme && theme.GetType() != typeof(Styles))
             Templates.AddOrUpdate(node, found);
         return found;
     }
@@ -199,7 +201,7 @@ internal static class HoleParts
             case ResourceInclude include:
                 Collect(include.Loaded, found, seen);
                 return;
-            case StyleInclude include:                       // a theme an app brings in from a file
+            case StyleInclude include:                       // a theme an app brings in from a file; a Wp81 root is skipped above
                 Collect(include.Loaded, found, seen);
                 return;
             case ControlTheme theme:

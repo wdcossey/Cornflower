@@ -154,8 +154,7 @@ public class HoleContentControlPartsTests
     [AvaloniaFact]
     public void A_Template_From_A_StyleInclude_Under_Wp81_Falls_Back()
     {
-        var baseUri = new Uri("avares://Cornflower.Tests/");
-        var include = new StyleInclude(baseUri) { Source = new Uri(baseUri, "Completeness/Fixture/UnderWp81.axaml") };
+        var include = Include("UnderWp81.axaml");
         var simple = new SimpleTheme();
         var pager = new PipsPager();
         using var scene = new Scene(pager, themes: [simple, include, new Wp81Theme()]);
@@ -164,6 +163,47 @@ public class HoleContentControlPartsTests
         Assert.True(simple.TryGetResource(typeof(Button), ThemeVariant.Dark, out var simpleButton));
         Assert.Same(simpleButton, button.Theme);
         Assert.True(IsOwn(Plain(pager).Single().Theme));
+    }
+
+    /// <summary>A file of this assembly, brought in with StyleInclude, as an app's App.axaml brings in its themes.</summary>
+    private static StyleInclude Include(string file)
+    {
+        var baseUri = new Uri("avares://Cornflower.Tests/");
+        return new StyleInclude(baseUri) { Source = new Uri(baseUri, "Completeness/Fixture/" + file) };
+    }
+
+    // An app's themes in an included file, Simple then Wp81: Wp81 is found inside it, and the holes fall back.
+    [AvaloniaFact]
+    public void Wp81_In_An_Included_File_Finds_The_Theme_Under_It()
+    {
+        var pager = new PipsPager();
+        var errors = new DataValidationErrors { Content = "content" };
+        using var scene = new Scene(new StackPanel { Children = { pager, errors } }, themes: [Include("SimpleThenWp81.axaml")]);
+
+        var buttons = pager.GetVisualDescendants().OfType<Button>().Where(b => b.GetType() == typeof(Button)).ToList();
+        Assert.NotEmpty(buttons);
+        Assert.All(buttons, b => Assert.NotNull(b.Theme));
+        Assert.NotEmpty(Plain(errors));
+        Assert.All(Plain(errors), c => Assert.True(IsOwn(c.Theme)));
+    }
+
+    // A file holding another Wp81, under Wp81: its templates aren't a theme under Wp81, so a part in one of them
+    // keeps Wp81's (here the PasswordBox template's plain CheckBox, given the included Wp81's PasswordBox theme).
+    [AvaloniaFact]
+    public void An_Included_Wp81_Under_Wp81_Isnt_A_Theme_Under_It()
+    {
+        var inner = Include("Wp81Only.axaml");
+        var outer = new Wp81Theme();
+        var box = new TextBox { Classes = { "revealPasswordButton" } };
+        using var scene = new Scene(box, themes: [new SimpleTheme(), inner, outer]);
+        Assert.True(inner.TryGetResource("PasswordBox", null, out var innerTheme));
+        Assert.True(outer.TryGetResource("PasswordBox", null, out var outerTheme));
+        Assert.NotSame(outerTheme, innerTheme);
+        box.Theme = (ControlTheme)innerTheme!;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var reveal = box.GetVisualDescendants().OfType<CheckBox>().Single();
+        Assert.Null(reveal.Theme);
     }
 
     /// <summary>A ContentControl with a style key of its own.</summary>

@@ -1,0 +1,6 @@
+<!-- An app's themes in a file it brings in with StyleInclude: Simple, then Wp81, for HoleContentControlPartsTests. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <SimpleTheme />
+  <wp81:Wp81Theme />
+</Styles>

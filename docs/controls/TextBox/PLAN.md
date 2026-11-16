@@ -117,7 +117,7 @@ Paste flyout, and the `.clearButton` and `.revealPasswordButton` classes.
 | `SelectionHighlightColor` | the accent | `SelectionBrush` | 1, the style sets `SelectionBrush` |
 | The text's line | 1.33 em | 1.2 em | 1 and 2: the style binds the box's `LineHeight` to 1.33 × its `FontSize` (`PhoneTextBoxLine`, new and internal), which the presenter inherits. An app's `LineHeight` wins; `MinLines` and `MaxLines` count the phone's lines |
 | `ContentElement`'s `MinHeight` | 34 | overwritten by the TextBox in each measure | 1, set on the `Grid` round it instead |
-| The scroll bars | `Hidden`: none drawn | the `ScrollViewer`'s theme by type, a hole today (Wp81 alone would give it no template, and the text would vanish) | 1, the part's own theme, `Wp81TextBoxScrollViewerTheme` (since #139 `Wp81ScrollViewerScrollBarlessTheme`): the content presenter inset by the padding, with the gesture recogniser, no bars |
+| The scroll bars | `Hidden`: none drawn | the `ScrollViewer`'s theme by type, a hole when this was written (Wp81 alone would have given it no template); since #116 the phone's indicator theme, which would show an indicator on a box of many lines | 1, the part's own theme, `Wp81TextBoxScrollViewerTheme` (since #139 `Wp81ScrollViewerScrollBarlessTheme`): the content presenter inset by the padding, with the gesture recogniser, no bars |
 | The text clipped inside the padding | the `ScrollContentPresenter`'s margin is the padding | Simple's pads inside it | 1, the presenter's `Margin`, as the phone's |
 | The box at 0.8 | the Border as one layer | Skia applies a visual's opacity to its background and its border each: 245 grey where they overlap | 1, the Border's `BackgroundSizing` `InnerBorderEdge`, so they don't overlap and no layer is needed (the second review's finding; the first build used `RenderOptions.RequiresFullOpacityHandling`, as ToggleButton's) |
 | Focus | `Focused`, for any focus, a tap's too | `:focus` | 1, `:focus`, not `:focus-visible` |
@@ -230,7 +230,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/TextBoxTests.cs` unless name
 - **The `ScrollViewer` part has its own theme**, `Wp81TextBoxScrollViewerTheme` (*since the Tier 2 roll-up (#139)*
   `Wp81ScrollViewerScrollBarlessTheme`, #116's: the same presenter in a `Grid`, which draws the same pixels), rather than the `ScrollViewer` theme by type: no bars, as the phone's `Hidden` draws none, and the text doesn't depend on a hole (Wp81 has no
   `ScrollViewer` theme yet; alone, the box would show nothing). Prefixed so it doesn't shadow Simple's keys. To
-  reverse: delete the `Theme` attribute.
+  reverse: delete the `Theme` attribute. (*Since #116* Wp81 has a ScrollViewer theme by type, with the indicators:
+  deleting the attribute now gives a box of many lines an indicator the phone's doesn't draw.)
 - **`HoleParts` takes any templated control**, so the five templates' TextBoxes keep Simple's. To reverse: list the
   TextBox under "Proposed" and let the templates take the phone's.
 - **The header shows for any non-null `Header`**, an empty string as one empty line (as #96 decided for the Slider);
