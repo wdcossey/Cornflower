@@ -3,8 +3,19 @@
 A faithful reproduction of the Windows Phone design languages for
 [AvaloniaUI](https://avaloniaui.net/), mobile first. The first era is Windows Phone 8.1.
 
-> **Status: bootstrap.** No controls yet. The solution builds, the tests run, and a theme's
-> files are discovered at build time. Controls are added one at a time.
+<p>
+<img src="docs/preview/dark__pivot.png" width="250" alt="Pivot, dark">
+<img src="docs/preview/light__commandbar.png" width="250" alt="The app bar, light">
+<img src="docs/preview/dark__theme.png" width="250" alt="The accent and the 20 named accents">
+</p>
+
+More in [PREVIEW.md](PREVIEW.md).
+
+> **Status: in progress, not yet published.** Done, each measured against the Windows Phone 8.1 emulator and run on
+> a phone: the type ramp, Button, HyperlinkButton, RepeatButton, ToggleButton, CheckBox, RadioButton, ToggleSwitch,
+> Slider, ProgressBar, ProgressRing, TextBox and PasswordBox (Tier 1); ScrollViewer, ContentControl, the app bar
+> (CommandBar), ListView, Page with its transitions, Pivot and Hub (Tier 2). Next, the pickers, flyouts and dialogs
+> (Tier 3). The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here
 
