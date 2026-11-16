@@ -741,6 +741,28 @@ public class ListViewTests
         Assert.Empty(page.List.SelectedItems!);
     }
 
+    // The list leaving the check mode while its box is pressed takes the box's press with it: at rest, unfilled.
+    [AvaloniaFact]
+    public void Leaving_The_Check_Mode_Puts_A_Pressed_Box_At_Rest()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.NotNull(box.RenderTransform);
+        page.List.SelectionMode = SelectionMode.Single;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
+    }
+
     // The probe: in the check mode a press anywhere off the box is the Single mode's, at the same tilts: the content
     // tilts, the box stays flat and unfilled; on release the tilt holds, then eases back.
     public static TheoryData<int> CheckModePressIndexes => new(Enumerable.Range(0, CheckModePresses.Length));

@@ -247,8 +247,9 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 15a. **In the check mode a press off the box is the Single mode's**: four probed presses (the centre, 95% across, 10%
     and 90% down) at the phone's tilts on TiltContainer, the box flat and unfilled, the release holding and returning.
     `In_The_Check_Mode_A_Press_Off_The_Box_Is_The_Single_Modes`.
-15b. **Extended under a tap is Single**, with no boxes, each press tilting the content. `Extended_Under_A_Tap_Is_Single`.
-15c. **A `SelectedIndex` set from code scrolls at once by the least**, the probe's 30, 5 and 39 to its offsets, and
+15b. **Leaving the check mode mid-press** puts the box at rest. `Leaving_The_Check_Mode_Puts_A_Pressed_Box_At_Rest`.
+15c. **Extended under a tap is Single**, with no boxes, each press tilting the content. `Extended_Under_A_Tap_Is_Single`.
+15d. **A `SelectedIndex` set from code scrolls at once by the least**, the probe's 30, 5 and 39 to its offsets, and
     doesn't move on the frames after. `A_SelectedIndex_Set_From_Code_Scrolls_At_Once_By_The_Least`.
 16. **Each probed press settles at the phone's tilt**, ten presses (centres, 5%, 25%, 75% and 95% across, 10% and
     90% down) within 0.1° and 0.15 of depth. `A_Held_Press_Settles_At_The_Probes_Reading`.
