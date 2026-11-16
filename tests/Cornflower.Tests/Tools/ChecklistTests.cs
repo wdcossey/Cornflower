@@ -272,6 +272,18 @@ public class ChecklistTests
         Assert.Equal(typeof(Avalonia.Controls.Primitives.ToggleButton), new AvaloniaSide("ToggleButton").Type);
     }
 
+    [Fact]
+    public void Avalonia_s_Presenters_Are_Found_Too()
+    {
+        // WinRT's ContentPresenter and ScrollContentPresenter have checklists (#125); Avalonia keeps its presenters
+        // in Avalonia.Controls.Presenters.
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ContentPresenter), new AvaloniaSide("ContentPresenter").Type);
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ScrollContentPresenter),
+            new AvaloniaSide("ScrollContentPresenter").Type);
+        // A name in Avalonia.Controls still wins over one further down the list.
+        Assert.Equal(typeof(Avalonia.Controls.ContentControl), new AvaloniaSide("ContentControl").Type);
+    }
+
     [Theory]
     [InlineData("Normal", "")]
     [InlineData("Pressed", ":pressed")]

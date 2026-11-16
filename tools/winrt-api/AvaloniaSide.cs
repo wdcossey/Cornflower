@@ -79,11 +79,18 @@ internal sealed class AvaloniaSide
         }
     }
 
-    /// <summary>Avalonia's type of that name in <c>Avalonia.Controls</c>, then <c>.Primitives</c>.</summary>
+    /// <summary>The namespaces Avalonia's controls are looked for in, in order.</summary>
+    private static readonly string[] Namespaces =
+        ["Avalonia.Controls", "Avalonia.Controls.Primitives", "Avalonia.Controls.Presenters"];
+
+    /// <summary>
+    /// Avalonia's type of that name in <c>Avalonia.Controls</c>, then <c>.Primitives</c>, then <c>.Presenters</c>
+    /// (<c>ContentPresenter</c>, <c>ItemsPresenter</c>, <c>ScrollContentPresenter</c>, <c>TextPresenter</c>).
+    /// </summary>
     private static Type? FindType(string name) =>
         Controls.GetExportedTypes()
-            .Where(t => t.Name == name && t.Namespace is "Avalonia.Controls" or "Avalonia.Controls.Primitives")
-            .OrderBy(t => t.Namespace == "Avalonia.Controls" ? 0 : 1)
+            .Where(t => t.Name == name && Array.IndexOf(Namespaces, t.Namespace) >= 0)
+            .OrderBy(t => Array.IndexOf(Namespaces, t.Namespace))
             .FirstOrDefault();
 
     /// <summary>Avalonia's control, or null for a control Avalonia doesn't have.</summary>
