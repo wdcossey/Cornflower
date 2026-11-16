@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ItemClickPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    WinRT's IsItemClickEnabled and ItemClick on the 8.1 ListView, as an 8.1 page writes a list of things to open:
+    Avalonia's ListBox with cf:ListBoxOptions.IsItemClickEnabled. A tap tilts the item and clicks it, which the line
+    above the list shows, and selects nothing; a drag pans the list and clicks nothing. "select" puts the list in the
+    check mode, where a tap checks an item and clicks nothing. Below, the light theme's.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="item click" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <ToggleButton x:Name="Select" Content="select" IsCheckedChanged="OnSelectChanged" />
+      <TextBlock x:Name="State" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+      <ListBox x:Name="Clickable" Height="300" Margin="0,6,0,0"
+               cf:ListBoxOptions.IsItemClickEnabled="True"
+               cf:ListBoxOptions.ItemClick="OnItemClick"
+               SelectionChanged="OnSelectionChanged">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Margin="0,0,0,9.5">
+              <TextBlock Text="{Binding}" Theme="{DynamicResource ListViewItemTextBlockStyle}" />
+              <TextBlock Text="tap to open" Theme="{DynamicResource ListViewItemSubheaderTextBlockStyle}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <TextBlock x:Name="LightState" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+            <ListBox x:Name="Light" Height="160"
+                     cf:ListBoxOptions.IsItemClickEnabled="True"
+                     cf:ListBoxOptions.ItemClick="OnItemClick" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
