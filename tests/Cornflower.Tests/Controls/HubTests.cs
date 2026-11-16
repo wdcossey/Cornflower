@@ -563,6 +563,20 @@ public class HubTests
         var touch = stage.Window.TouchBegin(at, RawInputModifiers.None);
         stage.Window.TouchEnd(touch, at, RawInputModifiers.None);
         Assert.Equal(1, clicks);
+        Assert.True(stage.Hub.Motion.IsLooping);                             // the header's ease goes on
+    }
+
+    [AvaloniaFact]
+    public void Sections_Changed_Mid_Swipe_End_It_On_The_Section_It_Was_Going_To()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        Swipe(stage, clock, 250);
+        clock.At(250 + 5 * Frame);
+        stage.Hub.Sections.Add(Stage.MakeSection("section 5"));
+        stage.Window.UpdateLayout();
+        Assert.False(stage.Hub.Motion.IsMoving);
+        Assert.Equal(SectionWidth, stage.Offset, 0.01);
     }
 
     [AvaloniaFact]
