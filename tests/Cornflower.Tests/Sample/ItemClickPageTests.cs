@@ -66,7 +66,7 @@ public class ItemClickPageTests
 
         page.FindControl<ToggleButton>("Select")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(ItemClickPage.CheckMode, list.SelectionMode);
+        Assert.Equal(ListViewPage.CheckMode, list.SelectionMode);
         Tap(scene, list.ContainerFromIndex(2)!);
         Assert.Equal("clicked: item 2 · selected: item 3", state.Text);
 

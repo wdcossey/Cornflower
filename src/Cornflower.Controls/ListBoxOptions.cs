@@ -76,16 +76,23 @@ public static class ListBoxOptions
 
     static ListBoxOptions()
     {
-        IsItemClickEnabledProperty.Changed.AddClassHandler<ListBox>((_, e) => _enabled += e.GetNewValue<bool>() ? 1 : -1);
+        IsItemClickEnabledProperty.Changed.AddClassHandler<ListBox>((_, e) =>
+            _enabled += (e.GetNewValue<bool>() ? 1 : 0) - (e.GetOldValue<bool>() ? 1 : 0));
 
         // The item selects in its own class handler, the first on the item to see an event on its way up. So the list
         // takes a pointer's event a step before, on the item's template root, after everything inside the item has seen
-        // it (a press something there handled too, which then clicks nothing); and a key, whose source is the focused
-        // item itself, on its way down to the item.
+        // it (a press or release something there handled too, which then clicks nothing); and a key, whose source is
+        // the focused item itself, on its way down to the item.
         InputElement.PointerPressedEvent.AddClassHandler<Interactive>(OnPressed, handledEventsToo: true);
-        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnReleased);
+        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnReleased, handledEventsToo: true);
         InputElement.KeyDownEvent.AddClassHandler<ListBoxItem>(OnKeyDown, RoutingStrategies.Tunnel);
         InputElement.KeyUpEvent.AddClassHandler<ListBoxItem>(OnKeyUp, RoutingStrategies.Tunnel);
+
+        // A press is forgotten when its pointer is taken from the item (a pan) or held (a context menu), and a key's
+        // when the item loses the focus, so that a release or a key let go later clicks nothing.
+        InputElement.PointerCaptureLostEvent.AddClassHandler<Interactive>(OnCaptureLost, handledEventsToo: true);
+        InputElement.HoldingEvent.AddClassHandler<ListBoxItem>(OnHolding, handledEventsToo: true);
+        InputElement.LostFocusEvent.AddClassHandler<ListBoxItem>(OnLostFocus, handledEventsToo: true);
     }
 
     public static bool GetIsItemClickEnabled(ListBox list) => list.GetValue(IsItemClickEnabledProperty);
@@ -100,12 +107,21 @@ public static class ListBoxOptions
             ? list
             : null;
 
-    /// <summary>The item whose template root this is, while some list has item click on.</summary>
-    private static ListBoxItem? ItemOf(Interactive root) => _enabled > 0 ? root.GetVisualParent() as ListBoxItem : null;
+    /// <summary>
+    /// The item whose template root this is, while some list has item click on, if the event comes from inside the
+    /// root: an event from a popup a control in the item owns is routed through the item but isn't on it.
+    /// </summary>
+    private static ListBoxItem? ItemOf(Interactive root, RoutedEventArgs e) =>
+        _enabled > 0 &&
+        root.GetVisualParent() is ListBoxItem item &&
+        e.Source is Visual hit &&
+        (ReferenceEquals(hit, root) || root.IsVisualAncestorOf(hit))
+            ? item
+            : null;
 
     private static void OnPressed(Interactive root, PointerPressedEventArgs e)
     {
-        if (ItemOf(root) is not { } item)
+        if (ItemOf(root, e) is not { } item)
         {
             return;
         }
@@ -129,21 +145,25 @@ public static class ListBoxOptions
 
     private static void OnReleased(Interactive root, PointerReleasedEventArgs e)
     {
-        if (ItemOf(root) is not { } item || Clicking(item) is not { } list)
+        if (ItemOf(root, e) is not { } item)
         {
             return;
         }
 
         // The left button, or a touch, let go on the item, by the pointer whose press reached it.
         var left = e.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonReleased;
-        var click = left &&
-            ReferenceEquals(item.GetValue(PressedByProperty), e.Pointer) &&
-            new Rect(item.Bounds.Size).Contains(e.GetPosition(item));
+        var pressedHere = left && ReferenceEquals(item.GetValue(PressedByProperty), e.Pointer);
         if (left)
         {
             item.ClearValue(PressedByProperty);
         }
 
+        if (e.Handled || Clicking(item) is not { } list)
+        {
+            return;
+        }
+
+        var click = pressedHere && new Rect(item.Bounds.Size).Contains(e.GetPosition(item));
         if (click || ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
         {
             e.Handled = true;
@@ -157,9 +177,45 @@ public static class ListBoxOptions
         }
     }
 
+    /// <summary>The pointer taken from an element: each item round it forgets that pointer's press.</summary>
+    private static void OnCaptureLost(Interactive element, PointerCaptureLostEventArgs e)
+    {
+        if (_enabled == 0)
+        {
+            return;
+        }
+
+        for (Visual? at = element; at is not null; at = at.GetVisualParent())
+        {
+            if (at is ListBoxItem item && ReferenceEquals(item.GetValue(PressedByProperty), e.Pointer))
+            {
+                item.ClearValue(PressedByProperty);
+            }
+        }
+    }
+
+    /// <summary>A held press is a hold (a context menu), not a click.</summary>
+    private static void OnHolding(ListBoxItem item, HoldingRoutedEventArgs e)
+    {
+        if (e.HoldingState == HoldingState.Started)
+        {
+            item.ClearValue(PressedByProperty);
+        }
+    }
+
+    private static void OnLostFocus(ListBoxItem item, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, item))
+        {
+            item.ClearValue(KeyDownProperty);
+        }
+    }
+
     private static void OnKeyDown(ListBoxItem item, KeyEventArgs e)
     {
-        if (Clicking(item) is not null && ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
+        if (ReferenceEquals(e.Source, item) &&
+            Clicking(item) is not null &&
+            ItemSelectionEventTriggers.ShouldTriggerSelection(item, e))
         {
             e.Handled = true;
             item.SetValue(KeyDownProperty, e.Key);

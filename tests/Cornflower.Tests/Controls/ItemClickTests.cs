@@ -1,10 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -288,6 +290,7 @@ public class ItemClickTests
 
         page.Window.MouseDown(at, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
+        Assert.Contains(":pressed", page.Item(2).Classes);
         Assert.Equal(-1, page.List.SelectedIndex);
         Assert.Empty(page.Clicked);
         page.Window.MouseUp(at, MouseButton.Left);
@@ -375,6 +378,49 @@ public class ItemClickTests
         Assert.Empty(page.Clicked);
     }
 
+    // Space on a focused Button in an item is the Button's: it clicks, and the item doesn't.
+    [AvaloniaFact]
+    public void A_Key_On_A_Control_In_The_Item_Is_The_Controls()
+    {
+        using var page = new ClickPage();
+        var buttonClicks = 0;
+        page.List.ItemTemplate = new FuncDataTemplate<string>((text, _) =>
+        {
+            var button = new Button { Content = text };
+            button.Click += (_, _) => buttonClicks++;
+            return button;
+        });
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(page.Item(1).GetVisualDescendants().OfType<Button>().Single().Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        page.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(1, buttonClicks);
+        Assert.Empty(page.Clicked);
+    }
+
+    // A key pressed on an item that loses the focus before the key is let go is forgotten: let go on the item later,
+    // after the focus comes back, it clicks nothing.
+    [AvaloniaFact]
+    public void A_Key_Pressed_Before_The_Focus_Left_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        var item = page.Item(2);
+        Assert.True(item.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Assert.True(page.Item(3).Focus());
+        Assert.True(item.Focus());
+        page.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
+    }
+
     // ----- In and round the item -----
 
     // A Button in an item takes its own tap: the Button clicks, the item doesn't.
@@ -453,8 +499,7 @@ public class ItemClickTests
         Assert.Equal(-1, outer.SelectedIndex);
     }
 
-    // The right button pressed and let go while the left is held on the item clicks nothing; the left's release then
-    // clicks once.
+    // The right button pressed and let go while the left is held on the item clicks nothing.
     [AvaloniaFact]
     public void A_Right_Click_While_The_Left_Is_Held_Clicks_Nothing()
     {
@@ -465,12 +510,10 @@ public class ItemClickTests
         page.Window.MouseDown(at, MouseButton.Right);
         page.Window.MouseUp(at, MouseButton.Right);
         Dispatcher.UIThread.RunJobs();
-        Assert.Empty(page.Clicked);
-        page.Window.MouseUp(at, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
 
-        Assert.Equal(["item 2"], page.Clicked);
+        Assert.Empty(page.Clicked);
         Assert.Equal(0, page.SelectionChanges);
+        page.Window.MouseUp(at, MouseButton.Left);
     }
 
     // A press something in the item took forgets an earlier press of the same pointer on the item, whose release never
@@ -519,6 +562,64 @@ public class ItemClickTests
 
         Assert.Empty(page.Clicked);
         Assert.Equal(0, page.SelectionChanges);
+    }
+
+    // A tap in a popup a control in the item owns is routed through the item but isn't on it: it clicks nothing, though
+    // the popup is drawn over the item.
+    [AvaloniaFact]
+    public void A_Tap_In_A_Popup_Over_The_Item_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        var inPopup = new Border { Width = 200, Height = 30, Background = Brushes.Transparent };
+        var popup = new Popup { Child = inPopup, Placement = PlacementMode.Bottom };
+        page.List.ItemTemplate = new FuncDataTemplate<string>((text, _) =>
+            new Panel { Children = { new TextBlock { Text = text }, text == "item 1" ? popup : new Panel() } });
+        Dispatcher.UIThread.RunJobs();
+        popup.IsOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        var popupRoot = TopLevel.GetTopLevel(inPopup)!;
+        var at = inPopup.TranslatePoint(new Point(20, 5), popupRoot)!.Value;
+        var routed = false;
+        page.Item(1).AddHandler(InputElement.PointerReleasedEvent, (_, _) => routed = true, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+        var touch = popupRoot.TouchBegin(at);
+        popupRoot.TouchEnd(touch, at);
+        Dispatcher.UIThread.RunJobs();
+        popup.IsOpen = false;
+
+        Assert.True(routed, "the popup's release wasn't routed through the item");
+        Assert.Empty(page.Clicked);
+    }
+
+    // A held touch is a hold, which opens a context menu, not a click: let go, it clicks nothing. Avalonia's hold is on
+    // a real timer, so this waits for it in real time.
+    [AvaloniaFact]
+    public void A_Hold_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        var item = page.Item(2);
+        var held = false;
+        item.AddHandler(InputElement.HoldingEvent, (_, e) => held |= e.HoldingState == HoldingState.Started, RoutingStrategies.Bubble, handledEventsToo: true);
+        var at = page.On(2);
+
+        var touch = page.Window.TouchBegin(at);
+        var frame = new DispatcherFrame();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var poll = new DispatcherTimer(TimeSpan.FromMilliseconds(5), DispatcherPriority.Background, (_, _) =>
+        {
+            if (held || watch.ElapsedMilliseconds > 3000)
+            {
+                frame.Continue = false;
+            }
+        });
+        poll.Start();
+        Dispatcher.UIThread.PushFrame(frame);
+        poll.Stop();
+        page.Window.TouchEnd(touch, at);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(held, "no hold came");
+        Assert.Empty(page.Clicked);
     }
 
     // Behaviour only: under Simple's ListBox, with no Cornflower theme, a tap clicks and selects nothing.

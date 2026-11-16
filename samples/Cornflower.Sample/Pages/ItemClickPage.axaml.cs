@@ -11,9 +11,6 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("itemclick", Order = 132)]
 public partial class ItemClickPage : UserControl
 {
-    /// <summary>WinRT's <c>SelectionMode="Multiple"</c>: the check mode.</summary>
-    public const SelectionMode CheckMode = SelectionMode.Multiple | SelectionMode.Toggle;
-
     /// <summary>What a list's line shows before its first click.</summary>
     public const string NothingClicked = "nothing clicked";
 
@@ -55,7 +52,7 @@ public partial class ItemClickPage : UserControl
             Clickable.UnselectAll();
         }
 
-        Clickable.SelectionMode = on ? CheckMode : SelectionMode.Single;
+        Clickable.SelectionMode = on ? ListViewPage.CheckMode : SelectionMode.Single;
         ShowState();
     }
 

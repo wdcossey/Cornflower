@@ -66,8 +66,11 @@ unhandled; or Space or Enter pressed and let go on the focused item. The touch's
 a tap clicks exactly where it used to select: a pan takes the pointer from the item, so its release never reaches the
 item; a release off the item is outside its bounds; a press moved 10 px is still inside them. The mouse clicks on its
 release, as a Button does, where Avalonia selected on its press. A press something in the item took (a Button, a
-TextBox, a plain list's item) clicks nothing when it is let go, whichever the pointer. A key clicks as it is let go,
-so a held key, whose press repeats, clicks once. A click gives the platform's click feedback by the item's
+TextBox, a plain list's item) clicks nothing when it is let go, whichever the pointer. A press is forgotten when its
+pointer is taken from the item (a pan) or the press becomes a hold (Avalonia's `Holding`, which opens a context menu).
+An event from a popup that a control in the item owns is routed through the item but isn't on it, so it is left
+alone. A key clicks as it is let go, so a held key, whose press repeats, clicks once; a key is forgotten when the
+item loses the focus, and a key on a control inside the item is that control's. A click gives the platform's click feedback by the item's
 `PlatformFeedback.FeedbackType`, as Avalonia's selection and Button do.
 
 Where it takes them: the item's class handler is the first on the item to see an event on its way up, and nothing
@@ -108,7 +111,7 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 8. **In the check mode a tap checks and clicks nothing**, `Multiple, Toggle` and `Multiple`.
    `In_The_Check_Mode_A_Tap_Checks_And_Clicks_Nothing`; Single's other flags keep item click,
    `Without_Multiple_A_Tap_Clicks`.
-9. **The mouse clicks on the left button's release and selects nothing**; the right button clicks nothing.
+9. **The mouse clicks on the left button's release and selects nothing**, the item pressed meanwhile; the right button clicks nothing.
    `A_Mouse_Clicks_On_The_Left_Buttons_Release_And_Selects_Nothing`; let go off the item, nothing,
    `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; a release with no press on the item, nothing,
    `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; the right button clicked while the left is held, nothing,
@@ -116,12 +119,15 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
    release, neither button selects, `With_Hold_On_The_Mouse_Neither_Button_Selects`.
 10. **Space and Enter click the focused item once, as they are let go**, a held key's repeats included.
     `Space_And_Enter_Click_The_Focused_Item_Once_As_They_Are_Let_Go`; a key let go without its press, nothing,
-    `A_Key_Let_Go_Without_Its_Press_Clicks_Nothing`.
+    `A_Key_Let_Go_Without_Its_Press_Clicks_Nothing`; pressed before the focus left, nothing,
+    `A_Key_Pressed_Before_The_Focus_Left_Clicks_Nothing`; on a Button in the item, the Button's,
+    `A_Key_On_A_Control_In_The_Item_Is_The_Controls`.
 11. **A Button in an item takes its own tap.** `A_Button_In_An_Item_Takes_Its_Own_Tap`; a press something in the item
     took clicks nothing, the mouse's and a touch's, `A_Press_Something_In_The_Item_Took_Clicks_Nothing`, and forgets
     an earlier press whose release never came back, `A_Press_Something_In_The_Item_Took_Forgets_An_Earlier_Press`.
 12. **A list in an item clicks its own item alone**; the outer list hears nothing.
-    `A_List_In_An_Item_Clicks_Its_Own_Item_Alone`.
+    `A_List_In_An_Item_Clicks_Its_Own_Item_Alone`. **A tap in a popup over the item clicks nothing**,
+    `A_Tap_In_A_Popup_Over_The_Item_Clicks_Nothing`; **nor does a hold**, `A_Hold_Clicks_Nothing`.
 13. **Behaviour only**: under Simple's ListBox it clicks too. `It_Works_Under_Another_Theme`.
 14. **An item that is its own container is clicked as itself.**
     `An_Item_That_Is_Its_Own_Container_Is_Clicked_As_Itself`.
@@ -133,17 +139,17 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 
 - **With item click on, out of the check mode, a tap selects nothing**, against the WinUI documentation's "both".
   The 8.1 Update 1 phone, the reference, selected nothing on 30 taps in Single mode (above). To reverse: let the
-  pointer events through in `ListBoxOptions.Take` after raising the click.
+  events through in `ListBoxOptions.OnPressed` and `OnReleased` after raising the click.
 - **In the check mode (any mode with `Multiple`), a tap checks and clicks nothing.** Not probed. The check mode is
   how an 8.1 app lets the user choose items, with the boxes showing; on the phone a tap does one thing, and in Single
   mode item click took the tap from selection. Owed: a probe of a ListView with `IsItemClickEnabled` and
-  `SelectionMode="Multiple"`. To reverse: drop the `SelectionMode.Multiple` test in `Take`.
+  `SelectionMode="Multiple"`. To reverse: drop the `SelectionMode.Multiple` test in `ListBoxOptions.Clicking`.
 - **WinRT's `None` has no mode of its own.** Single with item click on is the same to the user: no tap, click or key
   selects. A selection set in code still shows (it draws nothing in a ListView outside the check mode, #119).
   To reverse: nothing to undo; a None mode would need a ListBox subclass.
 - **The mouse clicks on the left button's release, and its press selects nothing**, as a touch, and as WinRT's
   Button. The right button's press selects nothing either (Avalonia's selects the item under a context menu);
-  its release is left alone, as before. To reverse: let the press through in `Take`.
+  its release is left alone, as before. To reverse: let the press through in `ListBoxOptions.OnPressed`.
 - **Space and Enter click the focused item, as they are let go.** Avalonia's item selects on them; left as they
   were, a key would select an item a tap can't. On the release, so a held key clicks once (Avalonia's Button clicks
   on Enter's press, and repeats). The phone has no keyboard to read. To reverse: drop the key handlers.
