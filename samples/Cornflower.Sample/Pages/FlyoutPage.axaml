@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.FlyoutPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 Flyout, as an 8.1 page writes one: a Button's Flyout. The first opens across the top of the window, whatever
+    its Placement; the second fills the window (cf:FlyoutOptions.IsFullScreen, WinRT's Placement="Full"). Each swings in;
+    tap below the top one, press Back, or its own "close" to close it. What happened last is shown, and the switch makes
+    the page light.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <ScrollViewer>
+        <StackPanel Margin="19,12,19,24">
+          <sample:SamplePageHeader x:Name="Header" />
+
+          <TextBlock Text="last" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+          <TextBlock x:Name="State" Text="none" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+
+          <Button x:Name="OpenTop" Content="top flyout" Margin="0,12,0,0">
+            <Button.Flyout>
+              <Flyout Placement="Bottom" Opened="OnOpened" Closed="OnClosed">
+                <StackPanel Margin="19,0">
+                  <TextBlock Text="flyout content" TextWrapping="Wrap" />
+                  <Button x:Name="CloseTop" Content="close" Click="OnCloseTop" />
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+
+          <Button x:Name="OpenFull" Content="full flyout">
+            <Button.Flyout>
+              <Flyout cf:FlyoutOptions.IsFullScreen="True" Opened="OnOpened" Closed="OnClosed">
+                <StackPanel Margin="19,0">
+                  <TextBlock Text="full flyout" Theme="{DynamicResource HeaderTextBlockStyle}" />
+                  <TextBlock Text="It fills the window. Press Back, or close it." TextWrapping="Wrap" />
+                  <Button x:Name="CloseFull" Content="close" Click="OnCloseFull" />
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+
+          <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" Margin="0,12,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>

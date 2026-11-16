@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 Flyout: Avalonia's FlyoutPresenter in the default style of the 8.1 Update 1 runtime
+    (flyoutpresenter.json, which equals the SDK's generic.xaml), re-expressed as an Avalonia ControlTheme, and the
+    phone's popup round it (PhoneFlyout, PhonePopupHost). docs/controls/Flyout/PLAN.md has the values and their sources.
+
+    The phone's template is a Border, Background, round a ScrollViewer pushed down by
+    FlyoutContentPanelPortraitThemeMargin (0 in landscape), round a ContentPresenter whose margin is the Padding. The
+    style stretches the content and sets the chrome's background, no padding and FlyoutThemeMinHeight. Its one state
+    group, OrientationStates, is the window's: PhonePopupHost.IsLandscape here.
+
+    Where it sits, how it opens and closes, and Back are the popup's, not the template's: PhoneFlyout, turned on below,
+    puts the presenter's popup at the top of the window, or filling it with cf:FlyoutOptions.IsFullScreen.
+  -->
+  <ControlTheme x:Key="{x:Type FlyoutPresenter}" TargetType="FlyoutPresenter">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <!-- The phone's presenter inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set,
+         as the CheckBox's is. -->
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="{DynamicResource FlyoutThemeMinHeight}" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
+    <Setter Property="wp81:PhoneFlyout.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Background"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer x:Name="ScrollViewer"
+                        Margin="{DynamicResource FlyoutContentPanelPortraitThemeMargin}"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ ScrollViewer#ScrollViewer">
+      <Setter Property="Margin" Value="{DynamicResource FlyoutContentPanelLandscapeThemeMargin}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
