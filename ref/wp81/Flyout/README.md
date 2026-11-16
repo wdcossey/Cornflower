@@ -18,5 +18,6 @@ both are in [`docs/controls/Flyout/PLAN.md`](../../../docs/controls/Flyout/PLAN.
 `tests/Cornflower.Tests/Controls/FlyoutReadings.cs`. The names are the reference app's:
 `<theme>__Flyout__<variant>__popup__screen.png`.
 
-Nothing here shows the flyout opening or closing: that is the recording of run `20261110-0819-dev11`, read in
-[`tools/refapp/README.md`](../../../tools/refapp/README.md), "Flyouts, pickers and the dialog".
+The flyout opening and closing is in [`motion/`](motion/README.md), stills of #149's recording (run
+`20261116-1835-dev11`), read in [`tools/refapp/README.md`](../../../tools/refapp/README.md), "The popups' bands, and
+the inline ComboBox".

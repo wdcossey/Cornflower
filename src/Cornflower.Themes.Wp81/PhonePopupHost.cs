@@ -9,6 +9,7 @@ using Avalonia.Diagnostics;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
 
@@ -44,10 +45,11 @@ internal enum PhonePopupPlacement
 /// <para><b>Dimming.</b> With a <see cref="Dim"/> brush, a rectangle of it covers the window under the popup while it is
 /// open, as the phone's own full-window Rectangle popup does under a MenuFlyout and a ContentDialog: in the same overlay
 /// layer, just below the popup. It takes no taps unless <see cref="PhonePopupDismissal.DimPassesTaps"/> says so.</para>
-/// <para><b>Moving.</b> Opening, the content swings in about its top edge (<see cref="PhonePopupMotion"/>), drawn by a
-/// <c>RenderTransform</c> at animation priority, taken away at rest. Closing goes through <see cref="Dismiss"/>, which
-/// runs the closing motion from wherever the opening had got to and then calls the owner's close; anything that closes
-/// the popup another way ends the motion where it is.</para>
+/// <para><b>Moving.</b> As the phone's shell does (<see cref="PhonePopupMotion"/>): on a motion's first frame a picture of
+/// the popup is taken and laid over it, cut into bands (<see cref="PhonePopupBands"/>), each turned about its own
+/// centre line, the popup hidden under them at animation priority; at rest both go. Closing goes through
+/// <see cref="Dismiss"/>, which runs the closing motion and then calls the owner's close; anything that closes the
+/// popup another way ends the motion where it is.</para>
 /// <para><b>Back.</b> A class handler on <see cref="TopLevel.BackRequestedEvent"/>, which runs before any handler an
 /// element adds (Avalonia's <c>PageNavigationHost</c>'s, which passes Back to its <c>NavigationPage</c>, included),
 /// dismisses the window's topmost open host that isn't already closing, and marks the request handled.</para>
@@ -78,17 +80,15 @@ internal sealed class PhonePopupHost : IDisposable
     private readonly Control _content;
     private readonly Action _close;
     private readonly List<(AvaloniaProperty Property, object? Value)> _given = [];
-    private readonly MatrixTransform _transform = new();
     private PhonePopupPlacement _placement;
     private TopLevel? _top;
     private IInsetsManager? _insets;
     private Rectangle? _dim;
+    private PhonePopupBands? _bands;
     private IDisposable? _frame;
-    private IDisposable? _shown;
-    private IDisposable? _origin;
+    private IDisposable? _hidden;
     private TimeSpan? _start;
-    private double _angle;
-    private double _closeFrom;
+    private double[] _closeFrom = [];
     private Phase _phase;
 
     static PhonePopupHost()
@@ -112,7 +112,6 @@ internal sealed class PhonePopupHost : IDisposable
         _popup.ShouldUseOverlayLayer = true;
         _popup.Opened += OnOpened;
         _popup.Closed += OnClosed;
-        _content.SizeChanged += OnContentSizeChanged;
         if (_popup.IsOpen)
             OnOpened(null, EventArgs.Empty);
     }
@@ -148,6 +147,9 @@ internal sealed class PhonePopupHost : IDisposable
     /// <summary>Whether its closing motion is running: the owner's close is still to come.</summary>
     public bool IsClosing => _phase == Phase.Closing;
 
+    /// <summary>The popup's bands while it moves, drawn over it; none at rest.</summary>
+    internal PhonePopupBands? Bands => _bands;
+
     public static bool GetIsLandscape(Control control) => control.GetValue(IsLandscapeProperty);
 
     /// <summary>
@@ -158,7 +160,6 @@ internal sealed class PhonePopupHost : IDisposable
     {
         _popup.Opened -= OnOpened;
         _popup.Closed -= OnClosed;
-        _content.SizeChanged -= OnContentSizeChanged;
         OnClosed(null, EventArgs.Empty);
         foreach (var (property, value) in _given)
         {
@@ -170,8 +171,9 @@ internal sealed class PhonePopupHost : IDisposable
     }
 
     /// <summary>
-    /// Closes the popup the phone's way: its closing motion, from wherever the opening had got to, then the owner's
-    /// close. Asked again while closing, or when it isn't open, it does nothing.
+    /// Closes the popup the phone's way, then calls the owner's close: a top popup shows as it is, goes in one frame
+    /// and is closed a little later; a full one's bands turn away from wherever the opening had got to. Asked again
+    /// while closing, or when it isn't open, it does nothing.
     /// </summary>
     public void Dismiss()
     {
@@ -181,17 +183,16 @@ internal sealed class PhonePopupHost : IDisposable
         _frame?.Dispose();
         _frame = null;
         _start = null;
-        _closeFrom = _angle;
         if (_placement == PhonePopupPlacement.Top)
         {
-            // At rest, mid-opening too, until it goes in one frame.
+            // No turn: at rest, mid-opening too, until it goes in one frame.
             Rest();
-            _frame = CornflowerClock.Schedule(Finish, PhonePopupMotion.TopCloseDelay);
+            _frame = CornflowerClock.Schedule(Vanish, PhonePopupMotion.TopGoneAfter);
+            return;
         }
-        else
-        {
-            _frame = CornflowerClock.RequestFrame(_content, Step);
-        }
+
+        _closeFrom = _bands?.Angles.ToArray() ?? [];
+        _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
     private void OnOpened(object? sender, EventArgs e)
@@ -211,7 +212,6 @@ internal sealed class PhonePopupHost : IDisposable
         Anchor();
         Resize();
         _start = null;
-        Look(PhonePopupMotion.OpeningAngle(_placement, TimeSpan.Zero));
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
@@ -227,13 +227,14 @@ internal sealed class PhonePopupHost : IDisposable
             _top.PropertyChanged -= OnTopPropertyChanged;
         if (_insets is not null)
             _insets.SafeAreaChanged -= OnSafeAreaChanged;
-        _top = null;
-        _insets = null;
         RemoveDim();
         Rest();
+        _top = null;
+        _insets = null;
         _content.ClearValue(IsLandscapeProperty);
     }
 
+    /// <summary>One frame of the motion. Time 0 is the first, which shows the start angles.</summary>
     private void Step()
     {
         _frame = null;
@@ -250,20 +251,30 @@ internal sealed class PhonePopupHost : IDisposable
                 return;
             }
 
-            Look(PhonePopupMotion.OpeningAngle(_placement, time));
+            Turn(band => PhonePopupMotion.OpeningAngle(_placement, band, time));
         }
         else
         {
-            if (time >= PhonePopupMotion.FullCloseLength)
+            if (time >= PhonePopupMotion.FullClosedAfter)
             {
                 Finish();
                 return;
             }
 
-            Look(PhonePopupMotion.ClosingAngle(_closeFrom, time));
+            Turn(band => PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time));
         }
 
         _frame = CornflowerClock.RequestFrame(_content, Step);
+    }
+
+    /// <summary>The top popup is gone in one frame; it is closed a little later.</summary>
+    private void Vanish()
+    {
+        _frame = null;
+        if (_phase != Phase.Closing)
+            return;
+        _hidden ??= _content.SetValue(Visual.OpacityProperty, 0d, BindingPriority.Animation);
+        _frame = CornflowerClock.Schedule(Finish, PhonePopupMotion.TopClosedAfter - PhonePopupMotion.TopGoneAfter);
     }
 
     /// <summary>The closing motion is over: the owner closes the popup.</summary>
@@ -281,38 +292,63 @@ internal sealed class PhonePopupHost : IDisposable
         }
     }
 
-    /// <summary>The content turned <paramref name="degrees"/> about its top edge; at 0, its own transform back.</summary>
-    private void Look(double degrees)
+    /// <summary>
+    /// The popup's bands at their angles: on the first frame of a motion, a picture of the popup is taken and laid over
+    /// it in bands, and the popup hidden under them.
+    /// </summary>
+    private void Turn(Func<int, double> angle)
     {
-        if (degrees == 0)
-        {
-            Rest();
+        if (_bands is null && !Cut())
             return;
-        }
-
-        _angle = degrees;
-        var size = _content.Bounds.Size;
-        if (size.Width <= 0 || size.Height <= 0)
-            size = _content.DesiredSize;
-        _transform.Matrix = PhonePopupMotion.Swing(degrees, size);
-        _origin ??= _content.SetValue(Visual.RenderTransformOriginProperty, RelativePoint.TopLeft, BindingPriority.Animation);
-        _shown ??= _content.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
+        _bands!.Turn(angle);
     }
 
+    /// <summary>The popup's picture in bands over it, the popup hidden; false if it can't be drawn yet.</summary>
+    private bool Cut()
+    {
+        if (!_content.IsArrangeValid)
+            _content.UpdateLayout();
+        var size = _content.Bounds.Size;
+        var host = _content.GetSelfAndVisualAncestors().OfType<OverlayPopupHost>().FirstOrDefault();
+        if (_top is null || size.Width <= 0 || size.Height <= 0 || host?.GetVisualParent() is not Panel layer)
+            return false;
+
+        _hidden?.Dispose();
+        _hidden = null;
+        var scaling = _top.RenderScaling;
+        var picture = new RenderTargetBitmap(
+            new PixelSize((int)Math.Ceiling(size.Width * scaling), (int)Math.Ceiling(size.Height * scaling)),
+            new Vector(96 * scaling, 96 * scaling));
+        picture.Render(_content);
+
+        var bands = new List<Rect>();
+        var height = _placement == PhonePopupPlacement.Top ? size.Height : PhonePopupMotion.BandHeight;
+        for (var y = 0.0; y < size.Height; y += height)
+            bands.Add(new Rect(0, y, size.Width, Math.Min(height, size.Height - y)));
+
+        // The camera is over the window's area's centre: in the popup's own space, as the popup sits at its top left.
+        var area = Area();
+        _bands = new PhonePopupBands(picture, size, scaling, new Point(area.Width / 2, area.Height / 2), bands);
+        Canvas.SetLeft(_bands, area.X);
+        Canvas.SetTop(_bands, area.Y);
+        layer.Children.Insert(layer.Children.IndexOf(host) + 1, _bands);
+        _hidden = _content.SetValue(Visual.OpacityProperty, 0d, BindingPriority.Animation);
+        return true;
+    }
+
+    /// <summary>The popup drawn as itself again: no bands, not hidden.</summary>
     private void Rest()
     {
-        _angle = 0;
-        _shown?.Dispose();
-        _shown = null;
-        _origin?.Dispose();
-        _origin = null;
-    }
+        if (_bands is not null)
+        {
+            if (_bands.Parent is Panel layer)
+                layer.Children.Remove(_bands);
+            _bands.Release();
+            _bands = null;
+        }
 
-    /// <summary>The angle drawn last, for the content's new size.</summary>
-    private void OnContentSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        if (_shown is not null)
-            _transform.Matrix = PhonePopupMotion.Swing(_angle, e.NewSize);
+        _hidden?.Dispose();
+        _hidden = null;
     }
 
     private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

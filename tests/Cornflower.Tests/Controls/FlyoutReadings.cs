@@ -8,8 +8,8 @@ namespace Cornflower.Tests.Controls;
 /// <c>TextBlock</c>, "flyout content", with <c>Placement</c> Top and Full, dark and light, on the reference profile
 /// (device 11, 1080 × 1920 at 2.4). Read from the screenshots of refapp run <c>20261108-2254-dev11</c> (the same to the
 /// byte as <c>-2248</c>), committed in <c>ref/wp81/Flyout/</c>, the popup dumps of runs <c>20261108-1705-dev11</c>,
-/// <c>-1734</c> and <c>-2254</c>, the style (<c>flyoutpresenter.json</c>), and the recording of run
-/// <c>20261110-0819-dev11</c> (<c>tools/refapp/README.md</c>, "Popups on the reference profile" and "Flyouts, pickers and
+/// <c>-1734</c> and <c>-2254</c>, the style (<c>flyoutpresenter.json</c>), and #149's reading of the recording of run
+/// <c>20261116-1835-dev11</c> (<c>tools/refapp/README.md</c>, "Popups on the reference profile" and "Flyouts, pickers and
 /// the dialog"). View pixels unless named raw.
 /// </summary>
 internal static class FlyoutReadings
@@ -46,16 +46,43 @@ internal static class FlyoutReadings
 
     public const int InkLeftColumn = 0;
 
-    // The recording (±25 ms, the recording's clock). Top: 50 / 100 / 142 ms to 50%, 90% and 99% of the way; the bottom
-    // edge at 46, 55, 69 then 77 of 78 px on successive recorded frames; gone in one frame about 100 ms after Hide().
-    // Full: 141 / 208 / 208 ms in, 200 / 291 / 334 ms out.
-    public const double TopOpenAt99 = 142;
+    // The motion, as #149 read it (run 20261116-1835-dev11, tools/refapp/README.md, "The popups' bands"), in ticks of the
+    // phone's 64 Hz clock. Each band turns about its own centre line, one camera for the screen, 999 view px in front of
+    // it over y 400; positive brings the lower edge nearer. Top: one band, 80° to 0 at 9.31° a tick; closing, no turn,
+    // gone in one frame 98 to 122 ms after Hide(), Closed 9 ticks after. Full: 100 px bands, all from 80°, bands 0 to 2
+    // at 12.61, 9.57 and 7.58° a tick, none below 400 px turning, the whole at rest 208 to 248 ms; closing, band k 2k
+    // ticks after Hide(), the lower edge back, 10.95° a tick to 90°, Closed 22 ticks after.
+    public const double Tick = 15.625;
 
-    public const double TopGoneAfterHide = 100;
+    public const double EyeDistance = 999;
 
-    public const double FullOpenAt99 = 208;
+    public const double EyeY = 400;
 
-    public const double FullCloseAt99 = 334;
+    public const double OpenFrom = 80;
 
-    public const double RecordingTolerance = 25;
+    public const double TopOpenRate = 9.31;
+
+    public static readonly double[] FullOpenRates = [12.61, 9.57, 7.58];
+
+    public const double FullBand = 100;
+
+    public const double FullStillFrom = 400;
+
+    public const double FullRestFrom = 208;
+
+    public const double FullRestBy = 248;
+
+    public const double CloseRate = 10.95;
+
+    public const double CloseStagger = 2;
+
+    public const double CloseEdgeOn = 90;
+
+    public const double TopGoneFrom = 98;
+
+    public const double TopGoneBy = 122;
+
+    public const double TopClosedAfterHide = 9 * Tick;
+
+    public const double FullClosedAfterHide = 22 * Tick;
 }

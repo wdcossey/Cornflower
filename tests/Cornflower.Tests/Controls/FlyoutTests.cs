@@ -33,7 +33,8 @@ public class FlyoutTests
             Control? root = null, double width = Scene.ReferenceWidth, double height = Scene.ReferenceHeight,
             IEnumerable<IStyle>? themes = null, IBrush? page = null)
         {
-            Clock = new TestClock();
+            // The phone's clock: frames 15.625 ms apart, on its grid, as the readings are in its ticks.
+            Clock = new TestClock { FrameInterval = TimeSpan.FromMilliseconds(Tick), FramesOnGrid = true };
             Flyout = new Flyout { Content = new TextBlock { Text = "flyout content", TextWrapping = TextWrapping.Wrap } };
             if (placement is { } p)
                 Flyout.Placement = p;
@@ -65,6 +66,12 @@ public class FlyoutTests
         public Scene Scene { get; }
 
         public FlyoutPresenter Presenter => (FlyoutPresenter)Flyout.Popup.Child!;
+
+        /// <summary>The popup's bands while it moves; none at rest.</summary>
+        public PhonePopupBands? Bands => PhoneFlyout.HostOf(Presenter)?.Bands;
+
+        /// <summary>The motion's first frame: the next tick after the call.</summary>
+        public double FirstFrameAfter(double call) => (Math.Floor(call / Tick) + 1) * Tick;
 
         public void Open()
         {
@@ -236,42 +243,109 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
-    public void A_Top_Flyout_Swings_Down_From_Its_Top_Edge_And_Is_At_Rest_By_Its_99_Percent_Time()
+    public void A_Top_Flyout_Opens_As_One_Band_From_80_Degrees_At_9_31_A_Tick()
     {
         using var stage = new Stage();
         stage.Open();
+        var first = stage.FirstFrameAfter(0);
 
-        // Its first frame isn't at rest: the top edge where it rests, the bottom edge drawn above its own.
-        var swung = stage.Presenter.RenderTransform?.Value;
-        Assert.NotNull(swung);
+        stage.At(first);
+        var bands = Assert.IsType<PhonePopupBands>(stage.Bands);
         var height = stage.Presenter.Bounds.Height;
-        Assert.Equal(new Point(0, 0), Draw(swung.Value, new Point(0, 0)));
-        Assert.True(Draw(swung.Value, new Point(225, height)).Y < height - 1);
+        Assert.Equal(new Rect(0, 0, 450, height), Assert.Single(bands.Bands));
+        // The popup itself is hidden under its bands.
+        Assert.Equal(0, stage.Presenter.Opacity);
+        for (var tick = 0; tick <= 8; tick++)
+        {
+            stage.At(first + tick * Tick);
+            Assert.Equal(OpenFrom - TopOpenRate * tick, stage.Bands!.Angles[0], 1e-9);
+        }
 
-        // Time 0 is the motion's first frame, 16 ms in.
-        stage.At(16 + PhonePopupMotion.TopOpenLength.TotalMilliseconds - 16);
-        Assert.NotNull(stage.Presenter.RenderTransform);
-        stage.At(16 + PhonePopupMotion.TopOpenLength.TotalMilliseconds + 16);
-        Assert.Null(stage.Presenter.RenderTransform);
-        Assert.InRange(PhonePopupMotion.TopOpenLength.TotalMilliseconds, TopOpenAt99, TopOpenAt99 + RecordingTolerance);
+        // 80° at 9.31° a tick is 8.6 ticks, 134 ms: at rest on the ninth.
+        stage.At(first + 9 * Tick);
+        Assert.Null(stage.Bands);
+        Assert.Equal(1, stage.Presenter.Opacity);
+        Assert.InRange(PhonePopupMotion.OpenLength(PhonePopupPlacement.Top).TotalMilliseconds, 134, 135);
     }
 
     [AvaloniaFact]
-    public void A_Full_Flyout_Swings_In_And_Is_At_Rest_By_Its_99_Percent_Time()
+    public void A_Band_Turns_About_Its_Centre_Line_Its_Lower_Edge_Toward_One_Camera_Over_The_Window()
+    {
+        using var stage = new Stage();
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0));
+        var bands = stage.Bands!;
+        var band = bands.Bands[0];
+
+        // One camera for the whole screen, over its centre: y 400, not the band's.
+        Assert.Equal(new Point(225, EyeY), bands.Eye);
+        var matrix = PhonePopupMotion.Band(OpenFrom, band.Center.Y, bands.Eye);
+        Assert.Equal(new Point(100, band.Center.Y), matrix.Transform(new Point(100, band.Center.Y)));
+
+        // The lower edge, turned 80° toward the eye about the centre line, drawn by the camera as #149 solved it.
+        var u = band.Bottom - band.Center.Y;
+        var r = OpenFrom * Math.PI / 180;
+        double y = band.Center.Y + u * Math.Cos(r), z = u * Math.Sin(r);
+        var drawn = matrix.Transform(new Point(0, band.Bottom));
+        Assert.Equal(EyeY + (y - EyeY) * EyeDistance / (EyeDistance - z), drawn.Y, 1e-6);
+        Assert.Equal(225 + (0 - 225) * EyeDistance / (EyeDistance - z), drawn.X, 1e-6);
+    }
+
+    [AvaloniaFact]
+    public void The_Bands_Are_Drawn_Over_The_Hidden_Popup()
+    {
+        using var stage = new Stage(page: new SolidColorBrush(Page(dark: true)));
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0) + 4 * Tick);
+
+        // At 42.8°, the centre line in place, the top edge drawn below where it rests.
+        using var frame = stage.Scene.Capture();
+        Assert.Equal(Chrome(dark: true), Frames.PixelAt(frame, 1000, 94));
+        Assert.Equal(Page(dark: true), Frames.PixelAt(frame, 1000, 2));
+    }
+
+    [AvaloniaFact]
+    public void A_Full_Flyout_Opens_In_100_Px_Bands_All_From_80_Degrees_The_Lower_Ones_Slower()
     {
         using var stage = new Stage(full: true);
         stage.Open();
+        var first = stage.FirstFrameAfter(0);
+        stage.At(first);
 
-        Assert.NotNull(stage.Presenter.RenderTransform);
-        stage.At(16 + PhonePopupMotion.FullOpenLength.TotalMilliseconds - 16);
-        Assert.NotNull(stage.Presenter.RenderTransform);
-        stage.At(16 + PhonePopupMotion.FullOpenLength.TotalMilliseconds + 16);
-        Assert.Null(stage.Presenter.RenderTransform);
-        Assert.InRange(PhonePopupMotion.FullOpenLength.TotalMilliseconds, FullOpenAt99 - RecordingTolerance, FullOpenAt99 + RecordingTolerance);
+        var bands = stage.Bands!;
+        Assert.Equal(8, bands.Bands.Count);
+        for (var k = 0; k < 8; k++)
+            Assert.Equal(new Rect(0, k * FullBand, 450, FullBand), bands.Bands[k]);
+        for (var tick = 0; tick <= 6; tick++)
+        {
+            stage.At(first + tick * Tick);
+            for (var k = 0; k < FullOpenRates.Length; k++)
+                Assert.Equal(Math.Max(0, OpenFrom - FullOpenRates[k] * tick), stage.Bands!.Angles[k], 1e-9);
+            // From 400 px down, no band turns.
+            for (var k = (int)(FullStillFrom / FullBand); k < 8; k++)
+                Assert.Equal(0, stage.Bands!.Angles[k]);
+        }
+
+        Assert.True(stage.Bands!.Angles[3] > stage.Bands.Angles[2]);
     }
 
     [AvaloniaFact]
-    public void A_Top_Flyout_Stays_At_Rest_After_Hide_Then_Goes_In_One_Frame()
+    public void A_Full_Flyout_Is_At_Rest_Between_208_And_248_Ms()
+    {
+        using var stage = new Stage(full: true);
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+        var length = PhonePopupMotion.OpenLength(PhonePopupPlacement.Full).TotalMilliseconds;
+        Assert.InRange(length, FullRestFrom, FullRestBy);
+
+        stage.At(first + Math.Floor(length / Tick) * Tick);
+        Assert.NotNull(stage.Bands);
+        stage.At(first + Math.Ceiling(length / Tick) * Tick);
+        Assert.Null(stage.Bands);
+    }
+
+    [AvaloniaFact]
+    public void A_Top_Flyout_Closing_Doesnt_Turn_Goes_In_One_Frame_And_Is_Closed_9_Ticks_After()
     {
         using var stage = new Stage();
         stage.OpenAtRest();
@@ -281,37 +355,81 @@ public class FlyoutTests
 
         stage.Flyout.Hide();
         Dispatcher.UIThread.RunJobs();
-        Assert.True(stage.Flyout.IsOpen);
-        stage.At(hidden + TopGoneAfterHide - 1);
+        stage.At(hidden + TopGoneFrom - 1);
+        Assert.Null(stage.Bands);
+        Assert.Equal(1, stage.Presenter.Opacity);
         Assert.True(stage.Flyout.Popup.IsOpen);
-        Assert.Null(stage.Presenter.RenderTransform);
+
+        stage.At(hidden + TopGoneBy);
+        Assert.Null(stage.Bands);
+        Assert.Equal(0, stage.Presenter.Opacity);
+        Assert.True(stage.Flyout.Popup.IsOpen);
         Assert.Equal(0, closed);
 
-        stage.At(hidden + TopGoneAfterHide);
-        Assert.False(stage.Flyout.IsOpen);
+        stage.At(hidden + TopClosedAfterHide);
         Assert.False(stage.Flyout.Popup.IsOpen);
+        Assert.False(stage.Flyout.IsOpen);
         Assert.Equal(1, closed);
+        Assert.Equal(1, stage.Presenter.Opacity);
     }
 
     [AvaloniaFact]
-    public void A_Full_Flyout_Swings_Out_After_Hide_And_Is_Gone_By_Its_99_Percent_Time()
+    public void A_Full_Flyout_Closes_Band_By_Band_Two_Ticks_Apart_At_10_95_A_Tick_And_Is_Closed_22_Ticks_After()
     {
         using var stage = new Stage(full: true);
         stage.OpenAtRest();
         var hidden = stage.Clock.Now.TotalMilliseconds;
+        var first = stage.FirstFrameAfter(hidden);
 
         stage.Flyout.Hide();
-        stage.At(hidden + 150);
-        Assert.True(stage.Flyout.Popup.IsOpen);
-        Assert.NotNull(stage.Presenter.RenderTransform);
+        for (var tick = 0; tick <= 21; tick++)
+        {
+            stage.At(first + tick * Tick);
+            for (var k = 0; k < 8; k++)
+            {
+                var expected = Math.Max(-CloseEdgeOn, -CloseRate * Math.Max(0, tick - CloseStagger * k));
+                Assert.Equal(expected, stage.Bands!.Angles[k], 1e-9);
+            }
+        }
 
-        stage.At(hidden + 16 + FullCloseAt99 - 16);
         Assert.True(stage.Flyout.Popup.IsOpen);
-        // Time 0 is its first frame, 16 ms after Hide().
-        stage.At(hidden + 16 + FullCloseAt99 + 16);
+        stage.At(first + FullClosedAfterHide);
         Assert.False(stage.Flyout.Popup.IsOpen);
-        Assert.Null(stage.Presenter.RenderTransform);
-        Assert.InRange(PhonePopupMotion.FullCloseLength.TotalMilliseconds, FullCloseAt99 - RecordingTolerance, FullCloseAt99 + RecordingTolerance);
+        Assert.Null(stage.Bands);
+    }
+
+    [AvaloniaFact]
+    public void A_Full_Flyout_Closed_Mid_Opening_Turns_Away_From_Where_Each_Band_Was()
+    {
+        using var stage = new Stage(full: true);
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+        stage.At(first + 2 * Tick);
+        var before = stage.Bands!.Angles.ToArray();
+        Assert.True(before[0] > 0);
+
+        stage.Flyout.Hide();
+        stage.At(first + 3 * Tick);
+        Assert.Equal(before, stage.Bands!.Angles);
+        stage.At(first + 4 * Tick);
+        Assert.Equal(before[0] - CloseRate, stage.Bands!.Angles[0], 1e-9);
+    }
+
+    [AvaloniaFact]
+    public void A_Top_Flyout_Closed_Mid_Opening_Rests_Until_It_Goes()
+    {
+        using var stage = new Stage();
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0) + 3 * Tick);
+        Assert.NotNull(stage.Bands);
+        var hidden = stage.Clock.Now.TotalMilliseconds;
+
+        stage.Flyout.Hide();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Null(stage.Bands);
+        Assert.Equal(1, stage.Presenter.Opacity);
+        stage.At(hidden + TopClosedAfterHide);
+        Assert.False(stage.Flyout.Popup.IsOpen);
     }
 
     [AvaloniaFact]
@@ -324,7 +442,7 @@ public class FlyoutTests
         stage.Flyout.IsOpen = false;
         Dispatcher.UIThread.RunJobs();
         Assert.True(stage.Flyout.Popup.IsOpen);
-        stage.At(hidden + TopGoneAfterHide);
+        stage.At(hidden + TopClosedAfterHide);
         Assert.False(stage.Flyout.Popup.IsOpen);
         Assert.False(stage.Flyout.IsOpen);
     }
@@ -342,7 +460,7 @@ public class FlyoutTests
         stage.Scene.Window.MouseDown(centre, MouseButton.Left);
         stage.Scene.Window.MouseUp(centre, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        stage.At(tapped + TopGoneAfterHide);
+        stage.At(tapped + TopClosedAfterHide);
 
         Assert.False(stage.Flyout.Popup.IsOpen);
         // PENDING #150: whether the tap reaches the page. Today it doesn't, as Avalonia's flyout has it.
@@ -359,7 +477,8 @@ public class FlyoutTests
         Assert.False(stage.Flyout.Popup.IsOpen);
 
         stage.Open();
-        Assert.NotNull(stage.Presenter.RenderTransform);
+        stage.At(stage.Clock.Now.TotalMilliseconds + Tick);
+        Assert.NotNull(stage.Bands);
         stage.At(stage.Clock.Now.TotalMilliseconds + 500);
         Assert.Equal(new Point(0, 0), stage.Bounds().Position);
         Assert.Equal(Top.Width, stage.Bounds().Width);
@@ -412,7 +531,7 @@ public class FlyoutTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(request.Handled);
         Assert.Same(second, nav.CurrentPage);
-        stage.At(back + TopGoneAfterHide);
+        stage.At(back + TopClosedAfterHide);
         Assert.False(stage.Flyout.Popup.IsOpen);
 
         // With no popup open, Back is the page's again.
@@ -495,7 +614,8 @@ public class FlyoutTests
 
         Assert.False(PhoneFlyout.GetIsEnabled(stage.Presenter));
         Assert.Null(PhoneFlyout.HostOf(stage.Presenter));
-        Assert.Null(stage.Presenter.RenderTransform);
+        stage.At(stage.Clock.Now.TotalMilliseconds + Tick);
+        Assert.Null(stage.Bands);
         stage.Flyout.Hide();
         Assert.False(stage.Flyout.Popup.IsOpen);
     }
@@ -537,22 +657,6 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
-    public void A_Top_Flyout_Closed_Mid_Opening_Rests_Until_It_Goes()
-    {
-        using var stage = new Stage();
-        stage.Open();
-        stage.At(16 + 32);
-        Assert.NotNull(stage.Presenter.RenderTransform);
-
-        stage.Flyout.Hide();
-        Dispatcher.UIThread.RunJobs();
-        Assert.Null(stage.Presenter.RenderTransform);
-        Assert.True(stage.Flyout.Popup.IsOpen);
-        stage.At(16 + 32 + TopGoneAfterHide);
-        Assert.False(stage.Flyout.Popup.IsOpen);
-    }
-
-    [AvaloniaFact]
     public void A_Flyout_Whose_Button_Leaves_Closes_With_It()
     {
         // Placed against the window, the popup still closes when its own target goes, as Avalonia's does.
@@ -563,24 +667,6 @@ public class FlyoutTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(stage.Flyout.Popup.IsOpen);
-    }
-
-    [AvaloniaFact]
-    public void A_Full_Flyout_Closed_Mid_Opening_Swings_Out_From_Where_It_Was()
-    {
-        using var stage = new Stage(full: true);
-        stage.Open();
-        stage.At(16 + 48);
-        var height = stage.Presenter.Bounds.Height;
-        var before = Draw(stage.Presenter.RenderTransform!.Value, new Point(225, height)).Y;
-        Assert.True(before < height - 1);
-
-        stage.Flyout.Hide();
-        stage.At(16 + 48 + 16);
-
-        // Its first closing frame is where the opening was, not flat.
-        var after = Draw(stage.Presenter.RenderTransform!.Value, new Point(225, height)).Y;
-        Assert.Equal(before, after, 0.5);
     }
 
     [AvaloniaFact]
@@ -653,5 +739,4 @@ public class FlyoutTests
         public int GetHashCode(Rect rect) => 0;
     }
 
-    private static Point Draw(Matrix matrix, Point point) => matrix.Transform(point);
 }
