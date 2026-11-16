@@ -198,12 +198,17 @@ public partial class SampleShell : UserControl
                 }
                 catch (OperationCanceledException)
                 {
-                    // Given up for another navigation: the loop goes on from wherever the host is.
+                    // A transition cancelled (PhonePageRun's task ends cancelled when its host cancels it): the loop
+                    // goes on from wherever the host is.
                 }
 
-                // A host that didn't move and isn't moving won't: stop rather than ask for ever.
+                // A host that didn't move and isn't moving won't (a page refused to be left): stop rather than ask for
+                // ever, and show what the host shows.
                 if (ReferenceEquals(Host.CurrentPage, current) && !Host.IsNavigating)
+                {
+                    Adopt(Host.CurrentPage);
                     break;
+                }
             }
         }
         catch (Exception e)
@@ -220,25 +225,52 @@ public partial class SampleShell : UserControl
             Arrived(opening);
     }
 
-    /// <summary>Completes when <see cref="Host"/>'s navigation in progress ends.</summary>
-    private Task NavigationEnds()
+    /// <summary>
+    /// Completes when <see cref="Host"/>'s navigation in progress ends. A turn goes on out of a window, on
+    /// <c>CornflowerClock</c>'s timer, so it ends there too.
+    /// </summary>
+    private async Task NavigationEnds()
     {
         var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var watch = Host.GetObservable(NavigationPage.IsNavigatingProperty)
+        using var watch = Host.GetObservable(NavigationPage.IsNavigatingProperty)
             .Subscribe(new AnonymousObserver<bool>(navigating =>
             {
                 if (!navigating)
                     ended.TrySetResult();
             }));
-        _ = ended.Task.ContinueWith(_ => watch.Dispose(), TaskScheduler.FromCurrentSynchronizationContext());
-        return ended.Task;
+        await ended.Task;
     }
 
-    /// <summary>The navigation page is going back to the list itself, as on Alt+Left in a page: the shell shows the list.</summary>
+    /// <summary>
+    /// The navigation page is going back to the list itself, as on Alt+Left in a page: the shell shows the list. The
+    /// shell's own navigations never take the host to the list while it wants a page, so this is someone else's, even
+    /// in the moment between one of its own ending and its loop going on.
+    /// </summary>
     private void Followed()
     {
-        if (_wanted is not null && !_navigating && ReferenceEquals(Host.CurrentPage, IndexPage))
+        if (_wanted is not null && ReferenceEquals(Host.CurrentPage, IndexPage))
             ShowIndex();
+    }
+
+    /// <summary>The shell's state made what <see cref="Host"/> shows, <paramref name="shown"/>, once it gives up going elsewhere.</summary>
+    private void Adopt(Page? shown)
+    {
+        if (ReferenceEquals(shown, IndexPage))
+        {
+            if (_wanted is null)
+                return;
+            Abandon();
+            HidePerformance();
+            BackButton.IsVisible = false;
+            _wanted = null;
+        }
+        else if (shown is ContentPage page && !ReferenceEquals(page, _wanted))
+        {
+            Abandon();
+            HidePerformance();
+            BackButton.IsVisible = true;
+            _wanted = page;
+        }
     }
 
     /// <summary>Leaves the page being opened unreported, and stops measuring it.</summary>

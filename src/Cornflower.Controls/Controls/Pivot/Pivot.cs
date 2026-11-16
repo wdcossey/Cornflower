@@ -91,7 +91,7 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
     public Pivot()
     {
         _motion = new PivotMotion(this);
-        GestureRecognizers.Add(new SidewaysSwipeGestureRecognizer(this, this));
+        GestureRecognizers.Add(SidewaysSwipeGestureRecognizer.For(this));
         AddHandler(TappedEvent, OnTapped);
         ItemsView.CollectionChanged += OnItemsChanged;
         UpdateOrientation();
@@ -164,7 +164,7 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
     bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => IsInSwipeArea(point);
 
     // A press while it moves ends the move when the drag begins (PivotMotion.BeginDrag), and holds nothing.
-    bool ISidewaysSwipeTarget.HoldsOnPress() => false;
+    bool ISidewaysSwipeTarget.HoldsAPress => false;
 
     void ISidewaysSwipeTarget.BeginDrag() => _motion.BeginDrag();
 

@@ -15,6 +15,8 @@ using Cornflower.Sample;
 using Cornflower.Sample.Diagnostics;
 using Xunit;
 
+using static Cornflower.Tests.Sample.ShellTurns;
+
 namespace Cornflower.Tests.Sample;
 
 /// <summary>
@@ -386,28 +388,6 @@ public class PageTimingTests
     private static List<string> Ready(List<string> lines) =>
         lines.Where(line => line.StartsWith(SampleShell.ReadyMarker, StringComparison.Ordinal)).ToList();
 
-    /// <summary>
-    /// The page's first frame, the turnstile it comes in with to its end on <paramref name="clock"/> (425 ms, 430 going
-    /// back), and the frame at rest after it.
-    /// </summary>
-    private static void Settle(TestClock clock)
-    {
-        Draw();
-        clock.At(clock.Now.TotalMilliseconds + 500);
-        Draw();
-        clock.At(clock.Now.TotalMilliseconds + 500);
-        Draw();
-    }
-
-    /// <summary>Enough frames for a page to be drawn and the frame after it to come.</summary>
-    private static void Draw()
-    {
-        for (var frame = 0; frame < 4; frame++)
-        {
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            Dispatcher.UIThread.RunJobs();
-        }
-    }
 
     /// <summary>Frames, one at a time, until <paramref name="done"/>; a frame's render pass is over when it returns.</summary>
     private static void DrawUntil(Func<bool> done)

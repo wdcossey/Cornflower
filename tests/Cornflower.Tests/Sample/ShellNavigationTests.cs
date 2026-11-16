@@ -10,6 +10,8 @@ using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Xunit;
 
+using static Cornflower.Tests.Sample.ShellTurns;
+
 namespace Cornflower.Tests.Sample;
 
 /// <summary>
@@ -149,6 +151,57 @@ public class ShellNavigationTests
 
         Assert.Same(list, host.CurrentPage);
         Assert.False(host.IsNavigating);
+        Assert.False(shell.IsShowingPage);                       // the shell shows what the host does
+        Assert.False(shell.FindControl<Button>("BackButton")!.IsVisible);
+    }
+
+    // The way back refused: the shell stays on the page it shows, and Back with it.
+    [AvaloniaFact]
+    public void A_Way_Back_The_Page_Refuses_Leaves_The_Page_Shown()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+        var page = new Border();
+        shell.ShowPage(page, "a page");
+        Settle(clock);
+        var holder = (Page)host.CurrentPage!;
+        holder.Navigating += e => { e.Cancel = true; return Task.CompletedTask; };
+
+        shell.ShowIndex();
+        Settle(clock);
+
+        Assert.Same(holder, host.CurrentPage);
+        Assert.True(shell.IsShowingPage);
+        Assert.Same(page, shell.Shown);
+        Assert.True(shell.FindControl<Button>("BackButton")!.IsVisible);
+    }
+
+    // A shell taken out of its window mid-turn (an Android view made again, say): the turn ends out of the window, on the
+    // clock's timer, and the shell navigates again once it is back.
+    [AvaloniaFact]
+    public void A_Shell_Out_Of_Its_Window_Mid_Turn_Navigates_Again_When_Back()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+        shell.ShowPage(new Border(), "first");
+        Draw();
+        clock.At(100);
+        scene.Window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        clock.At(1000);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(host.IsNavigating);
+
+        scene.Window.Content = shell;
+        var second = new Border();
+        shell.ShowPage(second, "second");
+        Settle(clock);
+        Assert.Same(second.FindAncestorOfType<ContentPage>(), host.CurrentPage);
+        Assert.Equal(2, host.StackDepth);
     }
 
     // With the focus in a page, Alt+Left is the navigation page's own: it pops to the list, and the shell follows.
@@ -339,25 +392,4 @@ public class ShellNavigationTests
         }
     }
 
-    /// <summary>A frame drawn, and the frame after it.</summary>
-    private static void Draw()
-    {
-        for (var frame = 0; frame < 4; frame++)
-        {
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            Dispatcher.UIThread.RunJobs();
-        }
-    }
-
-    /// <summary>Every turn asked for to its end on <paramref name="clock"/> (425 ms, 430 going back), and the frame at rest.</summary>
-    private static void Settle(TestClock clock)
-    {
-        for (var turn = 0; turn < 3; turn++)
-        {
-            Draw();
-            clock.At(clock.Now.TotalMilliseconds + 500);
-        }
-
-        Draw();
-    }
 }

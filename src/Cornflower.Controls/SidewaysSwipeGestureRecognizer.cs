@@ -17,12 +17,12 @@ internal interface ISidewaysSwipeTarget
     bool IsInSwipeArea(Point point);
 
     /// <summary>
-    /// A finger has come down in the swipe area: whether it holds what is moving where it is, as the phone's
-    /// DirectManipulation catches a moving Hub. If it does, the drag has begun (<see cref="BeginDrag"/>) and this
-    /// recogniser doesn't capture the finger, so that something in the content can still take it. The Pivot ends its
-    /// move instead when the drag begins, and says no.
+    /// Whether a finger coming down now holds what is moving where it is, as the phone's DirectManipulation catches a
+    /// moving Hub. If it does, the recogniser begins the drag at the press (<see cref="BeginDrag"/>) and doesn't capture
+    /// the finger, so that something in the content can still take it. The Pivot ends its move when the drag begins
+    /// instead, and never holds.
     /// </summary>
-    bool HoldsOnPress();
+    bool HoldsAPress { get; }
 
     /// <summary>The finger has moved far enough sideways: the drag begins, from where the content is.</summary>
     void BeginDrag();
@@ -68,12 +68,14 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
     private bool _dragging;
     private bool _held;
 
-    /// <summary>A recogniser for <paramref name="control"/>, which it reads positions in, dragging <paramref name="target"/>.</summary>
-    public SidewaysSwipeGestureRecognizer(Visual control, ISidewaysSwipeTarget target)
+    private SidewaysSwipeGestureRecognizer(Visual control, ISidewaysSwipeTarget target)
     {
         _control = control;
         _target = target;
     }
+
+    /// <summary>A recogniser for <paramref name="control"/>, which it reads positions in and drags.</summary>
+    public static SidewaysSwipeGestureRecognizer For<T>(T control) where T : Visual, ISidewaysSwipeTarget => new(control, control);
 
     protected override void PointerPressed(PointerPressedEventArgs e)
     {
@@ -88,7 +90,9 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
         _moves.Clear();
 
         // If something in the content takes the finger, this hears PointerCaptureLost and lets go.
-        _held = _target.HoldsOnPress();
+        _held = _target.HoldsAPress;
+        if (_held)
+            _target.BeginDrag();
     }
 
     protected override void PointerMoved(PointerEventArgs e)

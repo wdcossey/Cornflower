@@ -3,6 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Xunit;
 
@@ -30,7 +31,12 @@ public class StartPageTests
         var shell = App.PhoneView(Catalogue, title);
         using var scene = new Scene(shell);
 
-        Assert.IsType<Second>(shell.Shown);
+        var shown = Assert.IsType<Second>(shell.Shown);
+        // On the shell's NavigationPage, over the list, at rest: pushed before the shell was in a window, with no turn.
+        var host = shell.FindControl<NavigationPage>("Host")!;
+        Assert.Equal(2, host.StackDepth);
+        Assert.Same(shown.FindAncestorOfType<ContentPage>(), host.CurrentPage);
+        Assert.DoesNotContain(shown.GetSelfAndVisualAncestors(), visual => visual.RenderTransform is not null);
     }
 
     [AvaloniaFact]
@@ -84,9 +90,12 @@ public class StartPageTests
     {
         var shell = App.PhoneView(Catalogue, null);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         Assert.True(Back(scene.Window));
         Assert.False(shell.IsShowingPage);
+        ShellTurns.Settle(clock);
+        Assert.Equal(1, shell.FindControl<NavigationPage>("Host")!.StackDepth);
         Assert.False(Back(scene.Window));
     }
 

@@ -105,7 +105,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     {
         _motion = new HubMotion(this);
         _sectionHeaders = new SectionHeaderList(_sections);
-        GestureRecognizers.Add(new SidewaysSwipeGestureRecognizer(this, this));
+        GestureRecognizers.Add(SidewaysSwipeGestureRecognizer.For(this));
         _sections.Validate = ValidateSection;
         _sections.CollectionChanged += OnSectionsChanged;
         // A ScrollViewer in a section may have scrolled down to the control already, and handled the request.
@@ -182,13 +182,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => IsInPanArea(point);
 
     // A finger on moving sections holds them where they are, as the phone's DirectManipulation does.
-    bool ISidewaysSwipeTarget.HoldsOnPress()
-    {
-        if (!_motion.AreSectionsMoving)
-            return false;
-        _motion.BeginDrag();
-        return true;
-    }
+    bool ISidewaysSwipeTarget.HoldsAPress => _motion.AreSectionsMoving;
 
     void ISidewaysSwipeTarget.BeginDrag() => _motion.BeginDrag();
 
