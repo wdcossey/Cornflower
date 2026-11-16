@@ -56,6 +56,14 @@ public partial class SampleShell : UserControl
     /// <summary>Whether the shell is taking <see cref="Host"/> to <see cref="_wanted"/>, one navigation after another.</summary>
     private bool _navigating;
 
+    /// <summary>Whether a navigation the shell asked for is running: any other is the navigation page's own.</summary>
+    private bool _ownStep;
+
+#if DEBUG
+    /// <summary>The cost line last shown up the rail, and the page it was for, to show again if the shell comes back to it.</summary>
+    private (ContentPage? Page, string? Line) _shownCost;
+#endif
+
     /// <summary>
     /// The page being opened, from its navigation until its ready line is written, or until the shell leaves it or its
     /// window; then null.
@@ -113,11 +121,17 @@ public partial class SampleShell : UserControl
     /// <summary>Shows the list.</summary>
     public void ShowIndex()
     {
-        Abandon();
-        HidePerformance();
-        BackButton.IsVisible = false;
+        Leave(toPage: false);
         _wanted = null;
         Navigate();
+    }
+
+    /// <summary>What leaving the page shown means, whichever way: its opening unreported, its cost hidden, and Back.</summary>
+    private void Leave(bool toPage)
+    {
+        Abandon();
+        HidePerformance();
+        BackButton.IsVisible = toPage;
     }
 
     /// <summary>
@@ -150,9 +164,7 @@ public partial class SampleShell : UserControl
 
     private void Show(Control page, string title, long started)
     {
-        Abandon();
-        HidePerformance();
-        BackButton.IsVisible = true;
+        Leave(toPage: true);
         // A ContentPage stretches its content both ways by default, as the phone's Frame stretches its page.
         _wanted = new ContentPage { Content = page };
         _opening = new Opening(page, _wanted, title, started);
@@ -175,6 +187,7 @@ public partial class SampleShell : UserControl
     private async Task NavigateAsync()
     {
         _navigating = true;
+        var retries = 0;
         try
         {
             while (true)
@@ -189,22 +202,28 @@ public partial class SampleShell : UserControl
                     continue;
                 }
 
-                var step = ReferenceEquals(wanted, IndexPage) ? Host.PopToRootAsync()
-                    : ReferenceEquals(current, IndexPage) ? Host.PushAsync(wanted)
-                    : Host.ReplaceAsync(wanted);
+                var cancelled = false;
+                _ownStep = true;
                 try
                 {
-                    await step;
+                    await (ReferenceEquals(wanted, IndexPage) ? Host.PopToRootAsync()
+                        : ReferenceEquals(current, IndexPage) ? Host.PushAsync(wanted)
+                        : Host.ReplaceAsync(wanted));
                 }
                 catch (OperationCanceledException)
                 {
                     // A transition cancelled (PhonePageRun's task ends cancelled when its host cancels it): the loop
-                    // goes on from wherever the host is.
+                    // asks again from wherever the host is, a few times at most.
+                    cancelled = true;
+                }
+                finally
+                {
+                    _ownStep = false;
                 }
 
                 // A host that didn't move and isn't moving won't (a page refused to be left): stop rather than ask for
                 // ever, and show what the host shows.
-                if (ReferenceEquals(Host.CurrentPage, current) && !Host.IsNavigating)
+                if (ReferenceEquals(Host.CurrentPage, current) && !Host.IsNavigating && (!cancelled || ++retries > 3))
                 {
                     Adopt(Host.CurrentPage);
                     break;
@@ -242,13 +261,13 @@ public partial class SampleShell : UserControl
     }
 
     /// <summary>
-    /// The navigation page is going back to the list itself, as on Alt+Left in a page: the shell shows the list. The
-    /// shell's own navigations never take the host to the list while it wants a page, so this is someone else's, even
-    /// in the moment between one of its own ending and its loop going on.
+    /// The navigation page is going back to the list itself, as on Alt+Left in a page: the shell shows the list. A
+    /// change made by one of the shell's own navigations (<see cref="_ownStep"/>) is the shell's, whatever it wants by
+    /// the time the change comes.
     /// </summary>
     private void Followed()
     {
-        if (_wanted is not null && ReferenceEquals(Host.CurrentPage, IndexPage))
+        if (!_ownStep && _wanted is not null && ReferenceEquals(Host.CurrentPage, IndexPage))
             ShowIndex();
     }
 
@@ -259,17 +278,17 @@ public partial class SampleShell : UserControl
         {
             if (_wanted is null)
                 return;
-            Abandon();
-            HidePerformance();
-            BackButton.IsVisible = false;
+            Leave(toPage: false);
             _wanted = null;
         }
         else if (shown is ContentPage page && !ReferenceEquals(page, _wanted))
         {
-            Abandon();
-            HidePerformance();
-            BackButton.IsVisible = true;
+            Leave(toPage: true);
             _wanted = page;
+#if DEBUG
+            if (ReferenceEquals(_shownCost.Page, page) && _shownCost.Line is { } line)
+                ShowPerformance(line);
+#endif
         }
     }
 
@@ -293,6 +312,13 @@ public partial class SampleShell : UserControl
         // Only now, in a window, so that a shell never shown has no listener; layout and render can't come before.
         opening.Measure();
 #endif
+        // The navigation page puts a pushed page in the window from the dispatcher: a frame before that isn't the page's.
+        if (TopLevel.GetTopLevel(opening.Page) is null)
+        {
+            opening.WhenAttached(AwaitFirstFrame);
+            return;
+        }
+
         // The callback runs before the next frame is drawn; the one it asks for runs after it.
         top.RequestAnimationFrame(_ => top.RequestAnimationFrame(_ => Drawn(opening, top)));
     }
@@ -354,8 +380,8 @@ public partial class SampleShell : UserControl
             Report(ReadyLine(opening.OpenedIn!.Value, DeviceFacts.Of(top, opening.Page), opening.Title));
 #if DEBUG
             Report($"{CostMarker} {opening.Cost}");
-            PerformanceLine.Text = opening.Cost;
-            PerformanceLine.IsVisible = true;
+            ShowPerformance(opening.Cost);
+            _shownCost = (opening.Holder, opening.Cost);
 #endif
         }
         finally
@@ -369,6 +395,12 @@ public partial class SampleShell : UserControl
     /// posted jobs can't be cancelled, and a page left, or a shell that has left its window since, says nothing.
     /// </summary>
     private bool IsCurrent(Opening opening, TopLevel top) => ReferenceEquals(opening, _opening) && ReferenceEquals(top, _top);
+
+    private void ShowPerformance(string? line)
+    {
+        PerformanceLine.Text = line;
+        PerformanceLine.IsVisible = true;
+    }
 
     private void HidePerformance()
     {
@@ -440,6 +472,27 @@ public partial class SampleShell : UserControl
         /// <summary>Whether the navigation page has finished turning to it.</summary>
         public bool HasArrived { get; set; }
 
+        private EventHandler<VisualTreeAttachmentEventArgs>? _attached;
+
+        /// <summary>Runs <paramref name="then"/> once, when the page joins a visual tree; the last asked for, if asked again.</summary>
+        public void WhenAttached(Action then)
+        {
+            StopWaiting();
+            _attached = (_, _) =>
+            {
+                StopWaiting();
+                then();
+            };
+            Page.AttachedToVisualTree += _attached;
+        }
+
+        private void StopWaiting()
+        {
+            if (_attached is not null)
+                Page.AttachedToVisualTree -= _attached;
+            _attached = null;
+        }
+
 #if DEBUG
         /// <summary>Avalonia's layout and render times for this page; a process-wide listener, so disposed with it.</summary>
         private PerformanceMonitor? _performance;
@@ -463,15 +516,14 @@ public partial class SampleShell : UserControl
 
         public void Dispose()
         {
+            StopWaiting();
             _performance?.Dispose();
             _performance = null;
         }
 #else
         public void Opened(TimeSpan opened) => OpenedIn ??= opened;
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() => StopWaiting();
 #endif
     }
 }

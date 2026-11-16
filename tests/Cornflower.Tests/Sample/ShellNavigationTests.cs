@@ -176,6 +176,35 @@ public class ShellNavigationTests
         Assert.True(shell.IsShowingPage);
         Assert.Same(page, shell.Shown);
         Assert.True(shell.FindControl<Button>("BackButton")!.IsVisible);
+#if DEBUG
+        Assert.True(shell.FindControl<TextBlock>("PerformanceLine")!.IsVisible);   // its cost shown again
+#endif
+    }
+
+    // A page asked for while the shell's own way back waits on the page being left (an async Navigating handler): the
+    // list coming in is the shell's own doing, not the navigation page's, so the page asked for still opens after it.
+    [AvaloniaFact]
+    public void A_Page_Asked_For_While_The_Way_Back_Waits_On_The_Page_Opens_After_It()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        var host = Host(shell);
+        shell.ShowPage(new Border(), "first");
+        Settle(clock);
+        var leaving = new TaskCompletionSource();
+        ((Page)host.CurrentPage!).Navigating += _ => leaving.Task;
+
+        shell.ShowIndex();
+        Dispatcher.UIThread.RunJobs();
+        var next = new Border();
+        shell.ShowPage(next, "next");
+        leaving.SetResult();
+        Settle(clock);
+
+        Assert.Same(next.FindAncestorOfType<ContentPage>(), host.CurrentPage);
+        Assert.True(shell.IsShowingPage);
+        Assert.Same(next, shell.Shown);
     }
 
     // A shell taken out of its window mid-turn (an Android view made again, say): the turn ends out of the window, on the
