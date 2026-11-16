@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
@@ -143,6 +145,50 @@ namespace RefApp
                 list.Add(Combo("open-" + count + "-items", count));
             }
 
+            // #150. AutoSuggestBox: at rest, focused, with text, and its suggestion list open with 1, 3 and 12 suggestions.
+            // The box is focused from code (its TextBox part); whether the keyboard comes up with that is part of the read.
+            list.Add(Suggest("rest", null, 0, false));
+            list.Add(Suggest("focused", null, 0, true));
+            list.Add(Suggest("text", "ap", 0, true));
+            list.Add(Suggest("list-1", "ap", 1, true));
+            list.Add(Suggest("list-3", "a", 3, true));
+            list.Add(Suggest("list-12", "a", 12, true));
+
+            // ContentDialog's layout (#150): no button, the primary or the secondary alone, a long title and content
+            // longer than the screen, and a TextBox in the content focused from code (the keyboard).
+            list.Add(Dialog("no-buttons", false, null, null));
+            list.Add(Dialog("primary-only", false, "ok", null));
+            list.Add(Dialog("secondary-only", false, null, "cancel"));
+            list.Add(Dialog("long", false, "ok", "cancel", LongTitle, LongBody()));
+            list.Add(Dialog("long-full-size", true, "ok", "cancel", LongTitle, LongBody()));
+            list.Add(KeyboardDialog());
+
+            // MenuFlyout (#150): every kind of item with the first held Pressed, a menu longer than the screen, and the
+            // four-item menu shown at targets lower down the page (where it sits, and when it goes above its target).
+            list.Add(MenuStates());
+            list.Add(MenuAt("long", 0, 24));
+            list.Add(MenuAt("at-300", 300, 4));
+            list.Add(MenuAt("at-500", 500, 4));
+            list.Add(MenuAt("at-640", 640, 4));
+            list.Add(MenuAt("at-720", 720, 4));
+
+            // The pickers' bar (#150): a PickerFlyout without the confirmation buttons, and ListPickerFlyout Multiple
+            // with two items checked.
+            list.Add(new PopupSpecimen
+            {
+                Name = "PickerFlyout",
+                Variant = "no-confirmation-buttons",
+                MakeHost = button,
+                Open = host =>
+                {
+                    var p = new PickerFlyout { Content = new TextBlock { Text = "picker flyout content", Margin = new Thickness(19) }, ConfirmationButtonsVisible = false };
+                    var op = p.ShowAtAsync(host);
+                    return p;
+                },
+                Close = (host, h) => ((PickerFlyout)h).Hide(),
+            });
+            list.Add(ListPicker("multiple-two-checked", ListPickerFlyoutSelectionMode.Multiple, 2));
+
             return list;
         }
 
@@ -169,6 +215,26 @@ namespace RefApp
 
         private static PopupSpecimen Dialog(string variant, bool fullSize)
         {
+            return Dialog(variant, fullSize, "ok", "cancel");
+        }
+
+        private const string LongTitle = "Agjy 0123 a content dialog title long enough to wrap onto a second line";
+
+        /// <summary>Forty numbered lines of body text, longer than the screen.</summary>
+        private static string LongBody()
+        {
+            var lines = new List<string>();
+            for (var i = 1; i <= 40; i++)
+            {
+                lines.Add("line " + i + " of the dialog's long body");
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        /// <summary>A ContentDialog; a null button text leaves that button out.</summary>
+        private static PopupSpecimen Dialog(string variant, bool fullSize, string primary, string secondary, string title = "content dialog", string body = "Agjy 0123 the dialog's body text, long enough to wrap onto a second line.")
+        {
             return new PopupSpecimen
             {
                 Name = "ContentDialog",
@@ -178,12 +244,20 @@ namespace RefApp
                 {
                     var d = new ContentDialog
                     {
-                        Title = "content dialog",
-                        Content = "Agjy 0123 the dialog's body text, long enough to wrap onto a second line.",
-                        PrimaryButtonText = "ok",
-                        SecondaryButtonText = "cancel",
+                        Title = title,
+                        Content = body,
                         FullSizeDesired = fullSize,
                     };
+                    if (primary != null)
+                    {
+                        d.PrimaryButtonText = primary;
+                    }
+
+                    if (secondary != null)
+                    {
+                        d.SecondaryButtonText = secondary;
+                    }
+
                     var op = d.ShowAsync();
                     return d;
                 },
@@ -235,7 +309,7 @@ namespace RefApp
             };
         }
 
-        private static PopupSpecimen ListPicker(string variant, ListPickerFlyoutSelectionMode mode)
+        private static PopupSpecimen ListPicker(string variant, ListPickerFlyoutSelectionMode mode, int checkedItems = 0)
         {
             return new PopupSpecimen
             {
@@ -249,7 +323,17 @@ namespace RefApp
                         ItemsSource = new[] { "one", "two", "three", "four", "five" },
                         SelectionMode = mode,
                     };
-                    p.SelectedIndex = 1;
+                    // Single, or Multiple with none asked for: the second item selected, as before #150. Else items 2, 4...
+                    if (checkedItems == 0)
+                    {
+                        p.SelectedIndex = 1;
+                    }
+
+                    for (var i = 0; i < checkedItems; i++)
+                    {
+                        p.SelectedItems.Add(((string[])p.ItemsSource)[i * 2 + 1]);
+                    }
+
                     PickerFlyoutBase.SetTitle(p, "LIST PICKER");
                     var op = p.ShowAtAsync(host);
                     return p;
@@ -369,6 +453,174 @@ namespace RefApp
             }
 
             return page;
+        }
+
+        /// <summary>
+        /// A ContentDialog whose content is a line of text and a TextBox, the TextBox focused from code once the dialog
+        /// has opened: the dialog with the keyboard up, if focus from code raises it.
+        /// </summary>
+        private static PopupSpecimen KeyboardDialog()
+        {
+            return new PopupSpecimen
+            {
+                Name = "ContentDialog",
+                Variant = "keyboard",
+                SettleMs = 1500,
+                MakeHost = () => new Button { Content = "open" },
+                Open = host =>
+                {
+                    var box = new TextBox { Header = "name", Text = "Agjy" };
+                    var panel = new StackPanel();
+                    panel.Children.Add(new TextBlock { Text = "Agjy 0123 the dialog's body text.", TextWrapping = TextWrapping.Wrap });
+                    panel.Children.Add(box);
+                    var d = new ContentDialog { Title = "content dialog", Content = panel, PrimaryButtonText = "ok", SecondaryButtonText = "cancel" };
+                    // Focused at once on Opened, it didn't take (20261116-1934-dev11): give the content time to load.
+                    d.Opened += async (s, e) =>
+                    {
+                        await Task.Delay(500);
+                        box.Focus(FocusState.Programmatic);
+                    };
+                    var op = d.ShowAsync();
+                    return d;
+                },
+                Close = (host, h) => ((ContentDialog)h).Hide(),
+            };
+        }
+
+        /// <summary>
+        /// An AutoSuggestBox with a header and placeholder; with <paramref name="focus"/> its TextBox part is focused from
+        /// code, then <paramref name="text"/> set, then <paramref name="suggestions"/> fruit names given as its items and
+        /// the list opened (none: left closed).
+        /// </summary>
+        private static PopupSpecimen Suggest(string variant, string text, int suggestions, bool focus)
+        {
+            return new PopupSpecimen
+            {
+                Name = "AutoSuggestBox",
+                Variant = variant,
+                Height = 400,
+                SettleMs = 1500,
+                MakeHost = () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit" },
+                Open = host =>
+                {
+                    var box = (AutoSuggestBox)host;
+                    if (focus)
+                    {
+                        var inner = FindNamed(box, "TextBox") as Control;
+                        if (inner == null || !inner.Focus(FocusState.Programmatic))
+                        {
+                            throw new InvalidOperationException("the AutoSuggestBox's TextBox part didn't take focus");
+                        }
+                    }
+
+                    if (text != null)
+                    {
+                        box.Text = text;
+                    }
+
+                    if (suggestions > 0)
+                    {
+                        box.ItemsSource = Fruits.Take(suggestions).ToList();
+                        box.IsSuggestionListOpen = true;
+                    }
+
+                    return null;
+                },
+                Close = (host, h) => ((AutoSuggestBox)host).IsSuggestionListOpen = false,
+            };
+        }
+
+        /// <summary>Twelve fruit names, the AutoSuggestBox's suggestions.</summary>
+        internal static readonly string[] Fruits = { "apple", "apricot", "avocado", "banana", "blackberry", "blueberry", "cherry", "grape", "lemon", "mango", "orange", "peach" };
+
+        /// <summary>
+        /// A MenuFlyout of every kind of item: an item, a ToggleMenuFlyoutItem checked and one unchecked, a separator, a
+        /// disabled item and a last item; once open, the first item is put in its Pressed state.
+        /// </summary>
+        private static PopupSpecimen MenuStates()
+        {
+            return new PopupSpecimen
+            {
+                Name = "MenuFlyout",
+                Variant = "states",
+                SettleMs = 1200,
+                MakeHost = () => new Button { Content = "open" },
+                Open = host =>
+                {
+                    var m = new MenuFlyout();
+                    var first = new MenuFlyoutItem { Text = "pressed item" };
+                    m.Items.Add(first);
+                    m.Items.Add(new ToggleMenuFlyoutItem { Text = "toggle checked", IsChecked = true });
+                    m.Items.Add(new ToggleMenuFlyoutItem { Text = "toggle unchecked", IsChecked = false });
+                    m.Items.Add(new MenuFlyoutSeparator());
+                    m.Items.Add(new MenuFlyoutItem { Text = "disabled item", IsEnabled = false });
+                    m.Items.Add(new MenuFlyoutItem { Text = "last item" });
+                    // Put in Pressed on Opened, it didn't show (20261116-1934-dev11): after the menu's 0.5 s storyboard instead.
+                    m.Opened += async (s, e) =>
+                    {
+                        await Task.Delay(700);
+                        VisualStateManager.GoToState(first, "Pressed", false);
+                    };
+                    m.ShowAt(host);
+                    return m;
+                },
+                Close = (host, h) => ((MenuFlyout)h).Hide(),
+            };
+        }
+
+        /// <summary>
+        /// A MenuFlyout of <paramref name="items"/> items shown at a Button whose top is <paramref name="top"/> view px
+        /// below the stage's top margin: where the menu sits against its target, and when it goes above it.
+        /// </summary>
+        private static PopupSpecimen MenuAt(string variant, double top, int items)
+        {
+            return new PopupSpecimen
+            {
+                Name = "MenuFlyout",
+                Variant = variant,
+                Height = 800,
+                MakeHost = () =>
+                {
+                    var target = new Button { Content = "open", Margin = new Thickness(0, top, 0, 0), VerticalAlignment = VerticalAlignment.Top };
+                    var grid = new Grid { Height = 780, VerticalAlignment = VerticalAlignment.Top, Tag = target };
+                    grid.Children.Add(target);
+                    return grid;
+                },
+                Open = host =>
+                {
+                    var m = new MenuFlyout();
+                    for (var i = 1; i <= items; i++)
+                    {
+                        m.Items.Add(new MenuFlyoutItem { Text = "menu item " + i });
+                    }
+
+                    m.ShowAt((FrameworkElement)host.Tag);
+                    return m;
+                },
+                Close = (host, h) => ((MenuFlyout)h).Hide(),
+            };
+        }
+
+        /// <summary>The first element of that name under root, in the visual tree.</summary>
+        internal static FrameworkElement FindNamed(DependencyObject root, string name)
+        {
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                var f = child as FrameworkElement;
+                if (f != null && f.Name == name)
+                {
+                    return f;
+                }
+
+                var found = FindNamed(child, name);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
         }
 
         private static PopupSpecimen Combo(string variant, int count)

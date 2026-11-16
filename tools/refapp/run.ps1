@@ -27,7 +27,8 @@
   pwsh -NoProfile -File tools/refapp/run.ps1 -Device 11 -Only 'Flyout|Dialog|ComboBox'
   pwsh -NoProfile -File tools/refapp/run.ps1 -Out ~/cornflower-reference/refapp
 
-  -Only keeps the specimens and popups whose name matches the regex, for a quick run.
+  -Only keeps the specimens whose name matches the regex, and the popups whose name or name/variant does
+  (ContentDialog/keyboard), for a quick run.
   -Popups also or -Popups only adds the popups (flyouts, dialogs, pickers), which are left out by default.
   -Demo deploys the app with its demo page (a button per popup, and dark or light) and leaves it
   open in the emulator, for screenshots by hand. It captures nothing.
@@ -36,7 +37,7 @@
   log of what the control did comes back as probe.txt, beside touch.log. Probes: toggleswitch, toggletap,
   togglehalf, tilt, tiltedge, tiltgrid, motion, pages, projections, ring, ringsize, scroll, scrollend, listpress, listcheck, turnstile, pivot, pivotwide, pivottwo, hub, hubimage, hubimage900, appbar,
   and for #148 pivotrelease, hubrelease, hubentrance, hubstretch, appbarlight, appbarlong, listclick, and for #149
-  popupcurves (with -Record) and looping.
+  popupcurves (with -Record) and looping, and for #150 dismiss and dismissagain.
   -Record (with -Probe) records the emulator's display with ffmpeg gdigrab from just before the touches until the
   probe is done, lossless, and brings back record.mkv and frames.csv, each frame's time in seconds. Probes motion,
   pages, projections and ring start their sequence on one tap, so the recording and the log start together;

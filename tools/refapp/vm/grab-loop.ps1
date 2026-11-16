@@ -7,13 +7,17 @@
 # the window doesn't: at 100% zoom the part of the window below the VM's screen is never drawn, and at the
 # zoom that fits it is scaled. The window is only watched, to know when to shoot.
 #
+# A change is more than -MaxChangedPixels pixels differing from the picture as it last changed, so that a text caret's
+# blink (a few hundred pixels at the window's zoom) doesn't keep a focused text box from ever holding still (#150).
+#
 # Each shot is <Out>\<UTC yyyyMMddTHHmmssfff>.png, the time the picture last changed. Runs until the stop
 # file appears. It opens the Additional Tools window if it isn't (the toolbar's >> button).
 param(
     [Parameter(Mandatory = $true)][string]$Out,
     [Parameter(Mandatory = $true)][string]$StopFile,
     [int]$IntervalMs = 200,
-    [int]$SteadyMs = 1200
+    [int]$SteadyMs = 1200,
+    [int]$MaxChangedPixels = 600
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,11 +58,11 @@ public static class Watch {
         return found;
     }
 
-    // A hash of the window's pixels, 0 if it can't be read.
-    public static long Hash(IntPtr h) {
+    // The window's pixels, null if they can't be read.
+    public static int[] Pixels(IntPtr h) {
         RECT r; GetClientRect(h, out r);
         int w = r.R - r.L, ht = r.B - r.T;
-        if (w <= 0 || ht <= 0) return 0;
+        if (w <= 0 || ht <= 0) return null;
         using (var bmp = new Bitmap(w, ht, PixelFormat.Format32bppArgb)) {
             using (var g = Graphics.FromImage(bmp)) {
                 var hdc = g.GetHdc();
@@ -69,10 +73,16 @@ public static class Watch {
             var px = new int[w * ht];
             Marshal.Copy(d.Scan0, px, 0, px.Length);
             bmp.UnlockBits(d);
-            long hash = 1469598103934665603;
-            foreach (var p in px) { hash ^= p; hash *= 1099511628211; }
-            return hash;
+            return px;
         }
+    }
+
+    // How many pixels differ; all of them if either is missing or the sizes differ.
+    public static int Changed(int[] a, int[] b) {
+        if (a == null || b == null || a.Length != b.Length) return int.MaxValue;
+        var n = 0;
+        for (var i = 0; i < a.Length; i++) if (a[i] != b[i]) n++;
+        return n;
     }
 }
 '@
@@ -126,7 +136,7 @@ function Save-Shot($t, [string]$Path) {
 }
 
 $saved = 0
-$lastHash = 0
+$last = $null
 $changedAt = [DateTime]::UtcNow
 $shot = $true
 $t = $null
@@ -135,9 +145,12 @@ while (-not (Test-Path $StopFile)) {
     $h = [Watch]::Find()
     if ($h -eq [IntPtr]::Zero) { continue }
 
-    $hash = [Watch]::Hash($h)
-    if ($hash -ne $lastHash) {
-        $lastHash = $hash
+    $pixels = [Watch]::Pixels($h)
+    $changed = [Watch]::Changed($pixels, $last)
+    if ($changed -gt $MaxChangedPixels) {
+        # A small change logged, to size -MaxChangedPixels by (a caret's blink was more than 64 px, 2026-11-16).
+        if ($changed -lt 5000) { Log "changed: $changed px" }
+        $last = $pixels
         $changedAt = [DateTime]::UtcNow
         $shot = $false
         continue

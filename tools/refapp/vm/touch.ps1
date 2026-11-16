@@ -7,6 +7,8 @@
 #   move <x> <y>    move there, pressed or not
 #   up <x> <y>      move there and release
 #   wait <ms>
+#   key <vk>        press and release a key on the PC's keyboard, a virtual-key code, with the emulator in front: the
+#                   emulator maps some to the phone's keys (F1, 112, is Back)
 # A view point lands on the display window (class OPWindowClass), which shows the phone's whole display at the
 # window's zoom, so one window pixel is (view width / window width) view pixels: about 0.82 at the zoom that
 # fits a 1440-high screen. The app logs the positions it actually got.
@@ -47,6 +49,8 @@ public static class XdeMouse {
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+    [DllImport("user32.dll")] static extern uint MapVirtualKey(uint code, uint type);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint ms);
     [DllImport("winmm.dll")] public static extern uint timeEndPeriod(uint ms);
@@ -96,6 +100,14 @@ public static class XdeMouse {
     public static void RealMove(int x, int y) { SetCursorPos(x, y); }
     public static void RealDown() { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); }
     public static void RealUp() { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); }
+
+    // A key, pressed and released 80 ms later, to whatever has the keyboard: the emulator, once in front.
+    public static void Key(int vk) {
+        var scan = (byte)MapVirtualKey((uint)vk, 0);
+        keybd_event((byte)vk, scan, 0, UIntPtr.Zero);
+        System.Threading.Thread.Sleep(80);
+        keybd_event((byte)vk, scan, 2, UIntPtr.Zero);
+    }
 }
 '@
 
@@ -142,6 +154,14 @@ try {
         if ($parts[0] -eq 'wait') { $at += [double]::Parse($parts[1], $inv); continue }
         while ($clock.Elapsed.TotalMilliseconds -lt $at) {
             if ($at - $clock.Elapsed.TotalMilliseconds -gt 2) { Start-Sleep -Milliseconds 1 }
+        }
+
+        if ($parts[0] -eq 'key') {
+            # Keys go to the window in front, in either mode.
+            [XdeMouse]::Front([IntPtr]$window)
+            [XdeMouse]::Key([int]$parts[1])
+            $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2}' -f $clock.Elapsed.TotalMilliseconds, $at, $line))
+            continue
         }
 
         $x = [int][Math]::Round([double]::Parse($parts[1], $inv) * $sx)
