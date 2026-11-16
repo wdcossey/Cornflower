@@ -95,22 +95,30 @@ public sealed class ContentDialogButtonClickDeferral
 
 /// <summary>
 /// The deferrals taken from one event's arguments: what was waiting on them runs when the last is completed, on the UI
-/// thread, or at once if none was taken. A deferral completed twice counts once.
+/// thread, or at once if none was taken. A deferral completed twice counts once; one taken once the decision has been
+/// made, as by a handler after an <c>await</c>, throws.
 /// </summary>
 internal sealed class Deferrals
 {
+    private readonly object _gate = new();
     private int _open;
+    private bool _decided;
     private Action? _then;
 
     public Action Take()
     {
-        _open++;
-        var done = false;
+        lock (_gate)
+        {
+            if (_decided)
+                throw new InvalidOperationException("A deferral must be taken in the event's handler, before it returns.");
+            _open++;
+        }
+
+        var done = 0;
         return () =>
         {
-            if (done)
+            if (Interlocked.Exchange(ref done, 1) == 1)
                 return;
-            done = true;
             if (Dispatcher.UIThread.CheckAccess())
                 Release();
             else
@@ -121,17 +129,32 @@ internal sealed class Deferrals
     /// <summary>Runs <paramref name="then"/> now if no deferral is open, or when the last is completed.</summary>
     public void Then(Action then)
     {
-        if (_open == 0)
-            then();
-        else
-            _then = then;
+        lock (_gate)
+        {
+            if (_open > 0)
+            {
+                _then = then;
+                return;
+            }
+
+            _decided = true;
+        }
+
+        then();
     }
 
     private void Release()
     {
-        if (--_open > 0 || _then is not { } then)
-            return;
-        _then = null;
+        Action? then;
+        lock (_gate)
+        {
+            if (--_open > 0 || _then is null)
+                return;
+            then = _then;
+            _then = null;
+            _decided = true;
+        }
+
         then();
     }
 }

@@ -439,26 +439,43 @@ public class ContentDialogTests
         Assert.Equal(ContentDialogResult.Secondary, stage.Result.Result);
     }
 
-    [AvaloniaFact]
-    public void The_Primary_Button_Runs_Its_Command_Once_With_Its_Parameter_And_Closes_With_Primary()
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_Button_Runs_Its_Own_Command_Once_With_Its_Parameter_And_Closes_With_Its_Result(bool primary)
     {
         using var stage = new Stage();
-        var command = new Command();
-        stage.Dialog.PrimaryButtonCommand = command;
+        Command first = new(), second = new();
+        stage.Dialog.PrimaryButtonCommand = first;
         stage.Dialog.PrimaryButtonCommandParameter = "p";
+        stage.Dialog.SecondaryButtonCommand = second;
+        stage.Dialog.SecondaryButtonCommandParameter = "s";
         stage.ShowAtRest();
 
-        stage.Click(stage.Buttons[0]);
-        Assert.Equal(["p"], command.Ran);
-        Assert.Equal(ContentDialogResult.Primary, stage.Result!.Result);
+        stage.Click(stage.Buttons[primary ? 0 : 1]);
+        Assert.Equal(primary ? ["p"] : [], first.Ran);
+        Assert.Equal(primary ? [] : ["s"], second.Ran);
+        Assert.Equal(primary ? ContentDialogResult.Primary : ContentDialogResult.Secondary, stage.Result!.Result);
     }
 
-    [AvaloniaFact]
-    public void A_Command_That_Cant_Run_And_IsPrimaryButtonEnabled_False_Disable_Their_Buttons()
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_Command_That_Cant_Run_And_A_Button_Not_Enabled_Disable_Their_Buttons(bool primaryDisabled)
     {
         using var stage = new Stage();
-        stage.Dialog.SecondaryButtonCommand = new Command { CanRun = false };
-        stage.Dialog.IsPrimaryButtonEnabled = false;
+        // One button disabled by its IsPrimaryButtonEnabled or IsSecondaryButtonEnabled, the other by its command.
+        if (primaryDisabled)
+        {
+            stage.Dialog.IsPrimaryButtonEnabled = false;
+            stage.Dialog.SecondaryButtonCommand = new Command { CanRun = false };
+        }
+        else
+        {
+            stage.Dialog.IsSecondaryButtonEnabled = false;
+            stage.Dialog.PrimaryButtonCommand = new Command { CanRun = false };
+        }
+
         stage.ShowAtRest();
 
         Assert.False(stage.Buttons[0].IsEffectivelyEnabled);
@@ -468,8 +485,10 @@ public class ContentDialogTests
         Assert.False(stage.Result!.IsCompleted);
 
         stage.Dialog.IsPrimaryButtonEnabled = true;
+        stage.Dialog.IsSecondaryButtonEnabled = true;
         Dispatcher.UIThread.RunJobs();
-        Assert.True(stage.Buttons[0].IsEffectivelyEnabled);
+        Assert.Equal(primaryDisabled, stage.Buttons[0].IsEffectivelyEnabled);
+        Assert.Equal(!primaryDisabled, stage.Buttons[1].IsEffectivelyEnabled);
     }
 
     [AvaloniaFact]
@@ -778,6 +797,155 @@ public class ContentDialogTests
         var layer = (Panel)stage.Dialog.GetVisualAncestors().OfType<OverlayPopupHost>().Single().GetVisualParent()!;
         Assert.Equal(Dim(dark: false), ((ISolidColorBrush)layer.Children.OfType<Rectangle>().Single().Fill!).Color);
     }
+
+    [AvaloniaFact]
+    public void A_Closed_Handler_Can_Show_It_Again()
+    {
+        using var stage = new Stage();
+        stage.ShowAtRest();
+        Task<ContentDialogResult>? again = null;
+        stage.Dialog.Closed += (_, _) => again ??= stage.Dialog.ShowAsync(stage.Scene.Window);
+
+        stage.Dialog.Hide();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        Assert.NotNull(again);
+        Assert.False(again.IsCompleted);
+        Assert.True(stage.Dialog.Popup!.IsOpen);
+        Assert.Equal(1, stage.Dialog.Opacity);
+    }
+
+    [AvaloniaFact]
+    public void A_Click_Deferred_In_One_Show_Doesnt_Reach_The_Next()
+    {
+        using var stage = new Stage();
+        ContentDialogButtonClickDeferral? deferral = null;
+        stage.Dialog.PrimaryButtonClick += (_, e) => deferral ??= e.GetDeferral();
+        stage.ShowAtRest();
+        var first = stage.Result!;
+        stage.Click(stage.Buttons[0]);
+        stage.Dialog.Hide();
+        Assert.Equal(ContentDialogResult.None, first.Result);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+
+        stage.ShowAtRest();
+        deferral!.Complete();
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(stage.Result!.IsCompleted);
+        // The new show's buttons click.
+        stage.Click(stage.Buttons[1]);
+        Assert.Equal(ContentDialogResult.Secondary, stage.Result.Result);
+    }
+
+    [AvaloniaFact]
+    public void A_Deferral_Taken_After_The_Handler_Has_Returned_Throws()
+    {
+        using var stage = new Stage();
+        ContentDialogClosingEventArgs? late = null;
+        stage.Dialog.Closing += (_, e) => late = e;
+        stage.ShowAtRest();
+
+        stage.Dialog.Hide();
+        Assert.Throws<InvalidOperationException>(() => late!.GetDeferral());
+    }
+
+    [AvaloniaFact]
+    public void It_Takes_The_Focus_Keeps_Tab_In_It_And_Gives_The_Focus_Back()
+    {
+        using var stage = new Stage();
+        stage.Button.Focus();
+        Dispatcher.UIThread.RunJobs();
+        stage.ShowAtRest();
+
+        var focus = stage.Scene.Window.FocusManager!;
+        Assert.True(stage.Dialog.IsKeyboardFocusWithin);
+        Assert.Equal(KeyboardNavigationMode.Cycle, KeyboardNavigation.GetTabNavigation(stage.Dialog));
+        for (var i = 0; i < 3; i++)
+            stage.Scene.Window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(stage.Dialog.IsKeyboardFocusWithin);
+
+        stage.Dialog.Hide();
+        Assert.Same(stage.Button, focus.GetFocusedElement());
+    }
+
+    [AvaloniaFact]
+    public void A_Dialog_In_A_Tree_Of_Its_Own_Cant_Be_Shown()
+    {
+        using var stage = new Stage();
+        stage.Page.Children.Add(stage.Dialog);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Throws<InvalidOperationException>(() => { _ = stage.Dialog.ShowAsync(stage.Scene.Window); });
+        Assert.False(stage.Dialog.IsShown);
+    }
+
+    [AvaloniaFact]
+    public void Back_Hides_It_Under_A_Popup_No_Phone_Host_Has()
+    {
+        var plain = new Popup { Child = new Border { Width = 50, Height = 50, Background = Brushes.Red }, ShouldUseOverlayLayer = true };
+        var holder = new Panel { Children = { plain } };
+        using var stage = new Stage(content: holder);
+        var closing = new List<ContentDialogResult>();
+        stage.Dialog.Closing += (_, e) => closing.Add(e.Result);
+        stage.ShowAtRest();
+        plain.Open();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(plain.IsOpen);
+
+        var request = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+        stage.Back(request);
+        Assert.True(request.Handled);
+        Assert.Equal([ContentDialogResult.None], closing);
+        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+        // Gone, with the popup in it.
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        Assert.False(plain.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void Its_Theme_Gone_And_Back_While_Shown_Keeps_One_Host()
+    {
+        using var stage = new Stage();
+        stage.ShowAtRest();
+        var host = PhoneContentDialog.HostOf(stage.Dialog);
+
+        stage.Dialog.Theme = new ControlTheme(typeof(ContentDialog));
+        stage.Dialog.ClearValue(StyledElement.ThemeProperty);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(host, PhoneContentDialog.HostOf(stage.Dialog));
+        Assert.True(stage.Dialog.Popup!.ShouldUseOverlayLayer);
+        Assert.Same(stage.Scene.Window, stage.Dialog.Popup.PlacementTarget);
+
+        stage.Back();
+        Assert.Equal(ContentDialogResult.None, stage.Result!.Result);
+    }
+
+    [AvaloniaFact]
+    public void The_Dialog_Goes_Before_The_Host_Would_Hide_It()
+    {
+        // The binder closes the popup itself; the host's own close, which it pre-empts, comes later.
+        Assert.True(PhoneContentDialog.GoneAfter < PhonePopupMotion.TopGoneAfter);
+    }
+
+    [AvaloniaFact]
+    public void Unbounded_The_Panel_Is_As_Wide_As_Both_Hosts()
+    {
+        var panel = new PhoneContentDialogPanel
+        {
+            Children =
+            {
+                new Border { Width = 10, Height = 10 },
+                new Border { Width = 20, Height = 10 },
+                new Border { Width = 100, Height = 10 },
+                new Border { Width = 80, Height = 10 },
+            },
+        };
+        panel.Measure(Size.Infinity);
+        Assert.Equal(200, panel.DesiredSize.Width);
+        Assert.False(panel.IsFull);
+    }
+
 
     private sealed class Command : ICommand
     {

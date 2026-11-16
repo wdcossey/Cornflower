@@ -113,7 +113,9 @@ internal sealed class PhoneContentDialogPanel : Panel
 
     private Control? Body => Children.Count > 1 ? Children[1] : null;
 
-    private IEnumerable<Control> Hosts => Children.Skip(2).Take(2);
+    private Control? Host1 => Children.Count > 2 ? Children[2] : null;
+
+    private Control? Host2 => Children.Count > 3 ? Children[3] : null;
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -121,19 +123,20 @@ internal sealed class PhoneContentDialogPanel : Panel
         Title?.Measure(free);
         Body?.Measure(free);
         var half = new Size(availableSize.Width / 2, double.PositiveInfinity);
-        foreach (var host in Hosts)
-            host.Measure(half);
+        Host1?.Measure(half);
+        Host2?.Measure(half);
 
         _titleHeight = Math.Max(TitleMinHeight, Title?.DesiredSize.Height ?? 0);
         _contentHeight = Math.Max(ContentMinHeight, Body?.DesiredSize.Height ?? 0);
-        _buttonsHeight = Hosts.Where(h => h.IsVisible).Select(h => h.DesiredSize.Height).DefaultIfEmpty(0).Max();
-        _buttonsHeight = Math.Max(ButtonsMinHeight, _buttonsHeight);
+        _buttonsHeight = Math.Max(ButtonsMinHeight, Math.Max(Shown(Host1)?.DesiredSize.Height ?? 0, Shown(Host2)?.DesiredSize.Height ?? 0));
         var height = _titleHeight + _contentHeight + _buttonsHeight;
         var room = availableSize.Height;
         IsFull = !double.IsInfinity(room) && (FullSizeDesired || height > room);
 
+        // Unbounded, as wide as the widest row: the hosts each have half.
         var width = double.IsInfinity(availableSize.Width)
-            ? Children.Select(c => c.DesiredSize.Width).DefaultIfEmpty(0).Max()
+            ? Math.Max(Math.Max(Title?.DesiredSize.Width ?? 0, Body?.DesiredSize.Width ?? 0),
+                2 * Math.Max(Shown(Host1)?.DesiredSize.Width ?? 0, Shown(Host2)?.DesiredSize.Width ?? 0))
             : availableSize.Width;
         return new Size(width, IsFull ? room : height);
     }
@@ -146,15 +149,12 @@ internal sealed class PhoneContentDialogPanel : Panel
         {
             Body?.Arrange(new Rect(0, _titleHeight, width, _contentHeight));
             var top = _titleHeight + _contentHeight;
+            // The phone's two star columns: the first shown host in the left half.
             var column = 0;
-            foreach (var host in Hosts)
-            {
-                // The phone's two star columns: the first shown host in the left half.
-                if (!host.IsVisible)
-                    continue;
-                host.Arrange(new Rect(column++ * width / 2, top, width / 2, _buttonsHeight));
-            }
-
+            if (Shown(Host1) is { } first)
+                first.Arrange(new Rect(column++ * width / 2, top, width / 2, _buttonsHeight));
+            if (Shown(Host2) is { } second)
+                second.Arrange(new Rect(column * width / 2, top, width / 2, _buttonsHeight));
             return finalSize;
         }
 
@@ -163,15 +163,19 @@ internal sealed class PhoneContentDialogPanel : Panel
         var slots = new Rect(0, barTop, width, BarHeight).Deflate(BarPadding);
         var slotWidth = Math.Max(0, (slots.Width - BarSpacing) / 2);
         var slot = 0;
-        foreach (var host in Hosts)
+        if (Shown(Host1) is { } one)
+            InSlot(one, slot++);
+        if (Shown(Host2) is { } two)
+            InSlot(two, slot);
+        return finalSize;
+
+        void InSlot(Control host, int index)
         {
-            if (!host.IsVisible)
-                continue;
-            var at = new Rect(slots.X + slot++ * (slotWidth + BarSpacing), slots.Y, slotWidth, slots.Height);
+            var at = new Rect(slots.X + index * (slotWidth + BarSpacing), slots.Y, slotWidth, slots.Height);
             // The host's padding round its slot, so its child fills the slot.
             host.Arrange(at.Inflate(host is Decorator decorator ? decorator.Padding : default));
         }
-
-        return finalSize;
     }
+
+    private static Control? Shown(Control? host) => host is { IsVisible: true } ? host : null;
 }

@@ -31,6 +31,8 @@
     <!-- The phone's dialog inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set, as
          the FlyoutPresenter's is. -->
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <!-- It takes the focus as it opens; the phone draws no focus. -->
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="wp81:PhoneContentDialog.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

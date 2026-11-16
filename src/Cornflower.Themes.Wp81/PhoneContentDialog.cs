@@ -84,20 +84,32 @@ internal static class PhoneContentDialog
     internal static double OpeningAngle(TimeSpan time) =>
         time >= OpenLength ? 0 : PhoneEase.Remaining(OpenFrom, OpenExponent, time, OpenLength);
 
+    private static Popup? PopupOf(ContentDialog dialog) => GetIsEnabled(dialog) ? dialog.Parent as Popup : null;
+
     private static void Update(ContentDialog dialog)
     {
-        var popup = GetIsEnabled(dialog) ? dialog.Parent as Popup : null;
+        var popup = PopupOf(dialog);
         if (Binders.TryGetValue(dialog, out var old))
         {
             if (old.Popup == popup)
                 return;
+            if (popup is null)
+            {
+                // A theme going unsets this first: the binder lets go from the dispatcher (CLAUDE.md, the Avalonia facts),
+                // and not at all if the theme has come back meanwhile, so no second host is made on the popup.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (PopupOf(dialog) != old.Popup && Binders.TryGetValue(dialog, out var still) && still == old)
+                    {
+                        Binders.Remove(dialog);
+                        old.Dispose();
+                    }
+                });
+                return;
+            }
+
             Binders.Remove(dialog);
-            // A theme going unsets this first: what the binder gives back is given from the dispatcher, unless the popup
-            // is closed and nothing of the dialog's is touched (CLAUDE.md, the Avalonia facts).
-            if (old.Popup.IsOpen)
-                Dispatcher.UIThread.Post(old.Dispose);
-            else
-                old.Dispose();
+            old.Dispose();
         }
 
         if (popup is not null)
@@ -157,7 +169,11 @@ internal static class PhoneContentDialog
             ? WindowOf(top)
             : null;
 
-        /// <summary>Whether no other popup is open above the dialog's in its window's overlay layer.</summary>
+        /// <summary>
+        /// Whether no other phone popup is open above the dialog's in its window's overlay layer: one whose content a
+        /// <see cref="PhonePopupHost"/> has marked (<see cref="PhonePopupHost.IsLandscapeProperty"/>), which the hosts'
+        /// Back would take first. Another popup above (Avalonia's own) doesn't stop Back reaching the dialog.
+        /// </summary>
         public bool IsTopmost
         {
             get
@@ -165,7 +181,14 @@ internal static class PhoneContentDialog
                 var host = Dialog.GetVisualAncestors().OfType<OverlayPopupHost>().FirstOrDefault();
                 if (host?.GetVisualParent() is not Panel layer)
                     return true;
-                return !layer.Children.Skip(layer.Children.IndexOf(host) + 1).OfType<OverlayPopupHost>().Any(h => h.IsVisible);
+                for (var i = layer.Children.IndexOf(host) + 1; i < layer.Children.Count; i++)
+                {
+                    if (layer.Children[i] is OverlayPopupHost { IsVisible: true, Content: AvaloniaObject content }
+                        && content.IsSet(PhonePopupHost.IsLandscapeProperty))
+                        return false;
+                }
+
+                return true;
             }
         }
 

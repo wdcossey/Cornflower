@@ -5,6 +5,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 
@@ -95,7 +96,9 @@ public class ContentDialog : ContentControl
     private Popup? _popup;
     private TaskCompletionSource<ContentDialogResult>? _result;
     private State _state;
-    private bool _clicking;
+    private int _shows;
+    private int _clickingIn = -1;
+    private IInputElement? _focusBefore;
 
     /// <summary>Initialises a dialog with no title, content or buttons.</summary>
     public ContentDialog()
@@ -104,6 +107,9 @@ public class ContentDialog : ContentControl
             PrimaryButtonCommandParameterProperty);
         _secondary = MakeButton(SecondaryButtonTextProperty, IsSecondaryButtonEnabledProperty,
             SecondaryButtonCommandProperty, SecondaryButtonCommandParameterProperty);
+        // Modal, as WinRT's: it takes the keyboard focus while shown, and Tab stays in it.
+        Focusable = true;
+        KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
     }
 
     private enum State
@@ -234,12 +240,17 @@ public class ContentDialog : ContentControl
 
     /// <summary>Shows the dialog over <paramref name="topLevel"/>, a window or a single view's top level.</summary>
     /// <returns>Which button closed it; <see cref="ContentDialogResult.None"/> for <see cref="Hide"/> and Back.</returns>
-    /// <exception cref="InvalidOperationException">The dialog is already shown.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The dialog is already shown, or is in a tree of its own: declare it in resources, or make it in code.
+    /// </exception>
     public Task<ContentDialogResult> ShowAsync(TopLevel topLevel)
     {
         ArgumentNullException.ThrowIfNull(topLevel);
         if (_state != State.Closed)
             throw new InvalidOperationException("The dialog is already shown.");
+        if (Parent is not null && Parent != _popup)
+            throw new InvalidOperationException(
+                "The dialog is in a tree of its own: declare it in resources, or make it in code, and show it with ShowAsync.");
 
         if (_popup is null)
         {
@@ -265,6 +276,9 @@ public class ContentDialog : ContentControl
         _popup.PlacementTarget = topLevel;
         var result = _result = new TaskCompletionSource<ContentDialogResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         _state = State.Open;
+        _shows++;
+        _clickingIn = -1;
+        var focused = topLevel.FocusManager?.GetFocusedElement();
         _popup.IsOpen = true;
         if (!_popup.IsOpen)
         {
@@ -273,6 +287,8 @@ public class ContentDialog : ContentControl
             throw new InvalidOperationException("The dialog's popup didn't open.");
         }
 
+        _focusBefore = focused;
+        Focus();
         Opened?.Invoke(this, new ContentDialogOpenedEventArgs());
         return result.Task;
     }
@@ -287,10 +303,6 @@ public class ContentDialog : ContentControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
-        if (_host1 is not null)
-            _host1.Child = null;
-        if (_host2 is not null)
-            _host2.Child = null;
         _host1 = e.NameScope.Find<Decorator>(Button1HostPart);
         _host2 = e.NameScope.Find<Decorator>(Button2HostPart);
         PlaceButtons();
@@ -361,15 +373,19 @@ public class ContentDialog : ContentControl
     {
         // The button doesn't run the command: the click's handlers may cancel, or defer, first.
         e.Handled = true;
-        if (_state != State.Open || _clicking)
+        // One click at a time, and a deferred click is this show's only.
+        var show = _shows;
+        if (_state != State.Open || _clickingIn == show)
             return;
         var primary = sender == _primary;
         var args = new ContentDialogButtonClickEventArgs();
-        _clicking = true;
+        _clickingIn = show;
         (primary ? PrimaryButtonClick : SecondaryButtonClick)?.Invoke(this, args);
         args.Deferrals.Then(() =>
         {
-            _clicking = false;
+            if (_shows != show)
+                return;
+            _clickingIn = -1;
             if (args.Cancel || _state != State.Open)
                 return;
             var (command, parameter) = primary
@@ -399,20 +415,33 @@ public class ContentDialog : ContentControl
                 return;
             }
 
-            Finish(result);
+            // The popup's close first, so a Closed handler may show the dialog again.
+            var task = Finished();
             if (CloseMotion is { } motion)
                 motion();
             else if (_popup is not null)
                 _popup.IsOpen = false;
+            Raise(result, task);
         });
     }
 
-    /// <summary>Closed: the event, then the result, its continuations after it.</summary>
-    private void Finish(ContentDialogResult result)
+    /// <summary>The dialog closed: its show's task to complete, and the focus given back.</summary>
+    private TaskCompletionSource<ContentDialogResult>? Finished()
     {
         _state = State.Closed;
+        _clickingIn = -1;
         var task = _result;
         _result = null;
+        var focus = _focusBefore;
+        _focusBefore = null;
+        if (focus is Visual visual && TopLevel.GetTopLevel(visual) is not null && IsKeyboardFocusWithin)
+            focus.Focus();
+        return task;
+    }
+
+    /// <summary><see cref="Closed"/>, then the result, its continuations after it.</summary>
+    private void Raise(ContentDialogResult result, TaskCompletionSource<ContentDialogResult>? task)
+    {
         Closed?.Invoke(this, new ContentDialogClosedEventArgs(result));
         task?.TrySetResult(result);
     }
@@ -421,6 +450,6 @@ public class ContentDialog : ContentControl
     private void OnPopupClosed(object? sender, EventArgs e)
     {
         if (_state != State.Closed)
-            Finish(ContentDialogResult.None);
+            Raise(ContentDialogResult.None, Finished());
     }
 }
