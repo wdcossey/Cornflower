@@ -81,10 +81,11 @@ public static class ListBoxOptions
 
         // The item selects in its own class handler, the first on the item to see an event on its way up. So the list
         // takes a pointer's event a step before, on the item's template root, after everything inside the item has seen
-        // it (a press or release something there handled too, which then clicks nothing); and a key, whose source is
-        // the focused item itself, on its way down to the item.
+        // it (a press something there handled too, which then clicks nothing); and a key, whose source is the focused
+        // item itself, on its way down to the item. A release something there handled doesn't reach the class handler,
+        // and its press is forgotten as the pointer's capture goes with the release.
         InputElement.PointerPressedEvent.AddClassHandler<Interactive>(OnPressed, handledEventsToo: true);
-        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnReleased, handledEventsToo: true);
+        InputElement.PointerReleasedEvent.AddClassHandler<Interactive>(OnReleased);
         InputElement.KeyDownEvent.AddClassHandler<ListBoxItem>(OnKeyDown, RoutingStrategies.Tunnel);
         InputElement.KeyUpEvent.AddClassHandler<ListBoxItem>(OnKeyUp, RoutingStrategies.Tunnel);
 
@@ -158,7 +159,7 @@ public static class ListBoxOptions
             item.ClearValue(PressedByProperty);
         }
 
-        if (e.Handled || Clicking(item) is not { } list)
+        if (Clicking(item) is not { } list)
         {
             return;
         }
