@@ -698,6 +698,32 @@ public class HubTests
         Assert.Equal(900, stage.Part("PART_Background").Bounds.Width, 0.001);
     }
 
+    // The phone clips the background to a rectangle its code sets; ours clips at the Hub's edge (decided; PLAN.md), so an
+    // image as tall as the window draws nothing below a shorter Hub.
+    [AvaloniaFact]
+    public void The_Background_Is_Clipped_At_The_Hubs_Edge()
+    {
+        var hub = Stage.Make(2);
+        hub.Height = 400;
+        hub.VerticalAlignment = VerticalAlignment.Top;
+        var image = new WriteableBitmap(new PixelSize(900, 800), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Premul);
+        using (var buffer = image.Lock())
+        {
+            var row = Enumerable.Repeat(unchecked((int)0xFFFFFFFFu), 900).ToArray();
+            for (var y = 0; y < 800; y++)
+                System.Runtime.InteropServices.Marshal.Copy(row, 0, buffer.Address + y * buffer.RowBytes, 900);
+        }
+
+        hub.Background = new ImageBrush(image) { Stretch = Stretch.Fill };
+        using var stage = new Stage(hub: hub);
+        Assert.Equal(ViewHeight, stage.Part("PART_Background").Bounds.Height, 0.001);
+        using var frame = stage.Window.CaptureRenderedFrame()!;
+        var inside = stage.At(200, 390);
+        var below = stage.At(200, 420);
+        Assert.Equal(0xFFFFFFFFu, Frames.PixelAt(frame, (int)(inside.X * 2.4), (int)(inside.Y * 2.4)).ToUInt32());
+        Assert.NotEqual(0xFFFFFFFFu, Frames.PixelAt(frame, (int)(below.X * 2.4), (int)(below.Y * 2.4)).ToUInt32());
+    }
+
     // Not read on the phone: a brush that isn't an image fills the Hub and doesn't move (decided; PLAN.md).
     [AvaloniaFact]
     public void A_Brush_That_Isnt_An_Image_Fills_The_Hub_And_Stays()
