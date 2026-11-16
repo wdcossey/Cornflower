@@ -7,7 +7,8 @@ namespace Cornflower.Themes.Wp81;
 /// <summary>
 /// A theme behaviour's hold on its control's template parts, found by name: the parts of the template already applied
 /// when the behaviour is turned on, then each new template's as it is applied, until it is disposed. Used by
-/// <see cref="PhoneProgressBar"/>, <see cref="PhoneProgressRing"/> and <see cref="PhoneToggleSwitch"/>.
+/// <see cref="PhoneAppBar"/>, <see cref="PhoneProgressBar"/>, <see cref="PhoneProgressRing"/> and
+/// <see cref="PhoneToggleSwitch"/>.
 /// </summary>
 /// <remarks>
 /// <para>The behaviour gives two things. <c>take</c> reads the parts it needs through a lookup by name, which gives

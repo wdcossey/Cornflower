@@ -96,8 +96,8 @@ one pays nothing), still no global rule, and the difference within the run-to-ru
 
 ## In a Debug build
 
-The sample's shell (`SampleShell`) writes a line for each page it opens, once the page's first frame
-has drawn, so a control's page has no code for it: on standard output after the page's ready line,
+The sample's shell (`SampleShell`) writes a line for each page it opens, of what it cost to its first
+drawn frame, once the turnstile it comes in with is over (since the Tier 2 roll-up), so a control's page has no code for it: on standard output after the page's ready line,
 as `CORNFLOWER cost <line>` (logcat's `DOTNET` tag on a phone, where `tools/android/run.ps1` keeps
 it as `cost` in `run.json`), and up the rail beside the page on desktop, so that nothing is drawn
 over the page:
@@ -122,7 +122,7 @@ rest of the line. Neither has been read on the phone since the shell began timin
 real desktop window.
 
 That's the time to open the page, the shell's, from navigation, before the page is made, to its
-first drawn frame, read once the next frame's layout is done (the same time as the `open=` of the page's ready line, which a Release build
+first drawn frame, mid-turn, read once the next frame's layout is done (the same time as the `open=` of the page's ready line, which a Release build
 also writes: `samples/Cornflower.Sample`), the elements in it, the global rules it is checked
 against and their alternatives (in the application's `Styles`, and the page's and each logical
 ancestor's: the one here is the page's own `TextBlock.section`), and Avalonia's own layout and
