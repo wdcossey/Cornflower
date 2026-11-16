@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Controls.Shapes;
 using Avalonia.Data;
 using Avalonia.Diagnostics;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -87,6 +88,8 @@ internal sealed class PhonePopupHost : IDisposable
     private PhonePopupBands? _bands;
     private IDisposable? _frame;
     private IDisposable? _hidden;
+    private IDisposable? _untouchable;
+    private int _uncut;
     private TimeSpan? _start;
     private double[] _closeFrom = [];
     private Phase _phase;
@@ -192,6 +195,7 @@ internal sealed class PhonePopupHost : IDisposable
         }
 
         _closeFrom = _bands?.Angles.ToArray() ?? [];
+        Turn(TimeSpan.Zero);
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
@@ -212,6 +216,9 @@ internal sealed class PhonePopupHost : IDisposable
         Anchor();
         Resize();
         _start = null;
+        _uncut = 0;
+        // The start angles at once, so no frame shows the popup at rest first; time 0 is still the first frame.
+        Turn(TimeSpan.Zero);
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
@@ -242,28 +249,22 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         var start = _start ??= CornflowerClock.Now;
         var time = CornflowerClock.Now - start;
-        if (_phase == Phase.Opening)
+        if (_phase == Phase.Opening && time >= PhonePopupMotion.OpenLength(_placement))
         {
-            if (time >= PhonePopupMotion.OpenLength(_placement))
-            {
-                _phase = Phase.Shown;
-                Rest();
-                return;
-            }
-
-            Turn(band => PhonePopupMotion.OpeningAngle(_placement, band, time));
-        }
-        else
-        {
-            if (time >= PhonePopupMotion.FullClosedAfter)
-            {
-                Finish();
-                return;
-            }
-
-            Turn(band => PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time));
+            _phase = Phase.Shown;
+            Rest();
+            return;
         }
 
+        if (_phase == Phase.Closing && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
+        {
+            Finish();
+            return;
+        }
+
+        // A popup that can't be drawn yet (not laid out) starts its motion when it can, for a few frames.
+        if (!Turn(time) && ++_uncut < 4)
+            _start = null;
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
@@ -273,7 +274,7 @@ internal sealed class PhonePopupHost : IDisposable
         _frame = null;
         if (_phase != Phase.Closing)
             return;
-        _hidden ??= _content.SetValue(Visual.OpacityProperty, 0d, BindingPriority.Animation);
+        Hide();
         _frame = CornflowerClock.Schedule(Finish, PhonePopupMotion.TopClosedAfter - PhonePopupMotion.TopGoneAfter);
     }
 
@@ -293,28 +294,44 @@ internal sealed class PhonePopupHost : IDisposable
     }
 
     /// <summary>
-    /// The popup's bands at their angles: on the first frame of a motion, a picture of the popup is taken and laid over
-    /// it in bands, and the popup hidden under them.
+    /// The popup's bands at their angles <paramref name="time"/> into the motion: on its first frame, a picture of the
+    /// popup is taken and laid over it in bands, and the popup hidden under them, taking no taps. False if the popup
+    /// can't be drawn yet.
     /// </summary>
-    private void Turn(Func<int, double> angle)
+    private bool Turn(TimeSpan time)
     {
         if (_bands is null && !Cut())
-            return;
-        _bands!.Turn(angle);
+            return false;
+        var bands = _bands!;
+        for (var band = 0; band < bands.Angles.Length; band++)
+        {
+            bands.Angles[band] = _phase == Phase.Closing
+                ? PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time)
+                : PhonePopupMotion.OpeningAngle(_placement, band, time);
+        }
+
+        bands.InvalidateVisual();
+        return true;
+    }
+
+    /// <summary>The popup's overlay layer and its host in it, the layer the dim and the bands go in.</summary>
+    private bool TryLayer(out OverlayPopupHost host, out Panel layer)
+    {
+        host = _content.GetSelfAndVisualAncestors().OfType<OverlayPopupHost>().FirstOrDefault()!;
+        layer = (host?.GetVisualParent() as Panel)!;
+        return host is not null && layer is not null;
     }
 
     /// <summary>The popup's picture in bands over it, the popup hidden; false if it can't be drawn yet.</summary>
     private bool Cut()
     {
-        if (!_content.IsArrangeValid)
-            _content.UpdateLayout();
+        // Laid out at the size just placed: the popup's host takes it only in a layout pass.
+        _content.UpdateLayout();
         var size = _content.Bounds.Size;
-        var host = _content.GetSelfAndVisualAncestors().OfType<OverlayPopupHost>().FirstOrDefault();
-        if (_top is null || size.Width <= 0 || size.Height <= 0 || host?.GetVisualParent() is not Panel layer)
+        if (_top is null || size.Width <= 0 || size.Height <= 0 || !TryLayer(out var host, out var layer))
             return false;
 
-        _hidden?.Dispose();
-        _hidden = null;
+        Unhide();
         var scaling = _top.RenderScaling;
         var picture = new RenderTargetBitmap(
             new PixelSize((int)Math.Ceiling(size.Width * scaling), (int)Math.Ceiling(size.Height * scaling)),
@@ -326,29 +343,49 @@ internal sealed class PhonePopupHost : IDisposable
         for (var y = 0.0; y < size.Height; y += height)
             bands.Add(new Rect(0, y, size.Width, Math.Min(height, size.Height - y)));
 
-        // The camera is over the window's area's centre: in the popup's own space, as the popup sits at its top left.
+        // Over the content where it sits in the popup, at the area's top left; the camera over the area's centre, in the
+        // content's own space.
         var area = Area();
-        _bands = new PhonePopupBands(picture, size, scaling, new Point(area.Width / 2, area.Height / 2), bands);
-        Canvas.SetLeft(_bands, area.X);
-        Canvas.SetTop(_bands, area.Y);
+        var at = area.TopLeft + (_content.TranslatePoint(default, host) ?? default);
+        _bands = new PhonePopupBands(picture, size, scaling, area.Center - at, bands);
+        Canvas.SetLeft(_bands, at.X);
+        Canvas.SetTop(_bands, at.Y);
         layer.Children.Insert(layer.Children.IndexOf(host) + 1, _bands);
-        _hidden = _content.SetValue(Visual.OpacityProperty, 0d, BindingPriority.Animation);
+        Hide();
         return true;
     }
 
     /// <summary>The popup drawn as itself again: no bands, not hidden.</summary>
     private void Rest()
     {
-        if (_bands is not null)
-        {
-            if (_bands.Parent is Panel layer)
-                layer.Children.Remove(_bands);
-            _bands.Release();
-            _bands = null;
-        }
+        DropBands();
 
+        Unhide();
+    }
+
+    /// <summary>The popup hidden and taking no taps, as the phone's is while its bands move or once it has gone.</summary>
+    private void Hide()
+    {
+        _hidden ??= _content.SetValue(Visual.OpacityProperty, 0d, BindingPriority.Animation);
+        _untouchable ??= _content.SetValue(InputElement.IsHitTestVisibleProperty, false, BindingPriority.Animation);
+    }
+
+    private void Unhide()
+    {
         _hidden?.Dispose();
         _hidden = null;
+        _untouchable?.Dispose();
+        _untouchable = null;
+    }
+
+    private void DropBands()
+    {
+        if (_bands is null)
+            return;
+        if (_bands.Parent is Panel layer)
+            layer.Children.Remove(_bands);
+        _bands.Release();
+        _bands = null;
     }
 
     private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -392,6 +429,9 @@ internal sealed class PhonePopupHost : IDisposable
         _popup.PlacementRect = area;
         _content.SetValue(IsLandscapeProperty, area.Width > area.Height);
         PlaceDim(area);
+        // Mid-motion, the picture is of the old size: taken again on the next frame.
+        if (_bands is not null)
+            DropBands();
     }
 
     /// <summary>The dim rectangle over the area, just below the popup in its overlay layer; none without a brush.</summary>
@@ -403,8 +443,7 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        var host = _content.GetSelfAndVisualAncestors().OfType<OverlayPopupHost>().FirstOrDefault();
-        if (host?.GetVisualParent() is not Panel layer)
+        if (!TryLayer(out var host, out var layer))
             return;
         _dim ??= new Rectangle { IsHitTestVisible = !PhonePopupDismissal.DimPassesTaps };
         _dim.Fill = Dim;

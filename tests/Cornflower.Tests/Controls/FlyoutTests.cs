@@ -433,6 +433,61 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
+    public void The_Start_Angle_Is_Drawn_From_The_Opening_On_And_The_Popup_Takes_No_Taps_While_It_Moves()
+    {
+        using var stage = new Stage();
+        stage.Open();
+
+        // No frame shows the popup at rest before its bands.
+        Assert.Equal(OpenFrom, stage.Bands!.Angles[0]);
+        Assert.Equal(0, stage.Presenter.Opacity);
+        Assert.False(stage.Presenter.IsHitTestVisible);
+        stage.At(stage.FirstFrameAfter(0) + 9 * Tick);
+        Assert.True(stage.Presenter.IsHitTestVisible);
+
+        var hidden = stage.Clock.Now.TotalMilliseconds;
+        stage.Flyout.Hide();
+        stage.At(hidden + TopGoneBy);
+        Assert.False(stage.Presenter.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public void A_Window_Resized_Mid_Motion_Is_Pictured_Again_At_Its_New_Size()
+    {
+        using var stage = new Stage(full: true);
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0) + 2 * Tick);
+        Assert.Equal(8, stage.Bands!.Bands.Count);
+
+        stage.Scene.Window.Width = 800;
+        stage.Scene.Window.Height = 450;
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.FirstFrameAfter(0) + 3 * Tick);
+
+        var bands = stage.Bands!;
+        Assert.Equal(5, bands.Bands.Count);
+        Assert.Equal(800, bands.Bands[0].Width);
+        Assert.Equal(new Point(400, 225), bands.Eye);
+    }
+
+    [AvaloniaFact]
+    public void A_Taller_Full_Flyout_Is_Closed_When_Its_Last_Band_Has_Turned_Away()
+    {
+        using var stage = new Stage(full: true, height: 1000);
+        stage.OpenAtRest();
+        Assert.Equal(1000, stage.Presenter.Bounds.Height);
+        var first = stage.FirstFrameAfter(stage.Clock.Now.TotalMilliseconds);
+        stage.Flyout.Hide();
+
+        // 10 bands: the last starts 18 ticks in and is edge-on 8.2 ticks later, past the reference's 22.
+        stage.At(first + 25 * Tick);
+        Assert.True(stage.Flyout.Popup.IsOpen);
+        Assert.True(stage.Bands!.Angles[9] < -CloseRate * 6);
+        stage.At(first + 26 * Tick);
+        Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void Setting_IsOpen_False_Closes_It_The_Same_Way()
     {
         using var stage = new Stage();

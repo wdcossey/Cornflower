@@ -15,7 +15,6 @@ internal sealed class PhonePopupBands : Control
 {
     private readonly RenderTargetBitmap _picture;
     private readonly double _scaling;
-    private readonly Point _eye;
 
     /// <param name="picture">The popup, drawn at <paramref name="scaling"/>.</param>
     /// <param name="size">The popup's size, in view px.</param>
@@ -26,7 +25,7 @@ internal sealed class PhonePopupBands : Control
     {
         _picture = picture;
         _scaling = scaling;
-        _eye = eye;
+        Eye = eye;
         Bands = bands;
         Angles = new double[bands.Count];
         Width = size.Width;
@@ -37,19 +36,14 @@ internal sealed class PhonePopupBands : Control
     /// <summary>The bands, from the top.</summary>
     public IReadOnlyList<Rect> Bands { get; }
 
-    /// <summary>Each band's angle, in degrees; at <see cref="PhonePopupMotion.CloseTo"/> back, not drawn.</summary>
+    /// <summary>
+    /// Each band's angle, in degrees; at <see cref="PhonePopupMotion.CloseTo"/> back, not drawn. The host sets them and
+    /// then invalidates the drawing.
+    /// </summary>
     public double[] Angles { get; }
 
     /// <summary>The camera's centre, in the popup's own space.</summary>
-    public Point Eye => _eye;
-
-    /// <summary>Sets the angles and draws them.</summary>
-    public void Turn(Func<int, double> angle)
-    {
-        for (var i = 0; i < Angles.Length; i++)
-            Angles[i] = angle(i);
-        InvalidateVisual();
-    }
+    public Point Eye { get; }
 
     public override void Render(DrawingContext context)
     {
@@ -59,7 +53,7 @@ internal sealed class PhonePopupBands : Control
                 continue;
             var band = Bands[i];
             var source = new Rect(band.X * _scaling, band.Y * _scaling, band.Width * _scaling, band.Height * _scaling);
-            using (context.PushTransform(PhonePopupMotion.Band(Angles[i], band.Center.Y, _eye)))
+            using (context.PushTransform(PhonePopupMotion.Band(Angles[i], band.Center.Y, Eye)))
                 context.DrawImage(_picture, source, band);
         }
     }

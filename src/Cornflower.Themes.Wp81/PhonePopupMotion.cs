@@ -12,8 +12,8 @@ namespace Cornflower.Themes.Wp81;
 /// <c>20261116-1835-dev11</c>, the stills in <c>ref/wp81/Flyout/motion/</c>). The shell cuts a popup into horizontal
 /// bands and turns each about its own horizontal centre line, which stays on the screen's plane, seen by one camera for
 /// the whole screen, <see cref="EyeDistance"/> in front of it, over the window's centre (y 400 on the reference). An
-/// angle is positive when the band's lower edge is nearer the eye. Every band's turn is linear, one step a tick of the
-/// phone's 64 Hz clock (<see cref="Tick"/>), in animation time.</para>
+/// angle is positive when the band's lower edge is nearer the eye. Every band's turn is linear in animation time (the
+/// phone shows it one step a tick of its 64 Hz clock, <see cref="Tick"/>; ours at whatever frames come).</para>
 /// <list type="bullet">
 /// <item>The <b>top</b> popup is one band. Opening, it turns from <see cref="OpenFrom"/> to 0 at
 /// <see cref="TopOpenRate"/> a tick (134 ms). Closing, it doesn't turn: it shows unchanged, is gone in one frame
@@ -23,7 +23,8 @@ namespace Cornflower.Themes.Wp81;
 /// <see cref="OpenFrom"/> at once and goes to 0 at its own rate, the lower ones slower (<see cref="FullOpenRates"/>);
 /// from the fifth band (400 px) down no band shows a turn. Closing, band k starts <see cref="CloseStagger"/> × k ticks
 /// after the call and turns the other way (the lower edge going back) at <see cref="CloseRate"/> a tick until it is
-/// edge-on at <see cref="CloseTo"/>, gone; the popup is closed at <see cref="FullClosedAfter"/> (22 ticks).</item>
+/// edge-on at <see cref="CloseTo"/>, gone; the popup is closed when its last band is (<see cref="ClosedAfter"/>, 22
+/// ticks).</item>
 /// </list>
 /// <para>Time 0 is the motion's first frame, which shows the start angle, as the phone's is the call's frame.</para>
 /// </remarks>
@@ -49,7 +50,7 @@ internal static class PhonePopupMotion
     /// 2; band 3's isn't read, and is the rate that brings it to rest at 208 ms, the start of the read 208 to 248 ms in
     /// which the whole popup comes to rest. Bands past these don't turn: none below 400 px shows a turn.
     /// </summary>
-    internal static readonly double[] FullOpenRates = [12.61, 9.57, 7.58, OpenFrom / (208 / 15.625)];
+    internal static readonly double[] FullOpenRates = [12.61, 9.57, 7.58, OpenFrom / (TimeSpan.FromMilliseconds(208) / Tick)];
 
     /// <summary>A closing band's rate, degrees a tick, the lower edge going back.</summary>
     internal const double CloseRate = 10.95;
@@ -64,17 +65,21 @@ internal static class PhonePopupMotion
     internal static readonly TimeSpan TopGoneAfter = TimeSpan.FromMilliseconds(110);
 
     /// <summary>The top popup is closed (<c>Closed</c>) 9 ticks after it is asked to close.</summary>
-    internal static readonly TimeSpan TopClosedAfter = TimeSpan.FromMilliseconds(9 * 15.625);
+    internal static readonly TimeSpan TopClosedAfter = Tick * 9;
 
-    /// <summary>The full popup is closed (<c>Closed</c>) 22 ticks after it is asked to close.</summary>
-    internal static readonly TimeSpan FullClosedAfter = TimeSpan.FromMilliseconds(22 * 15.625);
+    /// <summary>
+    /// A full popup of <paramref name="bands"/> bands is closed (<c>Closed</c>) on the last whole tick before its last
+    /// band is gone: 22 ticks for the reference's 8 (14 + 8.2), as read.
+    /// </summary>
+    internal static TimeSpan ClosedAfter(int bands) =>
+        Tick * Math.Floor(CloseStagger * Math.Max(0, bands - 1) + CloseTo / CloseRate);
 
     /// <summary>Ticks of the phone's clock in <paramref name="time"/>.</summary>
     internal static double Ticks(TimeSpan time) => time / Tick;
 
     /// <summary>How long a popup placed so takes to open: until its slowest band is at rest.</summary>
     internal static TimeSpan OpenLength(PhonePopupPlacement placement) => placement == PhonePopupPlacement.Full
-        ? Tick * (OpenFrom / FullOpenRates[^1])
+        ? Tick * (OpenFrom / FullOpenRates.Min())
         : Tick * (OpenFrom / TopOpenRate);
 
     /// <summary>Band <paramref name="band"/>'s angle <paramref name="time"/> into the opening, in degrees: 0 at rest.</summary>
