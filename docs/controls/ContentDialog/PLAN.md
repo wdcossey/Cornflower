@@ -60,6 +60,9 @@ Each has its test in `tests/Cornflower.Tests/Controls/ContentDialogTests.cs`, ag
 | A `Closed` handler may show it again; a click deferred in one show doesn't reach the next; a deferral taken after its handler returned throws | WinRT's API | `A_Closed_Handler_Can_Show_It_Again`, `A_Click_Deferred_In_One_Show_Doesnt_Reach_The_Next`, `A_Deferral_Taken_After_The_Handler_Has_Returned_Throws` |
 | A dialog in a tree of its own (a page's child) can't be shown; one in resources or made in code can | Avalonia: a control has one parent | `A_Dialog_In_A_Tree_Of_Its_Own_Cant_Be_Shown` |
 | Back reaches the dialog past a popup no phone host has (Avalonia's own); its theme gone and back while shown keeps one host | robustness | `Back_Hides_It_Under_A_Popup_No_Phone_Host_Has`, `Its_Theme_Gone_And_Back_While_Shown_Keeps_One_Host` |
+| Title SemiBold 25.5, body 18.14, an underscore shown as written | the style; the phone has no access keys | `The_Title_Is_SemiBold_Extra_Large_And_The_Body_Large_And_An_Underscore_Shows` |
+| Closed, it takes no taps while still drawn, then its popup leaves the window; a `Closing` deferral of an earlier show decides nothing | robustness | `Closed_It_Takes_No_Taps_While_Still_Drawn_And_Then_Leaves_Its_Window`, `A_Closing_Deferral_Of_An_Earlier_Show_Decides_Nothing` |
+| The dim follows the window's theme while shown; a resize mid-opening keeps the dialog's curve | robustness | `The_Dim_Follows_The_Windows_Theme_While_Shown`, `Resized_Mid_Opening_It_Keeps_Its_Own_Curve` |
 
 ## The visual states
 
@@ -88,7 +91,7 @@ Each has its test in `tests/Cornflower.Tests/Controls/ContentDialogTests.cs`, ag
 ## Dependencies
 
 - `PhonePopupHost`, `PhonePopupMotion`, `PhonePopupBands`, `PhonePopupDismissal` (#151), reused unchanged.
-- Wp81's Button theme, which the dialog's Buttons take; `PhoneContentLine` for the title's and body's line.
+- Wp81's Button theme, which the dialog's Buttons take; `PhoneTextLine` for the title's and body's line.
 - No capture is still needed for what is built. Not read: the full-size dialog's motion (taken as the default's one
   band), the bar in landscape, and the command's order against the click (ours: after the click's event).
 
@@ -174,7 +177,7 @@ _none_
 | [x] | `LayoutRoot` | `Grid` | `PART_LayoutRoot` | Themed: `LayoutRoot`, a `Panel` (its one Auto row) |
 | [x] | `BackgroundElement` | `Border` | `PART_BackgroundElement` | Themed: `BackgroundElement` |
 | [x] | `ContentPanel` | `Grid` | `PART_ContentPanel` | Themed: `ContentPanel`, a `PhoneContentDialogPanel`: the grid's rows and columns, and the full dialog's bar |
-| [x] | `Title` | `ContentControl` | `PART_Title` | Themed: `Title`, a `ContentPresenter` with the phone's line |
+| [x] | `Title` | `ContentControl` | `PART_Title` | Themed: `Title`, a `ContentPresenter` with the phone's line and no access keys (`PhoneContentDialog.TextLine`) |
 | [x] | `Content` | `ContentPresenter` | `PART_Content` | Themed: `PART_ContentPresenter`, the part Avalonia's `ContentControl` looks for; it clips |
 | [x] | `Button1Host` | `Border` | `PART_Button1Host` | `PART_Button1Host`: the control puts its first button in it |
 | [x] | `Button2Host` | `Border` | `PART_Button2Host` | `PART_Button2Host`: the second |

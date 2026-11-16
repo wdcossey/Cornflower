@@ -25,7 +25,8 @@ if (await dialog.ShowAsync() == ContentDialogResult.Primary)
 `ShowAsync(TopLevel)` over a given one. Under Wp81:
 
 - **Where it sits.** At the window's top, its width, as tall as it asks: 199.17 with buttons, 153.33 without. The
-  title and a string body are each one line, cut at the edge, as on the phone. With `FullSizeDesired`, or when it is
+  title and a string body are each one line, cut at the edge, as on the phone, and show an underscore as written (no
+  access keys). With `FullSizeDesired`, or when it is
   taller than the window, it fills the window: the title stays one line, the body is clipped above a bar at the foot,
   and the buttons go in that bar, as the phone's shell draws them. There is no ScrollViewer: put one in the content to
   scroll.
@@ -42,8 +43,9 @@ if (await dialog.ShowAsync() == ContentDialogResult.Primary)
 - **Back** hides it (`Closing` with `None`, which may keep it open) when it is its window's topmost popup, and is
   marked handled, so the page's `NavigationPage` doesn't go back. A Flyout open over the dialog takes Back first. With
   the keyboard up, the first Back is the keyboard's, as on the phone: on Android the input method takes it.
-- **Focus.** It takes the keyboard focus as it opens, Tab stays in it, and the focus goes back where it was as it
-  closes: the page under it can't be reached, as on the phone.
+- **Focus.** It takes the keyboard focus as it opens, Tab stays in it, and the focus goes back where it was once it
+  has gone from the screen: the page under it can't be reached, as on the phone. While it is still drawn after
+  closing, it takes no taps.
 - **Theme.** The dialog takes its window's theme variant, as the phone's takes the app's.
 - **Where to declare it.** In code, or in a page's resources; a dialog that is a page's child can't be shown, as a
   control has one parent.
