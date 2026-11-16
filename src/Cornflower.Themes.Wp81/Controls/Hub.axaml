@@ -1,0 +1,126 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 Hub and HubSection: the default styles of the 8.1 Update 1 runtime (hub.json, hubsection.json,
+    which equal the SDK's generic.xaml), re-expressed as Avalonia ControlThemes for Cornflower's own controls. Every value
+    is the phone's resource key, by DynamicResource. docs/controls/Hub/PLAN.md has the values and their sources.
+
+    The Hub's template is the phone's, part for part (our names PART_):
+    - PART_HubRoot, a Grid of two rows; the Hub clips to its bounds (ClipToBounds, set here though Avalonia's own
+      default), where the phone clips the background and the header with two rectangles its code sets;
+    - over both rows a Canvas holding PART_Background, a Grid the Hub sizes and moves (the phone's
+      BackgroundParallaxTransform), with PART_WrapBackground, the image's copy for the loop, and PART_MainBackground,
+      both drawing the Background, BorderBrush and BorderThickness;
+    - over both rows PART_ScrollViewer, the phone's ScrollViewerScrollBarlessTemplate (Wp81ScrollViewerScrollBarlessTheme),
+      holding PART_Panel, the sections side by side. It doesn't scroll: the Hub moves the panel itself
+      (Cornflower.Controls' HubMotion), so both bars are Disabled;
+    - in the first row, a Canvas holding PART_HeaderHost, the Header in the phone's values (HubHeaderMarginThickness,
+      HubHeaderFontSize, PhoneFontFamilyNormal, Light, HubHeaderCharacterSpacing), in Wp81's ContentControl theme. The
+      Hub moves it (the phone's HeaderParallaxTransform and HeaderFlyinFlyoutTransform). A Canvas asks for no room, so
+      the first row is 0 tall and the header is drawn over the sections; each section's placeholder makes room for it.
+    The phone's EntranceAnimationProjection, the Hub's own entrance, isn't here (README, "Known gaps").
+    BackgroundImageLoadStates: :backgroundhidden draws the background at 0, as the phone's FadeOutThemeAnimation leaves
+    it; :backgroundshowing at 1. The phone goes straight from one to the other (#137), so BackgroundImageFadingIn isn't
+    here. Foreground is PhoneForegroundBrush, which the phone's Hub inherits from the page, as Wp81 themes no Window.
+  -->
+  <ControlTheme x:Key="{x:Type cf:Hub}" TargetType="cf:Hub">
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_HubRoot" RowDefinitions="Auto,*">
+          <Canvas Grid.RowSpan="2">
+            <Grid x:Name="PART_Background">
+              <Border x:Name="PART_WrapBackground"
+                      Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" />
+              <Border x:Name="PART_MainBackground"
+                      Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" />
+            </Grid>
+          </Canvas>
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        Grid.RowSpan="2"
+                        Theme="{DynamicResource Wp81ScrollViewerScrollBarlessTheme}"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="PART_Panel" Orientation="Horizontal" />
+          </ScrollViewer>
+          <Canvas>
+            <ContentControl x:Name="PART_HeaderHost"
+                            Theme="{DynamicResource Wp81ContentControlTheme}"
+                            Margin="{DynamicResource HubHeaderMarginThickness}"
+                            FontSize="{DynamicResource HubHeaderFontSize}"
+                            FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                            FontWeight="Light"
+                            wp81:PhonePivotHeader.CharacterSpacing="{DynamicResource HubHeaderCharacterSpacing}"
+                            Content="{TemplateBinding Header}"
+                            ContentTemplate="{TemplateBinding HeaderTemplate}">
+              <ContentControl.LetterSpacing>
+                <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+                  <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+                </MultiBinding>
+              </ContentControl.LetterSpacing>
+            </ContentControl>
+          </Canvas>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:backgroundhidden /template/ Grid#PART_Background">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    The HubSection: the phone's, a Grid inset HubSectionMarginThickness (19,0,0,0) with the Background, of three rows:
+    PART_HubHeaderPlaceholder, which the Hub makes as tall as its header; PART_Header, the Header at the left in the
+    phone's values (HubSectionHeaderMarginThickness, PhoneFontFamilyNormal, HubSectionHeaderFontSize, SemiBold,
+    HubSectionHeaderCharacterSpacing), in Wp81's ContentControl theme, so its text has the phone's line; and
+    PART_ContentPresenter, the content the section builds from its ContentTemplate, inside the Padding, placed by the
+    content alignments (Stretch, the phone's style's). The phone's WrappingTransform, on the Grid, which its Hub moves
+    past the last section when the first wraps, is on the section here (HubSection's remarks). The phone's StickyHeaderTransform, which nothing moves in a
+    Hub that pans sideways, isn't here.
+  -->
+  <ControlTheme x:Key="{x:Type cf:HubSection}" TargetType="cf:HubSection">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Margin="{DynamicResource HubSectionMarginThickness}"
+              Background="{TemplateBinding Background}"
+              RowDefinitions="Auto,Auto,*">
+          <Rectangle x:Name="PART_HubHeaderPlaceholder" />
+          <ContentControl x:Name="PART_Header"
+                          Grid.Row="1"
+                          Theme="{DynamicResource Wp81ContentControlTheme}"
+                          Margin="{DynamicResource HubSectionHeaderMarginThickness}"
+                          FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                          FontSize="{DynamicResource HubSectionHeaderFontSize}"
+                          FontWeight="SemiBold"
+                          wp81:PhonePivotHeader.CharacterSpacing="{DynamicResource HubSectionHeaderCharacterSpacing}"
+                          Content="{TemplateBinding Header}"
+                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                          HorizontalAlignment="Left">
+            <ContentControl.LetterSpacing>
+              <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+                <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+              </MultiBinding>
+            </ContentControl.LetterSpacing>
+          </ContentControl>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Grid.Row="2"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:pages="using:Cornflower.Sample.Pages"
+             x:Class="Cornflower.Sample.Pages.HubPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 Hub, as an 8.1 page writes one: a Hub as the page, full width, with no style. Its header stands for the
+    page's header. Swipe across the four sections; swipe on past the last and the Hub loops round to the first, whose
+    edge shows past the last. The first section shows which sections are in view and the last header clicked, and has
+    switches for a background image (drawn at its own width and the window's height, moving slower than the sections)
+    and the light theme; the second scrolls up and down inside the section while a swipe across it still pans; the
+    third's header is interactive (tap it); the fourth is the last. Each section's content is a DataTemplate, as on the
+    phone; the page's model is its data.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Panel Background="{DynamicResource ApplicationPageBackgroundThemeBrush}">
+      <cf:Hub x:Name="Hub" Header="cornflower" SectionHeaderClick="OnSectionHeaderClick" SectionsInViewChanged="OnSectionsInViewChanged">
+        <cf:HubSection Header="about">
+          <DataTemplate x:DataType="pages:HubPageModel">
+            <StackPanel>
+              <TextBlock Text="swipe across; on past the last section the hub loops to the first" TextWrapping="Wrap" Theme="{DynamicResource BodyTextBlockStyle}" />
+              <TextBlock Text="{Binding InView}" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+              <TextBlock Text="{Binding LastClick}" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+              <ToggleSwitch cf:ControlHeader.Header="background image" IsChecked="{Binding Image}" Margin="0,12,0,0" />
+              <ToggleSwitch cf:ControlHeader.Header="light theme" IsChecked="{Binding Light}" />
+            </StackPanel>
+          </DataTemplate>
+        </cf:HubSection>
+        <cf:HubSection Header="lines">
+          <DataTemplate x:DataType="pages:HubPageModel">
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding Lines}" />
+            </ScrollViewer>
+          </DataTemplate>
+        </cf:HubSection>
+        <cf:HubSection Header="see all" IsHeaderInteractive="True">
+          <DataTemplate>
+            <TextBlock Text="this section's header is interactive: tap it" TextWrapping="Wrap" Theme="{DynamicResource BodyTextBlockStyle}" />
+          </DataTemplate>
+        </cf:HubSection>
+        <cf:HubSection Header="last">
+          <DataTemplate>
+            <TextBlock Text="the last section: swipe on to loop round to the first" TextWrapping="Wrap" Theme="{DynamicResource BodyTextBlockStyle}" />
+          </DataTemplate>
+        </cf:HubSection>
+      </cf:Hub>
+    </Panel>
+  </ThemeVariantScope>
+</UserControl>
