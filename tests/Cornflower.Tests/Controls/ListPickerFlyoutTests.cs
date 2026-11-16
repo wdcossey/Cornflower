@@ -371,6 +371,13 @@ public class ListPickerFlyoutTests
 
     // ---- Picking, accepting, cancelling and Back ----
 
+    /// <summary>A wait's result, failing (not blocking) if it hasn't ended.</summary>
+    private static T Done<T>(Task<T> task)
+    {
+        Assert.True(task.IsCompleted, "the wait hasn't ended");
+        return task.Result;
+    }
+
     /// <summary>What a picker raised, in order, with the clock's time.</summary>
     private sealed class Log
     {
@@ -428,7 +435,7 @@ public class ListPickerFlyoutTests
         Assert.Equal("ItemsPicked +[four] -[two]", log.Names.Last());
         Assert.Equal(tap, log.At("ItemsPicked"));
         Assert.True(result.IsCompleted);
-        Assert.Equal(["four"], result.Result!);
+        Assert.Equal(["four"], Done(result)!);
         Assert.Equal(3, picker.SelectedIndex);
         Assert.Equal("four", picker.SelectedItem);
         Assert.Equal(["four"], picker.SelectedItems);
@@ -466,7 +473,7 @@ public class ListPickerFlyoutTests
         Assert.Equal("ItemsPicked +[one] -[two]", log.Names.Last());
         Assert.Equal(accept, log.At("ItemsPicked"));
         Assert.True(result.IsCompleted);
-        Assert.Equal(["one"], result.Result!);
+        Assert.Equal(["one"], Done(result)!);
         Assert.Equal(["one"], picker.SelectedItems);
         Assert.Equal(0, picker.SelectedIndex);
         Assert.Equal("one", picker.SelectedItem);
@@ -508,7 +515,7 @@ public class ListPickerFlyoutTests
         stage.At(stage.FirstFrameAfter(at) + 22 * Tick);
         Assert.False(picker.Popup.IsOpen);
         Assert.True(result.IsCompleted);
-        Assert.Null(result.Result);
+        Assert.Null(Done(result));
         Assert.DoesNotContain(log.Names, n => n.StartsWith("ItemsPicked", StringComparison.Ordinal));
         Assert.Equal(["two"], picker.SelectedItems);
         Assert.Equal(1, picker.SelectedIndex);
@@ -554,7 +561,7 @@ public class ListPickerFlyoutTests
             Assert.Equal("Confirmed", log.Names.Last());
             Assert.Equal(at, log.At("Confirmed"));
             Assert.True(result.IsCompleted);
-            Assert.True(result.Result);
+            Assert.True(Done(result));
         }
         else
         {
@@ -564,7 +571,7 @@ public class ListPickerFlyoutTests
         stage.At(stage.FirstFrameAfter(at) + 22 * Tick);
         Assert.False(picker.Popup.IsOpen);
         Assert.True(result.IsCompleted);
-        Assert.Equal(how == "accept", result.Result);
+        Assert.Equal(how == "accept", Done(result));
         Assert.Equal(how == "accept", log.Names.Contains("Confirmed"));
     }
 
@@ -579,9 +586,9 @@ public class ListPickerFlyoutTests
         var picked = picker.ShowAtAsync(stage.Button);
 
         Assert.True(listed.IsCompleted);
-        Assert.Null(listed.Result);
+        Assert.Null(Done(listed));
         Assert.True(picked.IsCompleted);
-        Assert.False(picked.Result);
+        Assert.False(Done(picked));
     }
 
     [AvaloniaFact]
@@ -595,7 +602,7 @@ public class ListPickerFlyoutTests
         var second = picker.ShowAtAsync(stage.Button);
 
         Assert.True(first.IsCompleted);
-        Assert.Null(first.Result);
+        Assert.Null(Done(first));
         Assert.False(second.IsCompleted);
     }
 
@@ -641,11 +648,11 @@ public class ListPickerFlyoutTests
         var second = picker.ShowAtAsync(other);
         Dispatcher.UIThread.RunJobs();
 
-        Assert.Null(first.Result);
+        Assert.Null(Done(first));
         Assert.False(second.IsCompleted);
         stage.At(stage.Now + 500);
         stage.Tap(stage.ListItems()[0]);
-        Assert.Equal(["one"], second.Result!);
+        Assert.Equal(["one"], Done(second)!);
     }
 
     [AvaloniaFact]
@@ -695,7 +702,7 @@ public class ListPickerFlyoutTests
 
         stage.Tap(stage.ListItems()[2]);
         stage.Tap(stage.Part<CommandBarButton>("PART_AcceptButton"));
-        Assert.Equal(["a"], result.Result!);
+        Assert.Equal(["a"], Done(result)!);
         stage.At(stage.Now + 500);
 
         stage.OpenAtRest();
@@ -813,7 +820,7 @@ public class ListPickerFlyoutTests
         stage.At(stage.Now + 50);
         stage.Tap(stage.Part<CommandBarButton>("PART_AcceptButton"));
 
-        Assert.Equal(["three"], result.Result!);
+        Assert.Equal(["three"], Done(result)!);
     }
 
     // ---- The list's data ----
@@ -904,7 +911,7 @@ public class ListPickerFlyoutTests
         picker.Hide();
         Assert.False(picker.Popup.IsOpen);
         Assert.True(result.IsCompleted);
-        Assert.Null(result.Result);
+        Assert.Null(Done(result));
     }
 
     [AvaloniaFact]
