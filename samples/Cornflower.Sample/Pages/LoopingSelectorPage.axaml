@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.LoopingSelectorPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 LoopingSelector, the date and time pickers' wheel: three of Avalonia's DateTimePickerPanels in the
+    Wp81LoopingSelectorTheme, as the DatePickerFlyout lays its columns out (138.333 wide from 17.5), on the flyout's
+    background, at today's date. Drag a wheel up or down, flick it, or tap one to make it the active wheel; month and day
+    go round, the year doesn't. On a desktop the mouse wheel turns them. What each shows is under them, and the switch
+    makes the page light.
+
+    A DatePicker's own presenter keeps its columns in step (the days in the month, their names); these three are bare,
+    so the day wheel names the days of this month.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Grid Background="{DynamicResource FlyoutBackgroundThemeBrush}" RowDefinitions="Auto,*,Auto">
+      <sample:SamplePageHeader x:Name="Header" Margin="19,12,19,0" />
+
+      <Grid Grid.Row="1" ColumnDefinitions="138.333,138.333,138.333" Margin="17.5,0,0,0" HorizontalAlignment="Left">
+        <DateTimePickerPanel x:Name="Month" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                             PanelType="Month" ItemFormat="MM&#10;MMMM" ShouldLoop="True"
+                             MaximumValue="12" MinimumValue="1"
+                             SelectionChanged="OnSelectionChanged" />
+        <DateTimePickerPanel x:Name="Day" Grid.Column="1" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                             PanelType="Day" ItemFormat="dd&#10;dddd" ShouldLoop="True"
+                             MaximumValue="31" MinimumValue="1"
+                             SelectionChanged="OnSelectionChanged" />
+        <DateTimePickerPanel x:Name="Year" Grid.Column="2" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                             PanelType="Year" ItemFormat="yyyy"
+                             MaximumValue="2076" MinimumValue="1976"
+                             SelectionChanged="OnSelectionChanged" />
+      </Grid>
+
+      <StackPanel Grid.Row="2" Margin="19,0,19,12">
+        <TextBlock x:Name="State" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+        <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" />
+      </StackPanel>
+    </Grid>
+  </ThemeVariantScope>
+</UserControl>
