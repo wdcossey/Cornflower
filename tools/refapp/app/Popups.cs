@@ -39,6 +39,12 @@ namespace RefApp
         /// showing, or null when it is. Asked once it has settled and again after the hold.
         /// </summary>
         public Func<object, string> Fault;
+
+        /// <summary>
+        /// Opens no XAML popup on purpose (an AutoSuggestBox at rest or with its list closed; the keyboard isn't one): the
+        /// run doesn't count "no popup open" as an error for it.
+        /// </summary>
+        public bool NoPopup;
     }
 
     /// <summary>What the reference app opens and captures outside the stage. Add a popup by adding lines here.</summary>
@@ -221,7 +227,7 @@ namespace RefApp
         private const string LongTitle = "Agjy 0123 a content dialog title long enough to wrap onto a second line";
 
         /// <summary>Forty numbered lines of body text, longer than the screen.</summary>
-        private static string LongBody()
+        internal static string LongBody()
         {
             var lines = new List<string>();
             for (var i = 1; i <= 40; i++)
@@ -311,6 +317,12 @@ namespace RefApp
 
         private static PopupSpecimen ListPicker(string variant, ListPickerFlyoutSelectionMode mode, int checkedItems = 0)
         {
+            // Items 2 and 4 of the five: no more than two can be checked this way.
+            if (checkedItems > 2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(checkedItems), "the five items give at most two checked, the second and the fourth");
+            }
+
             return new PopupSpecimen
             {
                 Name = "ListPickerFlyout",
@@ -500,6 +512,7 @@ namespace RefApp
                 Variant = variant,
                 Height = 400,
                 SettleMs = 1500,
+                NoPopup = suggestions == 0,
                 MakeHost = () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit" },
                 Open = host =>
                 {

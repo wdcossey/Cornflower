@@ -258,7 +258,7 @@ namespace RefApp
         {
             var inner = PopupCatalog.FindNamed(element, part) as Control;
             var applied = inner != null && VisualStateManager.GoToState(inner, state, false);
-            await Task.Delay(450);
+            await Task.Delay(Suite.StateSettleMs);
             return applied;
         }
     }

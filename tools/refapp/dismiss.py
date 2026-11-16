@@ -10,8 +10,9 @@ setup line plus 1,200 ms; a touch lands within a frame or two of it), what came 
 - `call`, `event` and `result`: the popup opened, its events (Opening, Opened, Closed; the dialog's Closing, Closed
   and button clicks; ItemsPicked, DatePicked, TimePicked, Confirmed; a menu item's Click; the AutoSuggestBox's
   TextChanged and SuggestionChosen) and what ShowAsync or ShowAtAsync returned, each with its RenderingTime;
-- `under` and `page`: whether the touch reached the "under" Button below the popup (its press, Tapped, Click) or
-  the page;
+- `pressed`, `released`, `capturelost` and `canceled`, tagged `under`, `page` or a popup's tag: whether the touch
+  reached the "under" Button below the popup or the page, or went to the popup; `gesture` and `event` lines tagged
+  `under` give its Tapped and Click;
 - `keyboard`: the on-screen keyboard showing or hiding;
 - `after`: the popups still open 1.5 s after the touch.
 
@@ -50,7 +51,7 @@ def shown(what, details, everything):
         return True
     if what in KEEP:
         return True
-    if what in ('pressed', 'released', 'capturelost'):
+    if what in ('pressed', 'released', 'capturelost', 'canceled'):
         return True
     return what == 'frame' and ('watched' in details or 'suggest box' in details)
 
@@ -66,13 +67,14 @@ def main():
     for t, what, details in lines:
         if what == 'layout':
             print(f'layout: {details}')
-    for label, at, body in cases(lines):
+    found = cases(lines)
+    for label, at, body in found:
         print(f'{label}')
         for t, what, details in body:
             if shown(what, details, everything):
                 print(f'  {t - at:+8.0f}  {what:9} {details}')
     done = [d for _, w, d in lines if w == 'go']
-    print(f'{len(cases(lines))} cases; start tap: {done[0] if done else "none"}')
+    print(f'{len(found)} cases; start tap: {done[0] if done else "none"}')
     return 0
 
 

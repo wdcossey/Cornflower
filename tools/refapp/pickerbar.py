@@ -94,6 +94,8 @@ def contour(ink, x0, y0, x1, y1, level=0.5):
                 total += math.dist(pts[0], pts[1])
             elif len(pts) == 4:
                 total += math.dist(pts[0], pts[1]) + math.dist(pts[2], pts[3])
+    if not seen:
+        return 0.0, None
     xs, ys = [p[0] for p in seen], [p[1] for p in seen]
     return total, (min(xs), min(ys), max(xs), max(ys))
 
@@ -169,12 +171,16 @@ def measure(path, scale):
         sub = [[ink[y][x] if math.hypot(x + 0.5 - cx, y + 0.5 - cy) < r_in else 0.0 for x in range(gx0, gx1 + 1)]
                for y in range(gy0, gy1 + 1)]
         area = sum(map(sum, sub))
-        perimeter, (bl, bt, br, bb) = contour(sub, 1, 1, len(sub[0]) - 2, len(sub) - 2)
+        perimeter, box = contour(sub, 1, 1, len(sub[0]) - 2, len(sub) - 2)
+        if box is None:
+            # A ring with nothing inside: no glyph to measure.
+            continue
+        bl, bt, br, bb = box
         g = {'left': gx0 + bl, 'right': gx0 + br, 'top': gy0 + bt, 'bottom': gy0 + bb}
         gstroke = 2 * area / perimeter if perimeter else float('nan')
         out.append({'ring': (cx, cy, diameter, stroke), 'glyph': g, 'area': area, 'stroke': gstroke,
                     'sub': (gx0, gy0, sub)})
-    return background, out, ellipsis
+    return background, out, ellipsis, h
 
 
 def check_points(sub, gx0, gy0, stroke):
@@ -209,8 +215,7 @@ def report(run):
         theme, picker, variant = name.split('__')
         if picker not in PICKERS or (picker == 'ComboBox' and int(variant.split('-')[1]) < 6):
             continue
-        h = png(path)[1]
-        background, found, ellipsis = measure(path, scale)
+        background, found, ellipsis, h = measure(path, scale)
         dots = ''
         if ellipsis:
             top, centres = ellipsis
@@ -227,7 +232,8 @@ def report(run):
                   f' stroke {view(s, scale):.2f}')
             print(f'      glyph: box {gw:.2f} x {gh:.2f}, centre {view(gcx - cx, scale):+.2f}, {view(gcy - cy, scale):+.2f} from the ring\'s;'
                   f' ink {m["area"] / scale / scale:.1f} sq px; stroke {view(m["stroke"], scale):.2f}')
-            if k == 0:
+            # The check is the left of two rings (accept, then cancel); with any other count, which is which isn't known.
+            if k == 0 and len(found) == 2:
                 gx0, gy0, sub = m['sub']
                 pts = check_points(sub, gx0, gy0, m['stroke'])
                 rel = ', '.join(f'({view(px - cx, scale):+.2f}, {view(py - cy, scale):+.2f})' for px, py in pts)
@@ -270,7 +276,7 @@ def selftest():
         path = os.path.join(d, 'x.png')
         with open(path, 'wb') as f:
             f.write(data)
-        _, found, _ = measure(path, 1.0)
+        _, found, _, _ = measure(path, 1.0)
     failures = []
     if len(found) != 1:
         failures.append(f'{len(found)} rings, not 1')

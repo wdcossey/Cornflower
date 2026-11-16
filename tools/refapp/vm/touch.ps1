@@ -96,7 +96,7 @@ public static class XdeMouse {
     public static void PostUp(IntPtr h, int x, int y) { _down = false; PostMessage(h, WM_LBUTTONUP, IntPtr.Zero, Point(x, y)); }
 
     // Real: screen coordinates.
-    public static void Front(IntPtr h) { SetForegroundWindow(GetAncestor(h, 2)); }
+    public static bool Front(IntPtr h) { return SetForegroundWindow(GetAncestor(h, 2)); }
     public static void RealMove(int x, int y) { SetCursorPos(x, y); }
     public static void RealDown() { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); }
     public static void RealUp() { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); }
@@ -124,7 +124,7 @@ if ($chosen.Count -ne 1) { Log "failed: $($chosen.Count) display windows belong 
 $window = $chosen[0].Key
 $left, $top, $width, $height = [XdeMouse]::Client($window)
 if ($RectOnly) {
-    [XdeMouse]::Front([IntPtr]$window)
+    [void][XdeMouse]::Front([IntPtr]$window)
     Log "display window at $left,$top, $width x $height"
     "rect $left $top $width $height"
     exit 0
@@ -140,7 +140,7 @@ Log ("display window at {0},{1}, {2} x {3}; view {4} x {5}; {6:0.####} x {7:0.##
 # Each step runs at its own time from the start, so the time the steps take doesn't add up; the log is kept in
 # memory and written at the end, for the same reason.
 $steps = New-Object System.Collections.Generic.List[string]
-if ($Mode -eq 'real') { [XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
+if ($Mode -eq 'real') { [void][XdeMouse]::Front([IntPtr]$window); Start-Sleep -Milliseconds 300 }
 Log "playing $($lines.Count - 1) lines"
 # The system timer ticks every 15.6 ms unless asked for 1 ms, and a sleep of 1 ms lasts a tick: without it the steps of
 # a fast flick, 10 ms apart, bunched up (2026-11-15). With it a 1 ms sleep is about 1 ms, so the loop sleeps until 2 ms
@@ -157,10 +157,11 @@ try {
         }
 
         if ($parts[0] -eq 'key') {
-            # Keys go to the window in front, in either mode.
-            [XdeMouse]::Front([IntPtr]$window)
+            # Keys go to the window in front, so a key step brings the emulator to the front even in post mode. If that
+            # fails the key goes elsewhere: the step says so in the log.
+            $front = [XdeMouse]::Front([IntPtr]$window)
             [XdeMouse]::Key([int]$parts[1])
-            $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2}' -f $clock.Elapsed.TotalMilliseconds, $at, $line))
+            $steps.Add(('{0,8:0.0} ms (planned {1,6:0}) {2}{3}' -f $clock.Elapsed.TotalMilliseconds, $at, $line, $(if ($front) { '' } else { ' (the emulator did not come to the front)' })))
             continue
         }
 
@@ -174,7 +175,7 @@ try {
             }
         }
         else {
-            if ($parts[0] -eq 'down') { [XdeMouse]::Front([IntPtr]$window) }
+            if ($parts[0] -eq 'down') { [void][XdeMouse]::Front([IntPtr]$window) }
             [XdeMouse]::RealMove($left + $x, $top + $y)
             if ($parts[0] -eq 'down') { [XdeMouse]::RealDown() }
             elseif ($parts[0] -eq 'up') { [XdeMouse]::RealUp() }

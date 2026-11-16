@@ -34,7 +34,11 @@ namespace RefApp
         private Action _closeCase;
         private bool _backHandled = true;
 
-        /// <summary>Where a tap outside lands: on the "under" Button, below every popup that doesn't fill the screen.</summary>
+        /// <summary>
+        /// Where a tap outside lands: on the "under" Button, below the top Flyout and over the dialog's dim layer. Not off
+        /// the menu, whose last item reaches 642.5 at its target (20261116-1951-dev11): the menu's cases tap above and
+        /// below it instead.
+        /// </summary>
         private static readonly Point Outside = new Point(225, 630);
 
         /// <summary>The pickers' accept and cancel, where the shell draws them on the reference profile (pickerbar.py, 20261108-2254-dev11).</summary>
@@ -89,6 +93,19 @@ namespace RefApp
                 return;
             }
 
+            // The first item of a long menu, and the long dialog's content, every frame, for the drags on them.
+            WatchFrames(() =>
+            {
+                try
+                {
+                    return new[] { _watchItem != null ? Bounds(_watchItem).Y : double.NaN };
+                }
+                catch (ArgumentException)
+                {
+                    return new[] { double.NaN };
+                }
+            }, v => "watched " + (_watchName ?? "-") + " y " + Num(v[0]));
+
             if (again)
             {
                 await DismissAgain(page, header, menuTarget, under, suggest);
@@ -119,19 +136,6 @@ namespace RefApp
             menuTarget.Margin = new Thickness(19, 312, 0, 0);
             await Task.Delay(300);
 
-            // The first item of a long menu, and the long dialog's content, every frame, for the drags on them.
-            WatchFrames(() =>
-            {
-                try
-                {
-                    return new[] { _watchItem != null ? Bounds(_watchItem).Y : double.NaN };
-                }
-                catch (ArgumentException)
-                {
-                    return new[] { double.NaN };
-                }
-            }, v => "watched " + (_watchName ?? "-") + " y " + Num(v[0]));
-
             Func<Rect, Point> mid = r => new Point(r.X + r.Width / 2, r.Y + r.Height / 2);
 
             // Flyout, top and full.
@@ -144,7 +148,9 @@ namespace RefApp
             // MenuFlyout.
             Func<Task> menu = () => OpenMenu(menuTarget);
             Case("menu: Back", menu, null);
-            Case("menu: tap outside", menu, Outside);
+            // Off the menu above and below it (20261116-1951-dev11 tapped at 630, which was on its last item).
+            Case("menu: tap above it", menu, new Point(225, 150));
+            Case("menu: tap below it", menu, new Point(225, 740));
             Case("menu: tap an item", menu, mid(items[0]));
             Case("menu: tap the checked toggle", menu, mid(items[1]));
             Case("menu: tap the disabled item", menu, mid(items[3]));
@@ -163,8 +169,7 @@ namespace RefApp
             Case("dialog with a TextBox: Back", null, null, keep: true);
             Case("dialog with a TextBox: Back again", null, null);
             // Forty lines of content, longer than the screen: does it scroll under a drag?
-            DragCase("long dialog: drag up 300", () => OpenDialog(false, true), 225, 600, 300);
-            Case("long dialog: then Back", null, null);
+            // The long dialog's drag is in DismissAgain: opening it moves the focus to the page's AutoSuggestBox.
 
             // ListPickerFlyout: items 58.33 apart from y 93.33, 39.17 tall (20261108-2254-dev11's dumps).
             Func<int, Point> row = k => new Point(225, 93.33 + 58.33 * k + 19.6);
@@ -365,7 +370,7 @@ namespace RefApp
             }
             else if (longBody)
             {
-                content = string.Join("\n", Enumerable.Range(1, 40).Select(i => "line " + i + " of the dialog's long body"));
+                content = PopupCatalog.LongBody();
             }
 
             var d = new ContentDialog { Title = "content dialog", Content = content, PrimaryButtonText = "ok", SecondaryButtonText = "cancel" };
@@ -460,13 +465,6 @@ namespace RefApp
 
         private static string Describe(Rect r) => Num(r.X) + " " + Num(r.Y) + " " + Num(r.Width) + " " + Num(r.Height);
 
-        /// <summary>
-        /// The AutoSuggestBox: a tap on its box (focus, the keyboard), keys typed on the keyboard, each TextChanged
-        /// answered with the fruits starting with the text, a tap on a suggestion, Text set from code, the keyboard's
-        /// Enter, Back with the keyboard up, then typing again and a tap outside. Each TextChanged (reason, text, the
-        /// list open), SuggestionChosen, the TextBox's focus and keys, and every frame the box's, the list's and the
-        /// keyboard's places are logged.
-        /// </summary>
         /// <summary>Logs the pointer events of every open popup's child, under a tag: where a touch on a popup goes.</summary>
         private void LogOpenPopups(string tag)
         {
@@ -485,17 +483,6 @@ namespace RefApp
         /// </summary>
         private async Task DismissAgain(Grid page, Border header, Button menuTarget, Button under, AutoSuggestBox suggest)
         {
-            WatchFrames(() =>
-            {
-                try
-                {
-                    return new[] { _watchItem != null ? Bounds(_watchItem).Y : double.NaN };
-                }
-                catch (ArgumentException)
-                {
-                    return new[] { double.NaN };
-                }
-            }, v => "watched " + (_watchName ?? "-") + " y " + Num(v[0]));
             Func<Task> menu = () => OpenMenu(menuTarget);
             Case("menu: tap above it", menu, new Point(225, 150));
             Case("menu: tap below it", menu, new Point(225, 740));
@@ -512,6 +499,13 @@ namespace RefApp
             await RunScheduled(page, header);
         }
 
+        /// <summary>
+        /// The AutoSuggestBox: a tap on its box (focus, the keyboard), keys typed on the keyboard, each TextChanged
+        /// answered with the fruits starting with the text, a tap on a suggestion, Text set from code, the keyboard's
+        /// Enter, Back with the keyboard up, then typing again and a tap outside. Each TextChanged (reason, text, the
+        /// list open), SuggestionChosen, the TextBox's focus and keys, and every frame the box's, the list's and the
+        /// keyboard's places are logged.
+        /// </summary>
         private void SuggestCases(AutoSuggestBox box, Button under, bool again = false)
         {
             var inner = Find(box, "TextBox") as TextBox;

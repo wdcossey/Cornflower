@@ -26,7 +26,7 @@ namespace RefApp
         /// <summary>The phone's page margin, in logical pixels, used to place specimens as a page would.</summary>
         public const double PageMargin = 19;
 
-        private const int StateSettleMs = 450;
+        internal const int StateSettleMs = 450;
         private const string Ns = "xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"";
 
         private readonly Grid _host;
@@ -180,7 +180,7 @@ namespace RefApp
                 if (state != null)
                 {
                     var control = stage.Element as Control;
-                    forced = control != null && VisualStateManager.GoToState(control, state, false);
+                    forced = forced && control != null && VisualStateManager.GoToState(control, state, false);
                     await Task.Delay(StateSettleMs);
                 }
 

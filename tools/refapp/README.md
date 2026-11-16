@@ -1595,7 +1595,8 @@ Screen grabs and dumps from three `-Grab` runs: `20261116-1934-dev11` (`-Popups 
 what it missed, `20261116-1940-dev11` (the menu's pressed item, forced 700 ms after `Opened`) and `20261116-1944-dev11`
 (the AutoSuggestBox focused, and the dialog's TextBox focused 500 ms after `Opened`). A focused box's caret blinks,
 so its screen never held still for `vm\grab-loop.ps1`; the loop now counts a change only when more than 600 pixels of
-the window differ (a blink was 655). The PNGs are in `ref/wp81/<control>/`. View pixels throughout; positions in the
+the window differ (`-MaxChangedPixels`; a blink is more than 64 and no more than 600 at the zoom that fits the VM's
+screen, as no blink was logged at 600). The PNGs are in `ref/wp81/<control>/`. View pixels throughout; positions in the
 window.
 
 ### AutoSuggestBox
@@ -1688,7 +1689,8 @@ gives the same as the forced `Disabled`. The header is `#99FFFFFF` dark, `#73000
 ### How each popup is dismissed, and the AutoSuggestBox's events
 
 `20261116-1951-dev11` (`-Probe dismiss`, 51 cases) and `20261116-1955-dev11` (`-Probe dismissagain`, 17 cases: what
-the first missed), read with [`dismiss.py`](dismiss.py). Each case opens a popup from code 1.2 s before its touch:
+the first missed; `dismiss` has since taken its menu taps, above and below the menu, in place of the one at 630 that
+landed on the menu's last item, and left the long dialog's drag to it), read with [`dismiss.py`](dismiss.py). Each case opens a popup from code 1.2 s before its touch:
 Back (F1, a `key` step), a 90 ms tap off the popup (on a Button, "under", below every popup that doesn't fill the
 screen, or the bare page), a tap on the popup, or on one of its parts. Times are milliseconds from the touch as
 planned, the animation clock's frames (`rt`) to a frame; a touch lands within about 80 ms of its plan. Every event of

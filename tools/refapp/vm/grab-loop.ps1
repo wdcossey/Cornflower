@@ -148,7 +148,8 @@ while (-not (Test-Path $StopFile)) {
     $pixels = [Watch]::Pixels($h)
     $changed = [Watch]::Changed($pixels, $last)
     if ($changed -gt $MaxChangedPixels) {
-        # A small change logged, to size -MaxChangedPixels by (a caret's blink was more than 64 px, 2026-11-16).
+        # A small change logged, to size -MaxChangedPixels by. On 2026-11-16 a blink was more than 64 and no more than
+        # 600 (none was logged at 600); the window is at the zoom that fits the VM's screen, so another zoom needs another limit.
         if ($changed -lt 5000) { Log "changed: $changed px" }
         $last = $pixels
         $changedAt = [DateTime]::UtcNow
