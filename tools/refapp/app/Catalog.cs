@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -18,6 +19,12 @@ namespace RefApp
         public bool FullBleed;
         public bool States = true;
         public Func<FrameworkElement> Make;
+
+        /// <summary>
+        /// Run on the placed control before its capture, for a state the control's own groups don't hold, such as an
+        /// inner part's (#150, B19); its result is the capture's stateApplied. Null for none.
+        /// </summary>
+        public Func<FrameworkElement, Task<bool>> Prepare;
     }
 
     /// <summary>
@@ -169,6 +176,18 @@ namespace RefApp
             });
             add("DatePicker", "default", 140, () => new DatePicker { Header = "date picker", Date = new DateTimeOffset(2014, 7, 15, 0, 0, 0, TimeSpan.Zero) });
             add("TimePicker", "default", 140, () => new TimePicker { Header = "time picker", Time = new TimeSpan(12, 30, 0) });
+
+            // B19 (#150): the states of DatePicker's and TimePicker's inner FlyoutButton, a Button in the default Button
+            // style, forced on it; and the control disabled, which disables the button through its binding.
+            foreach (var state in new[] { "PointerOver", "Pressed", "Disabled" })
+            {
+                var st = state;
+                list.Add(new Specimen { Name = "DatePicker", Variant = "flyout-button-" + st.ToLowerInvariant(), Height = 140, States = false, Make = () => new DatePicker { Header = "date picker", Date = new DateTimeOffset(2014, 7, 15, 0, 0, 0, TimeSpan.Zero) }, Prepare = e => InnerState(e, "FlyoutButton", st) });
+                list.Add(new Specimen { Name = "TimePicker", Variant = "flyout-button-" + st.ToLowerInvariant(), Height = 140, States = false, Make = () => new TimePicker { Header = "time picker", Time = new TimeSpan(12, 30, 0) }, Prepare = e => InnerState(e, "FlyoutButton", st) });
+            }
+
+            add("DatePicker", "disabled", 140, () => new DatePicker { Header = "date picker", Date = new DateTimeOffset(2014, 7, 15, 0, 0, 0, TimeSpan.Zero), IsEnabled = false });
+            add("TimePicker", "disabled", 140, () => new TimePicker { Header = "time picker", Time = new TimeSpan(12, 30, 0), IsEnabled = false });
             add("AppBarButton", "default", 120, () => new AppBarButton { Label = "add", Icon = new SymbolIcon(Symbol.Add) });
             add("AppBarToggleButton", "unchecked", 120, () => new AppBarToggleButton { Label = "pin", Icon = new SymbolIcon(Symbol.Pin) });
             add("AppBarToggleButton", "checked", 120, () => new AppBarToggleButton { Label = "pin", Icon = new SymbolIcon(Symbol.Pin), IsChecked = true });
@@ -232,6 +251,15 @@ namespace RefApp
             });
 
             return list;
+        }
+
+        /// <summary>Forces a state on a named control inside the specimen's template, and gives it the suite's settle time.</summary>
+        private static async Task<bool> InnerState(FrameworkElement element, string part, string state)
+        {
+            var inner = PopupCatalog.FindNamed(element, part) as Control;
+            var applied = inner != null && VisualStateManager.GoToState(inner, state, false);
+            await Task.Delay(Suite.StateSettleMs);
+            return applied;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace RefApp
         /// <summary>The phone's page margin, in logical pixels, used to place specimens as a page would.</summary>
         public const double PageMargin = 19;
 
-        private const int StateSettleMs = 450;
+        internal const int StateSettleMs = 450;
         private const string Ns = "xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"";
 
         private readonly Grid _host;
@@ -57,7 +57,7 @@ namespace RefApp
                 _log.Visibility = Visibility.Collapsed;
             }
             var specimens = options.PopupsOnly ? new List<Specimen>() : Catalog.All().Where(s => options.Matches(s.Name)).ToList();
-            var popups = options.Popups ? PopupCatalog.All().Where(p => options.Matches(p.Name)).ToList() : new List<PopupSpecimen>();
+            var popups = options.Popups ? PopupCatalog.All().Where(p => options.Matches(p.Name) || options.Matches(p.Name + "/" + p.Variant)).ToList() : new List<PopupSpecimen>();
             var themes = new[] { ElementTheme.Dark, ElementTheme.Light };
 
             // A system popup (a MessageDialog) can't be closed, and stays over every capture after it: one runs only when
@@ -172,10 +172,15 @@ namespace RefApp
             {
                 var stage = await Place(theme, s);
                 var forced = true;
+                if (s.Prepare != null)
+                {
+                    forced = await s.Prepare(stage.Element);
+                }
+
                 if (state != null)
                 {
                     var control = stage.Element as Control;
-                    forced = control != null && VisualStateManager.GoToState(control, state, false);
+                    forced = forced && control != null && VisualStateManager.GoToState(control, state, false);
                     await Task.Delay(StateSettleMs);
                 }
 
