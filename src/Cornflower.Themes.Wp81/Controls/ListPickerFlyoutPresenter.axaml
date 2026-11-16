@@ -25,9 +25,7 @@
   -->
   <ControlTheme x:Key="{x:Type cf:ListPickerFlyoutPresenter}" TargetType="cf:ListPickerFlyoutPresenter">
     <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
-    <!-- The phone's presenter inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set,
-         as the FlyoutPresenter's is. -->
-    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <!-- No Foreground: the title's text style and the ListView set their own, as the CommandBar does. -->
     <Setter Property="wp81:PhonePickerFlyout.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

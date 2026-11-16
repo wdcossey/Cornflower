@@ -57,13 +57,12 @@ public class ListPickerFlyoutPresenter : PickerPresenterBase
         Fill();
     }
 
-    /// <summary>The items checked now, in the list's order.</summary>
+    /// <summary>The items checked now, in the list's order: by their places, so equal items are told apart.</summary>
     internal IReadOnlyList<object> CheckedItems()
     {
         if (_items is null)
             return _checked;
-        var selected = _items.Selection.SelectedItems.OfType<object>().ToList();
-        return _items.Items.OfType<object>().Where(selected.Contains).ToList();
+        return _items.Selection.SelectedIndexes.Order().Select(i => _items.Items[i]).OfType<object>().ToList();
     }
 
     /// <inheritdoc />
@@ -91,25 +90,22 @@ public class ListPickerFlyoutPresenter : PickerPresenterBase
         ListBoxOptions.SetIsItemClickEnabled(_items, !_multiple);
         if (_multiple)
         {
-            foreach (var index in _checked.Select(IndexOf).Where(i => i >= 0))
+            // Each item picked checks the first place holding it not yet checked: equal items stay apart.
+            var taken = new HashSet<int>();
+            foreach (var item in _checked)
+            {
+                var index = Enumerable.Range(0, _items.ItemCount)
+                    .FirstOrDefault(i => !taken.Contains(i) && Equals(_items.Items[i], item), -1);
+                if (index < 0)
+                    continue;
+                taken.Add(index);
                 _items.Selection.Select(index);
+            }
         }
 
-        if (_items.ItemCount > 0)
-            _items.ScrollIntoView(0);
-    }
-
-    private int IndexOf(object item)
-    {
-        var index = 0;
-        foreach (var each in _items!.Items)
-        {
-            if (Equals(each, item))
-                return index;
-            index++;
-        }
-
-        return -1;
+        // Each opening starts at the top: the list may be out of the tree, so its offset, not ScrollIntoView.
+        if (_items.Scroll is ScrollViewer scroll)
+            scroll.Offset = default;
     }
 
     private void OnItemClick(object? sender, ItemClickEventArgs e)

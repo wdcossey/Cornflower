@@ -155,11 +155,13 @@ public class ListPickerFlyout : PickerFlyoutBase
     public Task<IReadOnlyList<object>?> ShowAtAsync(Control target)
     {
         _result?.TrySetResult(null);
-        var result = _result = new TaskCompletionSource<IReadOnlyList<object>?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _result = null;
+        // Shown first: shown at another target, it closes there, and that close ends no wait of this call's.
         ShowAt(target);
         if (!IsOpen)
-            result.TrySetResult(null);
-        return result.Task;
+            return Task.FromResult<IReadOnlyList<object>?>(null);
+        _result = new TaskCompletionSource<IReadOnlyList<object>?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _result.Task;
     }
 
     /// <inheritdoc />
@@ -210,11 +212,39 @@ public class ListPickerFlyout : PickerFlyoutBase
             return;
         if (change.Property == SelectedIndexProperty)
         {
-            var item = ItemAt(change.GetNewValue<int>());
+            var index = change.GetNewValue<int>();
+            var item = ItemAt(index);
             Sync(() =>
             {
+                // An index past the items is none; with no items yet, it waits for them.
+                if (item is null && ItemsSource is not null)
+                    SelectedIndex = -1;
                 SelectedItem = item;
                 Only(item);
+            });
+        }
+        else if (change.Property == ItemsSourceProperty)
+        {
+            // New items: the item picked keeps its place in them, or an index set before them takes its item.
+            Sync(() =>
+            {
+                if (SelectedItem is { } picked)
+                {
+                    SelectedIndex = IndexOf(picked);
+                    if (SelectedIndex < 0 && ItemsSource is not null)
+                    {
+                        SelectedItem = null;
+                        Only(null);
+                    }
+                }
+                else if (SelectedIndex >= 0)
+                {
+                    var item = ItemAt(SelectedIndex);
+                    if (item is null)
+                        SelectedIndex = -1;
+                    SelectedItem = item;
+                    Only(item);
+                }
             });
         }
         else if (change.Property == SelectedItemProperty)

@@ -59,11 +59,13 @@ public class PickerFlyout : PickerFlyoutBase
     public Task<bool> ShowAtAsync(Control target)
     {
         _result?.TrySetResult(false);
-        var result = _result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _result = null;
+        // Shown first: shown at another target, it closes there, and that close ends no wait of this call's.
         ShowAt(target);
         if (!IsOpen)
-            result.TrySetResult(false);
-        return result.Task;
+            return Task.FromResult(false);
+        _result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _result.Task;
     }
 
     /// <inheritdoc />
@@ -100,7 +102,8 @@ public class PickerFlyout : PickerFlyoutBase
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ContentProperty && Popup.Child is PickerFlyoutPresenter presenter)
+        // Only while open: reading Popup makes it, and an opening copies the content anyway.
+        if (change.Property == ContentProperty && IsOpen && Popup.Child is PickerFlyoutPresenter presenter)
             presenter.Content = change.NewValue;
     }
 }

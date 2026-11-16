@@ -49,7 +49,12 @@ Each has its test in `tests/Cornflower.Tests/Controls/ListPickerFlyoutTests.cs`,
 | PickerFlyout: accept raises `Confirmed` with true at once; cancel and Back give false | #150 | `PickerFlyouts_Accept_Raises_Confirmed_With_True_At_Once_And_Cancel_And_Back_Give_False` |
 | Opened again, the picks so far are checked | WinRT's `SelectedItems` | `A_Picker_Opened_Again_Shows_What_Was_Picked_Checked` |
 | A picker that doesn't open gives its empty result at once; a second `ShowAtAsync` ends the first with none | WinRT's async contract | `ShowAtAsync_Gives_Its_Empty_Result_At_Once_When_The_Picker_Doesnt_Open`, `A_Second_ShowAtAsync_Ends_The_First_With_No_Result` |
-| `SelectedIndex`, `SelectedItem` and `SelectedItems` follow one another | WinRT | `SelectedIndex_SelectedItem_And_SelectedItems_Follow_One_Another` |
+| `SelectedIndex`, `SelectedItem` and `SelectedItems` follow one another; an index set before the items takes its item when they come, one past them is none, and new items drop a picked item they lack | WinRT | `SelectedIndex_SelectedItem_And_SelectedItems_Follow_One_Another`, `An_Index_Set_Before_The_Items_Takes_Its_Item_When_They_Come_And_One_Past_Them_Is_None` |
+| Equal items are checked and picked by their places | a list may hold equal items | `Equal_Items_Are_Checked_And_Picked_By_Their_Places` |
+| Each opening starts at the top of the list | chosen: not read | `Each_Opening_Starts_At_The_Top_Of_The_List` |
+| A second tap while it closes picks nothing more: the popup takes no taps once its bands move | the host's (#161) | `A_Second_Tap_While_It_Closes_Picks_Nothing_More` |
+| `ShowAtAsync` at another target while open ends the first wait and waits for the new opening | WinRT's async contract | `ShowAtAsync_At_Another_Target_While_Open_Waits_For_The_New_Opening` |
+| The picker flyout presenter's `ContentTemplate` shows its content | WinRT's `ContentControl` | `The_Picker_Flyout_Presenters_ContentTemplate_Shows_Its_Content` |
 | `ItemTemplate` and `DisplayMemberBinding` show the items | WinRT's `ItemTemplate`, `DisplayMemberPath` | `The_Items_Are_Shown_By_Their_ItemTemplate_Or_DisplayMemberBinding` |
 | Opening and closing are the full Flyout's bands | #149 for PickerFlyout; ListPickerFlyout below | `A_Picker_Opens_And_Closes_As_The_Full_Flyout_Does` |
 | Under Simple alone the popup is Avalonia's; a theme going mid-close closes it | the Flyout's | `Simple_Alone_Keeps_Avalonias_Own_Popup_And_The_Picker_Still_Closes`, `A_Picker_Whose_Theme_Goes_Mid_Close_Closes` |

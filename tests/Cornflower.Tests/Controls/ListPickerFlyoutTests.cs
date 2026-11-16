@@ -278,6 +278,8 @@ public class ListPickerFlyoutTests
         var text = stage.Presenter.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "picker flyout content");
         // The dump: the content's TextBlock, with its 19 margin, at 38.33, 56.25.
         Assert.Equal(new Point(38.3333, 56.25), stage.InWindow(text).Position, new PointComparer(0.01));
+        // The content's text in the phone's foreground, from the presenter (Wp81 themes no window).
+        Assert.Same(stage.Scene.Window.FindResource(ThemeVariant.Dark, "PhoneForegroundBrush"), text.Foreground);
         Assert.Equal(ContentPanelWithBarHeight, stage.Part<Grid>("ContentPanel").Bounds.Height, 0.01);
 
         stage.Picker.Hide();
@@ -362,8 +364,9 @@ public class ListPickerFlyoutTests
         var cross = InkBox(frame, cancelRing, Foreground(dark), Chrome(dark));
         Assert.Equal(CrossInk.Width, cross.Width, 0.6);
         Assert.Equal(CrossInk.Height, cross.Height, 0.6);
-        Assert.Equal(cancelRing.X + CrossOffset.X, cross.Center.X, 0.5);
-        Assert.Equal(cancelRing.Y + CrossOffset.Y, cross.Center.Y, 0.5);
+        // To a quarter of a view px: half a raw px of the ink's box either side.
+        Assert.Equal(cancelRing.X + CrossOffset.X, cross.Center.X, 0.25);
+        Assert.Equal(cancelRing.Y + CrossOffset.Y, cross.Center.Y, 0.25);
     }
 
     // ---- Picking, accepting, cancelling and Back ----
@@ -606,6 +609,118 @@ public class ListPickerFlyoutTests
         protected override void OnOpening(System.ComponentModel.CancelEventArgs args) => args.Cancel = true;
     }
 
+    [AvaloniaFact]
+    public void A_Second_Tap_While_It_Closes_Picks_Nothing_More()
+    {
+        var picker = ListPicker();
+        using var stage = new Stage(picker);
+        var log = new Log(stage);
+        stage.OpenAtRest();
+        var items = stage.ListItems();
+
+        stage.Tap(items[3]);
+        stage.At(stage.Now + Tick);
+        stage.Tap(items[4]);
+        stage.At(stage.Now + 500);
+
+        Assert.Single(log.Names, n => n.StartsWith("ItemsPicked", StringComparison.Ordinal));
+        Assert.Equal("four", picker.SelectedItem);
+    }
+
+    [AvaloniaFact]
+    public void ShowAtAsync_At_Another_Target_While_Open_Waits_For_The_New_Opening()
+    {
+        var picker = ListPicker();
+        using var stage = new Stage(picker);
+        var first = picker.ShowAtAsync(stage.Button);
+        Dispatcher.UIThread.RunJobs();
+        var other = new Button { Content = "other" };
+        ((Panel)stage.Button.Parent!).Children.Add(other);
+        Dispatcher.UIThread.RunJobs();
+
+        var second = picker.ShowAtAsync(other);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(first.Result);
+        Assert.False(second.IsCompleted);
+        stage.At(stage.Now + 500);
+        stage.Tap(stage.ListItems()[0]);
+        Assert.Equal(["one"], second.Result!);
+    }
+
+    [AvaloniaFact]
+    public void An_Index_Set_Before_The_Items_Takes_Its_Item_When_They_Come_And_One_Past_Them_Is_None()
+    {
+        var picker = new ListPickerFlyout { SelectedIndex = 2 };
+        picker.ItemsSource = Items;
+        Assert.Equal("three", picker.SelectedItem);
+        Assert.Equal(["three"], picker.SelectedItems);
+
+        picker.SelectedIndex = 10;
+        Assert.Equal(-1, picker.SelectedIndex);
+        Assert.Null(picker.SelectedItem);
+        Assert.Empty(picker.SelectedItems);
+
+        picker.SelectedItem = "two";
+        picker.ItemsSource = new[] { "zero", "one", "two" };
+        Assert.Equal(2, picker.SelectedIndex);
+        picker.ItemsSource = new[] { "ten" };
+        Assert.Equal(-1, picker.SelectedIndex);
+        Assert.Null(picker.SelectedItem);
+        Assert.Empty(picker.SelectedItems);
+    }
+
+    [AvaloniaFact]
+    public void Equal_Items_Are_Checked_And_Picked_By_Their_Places()
+    {
+        var picker = new ListPickerFlyout { ItemsSource = new[] { "a", "b", "a" }, SelectionMode = ListPickerFlyoutSelectionMode.Multiple };
+        using var stage = new Stage(picker);
+        var result = picker.ShowAtAsync(stage.Button);
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Now + 500);
+
+        stage.Tap(stage.ListItems()[2]);
+        stage.Tap(stage.Part<CommandBarButton>("PART_AcceptButton"));
+        Assert.Equal(["a"], result.Result!);
+        stage.At(stage.Now + 500);
+
+        stage.OpenAtRest();
+        Assert.Equal([true, false, false], stage.ListItems().Select(i => i.IsSelected));
+    }
+
+    [AvaloniaFact]
+    public void Each_Opening_Starts_At_The_Top_Of_The_List()
+    {
+        var picker = new ListPickerFlyout { ItemsSource = Enumerable.Range(1, 40).Select(i => $"item {i}").ToArray() };
+        using var stage = new Stage(picker);
+        stage.OpenAtRest();
+        var list = stage.Part<ListBox>("PART_ItemsHost");
+        var scroll = list.GetVisualDescendants().OfType<ScrollViewer>().First();
+        scroll.Offset = new Vector(0, 600);
+        stage.At(stage.Now + 50);
+        Assert.Equal(600, scroll.Offset.Y);
+        stage.Back();
+        stage.At(stage.Now + 500);
+
+        stage.OpenAtRest();
+
+        Assert.Equal(0, scroll.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public void The_Picker_Flyout_Presenters_ContentTemplate_Shows_Its_Content()
+    {
+        var picker = new PickerFlyout { Content = "plain" };
+        using var stage = new Stage(picker);
+        stage.OpenAtRest();
+
+        ((PickerFlyoutPresenter)stage.Presenter).ContentTemplate =
+            new FuncDataTemplate<string>((text, _) => new TextBlock { Text = text.ToUpperInvariant() });
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Contains(stage.Presenter.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "PLAIN");
+    }
+
     // ---- The list's data ----
 
     [AvaloniaFact]
@@ -740,20 +855,20 @@ public class ListPickerFlyoutTests
 
         return new Rect(left / scale, top / scale, (right - left + 1) / scale, (bottom - top + 1) / scale);
     }
-}
 
-internal sealed class RectComparer(double tolerance) : IEqualityComparer<Rect>
-{
-    public bool Equals(Rect a, Rect b) =>
-        Math.Abs(a.X - b.X) <= tolerance && Math.Abs(a.Y - b.Y) <= tolerance
-        && Math.Abs(a.Width - b.Width) <= tolerance && Math.Abs(a.Height - b.Height) <= tolerance;
+    private sealed class RectComparer(double tolerance) : IEqualityComparer<Rect>
+    {
+        public bool Equals(Rect a, Rect b) =>
+            Math.Abs(a.X - b.X) <= tolerance && Math.Abs(a.Y - b.Y) <= tolerance
+            && Math.Abs(a.Width - b.Width) <= tolerance && Math.Abs(a.Height - b.Height) <= tolerance;
 
-    public int GetHashCode(Rect rect) => 0;
-}
+        public int GetHashCode(Rect rect) => 0;
+    }
 
-internal sealed class PointComparer(double tolerance) : IEqualityComparer<Point>
-{
-    public bool Equals(Point a, Point b) => Math.Abs(a.X - b.X) <= tolerance && Math.Abs(a.Y - b.Y) <= tolerance;
+    private sealed class PointComparer(double tolerance) : IEqualityComparer<Point>
+    {
+        public bool Equals(Point a, Point b) => Math.Abs(a.X - b.X) <= tolerance && Math.Abs(a.Y - b.Y) <= tolerance;
 
-    public int GetHashCode(Point point) => 0;
+        public int GetHashCode(Point point) => 0;
+    }
 }

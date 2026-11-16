@@ -128,4 +128,5 @@ Rung 5 for the four types and `PickerFlyoutBase` (Avalonia has none); rung 1 for
   captured.
 - **The check's ink** is 1.1 view px shorter than the phone's; its width and centre match.
 - **A tap on the selected item in Single** picks it again (`ItemsPicked` with nothing added or removed): not read.
+- **Each opening starts at the top of the list**; whether the phone scrolls to the item picked wasn't read.
 - **Selection in Single** isn't drawn, as on the phone; a press tilts the item (the ListView's), not read for the picker.
