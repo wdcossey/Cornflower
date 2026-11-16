@@ -84,34 +84,32 @@ internal sealed class AvaloniaSide
     /// <c>.Presenters</c> (<c>ContentPresenter</c>, <c>ItemsPresenter</c>, <c>ScrollContentPresenter</c>,
     /// <c>TextPresenter</c>). The templated controls a checklist is for are all in these three.
     /// </summary>
-    internal static readonly string[] Namespaces =
+    internal static readonly IReadOnlyList<string> Namespaces =
         ["Avalonia.Controls", "Avalonia.Controls.Primitives", "Avalonia.Controls.Presenters"];
 
     /// <summary>
-    /// Every exported type in <see cref="Namespaces"/> by its short name, built once. No name is in two of them in
-    /// the Avalonia this tool is built against; if a later Avalonia puts one in two, this throws rather than pick.
+    /// The top-level exported types in <see cref="Namespaces"/>, by short name, built once. A nested type
+    /// (<c>ProgressBar.ProgressBarTemplateSettings</c>) is never a control a checklist is for, so it isn't indexed.
     /// </summary>
-    private static readonly Lazy<IReadOnlyDictionary<string, Type>> ByName = new(() => ByShortName(
-        Controls.GetExportedTypes().Where(t => t.Namespace is not null && Namespaces.Contains(t.Namespace))));
+    private static readonly Lazy<ILookup<string, Type>> ByName = new(() => Controls.GetExportedTypes()
+        .Where(t => !t.IsNested && Namespaces.Contains(t.Namespace!))
+        .ToLookup(t => t.Name, StringComparer.Ordinal));
 
-    /// <summary>The types by short name; throws on a name two of them share.</summary>
-    internal static IReadOnlyDictionary<string, Type> ByShortName(IEnumerable<Type> types)
-    {
-        var byName = new Dictionary<string, Type>(StringComparer.Ordinal);
-        foreach (var type in types)
-        {
-            if (!byName.TryAdd(type.Name, type))
-            {
-                throw new InvalidOperationException(
-                    $"{type.Name} is both {byName[type.Name].FullName} and {type.FullName}: say which in AvaloniaSide.");
-            }
-        }
+    /// <summary>
+    /// Of the types that share a short name, the one whose namespace comes first in <paramref name="order"/>. No
+    /// name is in two of <see cref="Namespaces"/> at Avalonia 12.1.4; if a later one puts a name in two, the
+    /// order decides, as it did before the presenters were added.
+    /// </summary>
+    internal static Type? FirstByNamespace(IEnumerable<Type> candidates, IReadOnlyList<string> order) =>
+        candidates
+            .Select(t => (Type: t, Rank: Enumerable.Range(0, order.Count).FirstOrDefault(i => order[i] == t.Namespace, -1)))
+            .Where(c => c.Rank >= 0)
+            .OrderBy(c => c.Rank)
+            .Select(c => c.Type)
+            .FirstOrDefault();
 
-        return byName;
-    }
-
-    /// <summary>Avalonia's type of that name in one of <see cref="Namespaces"/>, or null.</summary>
-    private static Type? FindType(string name) => ByName.Value.GetValueOrDefault(name);
+    /// <summary>Avalonia's type of that name in <see cref="Namespaces"/>, by their order, or null.</summary>
+    private static Type? FindType(string name) => FirstByNamespace(ByName.Value[name], Namespaces);
 
     /// <summary>Avalonia's control, or null for a control Avalonia doesn't have.</summary>
     public Type? Type => _type;

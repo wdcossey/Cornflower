@@ -96,5 +96,4 @@ jobs:
 
       # The test suite runs it too (RealWindowTests); here it fails fast, in its own step, with its own output.
       - name: drive.ps1's self-test
-        shell: pwsh
-        run: ./tools/real-window/selftest.ps1
+        run: pwsh -NoProfile -File tools/real-window/selftest.ps1

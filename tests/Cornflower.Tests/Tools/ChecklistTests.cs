@@ -283,14 +283,25 @@ public class ChecklistTests
     }
 
     [Fact]
-    public void A_Name_In_Two_Of_The_Namespaces_Is_An_Error_Not_A_Guess()
+    public void Only_Top_Level_Types_In_The_Three_Namespaces_Are_Found()
     {
-        // No name is in two of them at Avalonia 12.1.4; a clash in a later Avalonia must stop the tool, not pick one.
-        var clash = Assert.Throws<InvalidOperationException>(() => AvaloniaSide.ByShortName(
-            [typeof(Avalonia.Controls.ContentControl), typeof(Avalonia.Controls.Presenters.ContentPresenter),
-             typeof(Avalonia.Controls.Shapes.Path), typeof(System.IO.Path)]));
-        Assert.Contains("Avalonia.Controls.Shapes.Path", clash.Message);
-        Assert.Contains("System.IO.Path", clash.Message);
+        // Avalonia.Controls.Shapes is outside the three; ProgressBarTemplateSettings is nested in ProgressBar.
+        Assert.Null(new AvaloniaSide("Ellipse").Type);
+        Assert.Null(new AvaloniaSide("ProgressBarTemplateSettings").Type);
+    }
+
+    [Fact]
+    public void A_Name_In_Two_Namespaces_Goes_To_The_First_In_Order()
+    {
+        // No name is in two of the three at Avalonia 12.1.4, so the rule is tested on the namespaces alone: whichever
+        // candidate's namespace comes first wins, and one outside the order is never picked.
+        Type[] candidates =
+            [typeof(Avalonia.Controls.Presenters.ContentPresenter), typeof(Avalonia.Controls.ContentControl)];
+        Assert.Equal(typeof(Avalonia.Controls.ContentControl),
+            AvaloniaSide.FirstByNamespace(candidates, AvaloniaSide.Namespaces));
+        Assert.Equal(typeof(Avalonia.Controls.Presenters.ContentPresenter),
+            AvaloniaSide.FirstByNamespace(candidates, ["Avalonia.Controls.Presenters", "Avalonia.Controls"]));
+        Assert.Null(AvaloniaSide.FirstByNamespace([typeof(Avalonia.Controls.Shapes.Ellipse)], AvaloniaSide.Namespaces));
     }
 
     [Theory]
