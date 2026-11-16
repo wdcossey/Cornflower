@@ -547,9 +547,10 @@ public class LoopingSelectorTests
         var release = Drag(stage, clock, stage.Day, 150, y: 500, step: 15, holdMs: 0);
         clock.At(release + 100);
         stage.Day.MaximumValue = 30;
+        var shown = stage.Day.SelectedValue;
         clock.At(release + 3000);
         Assert.False(PhoneLoopingSelector.GetIsMoving(stage.Day));
-        Assert.InRange(stage.Day.SelectedValue, 1, 30);
+        Assert.Equal(shown, stage.Day.SelectedValue);
         stage.Settle();
         Assert.Equal(SelectedTop, stage.TopOf(stage.Day, stage.Day.SelectedValue), 1);
     }
