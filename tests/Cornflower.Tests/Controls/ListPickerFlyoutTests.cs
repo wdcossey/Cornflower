@@ -712,6 +712,7 @@ public class ListPickerFlyoutTests
     [AvaloniaFact]
     public void Each_Opening_Starts_At_The_Top_Of_The_List()
     {
+        // The list is given its items again as it opens, and Avalonia's ListBox starts again at the top.
         var picker = new ListPickerFlyout { ItemsSource = Enumerable.Range(1, 40).Select(i => $"item {i}").ToArray() };
         using var stage = new Stage(picker);
         stage.OpenAtRest();

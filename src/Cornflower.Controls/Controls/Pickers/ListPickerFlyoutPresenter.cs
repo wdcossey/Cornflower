@@ -111,10 +111,6 @@ public class ListPickerFlyoutPresenter : PickerPresenterBase
                     _items.Selection.Select(index);
             }
         }
-
-        // Each opening starts at the top: the list may be out of the tree, so its offset, not ScrollIntoView.
-        if (_items.Scroll is ScrollViewer scroll)
-            scroll.Offset = default;
     }
 
     private void OnItemClick(object? sender, ItemClickEventArgs e)
