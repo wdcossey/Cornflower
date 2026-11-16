@@ -115,8 +115,8 @@ internal static class PhoneListMultiSelect
     /// </summary>
     private static void OnPressed(ListBoxItem item, PointerPressedEventArgs e)
     {
-        if (!GetIsOn(item) || !item.IsEffectivelyEnabled || item.IsSet(PressProperty) ||
-            !ReferenceEquals(item.GetValue(FirstProperty), e.Pointer) ||
+        // The first pointer is noted only in the check mode, so an item out of it stops here.
+        if (!ReferenceEquals(item.GetValue(FirstProperty), e.Pointer) || !item.IsEffectivelyEnabled || item.IsSet(PressProperty) ||
             !e.GetCurrentPoint(item).Properties.IsLeftButtonPressed ||
             e.Source is not Visual hit || !(ReferenceEquals(hit, item) || item.IsVisualAncestorOf(hit)) ||
             BoxOf(item) is not { } box || box.GetVisualParent() is not { } parent ||
