@@ -21,7 +21,11 @@ For a Pivot it prints, for each touch:
 Then the slide-in's values over every touch, each counted once, with motionlib's exponential and ExponentialEase fits.
 
 For a Hub: the header's left edge against the offset, a straight line through every frame with the offset past 20 px
-(at the start the Hub's entrance animation still moves it), its slope and worst residual.
+(at the start the Hub's entrance animation still moves it), its slope and worst residual. The touches at the end (#136,
+their steps say "the end") are left out of that line, and printed on their own: the offset, the header and, with an
+image, the background, frame by frame, and whether the offset goes back to 0. With a background image (`-Probe
+hubimage`), the background's left edge against the offset, as two straight lines: up to the sections' width less the
+view's (L - V), beside (W - V) / (L - V), W the background's width; and from there to the end of the scroll range.
 
 Python 3 standard library only.
 """
@@ -36,6 +40,7 @@ PIVOT = re.compile(r'rt ([\d.]+) offset ([-\d.]+) index (-?\d+) panel (.*?) item
 TRANSLATE = re.compile(r'^\[translate ([-\d.]+) [-\d.]+\]$')
 HEADER = re.compile(r'\| (\S+) ([-\d.]+|NaN) op')
 HUB = re.compile(r'rt ([\d.]+) offset ([-\d.]+) header ([-\d.]+)')
+BACKGROUND = re.compile(r'\| Background ([-\d.]+) w ([\d.]+) ')
 
 
 def pivot_frames(seg):
@@ -138,19 +143,45 @@ def pivot(rows, segs):
 
 
 def hub(rows):
+    end_steps = [(label, t0, t1) for label, t0, t1, _ in ml.step_segments(rows, times=True) if 'the end' in label]
+    first_end = min((t0 for _, t0, _ in end_steps), default=float('inf'))
     pts = []
     for t, what, d in rows:
         if what == 'frame':
             m = HUB.match(d)
             if m:
-                pts.append((float(m.group(2)), float(m.group(3))))
-    use = [p for p in pts if p[0] > 20]
+                bg = BACKGROUND.search(d)
+                pts.append((t, float(m.group(2)), float(m.group(3)), float(bg.group(1)) if bg else None, float(bg.group(2)) if bg else None))
+    use = [p for p in pts if p[1] > 20 and p[0] < first_end]
     if len(use) < 3:
         raise SystemExit('too few frames with the offset past 20 px')
-    a, b = ml.linfit([p[0] for p in use], [p[1] for p in use])
-    worst = max(abs(y - (a + b * x)) for x, y in use)
+    a, b = ml.linfit([p[1] for p in use], [p[2] for p in use])
+    worst = max(abs(p[2] - (a + b * p[1])) for p in use)
     print('Hub: header = %.4f %+.6f x offset over %d frames, offsets %.0f to %.0f; worst %.4f px; 1 / slope = %.3f'
-          % (a, b, len(use), min(p[0] for p in use), max(p[0] for p in use), worst, -1 / b if b else float('inf')))
+          % (a, b, len(use), min(p[1] for p in use), max(p[1] for p in use), worst, -1 / b if b else float('inf')))
+
+    widths = [float(d.split()[-2]) for t, w, d in rows if w == 'layout' and d.startswith('section ')]
+    view = next((float(d.split()[-1]) for t, w, d in rows if w == 'layout' and ' viewport ' in d), None)
+    bgs = [p for p in use if p[3] is not None]
+    if bgs and widths and view:
+        width, length = bgs[0][4], sum(widths)
+        knee = length - view
+        print('Background: %.0f px wide; the sections %.0f px in all (L), the view %.0f (V); (W - V) / (L - V) = %.6f'
+              % (width, length, view, (width - view) / knee))
+        for name, part in (('offsets up to L - V', [p for p in bgs if p[1] < knee - 1]), ('offsets past L - V', [p for p in bgs if p[1] > knee + 1])):
+            if len(part) >= 3:
+                a, b = ml.linfit([p[1] for p in part], [p[3] for p in part])
+                worst = max(abs(p[3] - (a + b * p[1])) for p in part)
+                print('  %s: left edge = %.3f %+.6f x offset over %d frames, offsets %.0f to %.0f; worst %.3f px'
+                      % (name, a, b, len(part), min(p[1] for p in part), max(p[1] for p in part), worst))
+    for label, t0, t1 in end_steps:
+        seg = [p for p in pts if p[0] >= t0 and (t1 is None or p[0] < t1)]
+        if not seg:
+            continue
+        back = next((k for k in range(1, len(seg)) if seg[k][1] < 1 and seg[k - 1][1] > 100), None)
+        print('\n%s: offset %.1f at the start; %s' % (label, seg[0][1], 'back to 0 at %.0f ms' % (seg[back][0] - t0) if back is not None else 'never back to 0'))
+        for p in seg[max(0, (back or 0) - 14):(back or 0) + 16]:
+            print('  %8.1f  offset %8.2f  header %8.2f%s' % (p[0] - t0, p[1], p[2], '  background %9.2f' % p[3] if p[3] is not None else ''))
 
 
 def main():

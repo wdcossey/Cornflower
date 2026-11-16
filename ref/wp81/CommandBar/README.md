@@ -19,3 +19,18 @@ open or closed and doesn't match these pixels. So these screenshots are the refe
 from them are in [`docs/controls/CommandBar/PLAN.md`](../../../docs/controls/CommandBar/PLAN.md) and
 `tests/Cornflower.Tests/Controls/CommandBarReadings.cs`. The names are the reference app's:
 `<theme>__AppBar__<variant>__popup__screen.png`.
+
+## Added for #136 (2026-11-15 and 16)
+
+- `<theme>__BottomAppBar__compact-open-<n>-secondary__popup__screen.png`: the same bar open with 0, 1, 3, 4, 5 and
+  10 secondary commands ("first menu item", "second menu item", then "menu item 3" and on), dark and light, from refapp
+  run `20261116-0005-dev11` (`run.ps1 -Popups only -Only BottomAppBar -Grab`). The reference app now names these
+  `BottomAppBar`; the 2026-11-09 files kept their old name, `AppBar`.
+- `dark__recording__<what>__frame<n>.png`: frames of the recording of refapp run `20261115-2354-dev11`
+  (`run.ps1 -Probe appbar -Record`), 540 × 960 (1.2 recording px a view px), unchanged. A compact bar with add,
+  favorite (unchecked) and delete (enabled), at rest and with a finger held on add (closed and open) and on the first
+  menu line. They are the reference for the pressed look, which no screenshot has.
+
+The heights, the pressed look and the motion read from them are in
+[`tools/refapp/README.md`](../../../tools/refapp/README.md), "The app bar under touches, and with other numbers of
+secondary commands".

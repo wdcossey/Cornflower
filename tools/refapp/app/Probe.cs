@@ -105,7 +105,10 @@ namespace RefApp
                     await probe.HubProbe(host);
                     break;
                 case "hubimage":
-                    await probe.HubProbe(host, true);
+                    await probe.HubProbe(host, 1600, 800);
+                    break;
+                case "hubimage900":
+                    await probe.HubProbe(host, 900, 400);
                     break;
                 case "appbar":
                     await probe.AppBarProbe(host);

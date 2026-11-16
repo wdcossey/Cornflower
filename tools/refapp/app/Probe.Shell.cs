@@ -319,18 +319,22 @@ namespace RefApp
         /// ms on a section) three times in a row, then a swipe right; then a drag of 150 px left over 500 ms, held 300 ms
         /// and let go. The offset is set to 0 from code before each set.
         ///
-        /// With <paramref name="image"/> (-Probe hubimage, #136, for #122) the Hub's Background is an ImageBrush of a
-        /// striped picture the probe draws (<see cref="StripeImage"/>), and the log also has, every frame, the template's
+        /// With an image width and height (-Probe hubimage, 1600 x 800, and hubimage900, 900 x 400; #136, for #122) the
+        /// Hub's Background is an ImageBrush of a striped picture that size the probe draws (<see cref="StripeImage"/>),
+        /// and the log also has the parts' sizes once the entrance is over, and, every frame, the template's
         /// Background grid, WrapBackground and MainBackground: their left edges, widths, transforms and the grid's
-        /// opacity; and the Hub's visual states (BackgroundImageLoadStates). Then a fourth swipe left, at the end, and a
-        /// swipe right from there are added.
+        /// opacity; and the Hub's visual states (BackgroundImageLoadStates).
+        ///
+        /// Since #136 every run then sets the offset to the end from code and swipes left there, and again and swipes
+        /// right.
         /// </summary>
-        private async Task HubProbe(Grid host, bool image = false)
+        private async Task HubProbe(Grid host, int imageWidth = 0, int imageHeight = 0)
         {
+            var image = imageWidth > 0;
             var hub = new Hub { Name = "hub", Header = "hub", Margin = new Thickness(0, HeaderHeight, 0, 0) };
             if (image)
             {
-                hub.Background = new ImageBrush { ImageSource = await StripeImage(1600, 800) };
+                hub.Background = new ImageBrush { ImageSource = await StripeImage(imageWidth, imageHeight) };
             }
 
             for (var i = 1; i <= 4; i++)
@@ -375,6 +379,10 @@ namespace RefApp
                     var b = Bounds(part);
                     Log("layout", part.Name + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + " " + Value(part.RenderTransform) + " visibility " + part.Visibility);
                 }
+
+                // The bounds above are read during the Hub's entrance, under its projection: the sizes again after it.
+                await Task.Delay(1500);
+                Log("layout", "after the entrance: hub " + Num(hub.ActualWidth) + " x " + Num(hub.ActualHeight) + string.Concat(new[] { bg, wrap, main }.Select(part => ", " + part.Name + " " + Num(part.ActualWidth) + " x " + Num(part.ActualHeight) + " at " + Num(Left(part)))));
             }
 
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.HorizontalOffset) + " final " + Num(e.FinalView.HorizontalOffset) + " inertial " + e.IsInertial);
@@ -448,24 +456,22 @@ namespace RefApp
 
             Swipe(hub, "swipe right", none, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
             Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, dx: -150, moveMs: 500, holdMs: 300, gapMs: 3000);
-            if (image)
+            // To the end and past it (#136): the offset set to the end from code, then a swipe left there and one back.
+            Func<Task> end = () =>
             {
-                // To the end and past it: the offset set to the end from code, then a swipe left there and one back.
-                Func<Task> end = () =>
-                {
-                    var ok = sv.ChangeView(sv.ScrollableWidth, null, null, true);
-                    Log("setup", "offset " + Num(sv.ScrollableWidth) + (ok ? "" : " (ChangeView returned false)"));
-                    return Task.FromResult(true);
-                };
-                Swipe(hub, "swipe left at the end", end, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
-                Swipe(hub, "swipe right from the end", end, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
-            }
+                var ok = sv.ChangeView(sv.ScrollableWidth, null, null, true);
+                Log("setup", "offset " + Num(sv.ScrollableWidth) + (ok ? "" : " (ChangeView returned false)"));
+                return Task.FromResult(true);
+            };
+            Swipe(hub, "swipe left at the end", end, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
+            Swipe(hub, "swipe right from the end", end, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
 
             await RunScheduled(page, header);
         }
 
         /// <summary>
-        /// A picture to tell places by, written to the app's folder as hub-background.png and loaded from there: width x
+        /// A picture to tell places by, written to the app's temporary folder as hub-background.png and loaded from there
+        /// (not the local folder, which the run pulls: the image holds its file open, and ISETool's pull then fails): width x
         /// height pixels, its hue going once round the colour wheel from left to right, with a black column every 50 px
         /// and a white one every 250 px, each 4 px wide, and a black row every 100 px.
         /// </summary>
@@ -488,7 +494,7 @@ namespace RefApp
                 }
             }
 
-            var file = await _out.CreateFileAsync("hub-background.png", CreationCollisionOption.ReplaceExisting);
+            var file = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("hub-background.png", CreationCollisionOption.ReplaceExisting);
             using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
             {
                 var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
@@ -497,7 +503,7 @@ namespace RefApp
             }
 
             Log("layout", "background image " + width + " x " + height + " px, hub-background.png");
-            return new BitmapImage(new Uri("ms-appdata:///local/hub-background.png"));
+            return new BitmapImage(new Uri("ms-appdata:///temp/hub-background.png"));
         }
 
         /// <summary>

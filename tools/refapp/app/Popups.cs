@@ -128,11 +128,13 @@ namespace RefApp
             list.Add(BottomAppBar("minimal", AppBarClosedDisplayMode.Minimal, false));
             list.Add(BottomAppBar("minimal-open", AppBarClosedDisplayMode.Minimal, true));
 
-            // The open bar with other numbers of secondary commands (#136, for #133): none, one, four, and ten, more than
-            // the room.
+            // The open bar with other numbers of secondary commands (#136, for #133): none, one, three, four, five, and ten,
+            // more than the room.
             list.Add(BottomAppBar("compact-open-0-secondary", AppBarClosedDisplayMode.Compact, true, 0));
             list.Add(BottomAppBar("compact-open-1-secondary", AppBarClosedDisplayMode.Compact, true, 1));
+            list.Add(BottomAppBar("compact-open-3-secondary", AppBarClosedDisplayMode.Compact, true, 3));
             list.Add(BottomAppBar("compact-open-4-secondary", AppBarClosedDisplayMode.Compact, true, 4));
+            list.Add(BottomAppBar("compact-open-5-secondary", AppBarClosedDisplayMode.Compact, true, 5));
             list.Add(BottomAppBar("compact-open-10-secondary", AppBarClosedDisplayMode.Compact, true, 10));
 
             // Every count from 3, which opens inline, to 10, which opens the full-screen picker: where it flips (#25).
