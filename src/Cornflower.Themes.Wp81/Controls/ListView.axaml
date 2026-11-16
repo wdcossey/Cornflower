@@ -35,12 +35,13 @@
       ScaleTransform and the reorder states (reorder is deferred).
 
     The visual states: Pressed (Avalonia's :pressed, at once on a press, as the phone's) runs the tilt on
-    TiltContainer; in the check mode, CheckboxPressed fills the box with the accent and draws the tick over it, and
-    the tilt runs on the check box instead. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
+    TiltContainer, in the check mode too; CheckboxPressed, a press on the box in the check mode
+    (wp81:PhoneListMultiSelect.IsBoxPressed), fills the box with the accent and draws the tick over it, and
+    PhoneListMultiSelect tilts the box alone, with no return. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
     Update 1 runtime's 0.4) and the box and tick to their disabled brushes. Selected (:selected) shows the tick, which
     shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme sets
-    on a list whose SelectionMode has Multiple (with Toggle, WinRT's Multiple; without, its Extended, whose selection
-    would otherwise draw nothing), and its items inherit: the box comes in and the content goes over, both over
+    on a list whose SelectionMode has Multiple and Toggle (WinRT's Multiple; Multiple alone, its Extended, the phone
+    shows with no boxes), and its items inherit: the box comes in and the content goes over, both over
     the phone's 0.15 s, linear. Its two offsets are ListViewItemContentOffsetX (-40.5) and
     ListViewItemContentTranslateX (40.5), written here as literals: a transform transition takes a TransformOperations,
     which a resource double can't make. PointerOver, focus and SelectedUnfocused change nothing; FocusAdorner is
@@ -91,10 +92,11 @@
     </Setter>
 
     <!--
-      The check mode: any SelectionMode with Multiple (1), alone or with Toggle (2) and AlwaysSelected (4), by value, as a
-      selector's comma can't sit in a flags value. Its items inherit it.
+      The check mode, WinRT's Multiple: Multiple (1) with Toggle (2), with or without AlwaysSelected (4), by value, as a
+      selector's comma can't sit in a flags value. Multiple alone is WinRT's Extended, which the phone shows with no
+      boxes. Its items inherit it.
     -->
-    <Style Selector="^[SelectionMode=1], ^[SelectionMode=3], ^[SelectionMode=5], ^[SelectionMode=7]">
+    <Style Selector="^[SelectionMode=3], ^[SelectionMode=7]">
       <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="True" />
     </Style>
   </ControlTheme>
@@ -188,7 +190,7 @@
       <Setter Property="Opacity" Value="1" />
     </Style>
 
-    <!-- ListMultiSelect: the box comes in, the content goes over, and a press tilts the box (CheckboxPressed). -->
+    <!-- ListMultiSelect: the box comes in and the content goes over. A press off the box is Pressed, the content's tilt. -->
     <Style Selector="^[(wp81|PhoneListMultiSelect.IsOn)=True]">
       <Style Selector="^ /template/ Grid#CheckboxContainer">
         <Setter Property="RenderTransform" Value="translateX(0px)" />
@@ -196,16 +198,15 @@
       <Style Selector="^ /template/ Border#ContentBorder">
         <Setter Property="RenderTransform" Value="translateX(40.5px)" />
       </Style>
-      <Style Selector="^ /template/ Border#CheckboxTiltContainer">
-        <Setter Property="cf:Tilt.IsTarget" Value="True" />
-      </Style>
-      <Style Selector="^ /template/ Border#TiltContainer">
-        <Setter Property="cf:Tilt.IsTarget" Value="False" />
-      </Style>
-      <Style Selector="^:pressed /template/ Rectangle#NormalRectangle">
+    </Style>
+
+    <!-- CheckboxPressed, a press on the box in the check mode: the accent box and the tick over it; PhoneListMultiSelect
+         tilts the box. -->
+    <Style Selector="^[(wp81|PhoneListMultiSelect.IsBoxPressed)=True]">
+      <Style Selector="^ /template/ Rectangle#NormalRectangle">
         <Setter Property="Fill" Value="{DynamicResource CheckBoxPressedBackgroundThemeBrush}" />
       </Style>
-      <Style Selector="^:pressed /template/ Path#CheckGlyph">
+      <Style Selector="^ /template/ Path#CheckGlyph">
         <Setter Property="Fill" Value="{DynamicResource CheckBoxPressedForegroundThemeBrush}" />
       </Style>
     </Style>

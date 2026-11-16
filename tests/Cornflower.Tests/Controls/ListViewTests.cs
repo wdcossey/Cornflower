@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -341,16 +342,18 @@ public class ListViewTests
         Assert.True(Frames.SameAs(a, b), "the selected item is drawn differently");
     }
 
-    // WinRT's Multiple is Avalonia's Multiple and Toggle together; Multiple alone, WinRT's Extended, shows the boxes too,
-    // or its selection would draw nothing. Toggle alone is a toggled single selection, with none.
+    // WinRT's Multiple is Avalonia's Multiple and Toggle together. Multiple alone, WinRT's Extended, the phone shows with
+    // no boxes (#136's probe: leaving Multiple for Extended took every item to NoMultiSelect). Toggle alone is a toggled
+    // single selection, with none.
     [AvaloniaTheory]
     [InlineData(SelectionMode.Single, false)]
-    [InlineData(SelectionMode.Multiple, true)]
+    [InlineData(SelectionMode.Multiple, false)]
+    [InlineData(SelectionMode.Multiple | SelectionMode.AlwaysSelected, false)]
     [InlineData(SelectionMode.Toggle, false)]
     [InlineData(SelectionMode.Single | SelectionMode.AlwaysSelected, false)]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle, true)]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle | SelectionMode.AlwaysSelected, true)]
-    public void The_Check_Mode_Is_Multiple(SelectionMode mode, bool on)
+    public void The_Check_Mode_Is_Multiple_With_Toggle(SelectionMode mode, bool on)
     {
         using var stage = new ListStage();
         stage.List.SelectionMode = mode;
@@ -628,28 +631,359 @@ public class ListViewTests
         Assert.NotEqual(TiltState.Rest, CfTilt.Current(item));
     }
 
-    // CheckboxPressed, the check mode's press: the box fills with the accent, the tick is drawn over it in
-    // PhoneTextOverAccentColor, and the tilt runs on CheckboxTiltContainer, not on the content.
+    // CheckboxPressed, a press on the box in the check mode: the box fills with the accent, the tick is drawn over it in
+    // PhoneTextOverAccentColor, and the box tilts, the content doesn't.
     [AvaloniaTheory]
     [MemberData(nameof(Variants))]
-    public void In_The_Check_Mode_A_Press_Fills_The_Box_And_Tilts_It(string variant)
+    public void A_Press_On_The_Box_Fills_It_And_Tilts_The_Box_Alone(string variant)
     {
         using var clock = new TestClock();
         using var stage = new ItemStage(VariantOf(variant), new ListBoxItem { Content = "list view item", IsSelected = true });
         var item = stage.Item;
         item.SetValue(PhoneListMultiSelect.IsOnProperty, true);
         Dispatcher.UIThread.RunJobs();
+        var box = Part<Border>(item, "CheckboxTiltContainer");
 
-        stage.Window.TouchBegin(stage.At(200, 20));
+        stage.Window.TouchBegin(box.TranslatePoint(new Point(12, 12), stage.Window)!.Value);
         clock.At(SettleMs);
 
-        Assert.Contains(":pressed", item.Classes);
+        Assert.True(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
         Assert.Equal(Accent, ColourOf(BoxOf(item).Fill));
         Assert.Equal(OverAccent, ColourOf(TickOf(item).Fill));
-        Assert.Same(Part<Border>(item, "CheckboxTiltContainer"), CfTilt.TargetOf(item));
-        Assert.False(CfTilt.GetIsTarget(Part<Border>(item, "TiltContainer")));
+        Assert.IsType<MatrixTransform>(box.RenderTransform);
+        Assert.NotEqual(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
         Assert.Null(Part<Border>(item, "TiltContainer").RenderTransform);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+    }
+
+    // The probe's press held at item 1's box's centre: the box settles at the tilt the phone's held, about its own centre
+    // with the item's eye, the first frame the depth with almost no angle.
+    [AvaloniaFact]
+    public void A_Press_On_The_Box_Settles_At_The_Probes_Reading()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+
+        page.Window.TouchBegin(BoxPress);
+        var first = PhoneListMultiSelect.BoxTilt(item);
+        clock.At(SettleMs);
+        var held = PhoneListMultiSelect.BoxTilt(item);
+
+        Assert.True(
+            Math.Abs(BoxHeld.RotationX - held.RotationX) <= BoxAngleTolerance &&
+            Math.Abs(BoxHeld.RotationY - held.RotationY) <= BoxAngleTolerance &&
+            Math.Abs(BoxHeld.OffsetZ - held.OffsetZ) <= BoxDepthTolerance,
+            $"held: read {BoxHeld}, ours {held}");
+        Assert.True(
+            Math.Abs(first.RotationX) < 0.5 && Math.Abs(first.RotationY) < 0.5 &&
+            Math.Abs(BoxFirstFrame.OffsetZ - first.OffsetZ) <= BoxDepthTolerance,
+            $"first frame: read {BoxFirstFrame}, ours {first}");
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+    }
+
+    // The probe: on release the box is back at rest at once, its colours too, with no hold and no return, and the
+    // content never tilts.
+    [AvaloniaFact]
+    public void On_Release_The_Box_Is_At_Rest_At_Once()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        var touch = page.Window.TouchBegin(BoxPress);
+        clock.At(600);
+        Assert.NotEqual(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
+        page.Window.TouchEnd(touch, BoxPress);
+        var released = clock.Now.TotalMilliseconds;
+
+        Assert.Equal(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
+        for (var t = 16.0; t <= HoldMs + ReturnMs + 40; t += 16)
+        {
+            clock.At(released + t);
+            Assert.Null(box.RenderTransform);
+            Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+        }
+
+        // The mouse's left button, the same.
+        page.Window.MouseDown(BoxPress, MouseButton.Left);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotNull(box.RenderTransform);
+        page.Window.MouseUp(BoxPress, MouseButton.Left);
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+    }
+
+    // A pan from a press on the box takes the pointer from the item: the box is at rest at once, and nothing is checked.
+    [AvaloniaFact]
+    public void A_Pan_From_The_Box_Puts_It_At_Rest_At_Once()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        var touch = page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.NotNull(box.RenderTransform);
+        for (var step = 1; step <= 8; step++)
+        {
+            page.Window.TouchMove(touch, BoxPress - new Point(0, 10 * step));
+            clock.At(300 + 20 * step);
+        }
+
+        Assert.True(page.List.Scroll!.Offset.Y > 0, "the drag didn't pan the list");
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        page.Window.TouchEnd(touch, BoxPress - new Point(0, 80));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(page.List.SelectedItems!);
+    }
+
+    // The list leaving the check mode while its box is pressed takes the box's press with it: at rest, unfilled.
+    [AvaloniaFact]
+    public void Leaving_The_Check_Mode_Puts_A_Pressed_Box_At_Rest()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.NotNull(box.RenderTransform);
+        page.List.SelectionMode = SelectionMode.Single;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
+    }
+
+    // The item disabled while its box is pressed: the box at rest, unfilled.
+    [AvaloniaFact]
+    public void Disabling_The_Item_Puts_A_Pressed_Box_At_Rest()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.NotNull(box.RenderTransform);
+        page.List.IsEnabled = false;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+    }
+
+    // A new template while the box is pressed takes the box away: the press ends, and nothing is left filled.
+    [AvaloniaFact]
+    public void A_New_Template_Ends_The_Boxs_Press()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+
+        page.Window.TouchBegin(BoxPress);
+        clock.At(300);
+        Assert.True(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        item.Template = new FuncControlTemplate<ListBoxItem>((_, _) => new Border());
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
+    }
+
+    // One pointer at a time, as Tilt's: a second finger on the box while the first holds the item's text changes nothing
+    // (the content keeps its tilt, the box stays flat); and while the box is pressed, a second finger on the text doesn't
+    // tilt the content. Once the box is let go, the item tilts again.
+    [AvaloniaFact]
+    public void A_Second_Finger_Neither_Takes_Nor_Adds_A_Press()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+        var text = CheckModePresses[0].Press;
+
+        var first = page.Window.TouchBegin(text);
+        clock.At(SettleMs);
+        var held = CfTilt.Current(item);
+        Assert.NotEqual(TiltState.Rest, held);
+        var second = page.Window.TouchBegin(BoxPress);
+        clock.At(2 * SettleMs);
+        Assert.Equal(held, CfTilt.Current(item));
+        Assert.Null(box.RenderTransform);
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        page.Window.TouchEnd(second, BoxPress);
+        page.Window.TouchEnd(first, text);
+        clock.At(2 * SettleMs + HoldMs + ReturnMs + 40);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+
+        first = page.Window.TouchBegin(BoxPress);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotNull(box.RenderTransform);
+        second = page.Window.TouchBegin(text);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+        Assert.Null(Part<Border>(item, "TiltContainer").RenderTransform);
+        page.Window.TouchEnd(second, text);
+        page.Window.TouchEnd(first, BoxPress);
+        Assert.Null(box.RenderTransform);
+
+        page.Window.TouchBegin(text);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
         Assert.NotEqual(TiltState.Rest, CfTilt.Current(item));
+    }
+
+    // The probe: in the check mode a press anywhere off the box is the Single mode's, at the same tilts: the content
+    // tilts, the box stays flat and unfilled; on release the tilt holds, then eases back.
+    public static TheoryData<int> CheckModePressIndexes => new(Enumerable.Range(0, CheckModePresses.Length));
+
+    [AvaloniaTheory]
+    [MemberData(nameof(CheckModePressIndexes))]
+    public void In_The_Check_Mode_A_Press_Off_The_Box_Is_The_Single_Modes(int index)
+    {
+        var (name, press, held) = CheckModePresses[index];
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        page.List.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var box = Part<Border>(item, "CheckboxTiltContainer");
+
+        var touch = page.Window.TouchBegin(press);
+        clock.At(600);
+        var ours = CfTilt.Current(item);
+
+        AssertNear(held, ours, name);
+        Assert.Same(Part<Border>(item, "TiltContainer"), CfTilt.TargetOf(item));
+        Assert.Null(box.RenderTransform);
+        Assert.Equal(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(Transparent, ColourOf(BoxOf(item).Fill));
+
+        page.Window.TouchEnd(touch, press);
+        var released = clock.Now.TotalMilliseconds;
+        clock.At(released + HoldMs - 20);
+        Assert.Equal(ours, CfTilt.Current(item));
+        clock.At(released + HoldMs + ReturnMs + 40);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(item));
+    }
+
+    // The probe's taps in the check mode, in its order: every tap toggles its item, on the box or off it, at the release.
+    [AvaloniaFact]
+    public void Every_Tap_In_The_Check_Mode_Toggles_Its_Item()
+    {
+        using var page = new ProbePage(40);
+        var list = page.List;
+        list.SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle;
+        Dispatcher.UIThread.RunJobs();
+        var item4Box = BoxPress + new Point(0, 3 * ItemHeight);
+
+        (Point At, int Item, bool Selected, int Count)[] taps =
+        [
+            (BoxPress, 1, true, 1),
+            (CheckModePresses[0].Press, 1, false, 0),
+            (CheckModePresses[1].Press, 1, true, 1),
+            (CheckModePresses[2].Press, 1, false, 0),
+            (CheckModePresses[3].Press, 1, true, 1),
+            (item4Box, 4, true, 2),
+            (new Point(225, 256.656), 4, false, 1),
+            (new Point(225, 295.803), 5, true, 2),
+        ];
+        foreach (var (at, index, selected, count) in taps)
+        {
+            var touch = page.Window.TouchBegin(at);
+            Assert.Equal(!selected, page.Item(index).IsSelected);
+            page.Window.TouchEnd(touch, at);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(selected, page.Item(index).IsSelected);
+            Assert.Equal(count, list.SelectedItems!.Count);
+        }
+    }
+
+    // The probe: Extended, Avalonia's Multiple, under a tap is Single, with no boxes: with items 1 and 5 selected, a tap
+    // on item 1 keeps it alone; a tap on another replaces the selection; a tap on the selected item changes nothing.
+    // Each press tilts the content as in Single.
+    [AvaloniaFact]
+    public void Extended_Under_A_Tap_Is_Single()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        var list = page.List;
+        list.SelectionMode = SelectionMode.Multiple;
+        list.SelectedItems!.Add("item 1");
+        list.SelectedItems.Add("item 5");
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(IsOn(page.Item(1)));
+
+        (Point At, int Item)[] taps = [(CheckModePresses[0].Press, 1), (Presses[1].Press, 2), (Presses[1].Press, 2)];
+        foreach (var (at, index) in taps)
+        {
+            var touch = page.Window.TouchBegin(at);
+            clock.At(clock.Now.TotalMilliseconds + 70);
+            Assert.NotEqual(TiltState.Rest, CfTilt.Current(page.Item(index)));
+            page.Window.TouchEnd(touch, at);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(new object[] { $"item {index}" }, list.SelectedItems.Cast<object>());
+            clock.At(clock.Now.TotalMilliseconds + 600);
+        }
+    }
+
+    // The probe: a SelectedIndex set from code scrolls the list at once, by the least that brings the item into view (its
+    // bottom on the list's, or its top on the list's), with no animation: the offset doesn't move on later frames.
+    [AvaloniaFact]
+    public void A_SelectedIndex_Set_From_Code_Scrolls_At_Once_By_The_Least()
+    {
+        using var clock = new TestClock();
+        using var page = new ProbePage(40);
+        var list = page.List;
+        var scroll = list.Scroll!;
+        var height = page.Item(0).Bounds.Height;
+        var view = scroll.Viewport.Height;
+        Assert.Equal(720, view, 0.5);
+
+        foreach (var (index, offset) in SelectedFromCode)
+        {
+            var before = scroll.Offset.Y;
+            var top = index * height;
+            var expected = top < before ? top : top + height > before + view ? top + height - view : before;
+
+            list.SelectedIndex = index;
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(expected, scroll.Offset.Y, 0.5);
+            Assert.Equal(offset, scroll.Offset.Y, 1.0);
+
+            for (var frame = 1; frame <= 20; frame++)
+            {
+                clock.At(clock.Now.TotalMilliseconds + 16);
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(expected, scroll.Offset.Y, 0.5);
+            }
+        }
     }
 
     // Outside the check mode a press changes no colour: the phone's Pressed state runs only the tilt.

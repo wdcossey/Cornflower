@@ -1,10 +1,10 @@
 # ListView and ListViewItem
 
-Status: done · [#119](https://github.com/wdcossey/CornflowerUI/issues/119) · press compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · ListViewHeaderItem and GroupItem deferred with grouping · reorder deferred · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `fedf781`: cold 738 ms, the page opened in 315 ms, every specimen drawn, the check mode included) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the listview page opened in 37 ms with 287 elements) · owed: a real-window section driving its press, pan and check mode (#124's helpers)
+Status: done · [#119](https://github.com/wdcossey/CornflowerUI/issues/119) · press compared against [#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · the check mode's press, Extended and a `SelectedIndex` from code brought to [#136](https://github.com/wdcossey/CornflowerUI/issues/136)'s probe (runs `20261115-2352-dev11`, `20261116-0040-dev11`) in [#142](https://github.com/wdcossey/CornflowerUI/issues/142) · owed: the device run on the Pixel 8 (of #142's change) · ListViewHeaderItem and GroupItem deferred with grouping · reorder deferred · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `fedf781`: cold 738 ms, the page opened in 315 ms, every specimen drawn, the check mode included) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the listview page opened in 37 ms with 287 elements) · owed: a real-window section driving its press, pan and check mode (#124's helpers)
 
 The Windows Phone 8.1 ListView and ListViewItem: Avalonia's `ListBox` and `ListBoxItem`, themed by `Wp81Theme` with the
 phone's default styles and the item's template, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`; the phone's
-check mode by `PhoneListMultiSelect.IsOn`, internal to the theme, which the list sets and its items inherit; the press the Button's tilt. The plan, with every value and
+check mode by `PhoneListMultiSelect.IsOn`, internal to the theme, which the list sets and its items inherit; the press the Button's tilt, and a press on the check box `PhoneListMultiSelect`'s own. The plan, with every value and
 its source, is [PLAN.md](PLAN.md); the phone's captures and measurements beside ours are in
 [COMPARISON.md](COMPARISON.md).
 
@@ -30,8 +30,8 @@ An 8.1 page's ListView is Avalonia's `ListBox`, with no style:
   | WinRT | Avalonia | What it does |
   |---|---|---|
   | `Single` (the default) | `Single` (the default) | a tap selects one; the phone draws no selection |
-  | `Multiple` | `SelectionMode="Multiple,Toggle"` | the check mode: a check box slides in by each item over 0.15 s, and a tap checks or unchecks it |
-  | `Extended` | `Multiple` | Ctrl and Shift choose several; the check boxes show them (the phone's wasn't read) |
+  | `Multiple` | `SelectionMode="Multiple,Toggle"` | the check mode: a check box slides in by each item over 0.15 s, and every tap checks or unchecks its item |
+  | `Extended` | `Multiple` | no check boxes, as the phone's; a tap selects one, as in Single; Ctrl and Shift choose several, which draws nothing |
   | `None` | none | a gap: in Single mode the selection draws nothing anyway |
 
 - A string with no template is drawn small, 12 px, as the phone draws one. Give items a template in the phone's list
@@ -49,11 +49,15 @@ An 8.1 page's ListView is Avalonia's `ListBox`, with no style:
 - **The press**: at once, with the Button's tilt on the item's content (`TiltContainer`), within 0.1° of every press
   #113 probed; on release it holds 182.6 ms and eases back over 167.0 ms. A tap selects on its release. A pan takes the
   pointer from the item: the tilt returns and nothing is selected. A finger dragged off the item lets the tilt return.
+  In the check mode a press off the box is the same, the box flat.
+- **A selection set from code** (`SelectedIndex`) scrolls the list at once, by the least that brings the item into
+  view, with no animation, as the phone's (Avalonia's `AutoScrollToSelectedItem`).
 - **Selected** turns on the tick, which only the check mode shows: in Single mode a selected item looks like the
   others, as on the phone.
-- **The check mode** (any mode with `Multiple`): the box, `CheckBox`'s brushes and the `Wp81.Glyph.CheckMark` tick, comes in
-  from 40.5 to the left and the content moves 40.5 to the right, over 0.15 s each way; pressed, the box fills with the
-  accent and tilts, instead of the content.
+- **The check mode** (`Multiple` with `Toggle`): the box, `CheckBox`'s brushes and the `Wp81.Glyph.CheckMark` tick,
+  comes in from 40.5 to the left and the content moves 40.5 to the right, over 0.15 s each way. Every tap toggles its
+  item. **Pressed on the box** (CheckboxPressed), the box fills with the accent and tilts about its own centre, the
+  content doesn't, within 0.12° of the probe; on release it is at rest at once, with no hold and no return.
 - **Disabled**: the content at 0.4 (Update 1's `ListViewItemDisabledThemeOpacity`), the box and tick in
   `PhoneBaseLowColor`.
 - **Focus and pointer-over** draw nothing.
@@ -96,14 +100,12 @@ None.
 - **No grouping**: so no ListViewHeaderItem or GroupItem (Avalonia 12.1.4 has neither, nor `GroupStyle`). Deferred
   with grouping, beside SemanticZoom.
 - **No reorder**, and no add and delete transitions.
-- **The check mode's press** is the template's reading, not probed; nor is the phone's `Extended`.
-- **A selection set in code scrolls the item into view**: Avalonia's `AutoScrollToSelectedItem`, on by default, and its
-  request reaches a page's ScrollViewer round the list too. WinRT's ListView is believed not to (an app calls
-  `ScrollIntoView`), but it wasn't probed, so the theme leaves Avalonia's. Set it off where that matters.
+- **The box's press doesn't follow a move of the finger** (not read).
+- **A selection set in code scrolls the item into view**, as the phone's does (#136); Avalonia's request reaches a
+  page's ScrollViewer round the list too, which the phone's wasn't read for.
 - **In Simple's AutoCompleteBox and file dialog**, which now hold this list, a selection made with the keyboard or the
   mouse draws nothing, until those controls get themes of their own.
-- **The check mode's press away from the box** tilts the box as far as it goes (`Tilt` clamps to its target); the
-  phone's wasn't read.
+- **A selection of several in `Multiple`** (WinRT's Extended, chosen with Ctrl or Shift) draws nothing, as on the phone.
 - **The scroll physics** are Avalonia's (the ScrollViewer's recorded deviation).
 - **One raw pixel** here and there (ADR 0003).
 
