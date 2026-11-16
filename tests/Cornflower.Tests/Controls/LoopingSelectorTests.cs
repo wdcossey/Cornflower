@@ -573,6 +573,16 @@ public class LoopingSelectorTests
     }
 
     [AvaloniaFact]
+    public void Turned_Off_Alone_It_Takes_Its_Item_Theme_Back()
+    {
+        using var stage = new Stage();
+        var itemTheme = stage.Year.FindResource("Wp81LoopingSelectorItemTheme");
+        PhoneLoopingSelector.SetIsEnabled(stage.Year, false);
+        Assert.Null(PhoneLoopingSelector.Of(stage.Year));
+        Assert.All(stage.Year.Children, item => Assert.NotSame(itemTheme, item.Theme));
+    }
+
+    [AvaloniaFact]
     public void A_Finger_Moving_Sideways_Or_A_Mouse_Drags_Nothing()
     {
         using var clock = PhoneClock();
