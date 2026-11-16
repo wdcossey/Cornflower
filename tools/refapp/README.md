@@ -431,7 +431,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -829,6 +829,26 @@ logged: the same tilts, offsets and states, within the ranges below. `tools/moti
 - Clocks: the press, release and state times are the stopwatch's, between input events, as in #113. The return's
   fractions are frames (one a 15.625 ms step), the Button's.
 
+### ListView: `ItemClick` in each `SelectionMode` (2026-11-16, device 11, #148)
+
+`20261116-1717-dev11` (`-Probe listclick`): the list of `-Probe listcheck` with `IsItemClickEnabled`. Taps in each mode
+(the list at its top before each):
+
+- `Multiple`: on item 1's box, on its text, on item 2's text, and a 600 ms press on item 3.
+- `Extended`: on items 1, 2 and 2 again.
+- `None`: on item 3.
+- `Single`: on item 4, twice.
+
+`tools/motion/listpress.py` prints the presses.
+
+- **With item click on, every tap clicks and nothing selects, in every mode.** Each tap raised `ItemClick` with its
+  item at the release, and `Tapped` within 1 ms after it. No tap raised `SelectionChanged`. That
+  holds in `Multiple`, the check mode with its boxes shown: a tap on the box or on the text clicks the item and leaves it
+  unchecked. It holds in `Extended`, `None` and `Single` too.
+- **The press is the mode's.** In `Multiple` a press on the box tilts the box alone, as in #136, and a press on the text
+  tilts the item. In the other modes the item tilts and returns as in #113.
+- Clocks: the stopwatch's, between input events.
+
 ## Motion (2026-11-10, device 11, #24)
 
 How the theme moves: the ToggleSwitch's slide, the flyouts and pickers opening and closing, the
@@ -898,6 +918,9 @@ to about a frame.
 | The check mode's press and release times, and the `SelectedIndex` jump (#136) | the stopwatch, between input events and states | left as read |
 | Hub's background rate and the header's 420 ms ease after the loop (#136) | frames: `RenderingTime` | as given; the jump's time after the press is the stopwatch's |
 | The app bar's opening and closing, its time constants and settle times (#136) | the recording, paired with the log by the header's flash | **open**, as the row below |
+| Where a Pivot's or Hub's release goes: the release times, and the item events' times after `SelectionChanged` (#148) | the stopwatch, with touch.log's press-to-release times put on it by the start tap | left as read |
+| `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` 4.60 over 1,000 ms (#148) | frames: `RenderingTime` | as given |
+| The light app bar's motion, and the long list's scroll (#148) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
 
@@ -1137,6 +1160,106 @@ during the entrance. `tools/motion/pivot.py` prints the numbers below; the recor
   the states; before that the image had loaded unwatched). The `Background` grid's opacity is 1 when `ImageOpened` comes.
 - Clocks: the per-frame places and the ease are on `RenderingTime`. The jump's time after the press is the stopwatch's.
 
+### Pivot and Hub: where a release goes, a press while they move, and the Pivot's item events (2026-11-16, device 11, #148)
+
+`20261116-1706-dev11` (`-Probe pivotrelease`): the four-item Pivot of `-Probe pivot`, item 0 selected from code before
+each touch. `20261116-1714-dev11` (`-Probe hubrelease`): the four-section Hub of `-Probe hub`, its offset set from code
+before each touch. The drags are held still 400 ms before the release (a release with no speed), or let go while still
+moving at a set speed. `tools/motion/release.py` prints the numbers below. The ScrollViewer takes the touch once it pans,
+so the release isn't in the app's log: its time comes from `touch.log`, put on the app's clock by the start tap. The
+offset at the release is the first inertial `ViewChanging`'s `next`; the speed is a straight line through the drag's
+`ViewChanging`s over its last 100 ms. The decision is that event's `FinalView`, which the offset then reaches.
+
+**Where a Pivot's release goes** (a page is 450 px):
+
+| Release | Offset at the release, px | Speed, px a ms (planned / read) | Goes |
+|---|---|---|---|
+| Held still | 93.6, 155.7, 198.1, 220.3, 228.3 | about 0 | back |
+| Held still | 239.3, 258.5, 310.7 | about 0 | on |
+| 60 px, moving | 29.6 to 49.1 | 0.1 to 0.4 / 0.10 to 0.48 | back |
+| 60 px, moving | 42.7, 42.9 | 0.6, 1.0 / too few events | on |
+| 120 px, moving | 102.0, 108.7 | 0.1, 0.2 / 0.08, 0.19 | back |
+| 120 px, moving | 113.1 | 0.3 / 0.33 | on |
+| 250 px left, then 60 px back right in 100 ms | 191.8 | −0.6 / −0.41 | back |
+| 100 px left, then 60 px on in 100 ms | 158.9 | 0.6 / 0.63 | on |
+
+Right drags do the same, the other way: 201.0 held goes back, 245.4 held on, 60 px at 0.2 back and at 0.6 on.
+
+- **A held release goes on past about half a page**, between 228.3 and 239.3 px (half is 225).
+- **No single speed decides.** A 60 px drag let go at 0.48 px/ms goes back, and a 120 px drag at 0.33 goes on. Every
+  release read fits one rule, though that rule is a fit, not a read: it goes on when the offset at the release, plus its
+  speed × T, passes H. Here T is between 350 and 420 ms, and H is between 228.3 and 239.3 px.
+- A release moving back the other way goes back.
+
+**Where a Hub's release goes** (a section is 405 px): held still, 70.0 and 125.2 px go back, and 211.6 to 267.5 px go on
+(the probe's 190 px drag reached 214.9). Let go moving after 60 px (28.7 to 36.2 px at the release), speeds of 0.09 to
+0.30 px/ms read go back, and 0.39 px/ms and faster go on. From the second section, 60 px right at 0.2 goes back and at
+0.6 on, to the first.
+
+**A press while it moves catches it**, on both. In each case a swipe left (200 px in 150 ms) is followed by a second
+press, 30 to 360 ms after its release. That press stops the offset where it is: the offset moves 0 to 0.9 px over a 600 ms
+press. On the second release the offset goes on to the next page or section. Those presses came with the offset 245 to
+443 px into a Pivot page, and 223 to 391 px into a Hub section, past half each time. A 80 ms tap does the same.
+
+**A drag right at the Hub's first section loops backwards.** The offset stays 0, and the sections move with the finger:
+section 1 to 144 px for a 150 px drag. Once section 1 is between 35 and 50 px in, sections 2 to 4 are laid out to the left of
+section 1 (section 2 at −1164.5), with the header at 1/18 of the move. Held and let go, the sections ease back, and
+section 1 is at its place 780 ms after the release, with no inertial `ViewChanging`. A swipe right (200 px in 150 ms)
+carries on: the offset ends at 1,215.4, the end, which shows the last section. The header holds, then flies right 16
+px a frame, mirroring the loop forward.
+
+**`ScrollToSection` doesn't animate.** From offset 0 to sections 3, 2, 4 and 1, the offset is 810, 405, 1,215 and 0 on
+the call's return and on the next frame, with no frame between.
+
+**The Pivot's item events come together, right after the selection.** Every one of the 31 selection changes in the run
+is followed by `PivotItemUnloading` (the item left), `PivotItemUnloaded` (the same), `PivotItemLoading` (the item
+selected) and `PivotItemLoaded` (the same), in that order and within 0.4 ms of each other. They come:
+
+- 0.1 to 2.7 ms after `SelectionChanged` for a swipe;
+- 115 ms after it for a header tap;
+- 36 to 121 ms after it for a `SelectedIndex` set from code.
+
+Each event's `SelectedIndex` is already the new one. A swipe's selection comes while the offset still moves, so all four
+events come before the new item has slid in.
+
+- Clocks: the release times, the press-to-release times and the item events are the stopwatch's (touch.log's, put on the
+  app's clock by the start tap, good to a few ms). `ScrollToSection`'s frames and the backwards loop's 780 ms are on
+  `RenderingTime`.
+
+### Hub: the entrance, a plain colour, an image narrower than the screen, and `Stretch` (2026-11-16, device 11, #148)
+
+`20261116-1721-dev11` (`-Probe hubentrance -Record`) places a Hub three times, each from code on a page with only the
+header band: with no background, with a plain colour (`#FF603090`), swiped left and back, and with a 1600 × 800 image.
+`tools/motion/entrance.py` prints the entrance. `20261116-1720-dev11` (`-Probe hubstretch`) gives the Hub's `Background`
+a series of `ImageBrush`es: a 900 × 400 picture at `Fill`, `None`, `Uniform` and `UniformToFill`, then a 300 × 400 one
+at `Fill` and `None`. Each brush is read at offsets from 0 to the end, and the page is rendered at 0, 585 and the end
+(`stretch-*.png` in the run).
+
+- **The entrance turns the Hub in.** The template's `EntranceAnimationProjection` (on `HubRoot`) has `RotationY` −120° on
+  the first frame and reaches 0 on the 64th tick after, 1,000 ms of animation time. `CenterOfRotationX` is −0.5, the
+  axis half the Hub's width to its left; nothing else in the projection moves, and no opacity changes. The values are
+  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent 4.60, out) over 1,000 ms
+  to 0.00023 of the first value. The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
+  draws it: the header and the first section are carried with it, and both are at rest when `RotationY` is 0.
+- **With no background**, the `Background` grid is 0 × 800.
+- **A plain colour** fills a grid the view's width by the window's height: 450 × 800 (the Hub is 740 tall here). It
+  stays at 0 while the sections move, swiped and looped.
+- **`BackgroundImageLoadStates`** goes to `BackgroundShowing` 88 to 92 ms after `Loaded`, through
+  `BackgroundImageFadingIn`, with the colour as with the image. An image given to a Hub already on the screen (in the
+  stretch run) went `BackgroundHidden` > `BackgroundImageFadingIn` and stayed there for the rest of the run. The `Background` grid's
+  opacity reads 1 every frame throughout: `FadeInThemeAnimation` runs where the app can't read it. #136's run went from
+  `BackgroundHidden` straight to `BackgroundShowing`.
+- **`Stretch` is the brush's own, in a box the image's pixel width by 800.** With the 900 × 400 picture the parts are
+  900 × 800 and move at (W − V) / (L − V) under every `Stretch`, as #136 read. In the box:
+  - `Fill` stretches the picture to 900 × 800;
+  - `None` and `Uniform` both draw it 900 × 400, centred top to bottom;
+  - `UniformToFill` scales it to 1800 × 800 and shows the middle 900.
+- **An image narrower than the screen is drawn the view's width, and doesn't move.** With the 300 × 400 picture, the
+  `Background` grid and `MainBackground` are 450 × 800, at 0 at every offset from 0 to the end. `Fill` stretches the
+  picture across the 450 by 800; `None` draws it 300 × 400, centred in the 450 × 800 box. `WrapBackground` moved from −899 to +899 past
+  half the offsets' range, and is never on the screen. 899 is the 900 px picture's W − 1, so it may be left over from it.
+- Clocks: the entrance's frames are on `RenderingTime` (15.625 ms a step); the state times are the stopwatch's.
+
 ### ProgressRing: Active
 
 The suite's forced `Active` state captures no dots: they show only while the storyboard runs. Read
@@ -1292,7 +1415,52 @@ The motion, from the recording (`appbar.py`). The bar's top moves; the bar doesn
 - **The height goes up in steps, not a line at a time**: 2 and 3 lines are drawn the same height, and so are 4 and 5.
   With 3, 41.7 is left under the last line, where 2 leave 100.8.
 - **It stops at 418.75.** With 10 lines the sixth runs off the bottom of the screen. Whether that list scrolls isn't
-  read.
+  read (#148 read it: it scrolls, below).
+
+### The app bar: a long list of secondary commands, and a press in the light theme (2026-11-16, device 11, #148)
+
+Two runs, both recorded. The stills are in [`ref/wp81/CommandBar/`](../../ref/wp81/CommandBar/README.md), and
+`tools/motion/appbar.py` (with `--frames`) prints the bar's events and picks the held frames.
+
+- `20261116-1726-dev11` (`-Probe appbarlong -Record`): the bar of `-Probe appbar` with twelve secondary commands, "menu
+  item 1" to "menu item 12", open. The touches are planned where the open bar draws its lines. Each scroll touch is
+  followed by a tap where the second line is at rest (555). The `Click` that tap raises names the line there now.
+- `20261116-1724-dev11` (`-Probe appbarlight -Record`): the touches of `-Probe appbar` with the bar's `RequestedTheme`
+  Light. The page stays dark, so `appbar.py` still finds the bar's edge. One more touch comes last: favorite, checked by
+  then, held 1 s on the closed bar.
+
+**A long list scrolls.**
+
+- At rest, the tap on the second line's place invokes "menu item 2".
+- After a drag up of 250 px over 400 ms, held and let go, the same tap invokes "menu item 5": the list moved about
+  three lines, as far as the finger.
+- After a flick up of 300 px in 100 ms, it invokes "menu item 8": the list went on to its end, with "menu item 12" at
+  the screen's bottom.
+- A drag down at the list's top moves nothing: "menu item 2" again.
+- No drag invoked the line it started on.
+- The list scrolls under the commands and labels, cut off just below the labels, about 81 px below the bar's top. A thin
+  scroll indicator shows at the right edge while it moves. The bar stays 418.75 tall.
+
+**A pressed command in the light theme is the checked look, not the accent.** The light bar is `#DDDDDD`, with the
+command's circle and glyph black at rest.
+
+- **Pressed:** add's circle fills black and its glyph is drawn in the bar's `#DDDDDD`, with a white rim round the circle,
+  about 2 recording px. No accent appears.
+- **Checked:** a checked favorite at rest draws the same: black fill, glyph in the bar's colour, white rim. #136's light
+  screenshots show the same rim.
+- **Checked and pressed:** a checked favorite held looks as it does at rest, within a recording pixel or two.
+- **The open bar** gives add's press the same look.
+- **A pressed menu line** tilts as in dark: its text's ink moves from x 26–239, y 743–767 to x 29–239, y 740–765. It stays
+  `#1D1D1D` on the bar's colour, with nothing behind it.
+
+The light bar's events are the dark bar's: the same `Opened`, `Closed` and `Click` for every touch. Its motion is within
+a frame of #136's ranges: time constants 70 to 95 ms opening and 26 to 51 ms closing; at rest 393 to 454 ms and 181 to
+273 ms. `20261116-1728-dev11` is `-Probe appbar -Record` again, dark, rerun after
+#148 moved the probe's bar into a helper. Its events are the same as `20261116-0042-dev11`'s, touch for touch, and its
+motion is within a frame of #136's ranges: time constants 79 to 89 ms opening and 27 to 51 ms closing; at rest 411 to
+441 ms and 177 to 236 ms.
+
+- Clocks: the recording's (the VM's), as in #136.
 
 ## Popup pixels
 

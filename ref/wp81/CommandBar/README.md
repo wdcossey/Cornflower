@@ -35,3 +35,16 @@ from them are in [`docs/controls/CommandBar/PLAN.md`](../../../docs/controls/Com
 The heights, the pressed look and the motion read from them are in
 [`tools/refapp/README.md`](../../../tools/refapp/README.md), "The app bar under touches, and with other numbers of
 secondary commands".
+
+## Added for #148 (2026-11-16)
+
+- `light__recording__<what>__frame<n>.png`: frames of the recording of refapp run `20261116-1724-dev11`
+  (`run.ps1 -Probe appbarlight -Record`): the same bar in the light theme (its `RequestedTheme` Light, on the probe's
+  dark page), at rest, with a finger held on add (closed and open) and on the first menu line, and favorite checked, at
+  rest and held. They are the reference for the light theme's pressed look.
+- `dark__recording__twelve-secondary-<what>__frame<n>.png`: frames of the recording of refapp run
+  `20261116-1726-dev11` (`run.ps1 -Probe appbarlong -Record`): the bar open with twelve secondary commands, at rest,
+  with the list dragged up 250 px and held, and after a flick up, at the list's end.
+
+Both are 540 × 960, unchanged. What they show is in [`tools/refapp/README.md`](../../../tools/refapp/README.md), "The
+app bar: a long list of secondary commands, and a press in the light theme".

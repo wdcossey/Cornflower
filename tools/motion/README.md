@@ -52,6 +52,8 @@ frames are already in their `analysis\` folders; `decode.py` itself has not been
 | `listpress.py` | a `-Probe listpress` or `listcheck` run (#113, #136) | each touch's states, `ItemClick` and gestures, the item's tilt held beside the Button's model, and its return frame by frame; in the check mode a press on the box is read on the box |
 | `pivot.py` | a `-Probe pivot`, `pivotwide`, `pivottwo`, `hub`, `hubimage` or `hubimage900` run (#114, #136) | Pivot: each touch's selection time, the header strip against the offset (px a px, beside the header's pitch over 450) and the new item's slide in, frame by frame, with fits; Hub: the header against the offset, the background image against it (#136), and the touches at the end, frame by frame |
 | `appbar.py` | a `-Probe appbar -Record` run (#136) | the page's app bar: its top edge in each recorded frame, each opening and closing frame by frame with its time constant and when it is 90% there and at rest, and the bar's events and clicks for each touch. It reads one strip of the recording, which `--decode` makes with ffmpeg |
+| `release.py` | a `-Probe pivotrelease` or `hubrelease` run (#148) | for each touch, the offset and its speed at the release (the release's time from touch.log, put on the app's clock by the start tap), and where it goes, from the first inertial `ViewChanging`'s `FinalView`; a second press while it moves, and whether it holds the offset; the Pivot's item events after each selection change; the Hub's `ScrollToSection` calls, frame by frame |
+| `entrance.py` | a `-Probe hubentrance` run (#148) | each Hub's entrance: its `EntranceAnimationProjection`'s `RotationY` frame by frame, an `ExponentialEase` fitted to it, and the background grid at the end |
 | `clock.py` | any probe run that logs its frames | the frames' mean spacing by the stopwatch (`motionlib.frame_spacing`), and the factor, 15.625 ms over it, that takes the run's stopwatch durations to animation time |
 | `motionlib.py` | | what they share: the run, the frame measurements, the projection, the easing curves and the fits |
 | `selftest.py` | nothing | checks the measurements and fits on synthetic data with known answers |
@@ -87,7 +89,8 @@ for #113 the deceleration fits, the inertia taken after the press, the squash an
 strips, and a list item's held tilt and return; and for #114 a torn frame and a value between two steps, and Pivot's
 header strip and slide and Hub's header; and for #136 a header wider than the screen, faster than 100 px a frame,
 a press on the check mode's box, the Hub's background against the offset and its loop, and the app bar's opening read
-off a synthetic strip.
+off a synthetic strip; and for #148 a release's decision and a second press, paired through touch.log, and the Hub's
+entrance fitted.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
 logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.
