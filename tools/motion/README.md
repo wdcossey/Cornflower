@@ -85,8 +85,9 @@ ticks (and a true median ratio), the exponential, ExponentialEase and KeySpline 
 grid) and the turnstile's angle and axis, the knob's missing-tick check, the arguments, and reading a run folder; and
 for #113 the deceleration fits, the inertia taken after the press, the squash and the indicator read off synthetic
 strips, and a list item's held tilt and return; and for #114 a torn frame and a value between two steps, and Pivot's
-header strip and slide and Hub's header; and for #136 a header wider than the screen, faster than 100 px a frame, a press on the check mode's box, and the app
-bar's opening read off a synthetic strip.
+header strip and slide and Hub's header; and for #136 a header wider than the screen, faster than 100 px a frame,
+a press on the check mode's box, the Hub's background against the offset and its loop, and the app bar's opening read
+off a synthetic strip.
 It also checks that the scripts stop where they should: a transition missing or out of step with the log, a first
 frame that isn't at rest, an axis with no frame to fit; and that they carry on past a tilt press with nothing
 logged and a MenuFlyout rise cut off by the end of the log. CI runs it, on Linux.

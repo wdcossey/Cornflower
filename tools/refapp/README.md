@@ -1059,7 +1059,8 @@ earlier than the log has them (checked on the first swipe, header and content).
 For #121. `20261115-2339-dev11` (`-Probe pivotwide -Record`): four items, headers "favourites", "everything", "recent" and
 "supercalifragilisticexpialidocious", which come to 1,346 px against the 450 px view, the last one 728.75 wide on its
 own. Swipes left from each item (the last wraps), a swipe right from the first, and taps on the headers the right edge
-cuts. `20261115-2343-dev11` (`-Probe pivottwo -Record`): two items, "one" and "two", swiped left and right from each, and
+cuts. Again after review, `20261116-0027-dev11`, without a tap the first run labelled as a cut header's but which was on
+the selected one; every number below covers both. `20261115-2343-dev11` (`-Probe pivottwo -Record`): two items, "one" and "two", swiped left and right from each, and
 each header tapped from the other item. Before the touches, the probe selects each item from code and logs every
 header's place at rest (the `rest` lines). `tools/motion/pivot.py` prints the numbers below.
 
@@ -1075,7 +1076,7 @@ header's place at rest (the `rest` lines). `tools/motion/pivot.py` prints the nu
   −424 to 949).
 - **A tap on a header the edge cuts selects it**, as a tap on any other header does: "everything" (on screen from 256.67
   to 450, tapped at 352.8) from item 0, and the wide header (tapped at 313) from "recent". The selection changes at
-  the release, 68 to 72 ms after the press. The offset then travels 450 px and settles 531 ms (rt) after the first
+  the release, 68 to 86 ms after the press. The offset then travels 450 px and settles 531 ms (rt) after the first
   frame after the press. That is the same as a tap on a header fully on screen.
 - **A tap on the selected header does nothing**, even when the header runs off the screen. It raises `Tapped`, but the
   selection, the offset and the strip don't change.
@@ -1085,8 +1086,8 @@ header's place at rest (the `rest` lines). `tools/motion/pivot.py` prints the nu
   from "one", "one" moves right at "two"'s pitch (0.23056 px a px). "two" stays to the right of it until the selection
   changes, then jumps to the left (−41.9) and slides in to 15.83. Until then nothing is drawn left of "one".
 - **The new item's slide is the same** in both runs, to four places: one frame at 450 px, then `ExponentialEase` 4
-  over 400 ms (rms 0.003). The selection changes 200 to 235 ms into a swipe left and 152 to 172 ms into a swipe right
-  (stopwatch). The offset settles 625 to 656 ms (rt) after the first frame after the press.
+  over 400 ms (rms 0.003). The selection changes 155 to 235 ms into a swipe left and 152 to 172 ms into a swipe right
+  (stopwatch). The offset settles 578 to 672 ms (rt) after the first frame after the press.
 - Clocks: the per-frame places and the settle times are on `RenderingTime` (15.625 ms a step). The selection times are
   the stopwatch's.
 
@@ -1105,7 +1106,8 @@ right once, and dragged 150 px and let go.
 
 For #122. `-Probe hubimage` gives the Hub's `Background` an `ImageBrush` (`Stretch` `Fill`, the default) of a picture the
 probe draws: a hue running left to right, a black line every 50 px and a white one every 250 px. Runs:
-`20261116-0009-dev11` (1600 × 800 px) and `20261116-0001-dev11` (`-Probe hubimage900`, 900 × 400). Each run reads, every
+`20261116-0009-dev11` and, after review, `20261116-0025-dev11` (1600 × 800 px), and `20261116-0001-dev11`
+(`-Probe hubimage900`, 900 × 400). Each run reads, every
 frame, the template's `Background` grid and its two borders, `MainBackground` and `WrapBackground`. Since #136 every Hub
 probe also sets the offset to the end and swipes left there, and again and swipes right. `20261116-0007-dev11`
 (`-Probe hub`) is the Hub with no image. `20261115-2350-dev11` was a first 1600 px run, whose layout lines were read
@@ -1129,7 +1131,9 @@ during the entrance. `tools/motion/pivot.py` prints the numbers below; the recor
   `ExponentialEase` (exponent 7) over 420 ms (rms 0.0002 to 0.0007). About 200 ms (rt) after the jump the offset goes
   back to 0: the first section to its place and the image to 0, its copy to −W + 1. On the screen that is a step of
   1.4 px.
-- **No `BackgroundImageLoadStates` change was logged.** The image had loaded before the probe watched the states.
+- **When the image opens, `BackgroundImageLoadStates` goes from `BackgroundHidden` straight to `BackgroundShowing`**,
+  with no `BackgroundImageFadingIn` (`20261116-0025-dev11`, where the probe gives the Hub its image only once it watches
+  the states; before that the image had loaded unwatched). The `Background` grid's opacity is 1 when `ImageOpened` comes.
 - Clocks: the per-frame places and the ease are on `RenderingTime`. The jump's time after the press is the stopwatch's.
 
 ### ProgressRing: Active

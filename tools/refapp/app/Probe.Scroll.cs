@@ -430,10 +430,16 @@ namespace RefApp
 
         /// <summary>
         /// A step with no touch: <paramref name="action"/> runs when the plan reaches it, logged as a step, and the plan
-        /// waits <paramref name="ms"/> before the next. (A touch's setup runs 1.2 s before its press; this runs on time.)
+        /// waits <paramref name="ms"/> before the next. A touch's setup runs 1.2 s before its press, so a wait under
+        /// 1.2 s would let the next touch's setup run first: it is refused.
         /// </summary>
         private void Code(string label, Func<Task> action, double ms)
         {
+            if (ms < 1200)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ms), "a touch's setup runs 1.2 s before its press: wait at least that");
+            }
+
             _schedule.Add(new Scheduled { At = _plannedMs, Label = label, Action = action, Touch = true });
             Wait(ms);
         }

@@ -1,7 +1,7 @@
 """The page's app bar opening and closing, from a `-Probe appbar -Record` run (#136, for #133). The shell draws the bar,
 so the app reads only its events; its motion is the recording's.
 
-Usage: python -I appbar.py <run folder> [--decode] [--ffmpeg <path>]
+Usage: python -I appbar.py <run folder> [--decode] [--ffmpeg <path>] [--frames]
 
 The recording is read as one strip, decoded once into `<run>/analysis/left.gray` (`--decode` runs ffmpeg for it): 12 px
 wide at x 2, gray, at the screen's left edge, where neither the page nor the bar draws anything but their colours. The
@@ -19,7 +19,7 @@ closing. Then, for each touch, the bar's events (`Opened`,
 recorded frame halfway through the hold, for ffmpeg to extract: the press is the plan's, 1.2 s after its step, as a press on
 the shell's bar reaches nothing in the app.
 
-Times are by the recording's clock (the VM's), each frame about 25 to 33 ms apart, paired with the log by the flash; a
+Times are by the recording's clock (the VM's), each frame 18 to 36 ms apart, paired with the log by the flash; a
 recorded frame shows what was drawn up to a frame or so before it, so each time is good to about 35 ms.
 
 Python 3 standard library only; --decode needs ffmpeg.
@@ -48,25 +48,29 @@ def decode(run, exe):
                     '-y', os.path.join(out, 'left.gray')], check=True)
 
 
-def profiles(run):
-    """Each frame's strip, as the mean of each row."""
+def strip_frames(run):
+    """The frames' times, the recording's size, and each frame's strip as bytes, read one at a time."""
     times = ml.frame_times(run)
     w, h = ml.recording_size(run)
     path = os.path.join(run, 'analysis', 'left.gray')
     size = STRIP[0] * h * len(times)
     if not os.path.exists(path) or os.path.getsize(path) != size:
         raise SystemExit('%s: missing or not %d bytes; run with --decode' % (path, size))
-    out = []
-    with open(path, 'rb') as f:
-        for _ in times:
-            b = f.read(STRIP[0] * h)
-            out.append([sum(b[y * STRIP[0]:(y + 1) * STRIP[0]]) / STRIP[0] for y in range(h)])
-    return times, w, h, out
+
+    def frames():
+        with open(path, 'rb') as f:
+            for _ in times:
+                yield f.read(STRIP[0] * h)
+    return times, w, h, frames
 
 
-def bar_top(profile, top):
+def row_mean(strip, y):
+    return sum(strip[y * STRIP[0]:(y + 1) * STRIP[0]]) / STRIP[0]
+
+
+def bar_top(strip, top, h):
     """The first row from `top` down brighter than DARK, or None."""
-    return next((y for y in range(top, len(profile)) if profile[y] > DARK), None)
+    return next((y for y in range(top, h) if row_mean(strip, y) > DARK), None)
 
 
 def motions(series, rest_ms=150):
@@ -110,25 +114,27 @@ def main():
         if exe is None:
             raise SystemExit('ffmpeg not found; give it with --ffmpeg')
         decode(run, exe)
-    times, w, h, prof = profiles(run)
+    times, w, h, frames = strip_frames(run)
     scale = w / ml.VIEW_W
     band = int(HEADER * scale)
     rows = ml.probe(run)
     flash = next((t for t, wh, d in rows if wh == 'flash' and d == 'on'), None)
     if flash is None:
         raise SystemExit('the log has no flash')
-    lit = next((i for i, p in enumerate(prof) if sum(p[5:band - 5]) / (band - 10) > 200), None)
+    # One pass: the first frame whose header band is white (the flash), and every frame's bar top after it.
+    lit, tops = None, []
+    for i, strip in enumerate(frames()):
+        if lit is None:
+            if sum(row_mean(strip, y) for y in range(5, band - 5)) / (band - 10) > 200:
+                lit = i
+            continue
+        tops.append((i, bar_top(strip, band + 2, h)))
     if lit is None:
         raise SystemExit('no frame shows the header flash')
     lag = flash - times[lit] * 1000  # app ms - recording ms
     print('%s: %d frames; the flash pairs app time %.1f ms with recording %.3f s' % (run, len(times), flash, times[lit]))
 
-    series = []
-    for i, t in enumerate(times):
-        if i <= lit:
-            continue
-        y = bar_top(prof[i], band + 2)
-        series.append(((t * 1000) + lag, round(y / scale, 2) if y is not None else None))
+    series = [((times[i] * 1000) + lag, round(y / scale, 2) if y is not None else None) for i, y in tops]
     events = [(t, wh, d) for t, wh, d in rows if wh in ('step', 'setup', 'pressed', 'released', 'bar', 'click')]
     print('\nThe bar\'s top (view px) in each motion; times in ms of app time, then from the last frame at rest')
     summary = []

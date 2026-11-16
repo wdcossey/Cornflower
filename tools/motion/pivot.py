@@ -1,4 +1,5 @@
-"""Pivot's header strip and Hub's header against their content, from a `-Probe pivot` or `-Probe hub` run's log (#114).
+"""Pivot's header strip and Hub's header against their content, from a `-Probe pivot`, `pivotwide` or `pivottwo` run's
+log, or a `-Probe hub`, `hubimage` or `hubimage900` one (#114, #136).
 
 Usage: python -I pivot.py <run folder>
 
@@ -22,7 +23,7 @@ Then the slide-in's values over every touch, each counted once, with motionlib's
 
 For a Hub: the header's left edge against the offset, a straight line through every frame with the offset past 20 px
 (at the start the Hub's entrance animation still moves it), its slope and worst residual. The touches at the end (#136,
-their steps say "the end") are left out of that line, and printed on their own: the offset, the header and, with an
+the touches whose setup sets the offset from code to anything but 0) are left out of that line, and printed on their own: the offset, the header and, with an
 image, the background, frame by frame, and whether the offset goes back to 0. With a background image (`-Probe
 hubimage`), the background's left edge against the offset, as two straight lines: up to the sections' width less the
 view's (L - V), beside (W - V) / (L - V), W the background's width; and from there to the end of the scroll range.
@@ -91,15 +92,15 @@ def pivot(rows, segs):
         # The header selected at the start, against the offset, until the panel is laid out again.
         h = names[start[3]] if start[3] < len(names) else None
         # The header items are put in a new order once the new item is chosen, the selected one first: the frames
-        # before this header's left edge jumps (by over 100 px) the way the offset went. Against the offset it can move
-        # faster than that: a header wider than the screen moves 1.65 px a px (#136).
+        # before this header's left edge jumps (by over 100 px) the way the offset went, or with the offset still.
+        # Against the offset it can move faster than that: a header wider than the screen moves 1.65 px a px (#136).
         span = []
         for f in [start] + [f for f in moving if f is not start]:
             if f[4] != start[4] or h not in f[6]:
                 break
             if span:
                 dh, doff = f[6][h] - span[-1][6][h], f[2] - span[-1][2]
-                if abs(dh) > 100 and dh * doff > 0:
+                if abs(dh) > 100 and dh * doff >= 0:
                     break
             span.append(f)
         if h is not None and len(span) >= 3:
@@ -143,7 +144,9 @@ def pivot(rows, segs):
 
 
 def hub(rows):
-    end_steps = [(label, t0, t1) for label, t0, t1, _ in ml.step_segments(rows, times=True) if 'the end' in label]
+    # The touches at the end: their setup sets the offset from code to the end of the scroll range, not to 0.
+    end_steps = [(label, t0, t1) for label, t0, t1, seg in ml.step_segments(rows, times=True)
+                 if any(w == 'setup' and d.startswith('offset ') and float(d.split()[1]) > 0 for t, w, d in seg)]
     first_end = min((t0 for _, t0, _ in end_steps), default=float('inf'))
     pts = []
     for t, what, d in rows:

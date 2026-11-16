@@ -95,8 +95,10 @@ namespace RefApp
             Swipe(pivot, "swipe right from 0", Select(pivot, 0), 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
             for (var k = 0; k < parts.AtRest.Count; k++)
             {
-                // The header that starts on the screen and ends past its right edge, with item k selected.
-                var cut = parts.AtRest[k].FirstOrDefault(h => h.Value.X < 440 && h.Value.X + h.Value.Width > 450);
+                // The header, not item k's own, that starts at least 10 px inside the screen and ends past its right edge,
+                // with item k selected. (Item k's own is tapped below, for the wide one.)
+                var own = (string)((PivotItem)pivot.Items[k]).Header;
+                var cut = parts.AtRest[k].FirstOrDefault(h => h.Key != own && h.Value.X < 440 && h.Value.X + h.Value.Width > 450);
                 if (cut.Key != null)
                 {
                     var b = cut.Value;
@@ -332,11 +334,6 @@ namespace RefApp
         {
             var image = imageWidth > 0;
             var hub = new Hub { Name = "hub", Header = "hub", Margin = new Thickness(0, HeaderHeight, 0, 0) };
-            if (image)
-            {
-                hub.Background = new ImageBrush { ImageSource = await StripeImage(imageWidth, imageHeight) };
-            }
-
             for (var i = 1; i <= 4; i++)
             {
                 hub.Sections.Add(new HubSection
@@ -367,14 +364,19 @@ namespace RefApp
             }
 
             LogPointers(hub, "hub");
+            var parts = image ? new[] { bg, wrap, main } : new FrameworkElement[0];
             if (image)
             {
+                // The image is given to the Hub once its states and the brush's events are watched, so that its load is
+                // logged (set before the Hub was placed, it had loaded before anything watched).
                 WatchStates(hub);
-                var brush = (ImageBrush)hub.Background;
-                brush.ImageOpened += (s, e) => Log("image", "opened");
+                var brush = new ImageBrush();
+                brush.ImageOpened += (s, e) => Log("image", "opened, background opacity " + Num(bg.Opacity));
                 brush.ImageFailed += (s, e) => Log("image", "failed: " + e.ErrorMessage);
+                brush.ImageSource = await StripeImage(imageWidth, imageHeight);
+                hub.Background = brush;
                 Log("layout", "background brush stretch " + brush.Stretch + " align " + brush.AlignmentX + " " + brush.AlignmentY + " opacity " + Num(bg.Opacity));
-                foreach (var part in new[] { bg, wrap, main })
+                foreach (var part in parts)
                 {
                     var b = Bounds(part);
                     Log("layout", part.Name + " " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + " " + Value(part.RenderTransform) + " visibility " + part.Visibility);
@@ -382,7 +384,7 @@ namespace RefApp
 
                 // The bounds above are read during the Hub's entrance, under its projection: the sizes again after it.
                 await Task.Delay(1500);
-                Log("layout", "after the entrance: hub " + Num(hub.ActualWidth) + " x " + Num(hub.ActualHeight) + string.Concat(new[] { bg, wrap, main }.Select(part => ", " + part.Name + " " + Num(part.ActualWidth) + " x " + Num(part.ActualHeight) + " at " + Num(Left(part)))));
+                Log("layout", "after the entrance: hub " + Num(hub.ActualWidth) + " x " + Num(hub.ActualHeight) + string.Concat(parts.Select(part => ", " + part.Name + " " + Num(part.ActualWidth) + " x " + Num(part.ActualHeight) + " at " + Num(Left(part)))));
             }
 
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.HorizontalOffset) + " final " + Num(e.FinalView.HorizontalOffset) + " inertial " + e.IsInertial);
@@ -406,7 +408,7 @@ namespace RefApp
 
                 if (image)
                 {
-                    foreach (var part in new[] { bg, wrap, main })
+                    foreach (var part in parts)
                     {
                         key.Add(Left(part));
                         key.Add(part.ActualWidth);
@@ -430,7 +432,7 @@ namespace RefApp
 
                 if (image)
                 {
-                    foreach (var part in new[] { bg, wrap, main })
+                    foreach (var part in parts)
                     {
                         text.Append(" | ").Append(part.Name).Append(' ').Append(Num(Left(part))).Append(" w ").Append(Num(part.ActualWidth)).Append(' ').Append(Value(part.RenderTransform));
                     }

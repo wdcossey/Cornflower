@@ -564,6 +564,8 @@ def listpress_tilt():
             f.write('1000.0\tpressed\tlist 31.88 141.46 handled ts 1\n')
             f.write('1000.9\tstate\titem1 CommonStates Normal > CheckboxPressed\n')
             f.write('1030.0\tvalue\tprojection box1 rot -2.7 0.146 0 centre 0.5 0.5 0 local 0 0 0 global 0.167 -209 -20.86\n')
+            # A later move to Pressed doesn't take the read off the box: the first state the press went to counts.
+            f.write('1100.0\tstate\titem1 CommonStates CheckboxPressed > Pressed\n')
             f.write('1600.0\treleased\tlist 31.88 141.46 handled ts 2\n')
             f.write('1601.0\tvalue\tprojection box1 rot 0 0 0 centre 0.5 0.5 0 local 0 0 0 global 0.167 -209 0\n')
         code, out = run_script('listpress.py', run)
@@ -635,6 +637,8 @@ def pivot_header_and_slide():
                 off = 1000 + 70 * k
                 d = 1.6546 * (off - 1000)
                 f.write(line % (200.0 + 15 * k, 1000 + 15.625 * k, off, 0, 1000, 1000 - off, 15.84 - d, 760.42 - d))
+            # The reorder can come on a frame where the offset hasn't moved: the jump still ends the line.
+            f.write(line % (280.0, 1078.125, 1350, 0, 1000, -350, 15.84 - 1.6546 * 350 + 1200, 760.42 - 1.6546 * 350))
             f.write('290.0\tselection\tindex 1\n')
             f.write(line % (300.0, 1093.75, 1450, 1, 1450, 0, 15.84 - 1.6546 * 450 + 1200, 15.84))
         code, out = run_script('pivot.py', run)
@@ -667,6 +671,7 @@ def hub_background_and_end():
                 bg = -off * 450 / 1170 if off <= 1170 else -450 - (off - 1170)
                 f.write(line % (k * 15.0, k * 15.625, off, 15 - off / 18, -off, bg))
             f.write('2000.0\tstep\tswipe left at the end\n')
+            f.write('2000.5\tsetup\toffset 1215.417\n')
             f.write(line % (2100.0, 3000, 1200, 400, -1500, -800))
             f.write(line % (2115.0, 3015.625, 0, 300, 0, 0))
         code, out = run_script('pivot.py', run)

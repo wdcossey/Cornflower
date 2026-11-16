@@ -29,7 +29,8 @@ from them are in [`docs/controls/CommandBar/PLAN.md`](../../../docs/controls/Com
 - `dark__recording__<what>__frame<n>.png`: frames of the recording of refapp run `20261115-2354-dev11`
   (`run.ps1 -Probe appbar -Record`), 540 × 960 (1.2 recording px a view px), unchanged. A compact bar with add,
   favorite (unchecked) and delete (enabled), at rest and with a finger held on add (closed and open) and on the first
-  menu line. They are the reference for the pressed look, which no screenshot has.
+  menu line. They are the reference for the pressed look, which no screenshot has. The open bar at rest before the
+  menu line's press, frame 728, is the same to the byte as frame 553, so only 553 is kept.
 
 The heights, the pressed look and the motion read from them are in
 [`tools/refapp/README.md`](../../../tools/refapp/README.md), "The app bar under touches, and with other numbers of

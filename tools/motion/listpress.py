@@ -84,12 +84,12 @@ def main():
         # The item is the one whose state went to Pressed with this press. A touch's segment starts 1.2 s before its
         # press, so it can hold the end of the last touch's return, on another item: only what follows the press counts.
         # In the check mode a press on the box goes to CheckboxPressed instead, and tilts the box (listcheck).
-        pressed = next((d.split()[0] for t, what, d in seg if what == 'state' and t >= t0 and d.endswith('> Pressed')), None)
-        boxed = next((d.split()[0] for t, what, d in seg if what == 'state' and t >= t0 and d.endswith('> CheckboxPressed')), None)
-        if pressed is None and boxed is None:
+        # Whichever of the two the press went to first.
+        went = next((d for t, what, d in seg if what == 'state' and t >= t0 and d.endswith(('> Pressed', '> CheckboxPressed'))), None)
+        if went is None:
             print('  no item went to Pressed or CheckboxPressed')
             continue
-        item = pressed if pressed is not None else 'box' + boxed[4:]
+        item = went.split()[0] if went.endswith('> Pressed') else 'box' + went.split()[0][4:]
         mine = [(t, v) for t, i, v in ((t, ) + projection(d) for t, what, d in seg if what == 'value' and d.startswith('projection'))
                 if i == item and t >= t0]
         if not mine:
