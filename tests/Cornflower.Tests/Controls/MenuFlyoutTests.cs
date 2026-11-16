@@ -562,4 +562,19 @@ public class MenuFlyoutTests
         Assert.False(stage.Item(0).IsSet(StyledElement.ThemeProperty));
         Assert.Equal(0, stage.Flyout.Popup.VerticalOffset);
     }
+
+    [AvaloniaFact]
+    public void Turned_Off_It_Takes_The_Item_Themes_Back()
+    {
+        using var stage = new Stage(menu: [new MenuItem { Header = "one" }, new Separator()]);
+        stage.OpenAtRest();
+        Assert.True(stage.Item(0).IsSet(StyledElement.ThemeProperty));
+
+        PhoneMenuFlyout.SetIsEnabled(stage.Presenter, false);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(stage.Item(0).IsSet(StyledElement.ThemeProperty));
+        Assert.False(((Separator)stage.Flyout.Items[1]!).IsSet(StyledElement.ThemeProperty));
+        Assert.Null(PhoneMenuFlyout.HostOf(stage.Presenter));
+    }
 }
