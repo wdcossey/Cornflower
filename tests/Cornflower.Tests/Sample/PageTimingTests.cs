@@ -19,9 +19,10 @@ namespace Cornflower.Tests.Sample;
 
 /// <summary>
 /// The shell times every page it opens, from navigation to the page's first drawn frame, and writes the page's
-/// <c>CORNFLOWER ready</c> line (D-page-timing): a page has no timing code of its own. <c>tools/android/run.ps1</c> and
-/// <c>tools/real-window/drive.ps1</c> read the line, so its format is held here. A Debug build also writes a
-/// <c>CORNFLOWER cost</c> line after it, which these tests leave out unless they're about it.
+/// <c>CORNFLOWER ready</c> line (D-page-timing) once the turnstile it comes in with is over: a page has no timing code of
+/// its own. <c>tools/android/run.ps1</c> and <c>tools/real-window/drive.ps1</c> read the line, so its format is held here.
+/// A Debug build also writes a <c>CORNFLOWER cost</c> line after it, which these tests leave out unless they're about it.
+/// Each test that waits for a line runs the turn on a <see cref="TestClock"/> (<see cref="Settle"/>).
 /// </summary>
 public class PageTimingTests
 {
@@ -52,14 +53,14 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell, width: Scene.ReferenceWidth + RailWidth);
+        using var clock = new TestClock();
 
         shell.Open("plain");
-        Draw();
+        Settle(clock);
         shell.ShowIndex();
-        Draw();
+        Settle(clock);
         shell.Open("slow page");
-        Draw();
-        Draw();
+        Settle(clock);
 
         Assert.Collection(Ready(lines),
             line => Assert.Matches("^CORNFLOWER ready open=[0-9]+ms scaling=2.4 view=490x800 raw=1176x1920 safe=0,0,0,0 page=450x800 title=plain$", line),
@@ -73,9 +74,10 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         shell.FindControl<StackPanel>("PageList")!.Children.OfType<Button>().Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Draw();
+        Settle(clock);
 
         Assert.EndsWith(" title=slow page", Assert.Single(Ready(lines)), StringComparison.Ordinal);
     }
@@ -86,28 +88,43 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         shell.Open("slow page");
-        Draw();
+        Settle(clock);
 
         var line = Assert.Single(Ready(lines));
         Assert.True(OpenMs(line) >= SlowMs - 10, line);
     }
 
-    // Until the frame that first draws the page has been drawn, the page hasn't opened.
+    // Until the frame that first draws the page has been drawn, the page hasn't opened; and until the turnstile it comes
+    // in with is over, a frame of it isn't the page, so the line waits for that too. The time is still the first frame's.
     [AvaloniaFact]
-    public void The_Line_Waits_For_The_Pages_First_Frame()
+    public void The_Line_Waits_For_The_Pages_First_Frame_And_The_Turn()
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
-        shell.Open("plain");
+        shell.Open("slow page");
         Dispatcher.UIThread.RunJobs();
         Assert.Empty(lines);
 
         Draw();
-        Assert.Single(Ready(lines));
+        Assert.Empty(lines);
+        var page = Assert.IsType<Slow>(shell.Shown);
+        Assert.Contains(page.GetVisualAncestors(), visual => visual.RenderTransform is not null);   // turned
+
+        // The turnstile forward is 425 ms: one frame short of its end, still nothing.
+        clock.At(400);
+        Draw();
+        Assert.Empty(lines);
+
+        Settle(clock);
+        var line = Assert.Single(Ready(lines));
+        Assert.InRange(OpenMs(line), SlowMs - 10, 400);
+        Assert.DoesNotContain(page.GetVisualAncestors(), visual => visual.RenderTransform is not null);
     }
 
     // The theme page, the device run's page and drive.ps1's, at the reference view beside the rail.
@@ -117,9 +134,10 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = new SampleShell { Report = lines.Add };
         using var scene = new Scene(shell, width: Scene.ReferenceWidth + RailWidth);
+        using var clock = new TestClock();
 
         shell.Open("theme");
-        Draw();
+        Settle(clock);
 
         var view = Assert.IsType<MainView>(shell.Shown);
         var line = Assert.Single(Ready(lines));
@@ -133,10 +151,11 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         shell.Open("plain");
         shell.ShowIndex();
-        Draw();
+        Settle(clock);
 
         Assert.Empty(lines);
     }
@@ -147,10 +166,11 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         shell.Open("plain");
         shell.Open("slow page");
-        Draw();
+        Settle(clock);
 
         Assert.EndsWith(" title=slow page", Assert.Single(Ready(lines)), StringComparison.Ordinal);
     }
@@ -162,10 +182,12 @@ public class PageTimingTests
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
 
+        using var clock = new TestClock();
+
         // In and out with no dispatcher work between, so no render pass can run the frame requests before it leaves.
         shell.Open("plain");
         scene.Window.Content = null;
-        Draw();
+        Settle(clock);
 
         Assert.Empty(lines);
     }
@@ -178,10 +200,12 @@ public class PageTimingTests
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
 
+        using var clock = new TestClock();
+
         shell.Open("plain");
         scene.Window.Content = null;
         scene.Window.Content = shell;
-        Draw();
+        Settle(clock);
 
         Assert.True(shell.IsShowingPage);
         Assert.Empty(lines);
@@ -202,6 +226,7 @@ public class PageTimingTests
         var shell = ShellOf(lines);
         shell.HasBackRail = false;
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
 
         // A callback asked for with the shell's first runs in the same render pass, after it: once it has, that pass's
         // layout and frame are done, and the shell's second callback waits for the next.
@@ -214,7 +239,7 @@ public class PageTimingTests
             shell.SetValue(TemplatedControl.PaddingProperty, new Thickness(0, 50.29, 0, 24), BindingPriority.Style);
         else
             scene.Window.Height = 700;
-        Draw();
+        Settle(clock);
 
         // The padding, each side rounded to the raw pixel grid at 2.4, or the new view, is in the page's size, and the
         // line says so.
@@ -225,8 +250,9 @@ public class PageTimingTests
         Assert.EndsWith($" {page} title=plain", line, StringComparison.Ordinal);
     }
 
-    // A change can also come after that pass, before the line's own job, as a platform's resize can: Avalonia lays it
-    // out in a render pass, at a higher priority than the line's job, so the line still has the page's new size.
+    // A change can also come after the pass of the page's frame at rest, before the line's own job, as a platform's
+    // resize can: Avalonia lays it out in a render pass, at a higher priority than the line's job, so the line still has
+    // the page's new size.
     [AvaloniaFact]
     public void A_Change_Between_The_Pass_And_The_Line_Is_Laid_Out_First()
     {
@@ -234,10 +260,15 @@ public class PageTimingTests
         var shell = ShellOf(lines);
         shell.HasBackRail = false;
         using var scene = new Scene(shell);
+        using var clock = new TestClock();
+        shell.Open("plain");
+        Draw();
 
-        // Asked for before the shell's first callback, so the one it asks for runs in the next pass just before the shell's
-        // second, and its change, posted at the line's own priority, runs after that pass's layout and frame, and just
-        // before the line's job. With the frame in flight, no layout can run between them.
+        // The turn's last frame, on the clock: the push's task ends, and the shell hears it from the dispatcher. Asked for
+        // before the shell's first callback for the frame at rest, so the one it asks for runs in the next pass just
+        // before the shell's second, and its change, posted at the line's own priority, runs after that pass's layout and
+        // frame, and just before the line's job. With the frame in flight, no layout can run between them.
+        clock.At(clock.Now.TotalMilliseconds + 500);
         var changed = false;
         scene.Window.RequestAnimationFrame(_ => scene.Window.RequestAnimationFrame(_ => Dispatcher.UIThread.Post(
             () =>
@@ -246,7 +277,7 @@ public class PageTimingTests
                 changed = true;
             },
             DispatcherPriority.Loaded)));
-        shell.Open("plain");
+        Assert.Empty(lines);
         DrawUntil(() => changed);
         Draw();
 
@@ -265,7 +296,8 @@ public class PageTimingTests
         Assert.Empty(lines);
 
         using var scene = new Scene(shell);
-        Draw();
+        using var clock = new TestClock();
+        Settle(clock);
 
         var line = Assert.Single(Ready(lines));
         Assert.EndsWith(" title=slow page", line, StringComparison.Ordinal);
@@ -281,9 +313,10 @@ public class PageTimingTests
         var shell = ShellOf(lines);
         using var scene = new Scene(shell, width: Scene.ReferenceWidth + RailWidth);
         var shown = shell.FindControl<TextBlock>("PerformanceLine")!;
+        using var clock = new TestClock();
 
         shell.Open("plain");
-        Draw();
+        Settle(clock);
 
 #if DEBUG
         var page = Assert.IsType<Plain>(shell.Shown);
@@ -345,6 +378,19 @@ public class PageTimingTests
     /// <summary>The ready lines among what the shell wrote.</summary>
     private static List<string> Ready(List<string> lines) =>
         lines.Where(line => line.StartsWith(SampleShell.ReadyMarker, StringComparison.Ordinal)).ToList();
+
+    /// <summary>
+    /// The page's first frame, the turnstile it comes in with to its end on <paramref name="clock"/> (425 ms, 430 going
+    /// back), and the frame at rest after it.
+    /// </summary>
+    private static void Settle(TestClock clock)
+    {
+        Draw();
+        clock.At(clock.Now.TotalMilliseconds + 500);
+        Draw();
+        clock.At(clock.Now.TotalMilliseconds + 500);
+        Draw();
+    }
 
     /// <summary>Enough frames for a page to be drawn and the frame after it to come.</summary>
     private static void Draw()

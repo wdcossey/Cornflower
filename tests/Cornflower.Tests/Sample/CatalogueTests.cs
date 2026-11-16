@@ -259,6 +259,8 @@ public class CatalogueTests
         var page = new Border();
         shell.ShowPage(page, "a page");
         scene.Window.AddHandler(TopLevel.BackRequestedEvent, (_, e) => e.Handled = true);
+        // The navigation page puts the pushed page in the window from the dispatcher; then its request reaches the window.
+        Dispatcher.UIThread.RunJobs();
 
         Assert.True(Back(page));
         Assert.True(shell.IsShowingPage);

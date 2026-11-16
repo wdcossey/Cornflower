@@ -17,10 +17,17 @@ namespace Cornflower.Sample;
 /// or Avalonia's back request (Alt+Left on desktop, the back button or gesture on a phone) once nothing else on its
 /// route has taken it.
 /// <para>
-/// The shell times every page it opens, from navigation to the page's first drawn frame, and then writes the page's
-/// <c>CORNFLOWER ready</c> line to standard output (logcat's <c>DOTNET</c> tag on Android), which
-/// <c>tools/android/run.ps1</c> and <c>tools/real-window/drive.ps1</c> read. A page has no timing code of its own. In a
-/// Debug build it also writes what the page cost to open, a <c>CORNFLOWER cost</c> line, and shows it up the rail
+/// The pages are a <see cref="NavigationPage"/>'s, Wp81's Frame: the list is its first page, and each sample page is
+/// pushed onto it in a <see cref="ContentPage"/>, so it comes in with the theme's turnstile and Back turns back to the
+/// list. The navigation page drops a navigation asked for while another runs, so the shell asks again once it ends:
+/// whatever was asked for last is where it goes.
+/// </para>
+/// <para>
+/// The shell times every page it opens, from navigation to the page's first drawn frame, mid-turn, and then, once the
+/// turn is over and the page is drawn at rest, writes the page's <c>CORNFLOWER ready</c> line to standard output
+/// (logcat's <c>DOTNET</c> tag on Android), which <c>tools/android/run.ps1</c> and <c>tools/real-window/drive.ps1</c>
+/// read, so a frame they take after it is the page at rest. A page has no timing code of its own. In a Debug build it
+/// also writes what the page cost to open, to its first frame, a <c>CORNFLOWER cost</c> line, and shows it up the rail
 /// (<see cref="PerformanceMonitor"/>).
 /// </para>
 /// </summary>
@@ -43,6 +50,12 @@ public partial class SampleShell : UserControl
     private TopLevel? _top;
     private IDisposable? _backRequests;
 
+    /// <summary>The page the shell shows, or is turning to: a sample page's <see cref="ContentPage"/>; null for the list.</summary>
+    private ContentPage? _wanted;
+
+    /// <summary>Whether the shell is taking <see cref="Host"/> to <see cref="_wanted"/>, one navigation after another.</summary>
+    private bool _navigating;
+
     /// <summary>
     /// The page being opened, from its navigation until its ready line is written, or until the shell leaves it or its
     /// window; then null.
@@ -60,6 +73,13 @@ public partial class SampleShell : UserControl
     {
         Catalogue = catalogue;
         InitializeComponent();
+        // The navigation page's own way back (Alt+Left in a page) goes to the list without the shell: it follows, as the
+        // turn back begins.
+        Host.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == Page.CurrentPageProperty)
+                Followed();
+        };
         foreach (var page in catalogue)
         {
             var open = new Button { Content = page.Title, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -84,11 +104,11 @@ public partial class SampleShell : UserControl
         set => Rail.IsVisible = value;
     }
 
-    /// <summary>Whether a page is shown, rather than the list.</summary>
-    public bool IsShowingPage => !ReferenceEquals(Host.Content, Index);
+    /// <summary>Whether a page is shown, rather than the list, or being turned to.</summary>
+    public bool IsShowingPage => _wanted is not null;
 
-    /// <summary>The page shown, or the list.</summary>
-    internal object? Shown => Host.Content;
+    /// <summary>The page shown, or the list: what the shell shows, or is turning to.</summary>
+    internal object? Shown => _wanted is { } wanted ? wanted.Content : Index;
 
     /// <summary>Shows the list.</summary>
     public void ShowIndex()
@@ -96,7 +116,8 @@ public partial class SampleShell : UserControl
         Abandon();
         HidePerformance();
         BackButton.IsVisible = false;
-        Host.Content = Index;
+        _wanted = null;
+        Navigate();
     }
 
     /// <summary>
@@ -132,9 +153,96 @@ public partial class SampleShell : UserControl
         Abandon();
         HidePerformance();
         BackButton.IsVisible = true;
-        Host.Content = page;
-        _opening = new Opening(page, title, started);
+        _wanted = new ContentPage
+        {
+            Content = page,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch,
+        };
+        _opening = new Opening(page, _wanted, title, started);
+        Navigate();
         AwaitFirstFrame();
+    }
+
+    /// <summary>Takes <see cref="Host"/> to <see cref="_wanted"/>, unless it is already on its way.</summary>
+    private void Navigate()
+    {
+        if (!_navigating)
+            _ = NavigateAsync();
+    }
+
+    /// <summary>
+    /// One navigation after another until <see cref="Host"/> is at the page asked for last: pushed from the list, put
+    /// in place of another page, or popped back to the list. Each waits for the one before, as the navigation page
+    /// drops one asked for while another runs.
+    /// </summary>
+    private async Task NavigateAsync()
+    {
+        _navigating = true;
+        try
+        {
+            while (true)
+            {
+                Page wanted = (Page?)_wanted ?? IndexPage;
+                var current = Host.CurrentPage;
+                if (ReferenceEquals(current, wanted))
+                    break;
+                if (Host.IsNavigating)
+                {
+                    await NavigationEnds();
+                    continue;
+                }
+
+                var step = ReferenceEquals(wanted, IndexPage) ? Host.PopToRootAsync()
+                    : ReferenceEquals(current, IndexPage) ? Host.PushAsync(wanted)
+                    : Host.ReplaceAsync(wanted);
+                try
+                {
+                    await step;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Given up for another navigation: the loop goes on from wherever the host is.
+                }
+
+                // A host that didn't move and isn't moving won't: stop rather than ask for ever.
+                if (ReferenceEquals(Host.CurrentPage, current) && !Host.IsNavigating)
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            // Not lost on an unobserved task: thrown on the UI thread, where the app sees it.
+            Dispatcher.UIThread.Post(() => System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(e));
+        }
+        finally
+        {
+            _navigating = false;
+        }
+
+        if (_opening is { } opening && ReferenceEquals(Host.CurrentPage, opening.Holder))
+            Arrived(opening);
+    }
+
+    /// <summary>Completes when <see cref="Host"/>'s navigation in progress ends.</summary>
+    private Task NavigationEnds()
+    {
+        var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var watch = Host.GetObservable(NavigationPage.IsNavigatingProperty)
+            .Subscribe(new AnonymousObserver<bool>(navigating =>
+            {
+                if (!navigating)
+                    ended.TrySetResult();
+            }));
+        _ = ended.Task.ContinueWith(_ => watch.Dispose(), TaskScheduler.FromCurrentSynchronizationContext());
+        return ended.Task;
+    }
+
+    /// <summary>The navigation page is going back to the list itself, as on Alt+Left in a page: the shell shows the list.</summary>
+    private void Followed()
+    {
+        if (_wanted is not null && !_navigating && ReferenceEquals(Host.CurrentPage, IndexPage))
+            ShowIndex();
     }
 
     /// <summary>Leaves the page being opened unreported, and stops measuring it.</summary>
@@ -175,8 +283,39 @@ public partial class SampleShell : UserControl
             Dispatcher.UIThread.Post(() => Settled(opening, top), DispatcherPriority.Loaded);
     }
 
-    /// <summary>The pass after the page's first frame is done: the page's time and size are of the same frame.</summary>
+    /// <summary>
+    /// The pass after the page's first frame is done: the page has opened, and the time is that frame's. The line waits
+    /// for the turn, unless it is already over.
+    /// </summary>
     private void Settled(Opening opening, TopLevel top)
+    {
+        if (!IsCurrent(opening, top))
+            return;
+
+        opening.Opened(Stopwatch.GetElapsedTime(opening.Started));
+        if (opening.HasArrived)
+            Ready(opening, top);
+    }
+
+    /// <summary>
+    /// The turn into the page is over. Once the page's first frame has been timed, the line waits for the next frame,
+    /// the page at rest, and the end of its pass, as the first frame's did.
+    /// </summary>
+    private void Arrived(Opening opening)
+    {
+        opening.HasArrived = true;
+        if (opening.OpenedIn is null || _top is not { } top)
+            return;
+
+        top.RequestAnimationFrame(_ => top.RequestAnimationFrame(_ =>
+        {
+            if (IsCurrent(opening, top))
+                Dispatcher.UIThread.Post(() => Ready(opening, top), DispatcherPriority.Loaded);
+        }));
+    }
+
+    /// <summary>The ready line, with the time to the page's first frame and the facts of the frame at rest.</summary>
+    private void Ready(Opening opening, TopLevel top)
     {
         if (!IsCurrent(opening, top))
             return;
@@ -184,12 +323,10 @@ public partial class SampleShell : UserControl
         _opening = null;
         try
         {
-            var elapsed = Stopwatch.GetElapsedTime(opening.Started);
-            Report(ReadyLine(elapsed, DeviceFacts.Of(top, opening.Page), opening.Title));
+            Report(ReadyLine(opening.OpenedIn!.Value, DeviceFacts.Of(top, opening.Page), opening.Title));
 #if DEBUG
-            var cost = opening.Read(elapsed);
-            Report($"{CostMarker} {cost}");
-            PerformanceLine.Text = cost;
+            Report($"{CostMarker} {opening.Cost}");
+            PerformanceLine.Text = opening.Cost;
             PerformanceLine.IsVisible = true;
 #endif
         }
@@ -255,22 +392,46 @@ public partial class SampleShell : UserControl
         return top;
     }
 
-    /// <summary>A page being opened: what it is, what it's called, when its navigation began, and in Debug its cost.</summary>
-    private sealed class Opening(Control page, string title, long started) : IDisposable
+    /// <summary>
+    /// A page being opened: what it is, the page that holds it, what it's called, when its navigation began, how long it
+    /// took to its first frame, whether the turn into it is over, and in Debug its cost.
+    /// </summary>
+    private sealed class Opening(Control page, ContentPage holder, string title, long started) : IDisposable
     {
         public Control Page { get; } = page;
+
+        public ContentPage Holder { get; } = holder;
 
         public string Title { get; } = title;
 
         public long Started { get; } = started;
 
+        /// <summary>From its navigation to its first drawn frame, once that is drawn.</summary>
+        public TimeSpan? OpenedIn { get; private set; }
+
+        /// <summary>Whether the navigation page has finished turning to it.</summary>
+        public bool HasArrived { get; set; }
+
 #if DEBUG
         /// <summary>Avalonia's layout and render times for this page; a process-wide listener, so disposed with it.</summary>
         private PerformanceMonitor? _performance;
 
+        /// <summary>What the page cost to its first frame, read then.</summary>
+        public string? Cost { get; private set; }
+
         public void Measure() => _performance ??= new PerformanceMonitor();
 
-        public string Read(TimeSpan opened) => _performance!.Read(Title, Page, opened);
+        /// <summary>The first frame is drawn: its time, and the cost to it, after which the monitor stops listening.</summary>
+        public void Opened(TimeSpan opened)
+        {
+            OpenedIn ??= opened;
+            if (_performance is not null)
+            {
+                Cost = _performance.Read(Title, Page, opened);
+                _performance.Dispose();
+                _performance = null;
+            }
+        }
 
         public void Dispose()
         {
@@ -278,6 +439,8 @@ public partial class SampleShell : UserControl
             _performance = null;
         }
 #else
+        public void Opened(TimeSpan opened) => OpenedIn ??= opened;
+
         public void Dispose()
         {
         }
