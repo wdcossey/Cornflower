@@ -11,7 +11,8 @@ namespace Cornflower.Tests.Controls;
 /// (unselected and selected) and of a ListView of "one", "two" and "three" with the second selected, on the reference
 /// profile, run <c>20261108-1443-dev11</c> (device 11, 1080 × 1920 at 2.4), whose PNGs are in
 /// <c>ref/wp81/ListView/</c>, and the press probes of runs <c>20261115-1941-dev11</c> and <c>20261115-1948-dev11</c>
-/// (<c>tools/refapp/README.md</c>, "ListView: an item's press"). Values only: the JSON and the logs stay in
+/// (<c>tools/refapp/README.md</c>, "ListView: an item's press"), and the check mode's of runs <c>20261115-2352-dev11</c>
+/// and <c>20261116-0040-dev11</c> ("ListView: the check mode, Extended and None"). Values only: the JSON and the logs stay in
 /// <c>R:\cornflower-reference</c>.
 /// </summary>
 internal static class ListViewReadings
@@ -106,6 +107,36 @@ internal static class ListViewReadings
         ("item 2 at 90% down", new(225, 193.311), 2, new(5.572, 0.009, -16.882)),
         ("item 4 centre", new(225, 256.656), 4, new(-0.956, 0.009, -23.597)),
     ];
+
+    // The check mode's probe (#136, runs 20261115-2352-dev11 and 20261116-0040-dev11, "ListView: the check mode"): the
+    // same 40-item list in Multiple. Presses held on item 1 off its box, and the tilt TiltContainer held: the Single
+    // mode's at the centre (Presses[0]).
+    public static readonly (string Name, Point Press, TiltState Held)[] CheckModePresses =
+    [
+        ("item 1 centre", new(225, 138.361), new(-2.127, 0.009, -21.894)),
+        ("item 1 at 95% across", new(410.824, 138.361), new(-3.414, -8.097, -8.258)),
+        ("item 1 at 10% down", new(225, 123.344), new(-8.305, 0.009, -12.907)),
+        ("item 1 at 90% down", new(225, 154.164), new(5.311, 0.009, -17.262)),
+    ];
+
+    // A press held at item 1's box's centre, and the tilt its CheckboxTiltContainer held, about the box's own centre: the
+    // screen-position bias, from the item's centre (the box's CompositeTransform is the item's, -0.167, 209). The first
+    // frame shows the depth with almost no angle (0.28 deg on the phone's box, 0.02 on ours,
+    // whose centre is 0.2 px lower: under 0.5), the next overshoots, the one after settles.
+    public static readonly Point BoxPress = new(31.699, 141.639);
+    public static readonly TiltState BoxHeld = new(-2.699, 0.146, -20.862);
+    public static readonly TiltState BoxFirstFrame = new(0.282, 0.141, -24.385);
+
+    // The box's tilt off its reading: ours is 25.83 across, the phone's 25.42 (ADR 0003), so the same press is 0.2 px
+    // further from our box's centre, and a box 25 px across turns 0.68 deg a pixel. Ours holds -2.77, 0.26, -20.59: 0.07
+    // and 0.12 deg off, and the depth, which follows the angles' sum, 0.27.
+    public const double BoxAngleTolerance = 0.2;
+    public const double BoxDepthTolerance = 0.35;
+
+    // SelectedIndex set from code with the offset at 0 (run 20261116-0040-dev11): 30 put the offset at 494.17, item 30's
+    // bottom on the list's (30 x 39.17 + 39.17 - 720); then 5, above the view, at 195.83, item 5 at the top; then 39 at
+    // 846.67, the end. Each in the same call, with no animation.
+    public static readonly (int Index, double Offset)[] SelectedFromCode = [(30, 494.167), (5, 195.833), (39, 846.666)];
 
     // The most the tilt's model (the Button's rule, TiltModel) is off these readings, on our one raw pixel narrower item:
     // 0.09° (item 2 at 5% across, RotationX -2.549 against -2.630) and 0.11 of depth (-9.519 against -9.413).

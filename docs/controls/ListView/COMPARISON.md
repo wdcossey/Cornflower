@@ -37,7 +37,8 @@ Sizes, positions and colours are compared by measurement, here and in the tests.
 
 The phone's `Pressed` is tilted by −17.19°, 17.19°, the angle its `PointerDownThemeAnimation` takes with no press
 point; no finger gives it, so it isn't compared. The phone has no capture of the check mode pressed: CheckboxPressed
-forced outside the check mode is `base`, as its box is clipped away.
+forced outside the check mode is `base`, as its box is clipped away. Ours is pressed at the box's centre (#142), so
+the box is filled and sunk, and the content isn't tilted.
 
 ## Measurements
 
@@ -76,6 +77,23 @@ list 19.1667, 80 in the view; ours the same, one raw pixel narrower):
 The worst is 0.081° (`RotationX`, 5% across) and 0.106 of depth: the Button's model, on a short item, within a tenth
 of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half raw pixel off centre.
 
+**The check mode's press** (#136's probe, runs `20261115-2352-dev11` and `20261116-0040-dev11`; #142), item 1 of the
+40-item list in Multiple, held 600 ms. Off the box, the content's tilt (TiltContainer), the box flat; on the box, the
+box's (CheckboxTiltContainer), the content flat:
+
+| Press | Phone | Ours |
+|---|---|---|
+| item 1 centre | -2.127, 0.009, -21.894 | -2.105, 0.000, -21.939 |
+| item 1 at 95% across | -3.414, -8.097, -8.258 | -3.345, -8.125, -8.318 |
+| item 1 at 10% down | -8.305, 0.009, -12.907 | -8.319, 0.000, -12.901 |
+| item 1 at 90% down | 5.311, 0.009, -17.262 | 5.307, 0.000, -17.281 |
+| item 1's box, at its centre | -2.699, 0.146, -20.862 | -2.772, 0.262, -20.588 |
+
+Off the box, the Single mode's within 0.07°. On the box, within 0.12° and 0.27 of depth: our box is 25.83 across, the
+phone's 25.42 (ADR 0003), so the same press is 0.2 px further from its centre, and a box that small turns 0.68° a
+pixel. The bias, −2.7° at the box's centre, is the eye's: from the item's centre, as the phone's box carries the
+item's offset to the screen's centre. From the box's own, ours would be several degrees off across.
+
 ## Behaviours
 
 | Behaviour | Phone | Ours | |
@@ -87,9 +105,13 @@ of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half
 | Dragged off, the list can't pan | the tilt follows on the item, returns about 190 ms after leaving | holds 182.6 ms, returns; nothing selected | match |
 | 10 px sideways | a tap; `RotationY` −0.42° at 10 px | a tap; the tilt follows | match |
 | Single selection | draws nothing | draws nothing | match |
-| Multiple | the check boxes; a tap toggles | `Multiple, Toggle`: the same | match |
-| Extended | not read | `Multiple`: the check boxes, Ctrl and Shift | unread: a selection of several must show |
-| CheckboxPressed | the template's: the box in the accent, the tick over it, the tilt on the box | the same | from the template; not probed |
+| Multiple | the check boxes; every tap toggles, on the box or off it, at the release | `Multiple, Toggle`: the same | match |
+| CheckboxPressed, a press on the box | 0.6 to 39.7 ms after the press; the box in the accent, the tick over it; only the box tilts, about its centre, with the item's depth rule and eye | at once; the same, by `PhoneListMultiSelect` | match |
+| The box's release | at rest the next frame (1 to 8 ms); no hold, no return | at rest in the release's dispatch, so the next frame | match |
+| A press off the box, check mode | the Single mode's `Pressed`: the content tilts, the box stays flat; holds and returns as the Button's | the same: `Tilt` on TiltContainer | match |
+| Extended | no check boxes; a tap is Single's: it replaces the selection, and on the selected item changes nothing; each press tilts | `Multiple`: the same; Ctrl and Shift choose several, which draws nothing | match |
+| None | presses and tilts, selects nothing | no such mode | gap |
+| A `SelectedIndex` set from code | scrolls at once (the same call), by the least: 30 to 494.17, 5 to 195.83, 39 to 846.67; no animation | `AutoScrollToSelectedItem`: the same offsets before the next frame, still on the frames after | match; ours a layout pass later, inside the frame |
 
 ## Gaps and deliberate differences
 
@@ -102,8 +124,9 @@ of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half
 - **Grouping**, so ListViewHeaderItem and GroupItem: none in Avalonia (PLAN.md). Deferred.
 - **Add, delete and reorder transitions**, and **reorder**: deferred.
 - **The check mode's offsets** are literals in the theme, so an app's `ListViewItemContentOffsetX` doesn't move them.
-- **A selection set in code** scrolls the item into view, Avalonia's `AutoScrollToSelectedItem`; the phone's is believed
-  not to, unprobed.
+- **A selection made with Ctrl or Shift in `Multiple`** (WinRT's Extended) draws nothing, as on the phone, whose
+  Extended has no boxes and no modifier keys.
+- **The box's press doesn't follow a move of the finger** (not read); a drag on the box becomes a pan, which ends it.
 - **`IsHoldingEnabled`** isn't turned off, so a long press still opens an item's `ContextFlyout`.
 - **One raw pixel** here and there: the list's width, the box's laid-out size (ADR 0003).
 - **The scroll physics** are Avalonia's: the ScrollViewer's recorded deviation (#116).

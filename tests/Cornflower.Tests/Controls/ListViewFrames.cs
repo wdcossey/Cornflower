@@ -11,7 +11,7 @@ namespace Cornflower.Tests.Controls;
 /// <summary>
 /// Our side of docs/controls/ListView/COMPARISON.md: a ListViewItem headless on the reference app's stage (450 × 100 at
 /// 2.4, so 1080 × 240 like the capture), unselected and selected, at rest, pressed at its centre and settled, disabled,
-/// in the check mode, and pressed in the check mode; and the Catalog's three-item list with the second selected (450 ×
+/// in the check mode, and pressed on its box in the check mode; and the Catalog's three-item list with the second selected (450 ×
 /// 260). Dark and light, named as the reference app names its captures. By hand: it does nothing unless
 /// <c>CORNFLOWER_FRAMES</c> names a folder.
 /// <code>
@@ -42,7 +42,10 @@ public class ListViewFrames
                 if (state.StartsWith("MultiSelectStates.ListMultiSelect", StringComparison.Ordinal))
                     item.SetValue(PhoneListMultiSelect.IsOnProperty, true);
                 using var stage = new ListViewTests.ItemStage(variant, item);
-                if (state.EndsWith("Pressed", StringComparison.Ordinal))
+                // Pressed at the item's centre; CheckboxPressed at the box's (its bounds are in the item's space).
+                if (state.EndsWith("CheckboxPressed", StringComparison.Ordinal) && PhoneListMultiSelect.BoxOf(item) is { } box)
+                    stage.Window.TouchBegin(stage.At(box.Bounds.Center.X, box.Bounds.Center.Y));
+                else if (state.EndsWith("Pressed", StringComparison.Ordinal))
                     stage.Window.TouchBegin(stage.At(stage.Item.Bounds.Width / 2, stage.Item.Bounds.Height / 2));
                 clock.At(160);
                 Dispatcher.UIThread.RunJobs();

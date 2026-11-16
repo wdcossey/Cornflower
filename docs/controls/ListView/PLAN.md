@@ -5,6 +5,9 @@
 Avalonia `ControlTheme`s; the phone's check mode (WinRT's `SelectionMode="Multiple"`) by a behaviour; the item's press
 the Button's tilt, as [#113](https://github.com/wdcossey/CornflowerUI/issues/113) measured it. ListViewHeaderItem and
 GroupItem, a grouped list's parts, are deferred: Avalonia 12.1.4 has no grouping (below). Reorder is deferred.
+[#142](https://github.com/wdcossey/CornflowerUI/issues/142) brought the check mode to #136's probe (runs
+`20261115-2352-dev11` and `20261116-0040-dev11`, `tools/refapp/README.md`, "ListView: the check mode"): the press
+on the box and off it, Extended, and a `SelectedIndex` set from code.
 
 ## Where the values come from
 
@@ -119,7 +122,7 @@ Ours, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`, is the same tree 
 |---|---|---|---|
 | CommonStates | Normal | nothing | the plain setters |
 | | Pressed | `PointerDownThemeAnimation` on TiltContainer; `PointerUpThemeAnimation` on the way back | `:pressed`: `Tilt`, on TiltContainer |
-| | CheckboxPressed | `PointerDownThemeAnimation` on CheckboxTiltContainer; the box `CheckBoxPressedBackgroundThemeBrush` (the accent), the tick `CheckBoxPressedForegroundThemeBrush` | `:pressed` in the check mode: the same, `Tilt` on CheckboxTiltContainer |
+| | CheckboxPressed | `PointerDownThemeAnimation` on CheckboxTiltContainer, with no transition back; the box `CheckBoxPressedBackgroundThemeBrush` (the accent), the tick `CheckBoxPressedForegroundThemeBrush` | `PhoneListMultiSelect.IsBoxPressed`, a press on the box in the check mode: the same colours, and the box's own tilt (below) |
 | | Disabled | the content at `ListViewItemDisabledThemeOpacity`; the box's stroke `CheckBoxDisabledBorderThemeBrush`, the tick `CheckBoxDisabledForegroundThemeBrush`; the selected parts transparent | `:disabled`: the same (the selected parts are never drawn) |
 | SelectionStates | Unselected; Selected and SelectedUnfocused | the tick, and SelectedCheckMark, at 1 | `:selected`: the tick |
 | DataVirtualizationStates | DataAvailable; DataPlaceholder | the placeholders shown | left out |
@@ -132,10 +135,24 @@ Ours, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`, is the same tree 
 Catalog's list, with "two" selected, draws all three alike, and the item's `selected` captures equal `default`'s,
 byte for byte, but in ListMultiSelect and GridMultiSelect.
 
-**CheckboxPressed** is from the template: WinRT goes there instead of Pressed when the item is in the check mode. #113
-probed the press in Single mode only, so the check mode's press is the template's reading (owed: a probe). `Tilt`
-measures a press against its target, the 25.5 box, and clamps one away from it to the box's edge, so a press on the
-item's text tilts the box as far as it goes; where the phone's goes is the probe's question.
+**CheckboxPressed** (#136's probe): WinRT goes there for a press **on the box** in the check mode, 0.6 to 39.7 ms
+after the press. It tilts only the box, about the box's own centre, with the item's rule and depth: a press at its
+centre holds -2.70°, 0.15°, -20.86, the screen-position bias. The bias is the item's: the box's `CompositeTransform`
+is the item's (-0.167, 209 for item 1), so the eye sits from the item's centre towards the screen's, not from the
+box's. The first frame shows the depth with almost no angle, the next overshoots, the one after settles, as an item's
+press does. On release the box is back at rest the next frame: no hold and no return (the template has no transition
+out of CheckboxPressed). A press **anywhere else** on the item, in the check mode, is the Single mode's Pressed: the
+whole content tilts at the Single mode's angles, the box stays flat, and the release holds and returns as the
+Button's.
+
+**Ours.** `Tilt` is the Button's tilt, with its hold and return, and draws on one target; so the box's press is
+`PhoneListMultiSelect`'s. A press on the box (`CheckboxTiltContainer`'s bounds), by a touch, a pen or the left button,
+in the check mode, sets `IsBoxPressed`, which the theme's selectors read for the colours. Its class handler runs as
+the press bubbles, after the item's `Tilt` (a tunnelling handler) has taken it, and turns the item's `Tilt` off and on
+again at once: that puts the content back at rest with nothing drawn, and the press forgotten. It then steps the box's
+own tilt each frame by `TiltModel`, as `Tilt` steps an item's, with the eye from the item's centre. On release, or a
+lost capture (a pan), the box's transform and `IsBoxPressed` go at once. A press off the box is left to `Tilt` on
+TiltContainer, as in Single mode.
 
 ## Avalonia's ListBox against the phone's ListView
 
@@ -148,8 +165,9 @@ item's text tilts the box as far as it goes; where the phone's goes is the probe
 | A pan | the ScrollViewer takes the pointer about 50 ms into the move; the press is cancelled, no `ItemClick` | the `ScrollGestureRecognizer` takes it once the move passes its threshold; the item loses capture, `:pressed` goes, nothing is selected (tested) | 1 |
 | Dragged off where the list can't pan | the tilt follows on the item, returns about 190 ms after the finger leaves; no `ItemClick` | `Tilt` holds 182.6 ms and returns; Avalonia selects nothing on a release off the item (tested) | 1 |
 | Single | tap selects one | `SelectionMode.Single` | 1 |
-| Multiple | the check boxes come in; a tap checks or unchecks | `Multiple` and `Toggle` together toggle on a tap; the check mode `PhoneListMultiSelect.IsOn`, set on the list by its theme and inherited by its items | 1, the theme |
-| Extended | modifier keys | `SelectionMode.Multiple` (Ctrl and Shift), with the check boxes | 2, as Multiple |
+| Multiple | the check boxes come in; every tap, on the box or off it, checks or unchecks, at the release (#136) | `Multiple` and `Toggle` together toggle on a tap (tested); the check mode `PhoneListMultiSelect.IsOn`, set on the list by its theme and inherited by its items | 1, the theme |
+| Extended | no check boxes; under a tap, Single: a tap replaces the selection, a tap on the selected item changes nothing (#136) | `SelectionMode.Multiple`: a tap replaces the selection (tested); Ctrl and Shift choose several, which draws nothing, as on the phone | 1 |
+| A `SelectedIndex` set from code | scrolls at once, in the same call, by the least that brings the item into view, with no animation (#136) | `AutoScrollToSelectedItem`, on by default: the same, before the next frame (tested) | 1 |
 | None | no selection | no such mode | recorded gap |
 | `ItemClick`, `IsItemClickEnabled` | yes | none | `ListBoxOptions` (#132) |
 | `Header`, `Footer` | scroll with the items | none | recorded gap |
@@ -197,8 +215,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
    `A_Strings_Line_Is_The_Phones_And_An_Underscore_Is_Drawn`.
 6. **A single selection draws nothing**: a list with "two" selected is the same frame as one with none, dark and
    light, as the Catalog's capture shows. `A_Single_Selection_Draws_Nothing`.
-7. **The check mode is any mode with `Multiple`** (`Multiple, Toggle`, WinRT's Multiple; `Multiple`, its Extended),
-   and nothing else (six modes). `The_Check_Mode_Is_Multiple`.
+7. **The check mode is `Multiple` with `Toggle`** (WinRT's Multiple), with or without `AlwaysSelected`, and nothing
+   else (seven modes): `Multiple` alone, WinRT's Extended, has no boxes. `The_Check_Mode_Is_Multiple_With_Toggle`.
 8. **Every item follows the list's mode**, inherited: the realised ones when it changes, those made or recycled as the
    list scrolls, an item that is its own container, `Every_Item_Follows_The_Lists_Mode`; one the list recycled while
    the mode changed comes back in the new mode with no slide,
@@ -213,13 +231,25 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 11. **The box is drawn where the phone draws it** in the check mode, against the ListMultiSelect PNGs, dark and light,
     empty or with the tick, `In_The_Check_Mode_The_Box_Is_Drawn_Where_The_Phone_Draws_It`; and at rest it is clipped
     away, nothing drawn left of an item on its own, as `base` shows, `At_Rest_The_Box_Is_Clipped_Away`.
-12. **In the check mode a tap checks and unchecks.** `In_The_Check_Mode_A_Tap_Checks_And_Unchecks`.
+12. **In the check mode a tap checks and unchecks**, `In_The_Check_Mode_A_Tap_Checks_And_Unchecks`; **every tap
+    toggles its item**, on the box or off it, the probe's eight taps in its order,
+    `Every_Tap_In_The_Check_Mode_Toggles_Its_Item`.
 13. **A tap anywhere on the item selects it**, with no Background of its own.
     `A_Tap_Anywhere_On_The_Item_Selects_It_Even_With_No_Background`.
 14. **A press tilts TiltContainer inside an untilted root.** `A_Press_Tilts_The_Content_Inside_An_Untilted_Root`.
-15. **CheckboxPressed**: the accent box, the tick over it, the tilt on the box.
-    `In_The_Check_Mode_A_Press_Fills_The_Box_And_Tilts_It`; outside the check mode a press changes no colour,
+15. **CheckboxPressed**, a press on the box: the accent box, the tick over it, the box tilted and the content not,
+    dark and light, `A_Press_On_The_Box_Fills_It_And_Tilts_The_Box_Alone`; it settles at the probe's tilt within 0.2°
+    and 0.35 of depth (our box is 0.4 px wider, ADR 0003), the first frame the depth with almost no angle,
+    `A_Press_On_The_Box_Settles_At_The_Probes_Reading`; on release it is at rest at once, its colours too, with no
+    hold or return, `On_Release_The_Box_Is_At_Rest_At_Once`; a pan from it puts it at rest,
+    `A_Pan_From_The_Box_Puts_It_At_Rest_At_Once`. Outside the check mode a press changes no colour,
     `Outside_The_Check_Mode_A_Press_Changes_No_Colour`.
+15a. **In the check mode a press off the box is the Single mode's**: four probed presses (the centre, 95% across, 10%
+    and 90% down) at the phone's tilts on TiltContainer, the box flat and unfilled, the release holding and returning.
+    `In_The_Check_Mode_A_Press_Off_The_Box_Is_The_Single_Modes`.
+15b. **Extended under a tap is Single**, with no boxes, each press tilting the content. `Extended_Under_A_Tap_Is_Single`.
+15c. **A `SelectedIndex` set from code scrolls at once by the least**, the probe's 30, 5 and 39 to its offsets, and
+    doesn't move on the frames after. `A_SelectedIndex_Set_From_Code_Scrolls_At_Once_By_The_Least`.
 16. **Each probed press settles at the phone's tilt**, ten presses (centres, 5%, 25%, 75% and 95% across, 10% and
     90% down) within 0.1° and 0.15 of depth. `A_Held_Press_Settles_At_The_Probes_Reading`.
 17. **The press is at once, and a tap selects on its release.** `The_Press_Is_At_Once_And_A_Tap_Selects_On_Its_Release`.
@@ -245,10 +275,18 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
   take the key `ListBox` by name, as the mapping rules do for a WinRT control Avalonia has under another name. To
   reverse: key these themes `ListView` and `ListViewItem`, set `ItemContainerTheme` in the first, and give `ListBox` the
   phone's ListBox look.
-- **WinRT's `Multiple` is Avalonia's `Multiple, Toggle`; `Extended` is `Multiple`**, chosen with the modifier keys,
-  **and both show the check boxes.** The phone's `Extended` wasn't probed; a ListView item draws its selection only in
-  the check mode, so without the boxes a selection of several would be invisible (the first review's finding). To
-  reverse: drop `1` and `5` from the ListBox theme's check-mode selector.
+- **WinRT's `Multiple` is Avalonia's `Multiple, Toggle`; `Extended` is `Multiple`, with no check boxes** (#142).
+  #130 showed the boxes for `Multiple` too, as the phone's `Extended` wasn't read and a selection of several would
+  otherwise draw nothing. #136 read it: the phone's `Extended` has no boxes (leaving Multiple for it took every item to
+  `NoMultiSelect`), and a tap there is Single's, which Avalonia's `Multiple` already does. Boxes that a tap doesn't
+  toggle would say what the list doesn't do. So a selection of several made with Ctrl or Shift draws nothing, as a
+  ListView's Single selection draws nothing. To reverse: put `1` and `5` back in the ListBox theme's check-mode
+  selector.
+- **The box's press is "on the box" within `CheckboxTiltContainer`'s bounds**, the 25.5 square (#142). The probe
+  pressed its centre and the item's text; where between them the phone's edge is wasn't read. To reverse: test
+  another part's bounds in `PhoneListMultiSelect.OnPressed`.
+- **A move during the box's press doesn't re-aim its tilt** (#142): not read, and a drag on the box becomes a pan,
+  which ends the press. To reverse: follow `PointerMoved` in `PhoneListMultiSelect`, as `Tilt` does.
 - **`IsHoldingEnabled="False"` isn't set.** In Avalonia a hold is how a touch opens an item's `ContextFlyout`; turning
   it off on the item would take that from apps. To reverse: add the setter.
 - **Holes keep Wp81's list.** Simple's `AutoCompleteBox` and the managed file dialog hold a plain `ListBox`, which now
@@ -270,10 +308,11 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
   ([`ref/wp81/ListView/README.md`](../../../ref/wp81/ListView/README.md)).
 - **The Pressed capture is a forced state with no finger**: the tilt is ±17.19°, which no touch gives; the probes
   give the tilt.
-- **Owed:** a probe of the check mode's press (CheckboxPressed, and where its tilt goes for a press away from the box);
-  the phone's `Extended` and `None` under a tap; whether a `SelectedIndex` set in code scrolls the phone's list
-  (Avalonia's `AutoScrollToSelectedItem` does, and the theme leaves it on); captures of a grouped ListView (ListViewHeaderItem at rest and
-  pressed) and a GroupItem, for grouping's issue; the device run on the Pixel 8.
+- **Read since** (#136, runs `20261115-2352-dev11` and `20261116-0040-dev11`): the check mode's press on the box and
+  off it, every tap toggling, `Extended` and `None` under a tap, and a `SelectedIndex` set from code (#142 follows them;
+  `None` stays a gap, as Avalonia has no such mode).
+- **Owed:** captures of a grouped ListView (ListViewHeaderItem at rest and pressed) and a GroupItem, for grouping's
+  issue; the device run on the Pixel 8 of #142's change.
 
 ## Checklists
 
@@ -325,7 +364,7 @@ _none_
 | [-] | `DataFetchSize` | `Double` | none | not applicable: incremental loading |
 | [-] | `CanReorderItems` | `Boolean` | none | deferred: reorder |
 | [-] | `CanDragItems` | `Boolean` | none | deferred: with reorder |
-| [x] | `SelectionMode` | `ListViewSelectionMode` | `SelectionMode` (flags) | Mapped: Single is `Single`; Multiple is `Multiple, Toggle`, the check mode (`PhoneListMultiSelect`); Extended is `Multiple`, with the check boxes too; None has no mode (a gap) |
+| [x] | `SelectionMode` | `ListViewSelectionMode` | `SelectionMode` (flags) | Mapped: Single is `Single`; Multiple is `Multiple, Toggle`, the check mode (`PhoneListMultiSelect`); Extended is `Multiple`, with no check boxes, as the phone's; None has no mode (a gap) |
 | [x] | `SelectedItems` (read-only) (not a dependency property) | `IList<Object>` | `SelectedItems` | Avalonia's API stands |
 | [-] | `ReorderMode` | `ListViewReorderMode` | none | deferred: with reorder |
 
@@ -556,7 +595,7 @@ _none_
 |---|---|---|---|---|---|
 | [x] | `CommonStates` | `Normal` | nothing | the theme's plain setters | Themed |
 | [x] | `CommonStates` | `Pressed` | `PointerDownThemeAnimation on TiltContainer` | `^:pressed` | Themed: the tilt on TiltContainer |
-| [x] | `CommonStates` | `CheckboxPressed` | `PointerDownThemeAnimation on CheckboxTiltContainer`<br>`NormalRectangle.Fill = {ThemeResource CheckBoxPressedBackgroundThemeBrush}`<br>`CheckGlyph.Fill = {ThemeResource CheckBoxPressedForegroundThemeBrush}` | `^:pressed` in the check mode | Themed: `^[(wp81|PhoneListMultiSelect.IsOn)=True]:pressed`, the tilt on CheckboxTiltContainer |
+| [x] | `CommonStates` | `CheckboxPressed` | `PointerDownThemeAnimation on CheckboxTiltContainer`<br>`NormalRectangle.Fill = {ThemeResource CheckBoxPressedBackgroundThemeBrush}`<br>`CheckGlyph.Fill = {ThemeResource CheckBoxPressedForegroundThemeBrush}` | `^[(wp81|PhoneListMultiSelect.IsBoxPressed)=True]` | Themed: a press on the box in the check mode; `PhoneListMultiSelect` tilts CheckboxTiltContainer, with no return |
 | [x] | `CommonStates` | `Disabled` | `contentPresenter.Opacity: DoubleAnimation Duration=0 To={ThemeResource ListViewItemDisabledThemeOpacity}`<br>`NormalRectangle.Stroke = {ThemeResource CheckBoxDisabledBorderThemeBrush}`<br>`CheckGlyph.Fill = {ThemeResource CheckBoxDisabledForegroundThemeBrush}`<br>`SelectedBorder.BorderBrush = Transparent`<br>`SelectedEarmark.Fill = Transparent`<br>`SelectedGlyph.Fill = Transparent` | `^:disabled` | Themed (the selected parts' Transparent: never drawn in a ListView anyway) |
 | [x] | `SelectionStates` | `Unselected` | nothing | the theme's plain setters | Themed |
 | [x] | `SelectionStates` | `Selected` | `CheckGlyph.Opacity: DoubleAnimation Duration=0 To=1`<br>`SelectedCheckMark.Opacity: DoubleAnimation Duration=0 To=1` | `^:selected` | Themed: the tick |
