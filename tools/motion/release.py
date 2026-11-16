@@ -34,46 +34,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import motionlib as ml
 
 FRAME = re.compile(r'rt ([\d.]+) offset ([-\d.]+)(?: index (-?\d+))?')
-# touch.ps1 writes its times with PowerShell's -f, in the VM's culture: a decimal comma is read too.
-TOUCH = re.compile(r'^\s*([\d.,]+) ms \(planned\s+[\d.,]+\) (down|up) ')
-
-
-def touch_times(path):
-    """Each touch's press and release from touch.log, in ms from the start of its playing, in the order played."""
-    out, down = [], None
-    with open(path, encoding='utf-8', errors='replace') as f:
-        for line in f:
-            m = TOUCH.match(line)
-            if not m:
-                continue
-            ms = float(m.group(1).replace(',', '.'))
-            if m.group(2) == 'down':
-                down = ms
-            elif down is not None:
-                out.append((down, ms))
-                down = None
-    return out
-
-
-def touches(rows, played):
-    """Each touch but the start tap as (press, release) in the app's ms. touch.log's times are moved onto the app's
-    clock by the start tap's press (the `go` line), then by the median lag of the app's `pressed` lines to the nearest
-    planned press: a press the ScrollViewer still holds from the touch before reaches no pointer handler, so not every
-    touch has a `pressed` line. A pressed line over 150 ms from every touch is left out of the lag, and said so."""
-    go = next((t for t, w, d in rows if w == 'go'), None)
-    if go is None or not played:
-        raise SystemExit('no go line in the log, or no touch in touch.log')
-    first = played[0][0]
-    planned = [(go + a - first, go + b - first) for a, b in played[1:]]
-    lags = []
-    for t in (t for t, w, d in rows if w == 'pressed'):
-        near = min(planned, key=lambda p: abs(p[0] - t))
-        if abs(near[0] - t) > 150:
-            print('a press at %.1f ms is %.0f ms from the nearest touch in touch.log: left out of the lag' % (t, near[0] - t))
-            continue
-        lags.append(t - near[0])
-    lag = ml.median(lags) if lags else 0.0
-    return [(a + lag, b + lag) for a, b in planned]
 
 
 def offset_at(events, t, before):
@@ -163,7 +123,7 @@ def page_width(rows, pivot):
 def main():
     (run,), _ = ml.parse_args(__doc__)
     rows = ml.probe(run)
-    all_touches = touches(rows, touch_times(os.path.join(run, 'touch.log')))
+    all_touches = ml.touches(rows, ml.touch_times(os.path.join(run, 'touch.log')))
     pivot = any(w == 'frame' and ' index ' in d for t, w, d in rows)
     page = page_width(rows, pivot)
     print('%s: a %s, a page %.0f px; offsets in view px, times in ms by the stopwatch' % (run, 'Pivot' if pivot else 'Hub', page))

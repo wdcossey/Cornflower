@@ -25,6 +25,7 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Probe tilt                        # 
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pages -Record               # a probe, with a recording of the screen (see Motion)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe scrollend -Record           # the end of the content and the indicator (see Probes)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pivot -Record               # Pivot's header strip (see Motion; also turnstile, hub)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe popupcurves -Record         # the popups' bands, eight times each (see Motion)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
 
@@ -431,7 +432,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -893,8 +894,11 @@ are 15.0 to 15.2 ms apart once the frames with nothing logged are counted). So:
   that moves every frame, as the tilt's return does); otherwise with the run's factor, `clock.py`'s 15.625 ms
   over the frames' mean spacing. That factor is the run's average: one interval's own frames can differ from
   it by a frame either way, so a duration converted with it is good to about a frame, 15.6 ms.
-- **A duration from a recording** is timed by the VM's clock, not the emulator's. Whether the two agree
-  isn't checked yet.
+- **A duration from a recording** is timed by the VM's clock, not the emulator's. *Checked 2026-11-16 (#149,
+  `20261116-1835-dev11`):* it keeps with the app's stopwatch. Over the 200 s of `-Probe popupcurves`, each popup's
+  first changed frame stays within a frame (−20 to +31 ms) of its call, put on the recording by the start's flash,
+  while RenderingTime gains 4.1% on the stopwatch (8 s by the end). So a recording's durations convert to animation
+  time as the stopwatch's do: times the run's factor, 1.0413 there (`strips.py` prints it).
 
 **Which clock each duration below is on** (2026-11-12, gap register B9 to B12). For a stopwatch duration whose own
 frames the log doesn't read, [`tools/motion`](../motion/README.md)'s `clock.py` reads the run's factor: 15.625 ms
@@ -924,6 +928,11 @@ to about a frame.
 | `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` 4.61 over 1,000 ms (#148) | frames: `RenderingTime` | as given |
 | The light app bar's motion, and the long list's scroll (#148) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
+| The popups' bands (#149): each band's turn a tick, its ticks, and the closing's two ticks between bands | frames: distinct angles, one a 15.625 ms step | as given |
+| The popups' `Closed` after `Hide()` (#149): 9, 17, 22 and 30 ticks | RenderingTime, from the call's frame to the event's | as given |
+| When a popup is over on the recording, a top Flyout's vanishing and the dialog's (#149) | the recording, which keeps with the stopwatch (above) | times 1.0413, the run's factor |
+| The inline ComboBox's jump, 78 ms after the call (#149) | RenderingTime | as given |
+| LoopingSelector (#149): the snap and the coasts, frame by frame, and the columns' 333 ms fade (`20261116-1904-dev11`) | frames: RenderingTime | as given; the release's time is the stopwatch's |
 | The popups' times (the table below); a top Flyout gone about 100 ms, and a ContentDialog 125 ms, after `Hide()`; the inline ComboBox opening about 140 ms after the call; the Continuum's fade (one or two recorded frames), black (at most 94 to 125 ms) and growth (281 to 312 ms) | the recording, timed by the VM's clock, and paired with the app's log by a fixed lag | **open**: whether the VM's clock runs with the emulator's stopwatch or with its animation time isn't known. If with the stopwatch, these are about 4% short of animation time on these runs, under the ±25 ms they are quoted to |
 
 **A PlaneProjection's camera** (`-Probe projections`, `20261110-0756-dev11`): a full-window panel given
@@ -984,9 +993,95 @@ recording's clock (above);
 | ComboBox, 5 items (inline) | opens in one frame, about 140 ms after the call; in the app, the items' `TranslateY` eases from −8.5 to 0 over 4 frames | 142 / 142 / 208 | closes in one frame | 0 |
 | ContentDialog | about 200 ms | 34 / 192 / 209 | gone in one frame, about 125 ms after `Hide()` | 0 |
 
+*#149 reads these as curves, band by band, and the closes on the animation clock: [the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149).*
+
 **MenuFlyout, from the app's values** (`20261110-0745-dev11` and `-0753`): `OuterBorder`'s `ScaleX` goes
 0 to 1 linearly over 380 ms, origin (0.5, 0); then `InnerBorder`'s `ScaleY` 0 to 1 linearly over
 120 ms. That is the template's `TopPortrait` storyboard, run as written. Its close has no storyboard.
+
+### The popups' bands, and the inline ComboBox (2026-11-16, device 11, #149)
+
+`20261116-1835-dev11` (`-Probe popupcurves -Record`, gap register B11 and B12): on a black page, each popup is
+opened from code, held 1.5 s, closed with `Hide()` (the ComboBoxes with `IsDropDownOpen`) and given 1.5 s, eight
+times each. The app logs each call's and each event's RenderingTime. [`tools/motion`](../motion/README.md)'s
+`strips.py` reads the recording. Stills are in `ref/wp81/Flyout/motion/`, `ContentDialog/motion/`,
+`ListPickerFlyout/motion/` and `DatePickerFlyout/motion/`.
+
+**What moves.** The shell cuts the popup into horizontal bands and turns each about its own horizontal centre line,
+which stays on the screen's plane. One PlaneProjection camera sees the whole screen (999 view px, looking at y 400):
+only with it are the closing bands' steps all the same size. A band is a row of the popup:
+
+- the full Flyout's and the PickerFlyout's are 100 px slices;
+- the list pickers' (ListPickerFlyout, the ComboBox of 6) are the header and each item, 66.7 px;
+- the date and time pickers' are 160 px.
+
+The angle is positive when the band's lower edge is nearer the eye. Every band's turn is **linear**: its distinct
+angles, pooled over the eight calls, are evenly spaced, one step a tick of the 64 Hz clock, within 0.03 to 0.7°.
+
+| | Opening | Closing |
+|---|---|---|
+| Top Flyout (78.3 px) | one band, about y 39.5: from +80° to 0 at 9.31° a tick, 8.6 ticks (134 ms) | no turn. It shows unchanged, then is gone in one frame, 94 to 117 ms after `Hide()` by the recording (98 to 122 ms of animation time). `Closed` comes 9 ticks (140.6 ms) of RenderingTime after `Hide()` |
+| Full Flyout, PickerFlyout (100 px bands) | every band from +80° at once. Band k (0 the top) goes to 0 at 12.61, 9.57 and 7.58° a tick for k 0, 1 and 2: 6.3, 8.4 and 10.6 ticks. Below 400 px no band shows a turn: the lowest row reaches 427, 550, 672 and 794 px on successive frames. The whole popup is at its end 200 to 238 ms after the call by the recording (the medians of the last frame moving and the first at rest; 208 to 248 ms of animation time) | from 0 the other way (the lower edge going back) at 10.95° a tick. Band k starts 2k ticks after band 0, which starts with `Hide()`: in one frame, neighbours are 21.9° apart. Each band is last seen at about 69° and is gone by 90° (8.2 ticks). So band 7, the last, is gone 22.2 ticks after `Hide()`, and `Closed` comes at 22 ticks (343.8 ms). On the recording: the last frame moving at 276 ms, the first at rest at 326 (287 and 339 ms of animation time) |
+| ListPickerFlyout, ComboBox of 6 (66.7 px rows) | as above: 12.75 and 9.63° a tick for the header and the first item (6.3 and 8.3 ticks), then about 8 to 6° (10 to 13 ticks) | as above, 10.9 to 11.0° a tick, 2 ticks apart, twelve bands: the ListPickerFlyout's `Closed` at 30 ticks (468.8 ms) |
+| DatePickerFlyout, TimePickerFlyout (160 px rows) | 12.50 to 12.53, 9.60, 7.81 to 7.84, 6.60 and 5.67° a tick for bands 0 to 4: 6.4, 8.3, 10.2, 12.1 and 14.1 ticks | as above, five bands: `Closed` at 17 ticks (265.6 ms) |
+| ContentDialog | one band, the dialog (y 0 to about 194, about y 96.9): an eased exponential from 45.0° to 0 at tick 9 (141 ms), exponent 1.68 (rms 0.21°); a pure exponential is out by 0.95° | gone in one frame, 95 to 120 ms after `Hide()`. Its `Closed` comes at once, in the call's frame |
+
+So the opening's bands start together and the lower ones take longer: about 6.4 ticks for the top band and 1.9 more
+for each band down (100 ms, then about 30 ms more a band). The closing's bands each take the same 8.2 ticks and start
+two ticks apart: that is the "top to bottom" of #66's table.
+
+`Opening` and `Opened` come in the call's frame (no RenderingTime later) for every flyout. The full-screen popups'
+first recorded change is within a frame or two of the call (−20 to +70 ms).
+
+**The inline ComboBox** (5 items).
+
+- **Opening.** The template's `Opened` storyboard runs as written for four frames: the `ItemsPresenterHost`'s `Height`
+  from 27.167 and the `ItemsPresenterTranslateTransform` from −8.5, each an `ExponentialEase` EaseInOut 6 over 250 ms
+  (27.487, 28.167, 29.604, 32.648; −8.488, −8.463, −8.41, −8.298: the curve's values at ticks 1 to 4). Meanwhile the
+  host's `ActualHeight` stays 33.333 and the control 74.583 tall. On the fifth frame (78 ms of RenderingTime after the
+  call) both jump to their ends, 258.333 and 0, and the control to 299.583. On the screen it opens in one frame.
+- **Closing.** On the first frame the control is back to 74.583, the host's `ActualHeight` to 33.333 and the shift to
+  −8.5. The `Closed` storyboard's last four values (`ExponentialEase` EaseInOut 6 over 200 ms) come 9 to 12 frames
+  later and don't show.
+- So the storyboards say EaseInOut, not linear, and neither shows on the screen.
+
+### LoopingSelector, and a press on a closed ComboBox (2026-11-16, device 11, #149)
+
+`20261116-1904-dev11` (`-Probe looping`, `looping.py`): a DatePickerFlyout (15 July 2014) opened from code, and its
+three LoopingSelectors touched, the distances in items planned with the items' pitch read from the layout. Every frame,
+each one's ScrollViewer offset and its items are logged. The first run, `20261116-1828-dev11`, planned its items as
+`ItemHeight` (123 px, 11% short); its readings are given beside where they add something.
+
+- **Layout.** Three selectors, 138.333 view px wide and 700 tall from y 37.083, at x 17.5, 155.833 and 294.167.
+  `ItemWidth` and `ItemHeight` are 123; the items are 122.917 square, scaled 1.125 (`ContentScaleTransform`), and
+  138.375 px apart. Month and day loop (`ShouldLoop`); year doesn't. The ScrollViewer has `Mandatory` snap points at
+  `Near`. A looping one's extent is 139,213 px, with the offset in its middle (69,325.875).
+- **Which column is active.** At rest only the selected items show: the others are at opacity 0 (`Normal`). A touch on a
+  column puts its items in `Expanded`, opacity 1, and the column touched before goes back to `Normal`. The change is
+  the template's generated 0.33 s transition: the opacity moves 0.0469 a frame, a straight line over 21.3 frames, both
+  ways. The fade out starts about 100 ms after the other column's press. The first time a column expands it has no old
+  state, and it is at 1 at once.
+- **A drag held still and let go.** It goes to the nearer item: FinalView is decided at the release, in whole items.
+  Let go 0.34 and 0.43 of an item past one (the drag's last offset before the release), it first drifts on the drag's way, 1.2 to 1.3 px a frame for 7 or 8 frames
+  (9.1 to 9.5 px), then goes back over 341 to 399 ms. No simple ease fits that within 1.65%. The whole takes 500 ms of
+  RenderingTime (438 to 531 ms on the first run, let go 0.3 to 0.48 past). Let go 0.52 of an item past, it goes on to
+  the next one at a constant deceleration, 0.000834 px/ms², within 1.4% of the way, at rest in 328 ms.
+- **A drag let go moving toward an item.** 3 items down, let go 5.2 px short: at rest 62 ms after the first inertial frame. On the first run, 45 px
+  short at 0.31 px/ms: a constant deceleration to it, 0.000967 px/ms², over 301 ms (within 0.15% of the way).
+- **A flick.** The coast is the ScrollViewer's inertia: #113's `a + c v²` fits each within 0.3 to 2.4 px, ending on an
+  item. 1.77 px/ms went 8 items in 1,391 ms; 2.45 px/ms, 14 items in 1,844 ms. Three flicks of 4 to 4.5 px/ms, 1.5 s
+  apart, each caught by the next after about 1,550 ms of coast, went 48 items in all, the last coast 2,062 ms. (First run: 6 items in 1,156 ms, 13
+  in 1,766, 52 in all.)
+- **The wrap.** After each rest the offset jumps back by the items it moved (−1, −1, −8, +14, +3, +48 items) as
+  `SelectionChanged` comes, so it stays in the middle of the extent. Flicked down 48 items, the month is the same, four
+  times round 12 (on the first run, 52 items took month 7 to 3).
+- **A press during a coast** holds it within a frame (0.0 px while held 592 ms). Let go, it goes to the nearer item
+  (on the first run 6 items, not the 13 the flick was heading for).
+- **A tap on an item** (two below, two above, and the selected one, in the year column) doesn't scroll and doesn't
+  select: no `ViewChanging`, no `SelectionChanged`. It only makes the column active.
+- **A press on a closed ComboBox** (held 600 ms) goes to `Pressed`, whose `PointerDownThemeAnimation` on `Background`
+  is the Button's tilt: `RotationX` 3.6 then 2.1°, `RotationY` 3.0°, `GlobalOffsetZ` −17.6, within 108 to 135 ms, and held
+  until the release. The release opens it (`DropDownOpened`), and the tilt is back at 0 on the next frame.
 
 ### Page transitions
 

@@ -839,6 +839,171 @@ def hub_entrance_fit():
     assert 'place a Hub, cut off: RotationY -90 at tick 0, never back to 0 in the segment' in out, out
 
 
+def band_frame(bands, w=540, h=960, d=999.0, cy=400.0, cx=225.0, level=31):
+    """A synthetic recorded frame of full-width bands on black: each (top, bottom, angle) at rest from top to bottom
+    (view px), turned by angle degrees about its centre line (positive: the lower edge nearer), seen by PlaneProjection's
+    camera and cut by the screen's sides. Each row is filled where a band covers its middle, with the edges' coverage."""
+    s = ml.VIEW_W / w
+    img = bytearray(w * h)
+    for top, bottom, ang in bands:
+        c, half, r = (top + bottom) / 2, (bottom - top) / 2, math.radians(ang)
+        for k in range(2001):
+            u = -half + 2 * half * k / 2000
+            y, z = c + u * math.cos(r), u * math.sin(r)
+            q = d / (d - z)
+            yp = cy + (y - cy) * q
+            row = int(yp / s)
+            if not 0 <= row < h:
+                continue
+            l, rr = (cx - 225 * q) / s, (cx + 225 * q) / s
+            for x in range(w):
+                cover = max(0.0, min(x + 1, rr) - max(x, l))
+                if cover > 0:
+                    img[row * w + x] = max(img[row * w + x], int(round(level * min(cover, 1.0))))
+    return bytes(img), w, h, s
+
+
+@check
+def strips_band_about_its_centre():
+    # A band 100 px tall at rest from 100 to 200, turned 40 degrees about its centre: the pieces' line crosses the
+    # screen's plane at its centre, the angle comes back, and the near half, which the screen's sides cut, ends where
+    # the band's lower edge is. A second band, at rest, adds nothing.
+    import strips
+    frame, w, h, s = band_frame([(100, 200, 40.0), (200, 300, 0.0)])
+    page = bytes(w * h)
+    pieces = strips.trapezoids(strips.row_edges(frame, page, w, h), w)
+    turned = [strips.strip(p, s, 450.0) for p in pieces]
+    assert len(turned) == 1, turned
+    yt, zt, yb, zb, ang, cross, nend = turned[0]
+    near(ang, 40.0, 1.0, 'the angle')
+    near(cross, 150.0, 1.5, 'the line the band turns about')
+    near(yt, 150 - 50 * math.cos(math.radians(40)), 1.5, 'the far edge y')
+    near(zt, -50 * math.sin(math.radians(40)), 2.0, 'the far edge z')
+    assert nend is not None
+    near(nend[0], 150 + 50 * math.cos(math.radians(40)), 2.5, 'the near end y')
+    near(nend[1], 50 * math.sin(math.radians(40)), 3.0, 'the near end z')
+    # Turned the other way, the far half is the lower one, and nothing is cut below it.
+    frame, w, h, s = band_frame([(500, 600, -30.0)])
+    turned = [strips.strip(p, s, 450.0) for p in strips.trapezoids(strips.row_edges(frame, page, w, h), w)]
+    assert len(turned) == 1, turned
+    near(turned[0][4], -30.0, 1.0, 'a negative angle')
+    near(turned[0][5], 550.0, 1.5, 'its line')
+    # The unprojection undoes project().
+    yp, wp, _, _ = strips.project(120.0, -30.0, 180.0, 30.0, 450.0)
+    y, z = strips.unproject(yp, wp, 450.0)
+    near(y, 120.0, 1e-9, 'unproject y')
+    near(z, -30.0, 1e-9, 'unproject z')
+
+
+@check
+def strips_bands_and_their_eases():
+    # Readings of two bands from several calls: bands() finds each band by its line, and the opening's distinct
+    # angles fit the ExponentialEase they were made with, one a tick.
+    import strips
+    f = ml.expo_out(4)
+    readings = []
+    for call in range(3):
+        for k in range(0, 20):
+            if (k + call) % 3 == 0:
+                continue
+            a = 80 * (1 - f(k * ml.TICK / 300)) if k * ml.TICK < 300 else 0.0
+            readings.append((k * 15.625, (0, 0, 0, 0, a, 50.0 + 0.3 * call, None)))
+            readings.append((k * 15.625 + 30, (0, 0, 0, 0, a, 150.0 - 0.3 * call, None)))
+    found = strips.bands(readings)
+    assert [round(c) for c, _ in found] == [50, 150], found
+    vals = ml.distinct([x[4] for _, x in readings if abs(x[5] - 50) < 8], decimals=1, tol=0.6)
+    assert len(vals) >= 15, vals
+    e, d, ph, A = ml.fit_scaled([abs(v) for v in vals if v > 0.5], list(range(len([v for v in vals if v > 0.5]))), f,
+                                durations=range(100, 601, 5), phases=[i / 5 for i in range(-10, 51)])
+    near(d, 300, 10, 'the duration')
+    near(A, 80, 1.5, 'the start angle')
+
+
+@check
+def strips_steps_and_edge_on():
+    # The turn a tick from distinct angles with a tick no call showed (a gap of two), and a band at 80 degrees, whose
+    # far edge shows below its near one, read as 80, not -100.
+    import strips
+    rate, gaps = strips.steps([80.0, 69.05, 47.15, 36.2, 25.25])
+    near(rate, 10.95, 0.01, 'the turn a tick')
+    assert gaps == [1, 2, 1, 1], gaps
+    frame, w, h, s = band_frame([(0, 100, 80.0)])
+    turned = [strips.strip(p, s, 450.0) for p in strips.trapezoids(strips.row_edges(frame, bytes(w * h), w, h), w)]
+    assert turned and all(t[4] > 0 for t in turned), turned
+
+
+@check
+def looping_snap_coast_recentring_and_fade():
+    # A synthetic -Probe looping run (#149): a month drag let go 45 px short of the next item, which then slows at a
+    # constant deceleration to it over 280 ms and recentres by one item; and the day column's unselected items fading
+    # out over 21.3 frames, 0.0469 a frame.
+    import tempfile
+    pitch, start = 138.375, 69325.875
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46.1 ms (planned      0) down 30 30 -> 36,36\n    86.1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046.1 ms (planned   2000) down 86 387 -> 104,464\n  2846.1 ms (planned   2800) up 86 294 -> 104,350\n')
+        fin = start + pitch
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\tselector 0 17.5 37 138 700 item 123 x 123 loop True items 12\n')
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tmonth drag up, held\n')
+            f.write('3005.0\tpressed\tsel0 86 387 handled ts 1\n')
+            fr = '%.1f\tframe\trt %g sel0 offset %.3f items 6@%.3f:1x1.125 7@%.3f:1x1.125\n'
+            f.write(fr % (2900.0, 1000.0, start, 4.0, 4.0 + pitch))
+            for k in range(1, 6):
+                f.write('%.1f\tviewchanging\tnext %.3f final %.3f inertial False sel0\n' % (3500 + 50 * k, start + 18.6 * k, start + 18.6 * k))
+            off0 = start + 93.375
+            f.write('%.1f\tviewchanging\tnext %.3f final %.3f inertial True sel0\n' % (3812.0, off0, fin))
+            T = 280.0
+            for k in range(0, 19):
+                t = k * ml.TICK
+                u = min(t / T, 1.0)
+                off = fin - 45.0 * (1 - u) ** 2
+                f.write(fr % (3813.0 + 15 * k, 2000.0 + t, off, 4.0 - (off - start), 4.0 + pitch - (off - start)))
+            f.write('4200.0\tevent\tsel0 SelectionChanged 7 rt 2328.125\n')
+            f.write(fr % (4210.0, 2343.75, start, 4.0, 4.0 + pitch))
+            fr1 = '%.1f\tframe\trt %g sel1 offset %.3f items 14@4:%.3fx1.125 15@142:1x1.125 16@280:%.3fx1.125 17@418:%.3fx1.125\n'
+            f.write(fr1 % (5000.0, 3000.0, start, 1, 1, 1))
+            for k in range(1, 23):
+                o = max(0.0, 1 - k * ml.TICK / 333.0)
+                f.write(fr1 % (5100.0 + 15 * k, 3100.0 + k * ml.TICK, start, o, o, o))
+        code, out = run_script('looping.py', run)
+    assert code == 0, out
+    assert 'FinalView +138.4 px from the press (+1.000 items)' in out, out
+    assert re.search(r'constant deceleration \(quadratic ease-out\) over 2[78]\d ms', out), out
+    assert 'recentred at rt 2343.750: the offset jumps -138.375 px (-1.000 items)' in out, out
+    assert re.search(r'sel1 fade from rt [\d.]+: 1\.000 to 0\.000 over 2\d frames \(\d+ ms\), -0\.04[67]\d a frame', out), out
+
+
+@check
+def looping_and_strips_edges():
+    # The first review's cases (#149): a fade with one value repeated (two frames on one tick) is one fade; an item
+    # logged with opacity NaN is kept; a run of one frame isn't fitted; and a band whose angles end at 0.0 and aren't
+    # linear is reported, not stopped by the ratio test.
+    import looping
+    import strips
+    items = lambda o: [(1.0, 0.0, 1.0, 1.0), (2.0, 138.0, o, 1.0), (3.0, 276.0, o, 1.0)]
+    ops = [1.0, 0.95, 0.9, 0.9, 0.85, 0.8, 0.75]
+    fs = [(100.0 + 15 * k, 1000.0 + ml.TICK * k, 0.0, items(o)) for k, o in enumerate(ops)]
+    runs = looping.fades(fs)
+    assert len(runs) == 1 and runs[0][-1][1] == 0.75, runs
+    m = looping.FRAME.match('rt 1 sel0 offset 5 items 7@1:NaN 8@139:0x1.125')
+    got = [x for x in looping.ITEM.findall(m.group(4))]
+    assert len(got) == 2 and got[0][2] == 'NaN', got
+    assert looping.best_curves([(0.0, 100.0)], 50.0) == []
+    import contextlib
+    import io as _io
+    buf = _io.StringIO()
+    readings = []
+    for call in range(3):
+        for k, a in enumerate([45.0, 35.6, 27.7, 21.1, 15.7, 11.4, 7.8, 5.2, 0.0]):
+            readings.append((k * 15.6, (0, 0, 0, 0, a + 0.01 * call, 96.9, None)))
+    with contextlib.redirect_stdout(buf):
+        strips.band_report('dialog', 'open', readings, 3, 1.0)
+    assert 'band about y 96.9' in buf.getvalue() and 'eased' in buf.getvalue(), buf.getvalue()
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)
