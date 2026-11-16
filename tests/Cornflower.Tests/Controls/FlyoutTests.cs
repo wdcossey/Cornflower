@@ -330,18 +330,60 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
-    public void A_Full_Flyout_Is_At_Rest_Between_208_And_248_Ms()
+    public void A_Full_Flyouts_Band_3_Takes_About_2_Ticks_More_Than_Band_2()
     {
-        using var stage = new Stage(full: true);
+        double Ticks(double rate) => OpenFrom / rate;
+        var band3 = Ticks(PhonePopupMotion.FullOpenRates[3]);
+        Assert.Equal(Ticks(FullOpenRates[2]) + BandSlowing, band3, 0.05);
+    }
+
+    [AvaloniaFact]
+    public void Below_Its_Turning_Bands_A_Full_Flyout_Is_Revealed_At_Rest_Downwards()
+    {
+        using var stage = new Stage(full: true, page: new SolidColorBrush(Page(dark: true)));
         stage.Open();
         var first = stage.FirstFrameAfter(0);
-        var length = PhonePopupMotion.OpenLength(PhonePopupPlacement.Full).TotalMilliseconds;
-        Assert.InRange(length, FullRestFrom, FullRestBy);
 
-        stage.At(first + Math.Floor(length / Tick) * Tick);
-        Assert.NotNull(stage.Bands);
-        stage.At(first + Math.Ceiling(length / Tick) * Tick);
+        // Before the first piece, nothing below 400 px; then down to each reading's row, at rest, and all of it at the last.
+        stage.At(first + 6 * Tick);
+        using (var frame = stage.Scene.Capture())
+        {
+            Assert.Equal(Page(dark: true), Frames.PixelAt(frame, 1000, (int)(410 * Scale)));
+            Assert.Equal(Page(dark: true), Frames.PixelAt(frame, 1000, (int)(700 * Scale)));
+        }
+
+        foreach (var (at, to) in Reveal)
+        {
+            stage.At(first + Math.Ceiling(at / Tick) * Tick);
+            if (stage.Bands is not { } bands)
+            {
+                Assert.Equal(800, to);
+                break;
+            }
+
+            Assert.Equal(to == 800 ? double.PositiveInfinity : to, bands.RevealedTo);
+            using var frame = stage.Scene.Capture();
+            Assert.Equal(Chrome(dark: true), Frames.PixelAt(frame, 1000, (int)((to - 4) * Scale)));
+            if (to < 790)
+                Assert.Equal(Page(dark: true), Frames.PixelAt(frame, 1000, (int)((to + 4) * Scale)));
+        }
+
+        // At rest when the last piece is drawn.
+        Assert.Equal(Reveal[^1].At, PhonePopupMotion.OpenLength(PhonePopupPlacement.Full).TotalMilliseconds);
         Assert.Null(stage.Bands);
+    }
+
+    [AvaloniaFact]
+    public void A_Full_Flyouts_Lower_Bands_Turn_When_It_Closes()
+    {
+        using var stage = new Stage(full: true, page: new SolidColorBrush(Page(dark: true)));
+        stage.OpenAtRest();
+        var first = stage.FirstFrameAfter(stage.Clock.Now.TotalMilliseconds);
+
+        stage.Flyout.Hide();
+        stage.At(first + 12 * Tick);
+        Assert.True(double.IsPositiveInfinity(stage.Bands!.RevealedTo));
+        Assert.Equal(-CloseRate * 2, stage.Bands.Angles[5], 1e-9);
     }
 
     [AvaloniaFact]
@@ -488,6 +530,20 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
+    public void A_Tap_On_The_Flyout_Itself_Doesnt_Close_It()
+    {
+        using var stage = new Stage();
+        stage.OpenAtRest();
+
+        stage.Scene.Window.MouseDown(new Point(300, 40), MouseButton.Left);
+        stage.Scene.Window.MouseUp(new Point(300, 40), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+
+        Assert.True(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void Setting_IsOpen_False_Closes_It_The_Same_Way()
     {
         using var stage = new Stage();
@@ -518,7 +574,7 @@ public class FlyoutTests
         stage.At(tapped + TopClosedAfterHide);
 
         Assert.False(stage.Flyout.Popup.IsOpen);
-        // PENDING #150: whether the tap reaches the page. Today it doesn't, as Avalonia's flyout has it.
+        // #150: the closing tap reaches nothing under it.
         Assert.Equal(0, clicks);
     }
 

@@ -21,7 +21,7 @@ namespace Cornflower.Themes.Wp81;
 /// <see cref="TopClosedAfter"/>.</item>
 /// <item>The <b>full</b> popup is <see cref="BandHeight"/> px bands. Opening, every band starts at
 /// <see cref="OpenFrom"/> at once and goes to 0 at its own rate, the lower ones slower (<see cref="FullOpenRates"/>);
-/// from the fifth band (400 px) down no band shows a turn. Closing, band k starts <see cref="CloseStagger"/> × k ticks
+/// from the fifth band (400 px) down nothing turns: it is revealed at rest, downwards (<see cref="Reveal"/>). Closing, band k starts <see cref="CloseStagger"/> × k ticks
 /// after the call and turns the other way (the lower edge going back) at <see cref="CloseRate"/> a tick until it is
 /// edge-on at <see cref="CloseTo"/>, gone; the popup is closed when its last band is (<see cref="ClosedAfter"/>, 22
 /// ticks).</item>
@@ -47,10 +47,36 @@ internal static class PhonePopupMotion
 
     /// <summary>
     /// The full popup's opening bands' rates, degrees a tick, from the top: 12.61, 9.57 and 7.58 read for bands 0 to
-    /// 2; band 3's isn't read, and is the rate that brings it to rest at 208 ms, the start of the read 208 to 248 ms in
-    /// which the whole popup comes to rest. Bands past these don't turn: none below 400 px shows a turn.
+    /// 2. Band 3's isn't read: each band down takes about 2.1 ticks more than the one above (6.34, 8.36, 10.55), so its
+    /// 12.65 ticks. Bands past these don't turn: below 400 px the popup is revealed at rest (<see cref="Reveal"/>).
     /// </summary>
-    internal static readonly double[] FullOpenRates = [12.61, 9.57, 7.58, OpenFrom / (TimeSpan.FromMilliseconds(208) / Tick)];
+    internal static readonly double[] FullOpenRates = [12.61, 9.57, 7.58, OpenFrom / 12.65];
+
+    /// <summary>
+    /// The full popup's opening below its turning bands: drawn at rest, a piece at a time, downwards (#150's reading of
+    /// #149's recording, call 1): nothing below 400 px, then down to 428, 551 and 673 px at 119, 144 and 206 ms, and all
+    /// of it at 269 ms.
+    /// </summary>
+    internal static readonly (TimeSpan At, double To)[] Reveal =
+    [
+        (TimeSpan.FromMilliseconds(119), 428),
+        (TimeSpan.FromMilliseconds(144), 551),
+        (TimeSpan.FromMilliseconds(206), 673),
+        (TimeSpan.FromMilliseconds(269), double.PositiveInfinity),
+    ];
+
+    /// <summary>Where the full popup's still part is drawn down to, <paramref name="time"/> into the opening.</summary>
+    internal static double RevealedTo(TimeSpan time)
+    {
+        var to = FullOpenRates.Length * BandHeight;
+        foreach (var (at, end) in Reveal)
+        {
+            if (time >= at)
+                to = end;
+        }
+
+        return to;
+    }
 
     /// <summary>A closing band's rate, degrees a tick, the lower edge going back.</summary>
     internal const double CloseRate = 10.95;
@@ -79,7 +105,7 @@ internal static class PhonePopupMotion
 
     /// <summary>How long a popup placed so takes to open: until its slowest band is at rest.</summary>
     internal static TimeSpan OpenLength(PhonePopupPlacement placement) => placement == PhonePopupPlacement.Full
-        ? Tick * (OpenFrom / FullOpenRates.Min())
+        ? TimeSpan.FromTicks(Math.Max((Tick * (OpenFrom / FullOpenRates.Min())).Ticks, Reveal[^1].At.Ticks))
         : Tick * (OpenFrom / TopOpenRate);
 
     /// <summary>Band <paramref name="band"/>'s angle <paramref name="time"/> into the opening, in degrees: 0 at rest.</summary>

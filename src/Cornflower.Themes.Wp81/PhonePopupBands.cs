@@ -45,6 +45,15 @@ internal sealed class PhonePopupBands : Control
     /// <summary>The camera's centre, in the popup's own space.</summary>
     public Point Eye { get; }
 
+    /// <summary>
+    /// How far down the popup's bands that don't turn are drawn, in its own space: below it, nothing yet. All of them
+    /// by default.
+    /// </summary>
+    public double RevealedTo { get; set; } = double.PositiveInfinity;
+
+    /// <summary>The first band that doesn't turn: <see cref="RevealedTo"/> reaches it and those below.</summary>
+    public int StillFrom { get; set; } = int.MaxValue;
+
     public override void Render(DrawingContext context)
     {
         for (var i = 0; i < Bands.Count; i++)
@@ -52,6 +61,13 @@ internal sealed class PhonePopupBands : Control
             if (Angles[i] <= -PhonePopupMotion.CloseTo)
                 continue;
             var band = Bands[i];
+            if (i >= StillFrom)
+            {
+                if (band.Top >= RevealedTo)
+                    continue;
+                band = new Rect(band.X, band.Y, band.Width, Math.Min(band.Height, RevealedTo - band.Top));
+            }
+
             var source = new Rect(band.X * _scaling, band.Y * _scaling, band.Width * _scaling, band.Height * _scaling);
             using (context.PushTransform(PhonePopupMotion.Band(Angles[i], band.Center.Y, Eye)))
                 context.DrawImage(_picture, source, band);

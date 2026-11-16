@@ -1,6 +1,6 @@
 # Flyout and FlyoutPresenter
 
-Status: draft · [#151](https://github.com/wdcossey/CornflowerUI/issues/151) · waits on [#150](https://github.com/wdcossey/CornflowerUI/issues/150) (the dismissal) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done but for the device and real-window runs · [#151](https://github.com/wdcossey/CornflowerUI/issues/151) · owed: the device run on the Pixel 8 · owed: the real-window run
 
 The Windows Phone 8.1 Flyout: Avalonia's `Flyout`, its `FlyoutPresenter` themed by `Wp81Theme` in
 `src/Cornflower.Themes.Wp81/Controls/FlyoutPresenter.axaml`, and the phone's popup round it: drawn across the top of the
@@ -36,14 +36,17 @@ window, or filling it, turning in and out in bands on `CornflowerClock`, closed 
 - **In the window.** The popup is drawn in the window's overlay layer, on desktop too, never as a window of its own.
 - **Opening and closing.** As the phone's shell draws it (#149): the popup is cut into bands, each turned about its
   own centre line, seen by one camera over the window. A top flyout is one band, turned in from 80° in 134 ms. A full
-  one is 100 px bands, all from 80°, the lower ones slower, at rest in 208 ms. Closing, a top flyout doesn't turn: it
+  one is 100 px bands, all from 80°, the lower ones slower; below 400 px nothing turns and it is drawn at rest
+  downwards, all of it at 269 ms. Closing, a top flyout doesn't turn: it
   is gone 110 ms after it is asked to close, and closed at 140.6 ms. A full one's bands turn away one after another,
   two ticks apart, and it is closed at 343.8 ms. `Hide()`, `IsOpen = false`, a tap outside and Back all close it so.
   `Closing` is raised when it is asked to close (and can cancel it, as Avalonia's can), and again as it closes;
   `Closed` when it has gone.
 - **Back** closes the topmost open popup and is marked handled, so the page's `NavigationPage` (in Avalonia's
   `PageNavigationHost`) doesn't go back.
-- **A tap below a top flyout** closes it, and doesn't reach the page.
+- **A tap below a top flyout** closes it, and doesn't reach the page; a tap on the flyout itself doesn't close it.
+- **Events:** `Opening` and `Opened` as it opens, `Closed` when it has gone. 8.1's flyout has no `Closing`; Avalonia's
+  is raised when the flyout is asked to close and again as its motion ends, and an app may cancel at either.
 
 The content inherits the page's text, as Avalonia's popups do (the phone's falls back to XAML's 11 px font). Pad it
 yourself: the phone's flyout puts its content at the left edge, 25.5 down.
@@ -67,7 +70,7 @@ the date and time pickers (#156) host their popups the same way, through these i
     anything else that closes it ends the motion where it is;
   - takes Back: a class handler on `TopLevel.BackRequestedEvent` runs before any handler an element adds (Avalonia's
     `PageNavigationHost`'s included), dismisses the window's topmost open host that isn't already closing, and marks
-    the request handled; with every popup closing, Back is the page's again (PENDING #150);
+    the request handled; with every popup closing, Back is the page's again (#150);
   - sets `PhonePopupHost.IsLandscape` on the moved element while the window is wider than tall, for a theme's
     landscape values.
 - **`PhonePopupMotion`**: the bands and their turns, as #149 read them: the band matrix (a turn about a band's centre
@@ -100,9 +103,8 @@ Rung 1 for the presenter's theme; rung 2 for the popup (`PhoneFlyout`, `PhonePop
 
 ## Known gaps
 
-- **The full flyout's lower half, opening**: drawn flat from the start; the phone draws nothing below 427 px at 119 ms,
-  and how its lower bands come in isn't read. And the stills put the bands' centres about 111 px apart, not the read
-  100 (COMPARISON.md).
+- **`Closed` after Back** comes when it does after `Hide()` (140.6 and 343.8 ms), one to two ticks later than #150
+  read it after Back (125 to 139 and 312 ms); after a tap outside, 140.6 ms where the phone's is about 45 ms.
 - **The dismissal** (#150): Back, a tap outside and the event order are the platform's documented defaults and
   Avalonia's, not read.
 - **The height** of a top flyout is one raw pixel more than the phone's (189 rows, not 188): layout rounds up

@@ -14,7 +14,7 @@ namespace Cornflower.Themes.Wp81;
 /// of the window or, with <see cref="FlyoutOptions.IsFullScreenProperty"/>, filling it, whatever the flyout's own
 /// <c>Placement</c>; and it holds the flyout's closing (<c>Hide()</c>, a tap outside, Back) until the closing motion
 /// has run. A flyout's own events are Avalonia's, in Avalonia's order: <c>Closing</c> is raised when it is asked to close
-/// and again when it closes, after the motion (PENDING #150: the phone's order).
+/// and again when it closes, after the motion; 8.1's flyout has no <c>Closing</c> (#150).
 /// </summary>
 /// <remarks>
 /// <para>Avalonia's flyout is no styled element, so the theme can reach only its presenter. The presenter knows its

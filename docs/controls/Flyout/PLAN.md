@@ -6,9 +6,9 @@ the page. WinRT's `Flyout` and `FlyoutPresenter` are Avalonia's. `FlyoutPresente
 is a behaviour the theme turns on (rung 2); WinRT's `Placement="Full"` is one attached property Avalonia lacks,
 `FlyoutOptions.IsFullScreen` (rung 2). No type is substituted.
 
-The motion is [#149](https://github.com/wdcossey/CornflowerUI/issues/149)'s reading (PR #171). The **dismissal** waits
-on [#150](https://github.com/wdcossey/CornflowerUI/issues/150): this is a draft, with it in one marked place
-([What waits](#what-waits-on-150)).
+The motion is [#149](https://github.com/wdcossey/CornflowerUI/issues/149)'s reading (PR #171), and the dismissal and
+the full flyout's reveal [#150](https://github.com/wdcossey/CornflowerUI/issues/150)'s (PR #172): each in one place,
+`PhonePopupMotion` and `PhonePopupDismissal`.
 
 ## Where the values come from
 
@@ -42,11 +42,12 @@ Each has its test in `tests/Cornflower.Tests/Controls/FlyoutTests.cs`, against `
 | It follows the window's size while open | the placement is the window's | `The_Flyout_Follows_The_Windows_Size_While_Open` |
 | Opening, the top flyout is one band turned about its centre line, its lower edge toward the eye, from 80° at 9.31° a tick, at rest in 134 ms; the popup hidden under its bands | #149: the recording's distinct angles, linear, one step a tick | `A_Top_Flyout_Opens_As_One_Band_From_80_Degrees_At_9_31_A_Tick`, `The_Bands_Are_Drawn_Over_The_Hidden_Popup` |
 | One camera for the screen, 999 px in front over y 400 | #149 | `A_Band_Turns_About_Its_Centre_Line_Its_Lower_Edge_Toward_One_Camera_Over_The_Window` |
-| The full flyout opens in 100 px bands, all from 80°, at 12.61, 9.57 and 7.58° a tick for bands 0 to 2, none below 400 px turning, at rest within 208 to 248 ms | #149 | `A_Full_Flyout_Opens_In_100_Px_Bands_All_From_80_Degrees_The_Lower_Ones_Slower`, `A_Full_Flyout_Is_At_Rest_Between_208_And_248_Ms` |
+| The full flyout opens in 100 px bands, all from 80°, at 12.61, 9.57 and 7.58° a tick for bands 0 to 2 | #149 | `A_Full_Flyout_Opens_In_100_Px_Bands_All_From_80_Degrees_The_Lower_Ones_Slower` |
 | Closing, the top flyout doesn't turn: gone in one frame 98 to 122 ms after `Hide()`, closed 9 ticks after | #149 | `A_Top_Flyout_Closing_Doesnt_Turn_Goes_In_One_Frame_And_Is_Closed_9_Ticks_After`, `A_Top_Flyout_Closed_Mid_Opening_Rests_Until_It_Goes`, `Setting_IsOpen_False_Closes_It_The_Same_Way` |
 | The full flyout closes band by band, band k from 2k ticks, the lower edge back at 10.95° a tick to 90°, closed 22 ticks after; mid-opening, from where each band was | #149 | `A_Full_Flyout_Closes_Band_By_Band_Two_Ticks_Apart_At_10_95_A_Tick_And_Is_Closed_22_Ticks_After`, `A_Full_Flyout_Closed_Mid_Opening_Turns_Away_From_Where_Each_Band_Was` |
-| A tap below a top flyout closes it (PENDING #150) | Avalonia's light dismiss, WinRT's documented flyout | `A_Tap_Below_A_Top_Flyout_Closes_It` |
-| Back closes the topmost popup before the page's `NavigationPage` sees it, and only its own window's (PENDING #150) | WinRT's documented hardware Back; the order proved against Avalonia's `PageNavigationHost` | `Back_Closes_The_Flyout_Before_The_NavigationPage_Goes_Back`, `Back_With_No_Popup_Open_Is_Left_Alone`, `Back_Takes_Only_Its_Own_Windows_Popup` |
+| A tap below a top flyout closes it and reaches nothing under it; a tap on the flyout doesn't close it | #150 | `A_Tap_Below_A_Top_Flyout_Closes_It`, `A_Tap_On_The_Flyout_Itself_Doesnt_Close_It` |
+| Below 400 px a full flyout doesn't turn: it is drawn at rest downwards, to 428, 551, 673 and 800 px at 119, 144, 206 and 269 ms; closing, its lower bands turn | #150 | `Below_Its_Turning_Bands_A_Full_Flyout_Is_Revealed_At_Rest_Downwards`, `A_Full_Flyouts_Lower_Bands_Turn_When_It_Closes`, `A_Full_Flyouts_Band_3_Takes_About_2_Ticks_More_Than_Band_2` |
+| Back closes the topmost popup before the page's `NavigationPage` sees it, and only its own window's | #150;  the order proved against Avalonia's `PageNavigationHost` | `Back_Closes_The_Flyout_Before_The_NavigationPage_Goes_Back`, `Back_With_No_Popup_Open_Is_Left_Alone`, `Back_Takes_Only_Its_Own_Windows_Popup` |
 | Opened again, or by `IsOpen`, it is placed and moves the same way | Avalonia opens by `ShowAt` or `IsOpen` | `It_Opens_Again_Placed_And_Moving`, `Opened_By_IsOpen_It_Is_Placed_From_Its_Own_Options_Too` |
 | No flyout dims; a host given a dim brush covers the window under its popup while open | the phone's MenuFlyout and ContentDialog open a full-window Rectangle popup under theirs; the Flyout opens none | `A_Flyout_Doesnt_Dim`, `A_Host_With_A_Dim_Brush_Dims_The_Window_Under_Its_Popup_While_Open` |
 | Under Simple alone the flyout is Avalonia's own | the theme turns the behaviour on | `Simple_Alone_Keeps_Avalonias_Own_Flyout` |
@@ -87,18 +88,11 @@ time pickers #156), all internal, in `src/Cornflower.Themes.Wp81/`; the README's
 - `PhonePopupDismissal`: the rules, the one place for #150's answers.
 - `PhoneFlyout`: the glue for an Avalonia flyout, whose `Closing` it holds until the motion ends.
 
-## What waits on #150
-
-- **#150**, into `PhonePopupDismissal`: whether Back closes a top and a full Flyout; whether a tap outside a top Flyout
-  closes it, and whether the tap also reaches the page; the order of `Opening`, `Opened`, `Closing` and `Closed`.
-- **Asked of the reference** (not blocking): how the full flyout's bands below 400 px come in as it opens, and the
-  bands' height, which the stills put at about 111 px (COMPARISON.md).
-
 ## Dependencies
 
 - Wp81's `ScrollViewer` theme (#116), which the template's `ScrollViewer` takes.
 - `CornflowerClock` and `PhoneEase` (in `Cornflower.Controls`, visible to the theme).
-- No capture is still needed for what is built; the dismissal and the two readings above are.
+- No capture is still needed.
 
 ## The checklists
 
@@ -143,7 +137,7 @@ _none_
 |---|---|---|---|---|
 | [x] | `Closed` | `EventHandler<Object>` | `FlyoutBase.Closed` | Avalonia's; raised when the closing motion ends |
 | [x] | `Opened` | `EventHandler<Object>` | `FlyoutBase.Opened` | Avalonia's |
-| [x] | `Opening` | `EventHandler<Object>` | `PopupFlyoutBase.Opening` | Avalonia's (PENDING #150: the phone's order) |
+| [x] | `Opening` | `EventHandler<Object>` | `PopupFlyoutBase.Opening` | Avalonia's, in the phone's order (#150) |
 
 ### Methods, from `FlyoutBase` (3)
 

@@ -68,9 +68,12 @@ internal static class FlyoutReadings
 
     public const double FullStillFrom = 400;
 
-    public const double FullRestFrom = 208;
+    // #150's reading of the same recording (PR #172): below about 430 px nothing turns; the popup is drawn at rest
+    // downwards, to 428, 551, 673 and then 800 px at 119, 144, 206 and 269 ms (call 1).
+    public static readonly (double At, double To)[] Reveal = [(119, 428), (144, 551), (206, 673), (269, 800)];
 
-    public const double FullRestBy = 248;
+    // Bands 0 to 2 take 6.34, 8.36 and 10.55 ticks, about 2.1 more each band down.
+    public const double BandSlowing = 2.1;
 
     public const double CloseRate = 10.95;
 

@@ -39,9 +39,9 @@ of the phone's 64 Hz clock; ours from `FlyoutTests` on a `TestClock` on the same
 |---|---|---|---|
 | Top: opens | one band about its centre line, the lower edge toward the eye, 80° to 0 at 9.31° a tick (134 ms) | the same | **match** |
 | Full: opens, bands 0 to 2 | 100 px bands about their centre lines, all from 80°, 12.61, 9.57, 7.58° a tick | the same | **match** |
-| Full: opens, band 3 | not read | 6.01° a tick, so the popup is at rest at 208 ms | **chosen** (the read rest is 208 to 248 ms) |
-| Full: opens, below 400 px | no turn read; at 119 ms nothing is drawn below 427 px, then the lowest row reaches 550, 672, 794 on successive recorded frames | drawn flat from the start | **gap**: how the lower bands come in isn't read (requested) |
-| Full: at rest | 208 to 248 ms | 208 ms | **match** |
+| Full: opens, band 3 | not read | 6.32° a tick: 12.65 ticks, 2.1 more than band 2, as each band down takes | **chosen** |
+| Full: opens, below 400 px | nothing turns: drawn at rest downwards, to 428, 551, 673 and 800 px at 119, 144, 206 and 269 ms (#150, call 1) | the same | **match** |
+| Full: at rest | when the last piece is drawn, 269 ms | 269 ms | **match** |
 | Top: closes | no turn; gone in one frame 98 to 122 ms after `Hide()`; `Closed` 9 ticks after | no turn; gone at 110 ms; `Closed` at 140.6 ms | **match** |
 | Full: closes | band k from 2k ticks after `Hide()`, the lower edge back, 10.95° a tick to 90°; `Closed` 22 ticks after | the same | **match** |
 | The camera | one for the screen, 999 px in front, over y 400 | the same, over the window's centre | **match** |
@@ -60,17 +60,24 @@ Measured down the column at x 416 (view px), the chrome's rows:
 | | Phone | Ours |
 |---|---|---|
 | Top, opening | 25.0 to 55.0 | 27.1 to 52.5 |
-| Full, opening | 1.7–110.8, 119.2–213.3, 230.8–318.3, 340.0–426.7, nothing below | 1.7–98.8, 109.6–192.1, 214.2–287.9, 317.1–385.4, then flat 400–800 |
+| Full, opening | 1.7–110.8, 119.2–213.3, 230.8–318.3, 340.0–426.7, nothing below | 1.7–98.8, 109.6–192.1, 214.2–287.9, 315.8–386.7, nothing below |
 | Full, closing | 125.0–193.3, 228.3–315.8, 337.5–438.3, then flat 448.3–800 | 29.6–68.3, 116.7–180.4, 207.5–289.6, 302.1–396.2, then flat 400–800 |
 
-**Gap, sent back to the reference:** on all three full stills the bands' centre lines fall about 111 px apart (55, 166,
-275, 383 opening; 159, 272, 388 closing), not the 100 px slices #149 gives. Ours are 100 px, as read; the band height is
-one constant (`PhonePopupMotion.BandHeight`). And how the bands below 400 px come in, opening, isn't read.
+The full stills' bands look about 111 px apart, but their centre lines, read off every frame, are 100 apart (#150:
+49.3, 149.0, 248.9, 348.2 opening): a turned band's near half is drawn larger and an edge-on half not at all. Ours
+were taken at tick 6, before the first piece below 400 px is drawn at 119 ms, so they show nothing there, as the phone's
+does.
 
 ## Dismissal
 
+#150's reading (PR #172, `tools/refapp/README.md`).
+
 | What | Phone | Ours | |
 |---|---|---|---|
-| Back | not read | closes the topmost popup, ahead of the page's `NavigationPage` | **gap until #150** (`PhonePopupDismissal`) |
-| A tap below a top flyout | not read | closes it; the tap doesn't reach the page | **gap until #150** |
-| Event order | not read | Avalonia's | **gap until #150** |
+| Back, top and full | closes it; the app's Back isn't raised while it is open, handled or not | closes the topmost popup, marked handled, ahead of the page's `NavigationPage` | **match** |
+| `Closed` after Back | 125 to 139 ms top, 312 ms full | 140.6 ms and 343.8 ms, as after `Hide()` | **difference**: one to two ticks later than the reading after Back; the same as after `Hide()` (#149) |
+| A tap below a top flyout | closes it (`Closed` about 45 ms after the touch) | closes it, the top flyout's close (140.6 ms) | **match**, but for the close's length |
+| A tap on the flyout itself | doesn't close it | doesn't close it | **match** |
+| What the closing tap reaches | nothing: no press on the Button under it or the page | nothing | **match** |
+| A dim layer (the dialog's) | takes the tap, does nothing | takes the tap (`PhonePopupDismissal.DimPassesTaps` off) | **match**; no Flyout dims |
+| Events | `Opening`, `Opened` in `ShowAt`'s frame; `Closed` when the close is drawn; no `Closing` | Avalonia's `Opening`, `Opened` at once; `Closed` after the motion; Avalonia's `Closing` when asked and again as the motion ends | **match**, with Avalonia's extra event |

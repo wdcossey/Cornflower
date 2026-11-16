@@ -310,6 +310,9 @@ internal sealed class PhonePopupHost : IDisposable
                 : PhonePopupMotion.OpeningAngle(_placement, band, time);
         }
 
+        var revealing = _phase == Phase.Opening && _placement == PhonePopupPlacement.Full;
+        bands.StillFrom = revealing ? PhonePopupMotion.FullOpenRates.Length : int.MaxValue;
+        bands.RevealedTo = revealing ? PhonePopupMotion.RevealedTo(time) : double.PositiveInfinity;
         bands.InvalidateVisual();
         return true;
     }
