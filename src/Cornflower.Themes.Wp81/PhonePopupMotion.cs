@@ -65,14 +65,19 @@ internal static class PhonePopupMotion
         (TimeSpan.FromMilliseconds(269), double.PositiveInfinity),
     ];
 
-    /// <summary>Where the full popup's still part is drawn down to, <paramref name="time"/> into the opening.</summary>
-    internal static double RevealedTo(TimeSpan time)
+    /// <summary>
+    /// Where a full popup of <paramref name="height"/> is drawn down to below its turning bands, <paramref name="time"/>
+    /// into the opening: the reading's rows on the reference's 800, the steps scaled to the popup's own still part.
+    /// </summary>
+    internal static double RevealedTo(TimeSpan time, double height)
     {
-        var to = FullOpenRates.Length * BandHeight;
+        const double reference = 800;
+        var still = FullOpenRates.Length * BandHeight;
+        var to = still;
         foreach (var (at, end) in Reveal)
         {
             if (time >= at)
-                to = end;
+                to = double.IsPositiveInfinity(end) ? end : still + (end - still) * (height - still) / (reference - still);
         }
 
         return to;
@@ -103,7 +108,10 @@ internal static class PhonePopupMotion
     /// <summary>Ticks of the phone's clock in <paramref name="time"/>.</summary>
     internal static double Ticks(TimeSpan time) => time / Tick;
 
-    /// <summary>How long a popup placed so takes to open: until its slowest band is at rest.</summary>
+    /// <summary>
+    /// How long a popup placed so takes to open: until its slowest band is at rest, and for a full one its last piece
+    /// is revealed.
+    /// </summary>
     internal static TimeSpan OpenLength(PhonePopupPlacement placement) => placement == PhonePopupPlacement.Full
         ? TimeSpan.FromTicks(Math.Max((Tick * (OpenFrom / FullOpenRates.Min())).Ticks, Reveal[^1].At.Ticks))
         : Tick * (OpenFrom / TopOpenRate);

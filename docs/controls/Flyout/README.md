@@ -45,6 +45,7 @@ window, or filling it, turning in and out in bands on `CornflowerClock`, closed 
 - **Back** closes the topmost open popup and is marked handled, so the page's `NavigationPage` (in Avalonia's
   `PageNavigationHost`) doesn't go back.
 - **A tap below a top flyout** closes it, and doesn't reach the page; a tap on the flyout itself doesn't close it.
+- **A dim layer** (`PhonePopupHost.Dim`, for the ContentDialog) takes a tap and does nothing with it.
 - **Events:** `Opening` and `Opened` as it opens, `Closed` when it has gone. 8.1's flyout has no `Closing`; Avalonia's
   is raised when the flyout is asked to close and again as its motion ends, and an app may cancel at either.
 
@@ -70,7 +71,8 @@ the date and time pickers (#156) host their popups the same way, through these i
     anything else that closes it ends the motion where it is;
   - takes Back: a class handler on `TopLevel.BackRequestedEvent` runs before any handler an element adds (Avalonia's
     `PageNavigationHost`'s included), dismisses the window's topmost open host that isn't already closing, and marks
-    the request handled; with every popup closing, Back is the page's again (#150);
+    the request handled; while it closes, Back is taken and does nothing, as the phone raises no Back of the app's
+    while a popup is open (#150);
   - sets `PhonePopupHost.IsLandscape` on the moved element while the window is wider than tall, for a theme's
     landscape values.
 - **`PhonePopupMotion`**: the bands and their turns, as #149 read them: the band matrix (a turn about a band's centre

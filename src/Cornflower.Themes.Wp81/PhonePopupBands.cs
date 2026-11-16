@@ -45,14 +45,18 @@ internal sealed class PhonePopupBands : Control
     /// <summary>The camera's centre, in the popup's own space.</summary>
     public Point Eye { get; }
 
-    /// <summary>
-    /// How far down the popup's bands that don't turn are drawn, in its own space: below it, nothing yet. All of them
-    /// by default.
-    /// </summary>
-    public double RevealedTo { get; set; } = double.PositiveInfinity;
+    /// <summary>How far down the bands from <see cref="StillFrom"/> on are drawn, in the popup's own space; all by default.</summary>
+    public double RevealedTo { get; private set; } = double.PositiveInfinity;
 
-    /// <summary>The first band that doesn't turn: <see cref="RevealedTo"/> reaches it and those below.</summary>
-    public int StillFrom { get; set; } = int.MaxValue;
+    /// <summary>The first band <see cref="RevealedTo"/> limits.</summary>
+    public int StillFrom { get; private set; } = int.MaxValue;
+
+    /// <summary>Draws the bands from <paramref name="stillFrom"/> on down to <paramref name="to"/> only.</summary>
+    public void Reveal(int stillFrom, double to)
+    {
+        StillFrom = stillFrom;
+        RevealedTo = to;
+    }
 
     public override void Render(DrawingContext context)
     {

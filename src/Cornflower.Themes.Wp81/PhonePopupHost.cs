@@ -44,8 +44,9 @@ internal enum PhonePopupPlacement
 /// <see cref="IsLandscapeProperty"/> is set on the content while the window is wider than tall, for a theme's landscape
 /// values.</para>
 /// <para><b>Dimming.</b> With a <see cref="Dim"/> brush, a rectangle of it covers the window under the popup while it is
-/// open, as the phone's own full-window Rectangle popup does under a MenuFlyout and a ContentDialog: in the same overlay
-/// layer, just below the popup. It takes no taps unless <see cref="PhonePopupDismissal.DimPassesTaps"/> says so.</para>
+/// open, as the phone's own full-window Rectangle popup does under a ContentDialog: in the same overlay layer, just
+/// below the popup. It takes a tap and does nothing with it, unless <see cref="PhonePopupDismissal.DimPassesTaps"/> says
+/// otherwise. (The MenuFlyout's full-window layer is a tap outside: Avalonia's light dismiss, with no dim.)</para>
 /// <para><b>Moving.</b> As the phone's shell does (<see cref="PhonePopupMotion"/>): on a motion's first frame a picture of
 /// the popup is taken and laid over it, cut into bands (<see cref="PhonePopupBands"/>), each turned about its own
 /// centre line, the popup hidden under them at animation priority; at rest both go. Closing goes through
@@ -53,7 +54,8 @@ internal enum PhonePopupPlacement
 /// popup another way ends the motion where it is.</para>
 /// <para><b>Back.</b> A class handler on <see cref="TopLevel.BackRequestedEvent"/>, which runs before any handler an
 /// element adds (Avalonia's <c>PageNavigationHost</c>'s, which passes Back to its <c>NavigationPage</c>, included),
-/// dismisses the window's topmost open host that isn't already closing, and marks the request handled.</para>
+/// dismisses the window's topmost open host and marks the request handled; while it is closing Back is taken and does
+/// nothing, as the phone raises no Back of the app's while a popup is open (#150).</para>
 /// <para>What the host sets on the popup (its overlay layer, placement and size) it gives back when it is disposed: each
 /// value the popup had before, or none.</para>
 /// <para>To copy: make a host for the popup with its content (the element the motion moves) and the owner's close, set
@@ -92,6 +94,7 @@ internal sealed class PhonePopupHost : IDisposable
     private int _uncut;
     private TimeSpan? _start;
     private double[] _closeFrom = [];
+    private double _closeRevealedTo = double.PositiveInfinity;
     private Phase _phase;
 
     static PhonePopupHost()
@@ -195,6 +198,8 @@ internal sealed class PhonePopupHost : IDisposable
         }
 
         _closeFrom = _bands?.Angles.ToArray() ?? [];
+        // What the opening hadn't revealed yet stays hidden.
+        _closeRevealedTo = _bands?.RevealedTo ?? double.PositiveInfinity;
         Turn(TimeSpan.Zero);
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
@@ -310,9 +315,10 @@ internal sealed class PhonePopupHost : IDisposable
                 : PhonePopupMotion.OpeningAngle(_placement, band, time);
         }
 
-        var revealing = _phase == Phase.Opening && _placement == PhonePopupPlacement.Full;
-        bands.StillFrom = revealing ? PhonePopupMotion.FullOpenRates.Length : int.MaxValue;
-        bands.RevealedTo = revealing ? PhonePopupMotion.RevealedTo(time) : double.PositiveInfinity;
+        var revealedTo = _placement != PhonePopupPlacement.Full ? double.PositiveInfinity
+            : _phase == Phase.Opening ? PhonePopupMotion.RevealedTo(time, bands.Height)
+            : _closeRevealedTo;
+        bands.Reveal(PhonePopupMotion.FullOpenRates.Length, revealedTo);
         bands.InvalidateVisual();
         return true;
     }
@@ -466,7 +472,7 @@ internal sealed class PhonePopupHost : IDisposable
     }
 
     /// <summary>
-    /// Back dismisses the window's topmost open popup that isn't already closing, ahead of every handler an element
+    /// Back dismisses the window's topmost open popup (taken and doing nothing while it closes), ahead of every handler an element
     /// adds. With none, the request is left for the page.
     /// </summary>
     private static void OnBackRequested(TopLevel top, RoutedEventArgs e)
@@ -474,7 +480,7 @@ internal sealed class PhonePopupHost : IDisposable
         if (e.Handled || !PhonePopupDismissal.BackCloses)
             return;
         var window = WindowOf(top);
-        var host = Open.LastOrDefault(h => !h.IsClosing && h._top is { } t && WindowOf(t) == window);
+        var host = Open.LastOrDefault(h => h._top is { } t && WindowOf(t) == window);
         if (host is null)
             return;
         e.Handled = true;

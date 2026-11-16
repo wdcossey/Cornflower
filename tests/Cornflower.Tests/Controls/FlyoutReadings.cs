@@ -68,7 +68,7 @@ internal static class FlyoutReadings
 
     public const double FullStillFrom = 400;
 
-    // #150's reading of the same recording (PR #172): below about 430 px nothing turns; the popup is drawn at rest
+    // #150's reading of the same recording (PR #172): below its turning bands (400 px) nothing turns; the popup is drawn at rest
     // downwards, to 428, 551, 673 and then 800 px at 119, 144, 206 and 269 ms (call 1).
     public static readonly (double At, double To)[] Reveal = [(119, 428), (144, 551), (206, 673), (269, 800)];
 

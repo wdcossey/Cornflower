@@ -22,7 +22,7 @@ namespace Cornflower.Tests.Controls;
 /// The phone's Flyout: Wp81's FlyoutPresenter theme (<c>Controls/FlyoutPresenter.axaml</c>) and the popup round it
 /// (<see cref="PhoneFlyout"/>, <see cref="PhonePopupHost"/>), against the emulator's screenshots and dumps and the
 /// recording's times (<see cref="FlyoutReadings"/>). docs/controls/Flyout/PLAN.md has each reading. The motion's curve
-/// and the dismissal rules wait on #149 and #150: what is asserted here is what is known.
+/// and the dismissal rules are #149's and #150's readings (PR #171, #172).
 /// </summary>
 public class FlyoutTests
 {
@@ -330,11 +330,18 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
-    public void A_Full_Flyouts_Band_3_Takes_About_2_Ticks_More_Than_Band_2()
+    public void A_Full_Flyouts_Band_3_Comes_To_Rest_About_2_Ticks_After_Band_2()
     {
-        double Ticks(double rate) => OpenFrom / rate;
-        var band3 = Ticks(PhonePopupMotion.FullOpenRates[3]);
-        Assert.Equal(Ticks(FullOpenRates[2]) + BandSlowing, band3, 0.05);
+        using var stage = new Stage(full: true);
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+        // Band 2 rests at 10.55 ticks; band 3, about 2.1 more, at 12.65.
+        var rest = OpenFrom / FullOpenRates[2] + BandSlowing;
+
+        stage.At(first + Math.Floor(rest) * Tick);
+        Assert.True(stage.Bands!.Angles[3] > 0);
+        stage.At(first + Math.Ceiling(rest) * Tick);
+        Assert.Equal(0, stage.Bands!.Angles[3]);
     }
 
     [AvaloniaFact]
@@ -352,8 +359,13 @@ public class FlyoutTests
             Assert.Equal(Page(dark: true), Frames.PixelAt(frame, 1000, (int)(700 * Scale)));
         }
 
+        var before = FullStillFrom;
         foreach (var (at, to) in Reveal)
         {
+            // The tick before, still where it was; then the piece.
+            stage.At(first + (Math.Ceiling(at / Tick) - 1) * Tick);
+            Assert.Equal(before, stage.Bands!.RevealedTo);
+            before = to;
             stage.At(first + Math.Ceiling(at / Tick) * Tick);
             if (stage.Bands is not { } bands)
             {
@@ -683,11 +695,13 @@ public class FlyoutTests
     [AvaloniaFact]
     public void A_Host_With_A_Dim_Brush_Dims_The_Window_Under_Its_Popup_While_Open()
     {
-        // No Flyout dims; a ContentDialog and a MenuFlyout will, as the phone's full-window Rectangle does under them.
+        // No Flyout dims; a ContentDialog will, as the phone's #99000000 Rectangle does under it.
         using var clock = new TestClock();
         var content = new Border { Height = 100, Background = Brushes.Red };
         var popup = new Popup { Child = content };
-        var target = new Panel { Children = { popup } };
+        var target = new Panel { Background = Brushes.Transparent, Children = { popup } };
+        var pressed = 0;
+        target.PointerPressed += (_, _) => pressed++;
         using var scene = new Scene(target);
         using var host = new PhonePopupHost(popup, content, () => popup.Close()) { Dim = Brushes.Black };
 
@@ -698,7 +712,14 @@ public class FlyoutTests
         Assert.Same(Brushes.Black, dim.Fill);
         Assert.Equal(new Size(450, 800), new Size(dim.Width, dim.Height));
         Assert.True(layer.Children.IndexOf(dim) < layer.Children.IndexOf(content.GetVisualAncestors().OfType<OverlayPopupHost>().Single()));
-        Assert.Equal(!PhonePopupDismissal.DimPassesTaps, dim.IsHitTestVisible);
+
+        // #150: a tap on the dim layer is taken and does nothing: the popup stays and nothing under it is pressed.
+        popup.IsLightDismissEnabled = true;
+        scene.Window.MouseDown(new Point(225, 600), MouseButton.Left);
+        scene.Window.MouseUp(new Point(225, 600), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(popup.IsOpen);
+        Assert.Equal(0, pressed);
 
         host.Dismiss();
         clock.At(500);
@@ -781,8 +802,9 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
-    public void A_Second_Back_While_The_Flyout_Closes_Is_The_Pages()
+    public void A_Second_Back_While_The_Flyout_Closes_Is_Taken_And_Does_Nothing()
     {
+        // #150: the app's Back isn't raised while a popup is open, handled or not.
         var first = new ContentPage();
         var second = new ContentPage();
         var nav = new NavigationPage();
@@ -793,16 +815,32 @@ public class FlyoutTests
         second.Content = stage.Button;
         Dispatcher.UIThread.RunJobs();
         stage.OpenAtRest();
+        var back = stage.Clock.Now.TotalMilliseconds;
 
         stage.Scene.Window.RaiseEvent(new RoutedEventArgs(TopLevel.BackRequestedEvent));
         Dispatcher.UIThread.RunJobs();
-        Assert.Same(second, nav.CurrentPage);
         var again = new RoutedEventArgs(TopLevel.BackRequestedEvent);
         stage.Scene.Window.RaiseEvent(again);
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(again.Handled);
-        Assert.Same(first, nav.CurrentPage);
+        Assert.Same(second, nav.CurrentPage);
+        stage.At(back + TopClosedAfterHide);
+        Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Full_Flyout_Closed_Mid_Reveal_Keeps_What_It_Hadnt_Revealed_Hidden()
+    {
+        using var stage = new Stage(full: true);
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+        stage.At(first + 8 * Tick);
+        Assert.Equal(Reveal[0].To, stage.Bands!.RevealedTo);
+
+        stage.Flyout.Hide();
+        stage.At(first + 9 * Tick);
+        Assert.Equal(Reveal[0].To, stage.Bands!.RevealedTo);
     }
 
     [AvaloniaFact]
