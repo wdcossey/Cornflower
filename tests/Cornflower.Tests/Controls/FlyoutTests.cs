@@ -115,6 +115,7 @@ public class FlyoutTests
         Assert.Contains(background.GetVisualDescendants(), d => d is ScrollViewer { Name: "ScrollViewer" });
         Assert.True(PhoneFlyout.GetIsEnabled(stage.Presenter));
         Assert.Equal(MinHeight, stage.Presenter.MinHeight);
+        Assert.Same(stage.Presenter.FindResource("PhoneForegroundBrush"), stage.Presenter.Foreground);
     }
 
     [AvaloniaFact]
