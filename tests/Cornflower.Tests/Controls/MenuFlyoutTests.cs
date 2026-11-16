@@ -209,7 +209,10 @@ public class MenuFlyoutTests
     public void A_Menu_Longer_Than_The_Window_Fills_It()
     {
         using var stage = new Stage(targetTop: 312.08, items: LongItems);
-        stage.OpenAtRest();
+        stage.Open();
+        // Chosen (the phone's isn't read): it unfolds downwards from the line at its top.
+        Assert.Equal(new RelativePoint(0, 0, RelativeUnit.Relative), stage.Part<StackPanel>("InnerBorder").RenderTransformOrigin);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 600);
 
         Assert.Equal(FullWindow, stage.Bounds());
         Near(FirstItemTop, stage.Item(0).TranslatePoint(default, stage.Presenter)!.Value.Y);
@@ -576,5 +579,18 @@ public class MenuFlyoutTests
         Assert.False(stage.Item(0).IsSet(StyledElement.ThemeProperty));
         Assert.False(((Separator)stage.Flyout.Items[1]!).IsSet(StyledElement.ThemeProperty));
         Assert.Null(PhoneMenuFlyout.HostOf(stage.Presenter));
+    }
+
+    [AvaloniaFact]
+    public void A_Menu_Above_Its_Target_Stays_On_It_As_Items_Come()
+    {
+        using var stage = new Stage(targetTop: Placements[1].TargetTop);
+        stage.OpenAtRest();
+
+        stage.Flyout.Items.Add(new MenuItem { Header = "another" });
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(stage.Bounds().Height > FourItemHeight);
+        Near(Placements[1].TargetTop, stage.Bounds().Bottom);
     }
 }
