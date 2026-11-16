@@ -59,4 +59,33 @@ internal static class CommandBarReadings
 
     // A disabled command's opacity: its ring, icon and label at 0x73 / 0xFF, in both themes.
     public const double DisabledOpacity = 0.451;
+
+    // Read for #136 (tools/refapp/README.md, "The app bar under touches, and with other numbers of secondary
+    // commands"): the screenshots of run 20261116-0005-dev11 and the recording of 20261115-2354-dev11.
+
+    // The open bar's height by the lines of its list, 0 to 4 (4 for 4 or more): 214, 402, 685 (2 and 3) and 1005 raw.
+    public static readonly double[] OpenHeights = [214 / Scale, 402 / Scale, 685 / Scale, 685 / Scale, 1005 / Scale];
+
+    // The accent the recording shows a pressed command in (#3E65FE recorded): PhoneAccentBrush, Cobalt by default.
+    public static readonly Color Accent = Color.FromUInt32(0xFF3E65FFu);
+
+    // A pressed command, from the recording's stills (540 × 960, 2 raw px a recording px): the disc's ink 45.85
+    // recording px across from its area, where the circle's is 48.9 at rest; it and the icon 2.54 recording px higher
+    // on the closed bar (0.99 on the open), the icon its own size. On the closed bar the disc's ink is x 158..203 and
+    // y 896..942 recording px: raw 316..407 and 1792..1885, 23 below the bar's top.
+    public const double PressedCircleScale = 0.9376;
+    public const double PressedDiscDiameter = 2 * CircleRadius * PressedCircleScale;
+    public const int PressedRise = 5;
+    public static readonly (int Left, int Right) PressedDiscColumns = (316, 407);
+    public const int PressedDiscTopBelowBar = 1792 - CompactTop;
+    public const int PressedDiscBottomBelowBar = 1885 - CompactTop;
+
+    // The motion, by the recording's clock, over fourteen openings and fourteen closings (two runs): the time constant
+    // of the rest of the way, and when the top is 90% there and at rest, each from the last frame at rest, in ms.
+    public static readonly (double Low, double High) OpenTimeConstant = (76, 92);
+    public static readonly (double Low, double High) OpenNinety = (145, 255);
+    public static readonly (double Low, double High) OpenAtRest = (384, 455);
+    public static readonly (double Low, double High) CloseTimeConstant = (27, 52);
+    public static readonly (double Low, double High) CloseNinety = (67, 127);
+    public static readonly (double Low, double High) CloseAtRest = (163, 233);
 }
