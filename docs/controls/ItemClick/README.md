@@ -32,9 +32,10 @@ with `xmlns:cf="using:Cornflower.Controls"`.
   pressed and let go on the focused item (once, however long it is held). A pan, or a press dragged off the item,
   clicks nothing; the press tilts either way.
 - **Selection.** With item click on, a tap, click or key selects nothing, whatever the `SelectionMode`, unless the
-  list is in the check mode: `SelectionMode` with `Multiple` (`Multiple,Toggle` is WinRT's Multiple), where a tap
-  checks the item and clicks nothing. A selection set in code stands. WinRT's `SelectionMode="None"` with
-  `IsItemClickEnabled` is Single here: no tap selects.
+  list is in the check mode: `SelectionMode="Multiple,Toggle"`, WinRT's Multiple, where a tap checks the item and
+  clicks nothing. `Multiple` alone, WinRT's Extended, isn't the check mode (#145, following #142): a tap clicks, as
+  in Single, and Ctrl+A, which Avalonia's ListBox takes in any mode with `Multiple`, selects nothing. A selection set
+  in code stands. WinRT's `SelectionMode="None"` with `IsItemClickEnabled` is Single here: no tap selects.
 - `ClickedItem` is the list's item, the data, not its `ListBoxItem`.
 - `ItemClick` is a direct routed event raised on the list, as WinRT's is the list's own; its sender and source are
   the list. A control in an item that takes its own press, a Button or a TextBox, takes the tap; the item isn't
@@ -43,7 +44,7 @@ with `xmlns:cf="using:Cornflower.Controls"`.
 
 ## Known gaps
 
-- Arrow keys move the selection, as Avalonia's ListBox does.
+- Arrow keys move the selection, as Avalonia's ListBox does, and with Shift in `Multiple` extend it.
 - A pointer an app captures to the `ListBoxItem` itself selects, as before, and doesn't click; the item template
   root's own handlers don't see a press or release the list takes; a `ListBox` subclass's own selection rule isn't
   followed (PLAN, "How a click is told").
