@@ -51,11 +51,15 @@ Each has its test in `tests/Cornflower.Tests/Controls/ContentDialogTests.cs`, ag
 | A button: its click, `Closing` with its result, `Closed`, then the result, in one frame | #150 | `A_Click_On_A_Button_Raises_Its_Click_Closing_Closed_And_The_Result_In_That_Order` |
 | A tap on the dim layer does nothing and reaches nothing; a tap on the body does nothing | #150 | `A_Tap_On_The_Dim_Layer_Does_Nothing_And_Reaches_Nothing`, `A_Tap_On_The_Body_Does_Nothing` |
 | Back: `Closing`, `Closed` and the result `None` in one frame, before the page's `NavigationPage`; taken while it is still drawn | #150 | `Back_Hides_It_With_None_Before_The_NavigationPage_Goes_Back`, `Back_Kept_Open_By_Closing_Is_Still_Taken`, `Back_Closes_A_Flyout_Over_The_Dialog_First`, `Back_Takes_Only_Its_Own_Windows_Dialog` |
-| The buttons' commands, parameters and enabled state; a click's `Cancel` and deferral; `Closing`'s `Cancel` and deferral | WinRT's API | `The_Primary_Button_Runs_Its_Command_Once_With_Its_Parameter_And_Closes_With_Primary`, `A_Command_That_Cant_Run_And_IsPrimaryButtonEnabled_False_Disable_Their_Buttons`, `A_Cancelled_Click_Runs_No_Command_And_Keeps_It_Open`, `A_Deferred_Click_Waits_For_Its_Deferral`, `Closing_Can_Keep_It_Open_At_Once_Or_After_A_Deferral` |
+| The buttons' commands, parameters and enabled state; a click's `Cancel` and deferral; `Closing`'s `Cancel` and deferral | WinRT's API | `A_Button_Runs_Its_Own_Command_Once_With_Its_Parameter_And_Closes_With_Its_Result`, `A_Command_That_Cant_Run_And_A_Button_Not_Enabled_Disable_Their_Buttons`, `A_Cancelled_Click_Runs_No_Command_And_Keeps_It_Open`, `A_Deferred_Click_Waits_For_Its_Deferral`, `Closing_Can_Keep_It_Open_At_Once_Or_After_A_Deferral` |
 | `ShowAsync` shows it again, also while the last is still going; twice at once throws | WinRT's API | `It_Shows_Again_Placed_And_Moving_Even_Before_It_Has_Gone`, `ShowAsync_While_Shown_Throws` |
 | `ShowAsync()` finds the app's window; with none it throws | WinRT's has no window argument | `ShowAsync_Without_A_Window_Throws_And_On_Desktop_Shows_Over_The_Main_Window` |
 | Its window closing closes it with `None` | robustness | `Its_Window_Closing_Closes_It_With_None` |
 | `TitleTemplate`, `ContentTemplate` | WinRT's API | `The_Title_And_Content_Templates_Are_Used` |
+| Modal: it takes the keyboard focus, Tab stays in it, and the focus goes back as it closes | WinRT's dialog is modal | `It_Takes_The_Focus_Keeps_Tab_In_It_And_Gives_The_Focus_Back` |
+| A `Closed` handler may show it again; a click deferred in one show doesn't reach the next; a deferral taken after its handler returned throws | WinRT's API | `A_Closed_Handler_Can_Show_It_Again`, `A_Click_Deferred_In_One_Show_Doesnt_Reach_The_Next`, `A_Deferral_Taken_After_The_Handler_Has_Returned_Throws` |
+| A dialog in a tree of its own (a page's child) can't be shown; one in resources or made in code can | Avalonia: a control has one parent | `A_Dialog_In_A_Tree_Of_Its_Own_Cant_Be_Shown` |
+| Back reaches the dialog past a popup no phone host has (Avalonia's own); its theme gone and back while shown keeps one host | robustness | `Back_Hides_It_Under_A_Popup_No_Phone_Host_Has`, `Its_Theme_Gone_And_Back_While_Shown_Keeps_One_Host` |
 
 ## The visual states
 

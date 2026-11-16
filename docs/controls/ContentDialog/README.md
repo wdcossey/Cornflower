@@ -42,7 +42,11 @@ if (await dialog.ShowAsync() == ContentDialogResult.Primary)
 - **Back** hides it (`Closing` with `None`, which may keep it open) when it is its window's topmost popup, and is
   marked handled, so the page's `NavigationPage` doesn't go back. A Flyout open over the dialog takes Back first. With
   the keyboard up, the first Back is the keyboard's, as on the phone: on Android the input method takes it.
+- **Focus.** It takes the keyboard focus as it opens, Tab stays in it, and the focus goes back where it was as it
+  closes: the page under it can't be reached, as on the phone.
 - **Theme.** The dialog takes its window's theme variant, as the phone's takes the app's.
+- **Where to declare it.** In code, or in a page's resources; a dialog that is a page's child can't be shown, as a
+  control has one parent.
 
 ## Extensions
 
