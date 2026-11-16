@@ -144,14 +144,14 @@ item's text tilts the box as far as it goes; where the phone's goes is the probe
 | The look | the ListView style and ListViewItem template | `ListBox`, `ListBoxItem` | 1, theme |
 | Pressed | at once on a press, in the same input dispatch (#113: 0.3 to 2.6 ms) | `:pressed` on `PointerPressed`, at once, mouse and touch (tested) | 1 |
 | The tilt | the Button's rule, depth, eye and release (#113) | `Tilt`, as the Button's | 1, an existing behaviour |
-| A tap | selects, `ItemClick` and `Tapped` with the release | selects on a touch's release (tested); no `ItemClick` | 1; `ItemClick` a gap |
+| A tap | selects, `ItemClick` and `Tapped` with the release | selects on a touch's release (tested); `ItemClick` with `ListBoxOptions` | 1; `ItemClick` by `ListBoxOptions` (#132) |
 | A pan | the ScrollViewer takes the pointer about 50 ms into the move; the press is cancelled, no `ItemClick` | the `ScrollGestureRecognizer` takes it once the move passes its threshold; the item loses capture, `:pressed` goes, nothing is selected (tested) | 1 |
 | Dragged off where the list can't pan | the tilt follows on the item, returns about 190 ms after the finger leaves; no `ItemClick` | `Tilt` holds 182.6 ms and returns; Avalonia selects nothing on a release off the item (tested) | 1 |
 | Single | tap selects one | `SelectionMode.Single` | 1 |
 | Multiple | the check boxes come in; a tap checks or unchecks | `Multiple` and `Toggle` together toggle on a tap; the check mode `PhoneListMultiSelect.IsOn`, set on the list by its theme and inherited by its items | 1, the theme |
 | Extended | modifier keys | `SelectionMode.Multiple` (Ctrl and Shift), with the check boxes | 2, as Multiple |
 | None | no selection | no such mode | recorded gap |
-| `ItemClick`, `IsItemClickEnabled` | yes | none | recorded gap |
+| `ItemClick`, `IsItemClickEnabled` | yes | none | `ListBoxOptions` (#132) |
 | `Header`, `Footer` | scroll with the items | none | recorded gap |
 | Add, delete and reorder transitions | theme transitions | none | recorded gap |
 | Reorder | `CanReorderItems`, `ReorderMode` | none | deferred (the issue) |
@@ -316,7 +316,7 @@ _none_
 | [-] | `FooterTemplate` | `DataTemplate` | none | gap: as Footer |
 | [-] | `Footer` | `Object` | none | gap: Avalonia's ListBox has no footer that scrolls with the items; an app puts one round the list |
 | [-] | `IsSwipeEnabled` | `Boolean` | none | not applicable: Windows 8.1's cross-slide select; the phone's style sets it and nothing on the phone uses it |
-| [-] | `IsItemClickEnabled` | `Boolean` | none | gap: Avalonia has no ItemClick; an app uses SelectionChanged or the item's Tapped (README, Known gaps) |
+| [x] | `IsItemClickEnabled` | `Boolean` | none | `ListBoxOptions.IsItemClickEnabled` (#132, [ItemClick](../ItemClick/README.md)) |
 | [-] | `IncrementalLoadingTrigger` | `IncrementalLoadingTrigger` | none | not applicable: Avalonia has no ISupportIncrementalLoading |
 | [-] | `IncrementalLoadingThreshold` | `Double` | none | not applicable: incremental loading |
 | [-] | `HeaderTransitions` | `TransitionCollection` | none | gap: no Header (below) |
@@ -334,7 +334,7 @@ _none_
 | ✓ | WinRT | Handler | Avalonia | Action |
 |---|---|---|---|---|
 | [-] | `DragItemsStarting` | `DragItemsStartingEventHandler` | none | deferred: with reorder |
-| [-] | `ItemClick` | `ItemClickEventHandler` | none | gap: as IsItemClickEnabled |
+| [x] | `ItemClick` | `ItemClickEventHandler` | none | `ListBoxOptions.ItemClick` (#132) |
 | [-] | `ContainerContentChanging` | `TypedEventHandler<ListViewBase, ContainerContentChangingEventArgs>` | `ContainerPrepared`, nearest | not applicable: phased rendering has no equivalent |
 
 #### Methods, from `ListViewBase` (12)

@@ -82,7 +82,7 @@ of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half
 |---|---|---|---|
 | Pressed at once | `Normal` > `Pressed` 0.3 to 2.6 ms after `PointerPressed` | `:pressed` in the same dispatch | match |
 | The release | holds 182.6 ms, eases back over 167.0 ms | `Tilt`'s, the same | match |
-| A tap | selects; `ItemClick` and `Tapped` with the release | selects with the release; no `ItemClick` | match; `ItemClick` a gap |
+| A tap | selects; `ItemClick` and `Tapped` with the release | selects with the release; `ItemClick` with `ListBoxOptions` (#132) | match |
 | A pan | the pointer taken about 50 ms into the move; the tilt holds and returns from then; no `ItemClick` | the pointer taken once the move passes the gesture recogniser's threshold; the same return; nothing selected | match, the moment Avalonia's |
 | Dragged off, the list can't pan | the tilt follows on the item, returns about 190 ms after leaving | holds 182.6 ms, returns; nothing selected | match |
 | 10 px sideways | a tap; `RotationY` −0.42° at 10 px | a tap; the tilt follows | match |
@@ -93,8 +93,8 @@ of a degree. The phone's 0.009° of `RotationY` at the centre is its item's half
 
 ## Gaps and deliberate differences
 
-- **`ItemClick` and `IsItemClickEnabled`**: Avalonia's ListBox has none. An app handles `SelectionChanged` (and clears
-  the selection) or the item's `Tapped`. A gap an app would notice: proposed as an issue.
+- **`ItemClick` and `IsItemClickEnabled`**: Avalonia's ListBox has none; `ListBoxOptions` adds them (#132,
+  [ItemClick](../ItemClick/README.md)).
 - **`SelectionMode="None"`**: Avalonia has no mode without selection. In Single mode the selection draws nothing, so
   only `SelectedItem` tells the difference.
 - **`Header` and `Footer`**, which scroll with the items: none in Avalonia's ListBox. An app puts its header in the

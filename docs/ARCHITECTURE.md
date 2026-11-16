@@ -149,8 +149,8 @@ behaviour, and record the rung in the control's plan.
    expresses it. Many differences are really template differences: a transition, a part's hit
    area.
 2. **Attached behaviour** in `Cornflower.Controls`, set by the template, reading only public
-   state and events. The tilt, `Header` (`ControlHeader`) and `ClosedDisplayMode`
-   (`CommandBarOptions`). One that holds an era's own numbers, and so is a visual opinion, lives in
+   state and events. The tilt, `Header` (`ControlHeader`), `ClosedDisplayMode`
+   (`CommandBarOptions`) and a list's `ItemClick` (`ListBoxOptions`, #132). One that holds an era's own numbers, and so is a visual opinion, lives in
    that era's theme instead, internal to `Cornflower.Themes.Wp81` (rule 5): `PhoneTextLine`, the 8.1
    line rules; the scroll indicators, `PhoneScrollIndicators` and `PhoneIndicatorFade` (#116); the
    list check mode, `PhoneListMultiSelect` (#119).
