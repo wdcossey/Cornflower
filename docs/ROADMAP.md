@@ -90,22 +90,30 @@ step, and a control that climbs a rung says so in its PR.
 
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
-| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme; ScrollBar is the phone's thin indicator; the indicators by `PhoneScrollIndicators` and `PhoneIndicatorFade`; the scroll physics a recorded deviation, measured by [#113](https://github.com/wdcossey/CornflowerUI/issues/113) (a part class is [#129](https://github.com/wdcossey/CornflowerUI/issues/129)). The worked example for Tier 2: ListView, Page, Pivot and Hub hold one; done 2026-11-15 (#126), device run passed 2026-11-15 | 1, 2, 6 |
+| [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme; ScrollBar is the phone's thin indicator; the indicators by `PhoneScrollIndicators` and `PhoneIndicatorFade`; the scroll physics a recorded deviation, measured by [#113](https://github.com/wdcossey/CornflowerUI/issues/113) (a part class is [#129](https://github.com/wdcossey/CornflowerUI/issues/129), an enhancement carried past Tier 2). The worked example for Tier 2: ListView, Page, Pivot and Hub hold one; done 2026-11-15 (#126), device run passed 2026-11-15 | 1, 2, 6 |
 | [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | both exist | Theme, by type since the Tier 2 roll-up, #139 (keyed until then); ContentPresenter keeps Avalonia's own, as the phone's style reaches no template's presenter; done 2026-11-15 (#125), device run passed 2026-11-15 | 1, 2 |
-| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
-| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/CornflowerUI/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/CornflowerUI/issues/132), done 2026-11-15, #138); reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
+| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). The shell's press, the open bar's stepped height and its motion (`PhoneAppBar`): [#141](https://github.com/wdcossey/CornflowerUI/issues/141), done 2026-11-16 (#144), device run owed. AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
+| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/CornflowerUI/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/CornflowerUI/issues/132), done 2026-11-15, #138; `Multiple` alone clicks, as Single, #145); the check box's own press, and `Extended` with no boxes ([#142](https://github.com/wdcossey/CornflowerUI/issues/142), done 2026-11-16, #143, device run owed); reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
 | [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame: `NavigationPage` (Avalonia has no `Frame`) | Theme, plus our own page transitions (`TurnstileTransition`, `SlideTransition`, `ContinuumTransition`). `NavigationPage` is the navigation host; done 2026-11-15 (#134), device run owed | 1 |
-| [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls | 5 |
-| [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | none | New control | 5 |
+| [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls: the swipe, strip and slides are the control's own (`PivotMotion`, on `CornflowerClock`, read by #128 and #136), its ScrollViewer held, not scrolled; done 2026-11-16 (#140), device run owed | 5 |
+| [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | none | New control, on Pivot's pieces: the pan, the snap to sections, the loop and the header's and background's parallax are the control's own (`HubMotion`, read by #128 and #136); the swipe recogniser shared with Pivot since the Tier 2 roll-up; done 2026-11-16 (#146), device run owed | 5 |
 
 The reads and tools Tier 2 needs: [#113](https://github.com/wdcossey/CornflowerUI/issues/113)
 ScrollViewer physics and ListView press feedback; [#114](https://github.com/wdcossey/CornflowerUI/issues/114)
 the app bar's heights, the turnstile's forward angle and Pivot's header motion;
 [#115](https://github.com/wdcossey/CornflowerUI/issues/115) real touch, drag and wheel input in
-`drive.ps1`, from Avonic. All three done on 2026-11-15 (#127, #128, #124); the reads still owed for
-Pivot, Hub, ListView and CommandBar are [#136](https://github.com/wdcossey/CornflowerUI/issues/136). The batches: #113,
-#115, #116 and #117 first; then #114, #118, #119 and #120 (both batches done 2026-11-15); then #121 and #122. Each issue
-names its own blockers; they are the record, not this list.
+`drive.ps1`, from Avonic. All three done on 2026-11-15 (#127, #128, #124); the reads then owed for
+Pivot, Hub, ListView and CommandBar, [#136](https://github.com/wdcossey/CornflowerUI/issues/136), done 2026-11-16 (#137). The batches: #113,
+#115, #116 and #117 first; then #114, #118, #119 and #120 (both batches done 2026-11-15); then #121 and #122 (done
+2026-11-16), with #136's follow-ups for the app bar (#141) and the check mode (#142). Each issue names its own blockers;
+they are the record, not this list.
+
+**Tier 2 is complete** (2026-11-16, rolled up in the Tier 2 roll-up), but for
+[#129](https://github.com/wdcossey/CornflowerUI/issues/129), the scroll physics as a part class: an enhancement of #116's
+recorded deviation, carried forward, not a gap in the shell. Grouped lists
+([#131](https://github.com/wdcossey/CornflowerUI/issues/131)) are Tier 4's. Owed for the record: the Pixel 8 runs of
+#120, #121, #122, #141 and #142, and the real-window runs of #120, #121, #122 and #141, with the sample shell on
+`NavigationPage` since the roll-up.
 
 ### Tier 3
 
@@ -302,7 +310,12 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | Done 2026-11-15 (#133) |
 | [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem (ListViewHeaderItem, GroupItem deferred) | Done 2026-11-15 (#130) |
 | [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | Done 2026-11-15 (#134) |
-| [#132](https://github.com/wdcossey/CornflowerUI/issues/132) | ListView's `ItemClick` and `IsItemClickEnabled` | Done 2026-11-15 (#138) |
+| [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | Done 2026-11-16 (#140) |
+| [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | Done 2026-11-16 (#146) |
+| [#132](https://github.com/wdcossey/CornflowerUI/issues/132) | ListView's `ItemClick` and `IsItemClickEnabled` | Done 2026-11-15 (#138; `Multiple` alone clicks, #145) |
+| [#136](https://github.com/wdcossey/CornflowerUI/issues/136) | Read: Pivot's wide headers and two items, the Hub's background and loop, the check mode's press, the app bar's press, heights and motion | Done 2026-11-16 (#137) |
+| [#141](https://github.com/wdcossey/CornflowerUI/issues/141) | CommandBar: the shell's press, the open bar's stepped height, its motion | Done 2026-11-16 (#144) |
+| [#142](https://github.com/wdcossey/CornflowerUI/issues/142) | ListView: the check box's own press, `Extended` without boxes | Done 2026-11-16 (#143) |
 
-Tier 1 is complete. Each row's device run on the Pixel 8 is in the Tier 1 and Tier 2 tables above. Tier 2's
-batches 1 and 2 are done; #121 (Pivot) and #122 (Hub) are open.
+Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Each row's device run on
+the Pixel 8 is in the Tier 1 and Tier 2 tables above.

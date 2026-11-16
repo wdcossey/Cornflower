@@ -243,11 +243,7 @@ internal sealed class PivotMotion
     /// <c>EaseOut</c>, over <see cref="SlideDuration"/>, from 0 to 1. Its first frames on the phone leave 0.8526,
     /// 0.7266, 0.6188 and 0.5266 of the way to go.
     /// </summary>
-    public static double Slide(TimeSpan elapsed)
-    {
-        var x = Math.Clamp(elapsed / SlideDuration, 0, 1);
-        return 1 - (Math.Exp(SlideExponent * (1 - x)) - 1) / (Math.Exp(SlideExponent) - 1);
-    }
+    public static double Slide(TimeSpan elapsed) => PhoneEase.ExponentialOut(SlideExponent, elapsed / SlideDuration);
 
     private void Start(int steps, KeySplineCurve curve, TimeSpan duration, bool gesture, TimeSpan? selectAfter)
     {

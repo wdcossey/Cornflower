@@ -49,7 +49,10 @@ error leaves held, the mouse button or a touch, it lets go of.
   rail beside the page) and checks the list is back. A page below the fold of a long list is
   opened through UI Automation instead: a click never goes outside the window. The ready line and the
   performance line (which the shell shows up the rail, beside the page) are looked for under the page's
-  catalogue title, from its `[SamplePage]`. Titles are matched exactly, case and all.
+  catalogue title, from its `[SamplePage]`. Titles are matched exactly, case and all. Since the Tier 2
+  roll-up a page comes in with the turnstile (425 ms) and the shell writes the ready line once it is
+  at rest, so the frame saved after it is the page at rest; Back turns back to the list over 430 ms,
+  inside the 600 ms each click and invoke waits.
 - **The page's size:** the theme page's ready line,
   `CORNFLOWER ready open=<ms>ms scaling=<s> view=<w>x<h> raw=<w>x<h> safe=<l>,<t>,<r>,<b> page=<w>x<h> title=<title>`,
   has to name the theme page and report a 450 × 800 page (`page=`, the page's own size, so chrome

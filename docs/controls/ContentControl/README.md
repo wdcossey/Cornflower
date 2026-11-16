@@ -73,7 +73,8 @@ On the phone every ContentControl has this style, and so it is here, since the T
    ContentControl theme, or, as Simple has none, an empty `ControlTheme` for its type, which gives it Avalonia's own
    template and defaults. `HoleContentControlPartsTests` holds it.
 2. **The sample's page host**, `SampleShell`'s `Host`, stretches its page, as the phone's `Frame` does (`frame.json`:
-   both content alignments Stretch).
+   both content alignments Stretch). Since the Tier 2 roll-up the host is a `NavigationPage`, and each page's
+   `ContentPage` stretches it.
 3. **`TiltTests`' fixture** that presses a ContentControl's transparent background gives it Avalonia's own template,
    which draws it.
 

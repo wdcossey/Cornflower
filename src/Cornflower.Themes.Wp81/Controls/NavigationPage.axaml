@@ -56,8 +56,10 @@
     <Setter Property="ModalTransition">
       <wp81:SlideTransition />
     </Setter>
-    <!-- The phone's Frame has no edge swipe: back is the hardware button, the app's. -->
+    <!-- The phone's Frame has no edge swipe: back is the hardware button, the app's. And off, Avalonia's swipe recogniser
+         takes no finger from a page (PhoneNavigationSwipe): it would, sliding sideways, with IsGestureEnabled off alone. -->
     <Setter Property="IsGestureEnabled" Value="False" />
+    <Setter Property="wp81:PhoneNavigationSwipe.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
         <Panel ClipToBounds="True" Background="{TemplateBinding Background}">

@@ -187,7 +187,7 @@ WinRT `Windows.UI.Xaml.Controls.Primitives.PivotHeaderItem`; Avalonia none: a ne
 | [-] | `ContentTemplateSelector`, `OnContentTemplateSelectorChanged` | none | No selectors |
 | [x] | Setter `FontSize` `{ThemeResource PivotHeaderItemFontSize}` | none | By `DynamicResource` (57) |
 | [x] | Setter `FontFamily` `{ThemeResource PivotHeaderItemFontFamily}` | none | By `DynamicResource` (Selawik Semilight for Segoe WP SemiLight) |
-| [x] | Setter `CharacterSpacing` `{ThemeResource PivotHeaderItemCharacterSpacing}` | none | `LetterSpacing` bound to −25 × `FontSize` / 1000 through `PhonePivotHeader` (internal), inherited by the header's text |
+| [x] | Setter `CharacterSpacing` `{ThemeResource PivotHeaderItemCharacterSpacing}` | none | `LetterSpacing` bound to −25 × `FontSize` / 1000 through `PhoneCharacterSpacing` (internal), inherited by the header's text |
 | [x] | Setter `Background` `{ThemeResource PivotHeaderBackgroundUnselectedBrush}` | none | Set; the phone's template draws no Background but the Selected state's, nor does ours |
 | [x] | Setter `Foreground` `{ThemeResource PivotHeaderForegroundUnselectedBrush}` | none | By `DynamicResource` |
 | [x] | Setter `Margin` `{ThemeResource PivotHeaderItemMargin}` | none | By `DynamicResource` (16,−6.5,0,0) |
@@ -296,7 +296,8 @@ and read it back instead.
 
 ## The gesture
 
-A `GestureRecognizer` (`PivotSwipeGestureRecognizer`, internal) on the Pivot, not pointer handlers: so it takes part in
+A `GestureRecognizer` (`SidewaysSwipeGestureRecognizer`, internal, the Hub's too; `PivotSwipeGestureRecognizer` until the
+Tier 2 roll-up) on the Pivot, not pointer handlers: so it takes part in
 Avalonia's arbitration. An item's ScrollViewer, deeper, sees the press first and takes a drag up or down past its 5 px;
 a control that asks for no gesture (Wp81's Slider and ToggleSwitch, the phone's `ManipulationMode="None"`) keeps its
 drag; once the Pivot captures, nothing under it takes the finger. It starts past Avalonia's `ScrollGestureRecognizer`'s

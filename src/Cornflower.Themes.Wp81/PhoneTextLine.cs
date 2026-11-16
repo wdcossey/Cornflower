@@ -177,7 +177,7 @@ internal static class PhoneTextLine
         {
             var spacing = block.GetValue(CharacterSpacingProperty);
             if (spacing != 0)
-                Put(block, applied, ref applied.LetterSpacing, TextBlock.LetterSpacingProperty, spacing * fontSize / 1000);
+                Put(block, applied, ref applied.LetterSpacing, TextBlock.LetterSpacingProperty, PhoneCharacterSpacing.LetterSpacingOf(spacing, fontSize));
             else
                 Take(applied, ref applied.LetterSpacing, TextBlock.LetterSpacingProperty);
         }

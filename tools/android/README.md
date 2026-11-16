@@ -39,17 +39,19 @@ start, naming the titles it has, and the script stops with the app's crash repor
 5. Waits for the page's ready line in logcat (`-TimeoutSeconds`, 60 by default), or stops at once
    on a crash report for the app: Java's (`FATAL EXCEPTION` with `Process: <package>`) or .NET's
    (`UNHANDLED EXCEPTION`), read from the errors in the main and crash buffers. The sample's shell
-   writes the line, under logcat's `DOTNET` tag, for the page it opened, after the page's first
-   drawn frame:
+   writes the line, under logcat's `DOTNET` tag, for the page it opened, once the page is drawn at
+   rest: since the Tier 2 roll-up a page comes in with the turnstile (425 ms) and the line waits for
+   it, so the frame pulled after it is the page at rest. The start page, opened before the shell is in
+   the view, comes in at rest:
 
    ```
    CORNFLOWER ready open=<ms>ms scaling=<s> view=<w>x<h> raw=<w>x<h> safe=<l>,<t>,<r>,<b> page=<w>x<h> title=<title>
    ```
 
    `open` is the shell's time from navigation, before the page is made, to the frame after the
-   page's first, once that frame's layout is done; on a cold start it includes making the app's
+   page's first, once that frame's layout is done (mid-turn, so the turn isn't in it); on a cold start it includes making the app's
    view. `view` is the window's size in view pixels and `raw` in raw pixels, `safe` the safe area,
-   `page` the page's own size, laid out in the same frame as `open`, and the title is last, as it
+   `page` the page's own size, laid out in the frame at rest the line waits for, and the title is last, as it
    can have spaces. On a phone, Avalonia gives the safe area to the shell, the view's content, as
    its padding, so `page` is the view less the safe area, each side rounded to the raw pixel grid:
    on the Pixel 8, 840 tall (914.29 less 50.29 and 24), as every device run of 2026-11-12 read (`page=411.43x840`).

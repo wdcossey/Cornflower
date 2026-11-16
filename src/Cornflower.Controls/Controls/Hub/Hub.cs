@@ -57,7 +57,7 @@ namespace Cornflower.Controls;
 [TemplatePart("PART_Background", typeof(Control))]
 [TemplatePart("PART_WrapBackground", typeof(Control))]
 [PseudoClasses(BackgroundHiddenPseudoClass, BackgroundShowingPseudoClass)]
-public class Hub : TemplatedControl
+public class Hub : TemplatedControl, ISidewaysSwipeTarget
 {
     /// <summary>Defines <see cref="Header"/>.</summary>
     public static readonly StyledProperty<object?> HeaderProperty =
@@ -105,7 +105,7 @@ public class Hub : TemplatedControl
     {
         _motion = new HubMotion(this);
         _sectionHeaders = new SectionHeaderList(_sections);
-        GestureRecognizers.Add(new HubPanGestureRecognizer(this));
+        GestureRecognizers.Add(SidewaysSwipeGestureRecognizer.For(this));
         _sections.Validate = ValidateSection;
         _sections.CollectionChanged += OnSectionsChanged;
         // A ScrollViewer in a section may have scrolled down to the control already, and handled the request.
@@ -176,6 +176,19 @@ public class Hub : TemplatedControl
         if (_scrollViewer is null) return new Rect(Bounds.Size).Contains(point);
         return this.TranslatePoint(point, _scrollViewer) is { } local && new Rect(_scrollViewer.Bounds.Size).Contains(local);
     }
+
+    bool ISidewaysSwipeTarget.CanSwipe => CanPan;
+
+    bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => IsInPanArea(point);
+
+    // A finger on moving sections holds them where they are, as the phone's DirectManipulation does.
+    bool ISidewaysSwipeTarget.HoldsAPress => _motion.AreSectionsMoving;
+
+    void ISidewaysSwipeTarget.BeginDrag() => _motion.BeginDrag();
+
+    void ISidewaysSwipeTarget.Drag(double travel) => _motion.Drag(travel);
+
+    void ISidewaysSwipeTarget.Release(double velocity) => _motion.Release(velocity);
 
     /// <summary>Moves the sections at once so that <paramref name="section"/> is at the left, or as far as they go.</summary>
     public void ScrollToSection(HubSection section)

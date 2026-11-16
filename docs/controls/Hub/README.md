@@ -81,15 +81,15 @@ Cornflower's: `Wp81ScrollViewerScrollBarlessTheme` and `Wp81ContentControlTheme`
 Rung 5: new controls. `Hub` and `HubSection` are `TemplatedControl`s (WinRT's are `Control`s); the Hub keeps its
 sections as its logical children and puts them in its template's panel. The motion is the control's own (`HubMotion`),
 as the phone's is its code's and DirectManipulation's, not its template's; Pivot's is the same. The theme takes Pivot's
-`PhonePivotHeader` for the headers' character spacing.
+`PhoneCharacterSpacing` for the headers' character spacing.
 
 ## What it takes from Pivot
 
-- `PivotSwipeGestureRecognizer`'s shape, as `HubPanGestureRecognizer`: the same start distance, axis and pointer types.
-  Its own file, as Pivot's is bound to the Pivot (proposed: one shared recogniser).
+- Pivot's recogniser: since the Tier 2 roll-up both controls use one, `SidewaysSwipeGestureRecognizer`, through
+  `ISidewaysSwipeTarget`: the same start distance, axis and pointer types. Only the Hub holds moving content on a press.
 - `PivotMotion`'s frame loop: an offset of the control's own, moved by the finger and then by a timeline on
   `CornflowerClock`, drawn by moving render transforms; the ScrollViewer held in the bar-less theme, not scrolled.
-- `PhonePivotHeader.CharacterSpacing` and `LetterSpacing` for the two headers' spacing.
+- `PhoneCharacterSpacing.CharacterSpacing` and `LetterSpacing` for the two headers' spacing.
 - The tests' harness: gestures on a `TestClock` on the emulator's 15.625 ms grid, the release on a frame.
 
 ## Known gaps

@@ -234,16 +234,6 @@ internal sealed class HubMotion
     }
 
     /// <summary>
-    /// WinRT's <c>ExponentialEase</c> with <c>EasingMode.EaseOut</c> at <paramref name="progress"/>, from 0 to 1:
-    /// 1 − (e^(k(1 − x)) − 1) / (e^k − 1).
-    /// </summary>
-    public static double ExponentialOut(double exponent, double progress)
-    {
-        var x = Math.Clamp(progress, 0, 1);
-        return 1 - (Math.Exp(exponent * (1 - x)) - 1) / (Math.Exp(exponent) - 1);
-    }
-
-    /// <summary>
     /// The header during the loop, <paramref name="elapsed"/> after the release, right of its place: where it was at
     /// the release (<paramref name="from"/>), held, then flying out left; from <see cref="HeaderJump"/>, a view's width
     /// (<paramref name="view"/>) right, easing in.
@@ -252,7 +242,7 @@ internal sealed class HubMotion
     {
         if (elapsed < HeaderJump)
             return from - HeaderFlyOutSpeed * Math.Max(0, (elapsed - HeaderHold).TotalMilliseconds);
-        return view * (1 - ExponentialOut(HeaderFlyInExponent, (elapsed - HeaderJump) / HeaderFlyInDuration));
+        return view * (1 - PhoneEase.ExponentialOut(HeaderFlyInExponent, (elapsed - HeaderJump) / HeaderFlyInDuration));
     }
 
     private void Start(double to, KeySplineCurve curve, TimeSpan duration)

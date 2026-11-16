@@ -57,13 +57,13 @@
                             FontSize="{DynamicResource HubHeaderFontSize}"
                             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
                             FontWeight="Light"
-                            wp81:PhonePivotHeader.CharacterSpacing="{DynamicResource HubHeaderCharacterSpacing}"
+                            wp81:PhoneCharacterSpacing.CharacterSpacing="{DynamicResource HubHeaderCharacterSpacing}"
                             Content="{TemplateBinding Header}"
                             ContentTemplate="{TemplateBinding HeaderTemplate}">
               <ContentControl.LetterSpacing>
-                <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+                <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
                   <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
-                  <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
                 </MultiBinding>
               </ContentControl.LetterSpacing>
             </ContentControl>
@@ -103,14 +103,14 @@
                           FontFamily="{DynamicResource PhoneFontFamilyNormal}"
                           FontSize="{DynamicResource HubSectionHeaderFontSize}"
                           FontWeight="SemiBold"
-                          wp81:PhonePivotHeader.CharacterSpacing="{DynamicResource HubSectionHeaderCharacterSpacing}"
+                          wp81:PhoneCharacterSpacing.CharacterSpacing="{DynamicResource HubSectionHeaderCharacterSpacing}"
                           Content="{TemplateBinding Header}"
                           ContentTemplate="{TemplateBinding HeaderTemplate}"
                           HorizontalAlignment="Left">
             <ContentControl.LetterSpacing>
-              <MultiBinding Converter="{x:Static wp81:PhonePivotHeader.LetterSpacing}">
+              <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
                 <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
-                <Binding Path="(wp81:PhonePivotHeader.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
               </MultiBinding>
             </ContentControl.LetterSpacing>
           </ContentControl>
