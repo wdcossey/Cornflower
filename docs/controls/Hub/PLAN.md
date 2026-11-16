@@ -171,7 +171,11 @@ Each is a test in `tests/Cornflower.Tests/Controls/HubTests.cs` (named in bracke
    `ScrollToSection_Before_The_Hub_Is_Shown_Wins_Over_The_Default`, `A_Hub_Laid_Out_Hidden_Opens_On_Its_Default_Section`,
    `Sections_Added_After_The_Hub_Is_Shown_Open_On_The_Default`, `Shown_Again_The_Hub_Keeps_Its_Place_And_A_Drag_Cut_Short_Ends`,
    `A_Section_Put_First_While_Wrapped_Leaves_The_Old_First_At_Its_Place`, `A_New_Width_Mid_Swipe_Ends_On_The_Section_It_Was_Going_To`,
-   `A_Control_Brought_Into_View_Brings_Its_Section`).
+   `A_Control_Brought_Into_View_Brings_Its_Section`, `A_Control_Down_A_Sections_List_Brought_Into_View_Brings_The_Section_Too`,
+   `A_Control_Already_In_View_Brought_Into_View_Leaves_The_Hub`, `A_Drag_Ended_By_A_New_Layout_Rests_On_The_Section_It_Was_On`,
+   `A_Drag_Cut_Short_Near_The_Loops_End_Rests_On_The_First_Section`, `A_Tap_While_Only_The_Header_Comes_Back_Is_The_Contents`,
+   `A_Sections_Content_Is_Built_With_The_Data_It_Gets_In_The_Hub`, `A_Section_Joins_One_Hub_Once`,
+   `A_Section_Replaced_Is_Read_Again_Before_Anything_Is_Placed`).
 7. **`SectionHeaderClick`**: on an interactive header only, not on the content
    (`A_Tap_On_An_Interactive_Header_Raises_SectionHeaderClick`).
 8. **The header at 1/18** of the sections (#128) (`The_Header_Moves_At_An_Eighteenth_Of_The_Sections_Speed`).
@@ -241,8 +245,8 @@ drop the loop or give the panel a copy of the first section.
 `HubPanGestureRecognizer`, internal, the shape of Pivot's `PivotSwipeGestureRecognizer`: a `GestureRecognizer` on the
 Hub, in the ScrollViewer part, starting past Avalonia's `ScrollGestureRecognizer` distance (5) and only more sideways
 than up or down, touch and pen only. A section's ScrollViewer keeps a drag up or down; a Slider or ToggleSwitch keeps
-its drag (`PhoneNoManipulation`). A press on moving sections holds them where they are, and the Hub takes that finger
-at once, so it hears its release whatever else wants it; let go without a drag, they go to the nearer start.
+its drag (`PhoneNoManipulation`). A press on moving sections holds them where they are (not in the loop's last part,
+where only the header moves); let go without a drag, or taken by a list in a section, they go to the nearer start.
 
 ## Avalonia against the phone
 
