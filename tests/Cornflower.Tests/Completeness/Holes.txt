@@ -23,7 +23,6 @@ DrawerPage
 DropDownButton
 EmbeddableControlRoot
 Expander
-FlyoutPresenter
 GridSplitter
 GroupBox
 HeaderedContentControl
