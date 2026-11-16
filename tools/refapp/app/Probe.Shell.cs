@@ -256,6 +256,11 @@ namespace RefApp
             LogPointers(pivot, "pivot");
             LogGestures(pivot, "pivot");
             pivot.SelectionChanged += (s, e) => Log("selection", "index " + pivot.SelectedIndex);
+            // The item events (#148): the item each is for, and the selection when it comes.
+            pivot.PivotItemLoading += (s, e) => Log("pivotitem", "Loading " + e.Item.Header + ", index " + pivot.SelectedIndex);
+            pivot.PivotItemLoaded += (s, e) => Log("pivotitem", "Loaded " + e.Item.Header + ", index " + pivot.SelectedIndex);
+            pivot.PivotItemUnloading += (s, e) => Log("pivotitem", "Unloading " + e.Item.Header + ", index " + pivot.SelectedIndex);
+            pivot.PivotItemUnloaded += (s, e) => Log("pivotitem", "Unloaded " + e.Item.Header + ", index " + pivot.SelectedIndex);
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.HorizontalOffset) + " final " + Num(e.FinalView.HorizontalOffset) + " inertial " + e.IsInertial);
             sv.ViewChanged += (s, e) => Log("viewchanged", Num(sv.HorizontalOffset) + " intermediate " + e.IsIntermediate);
             foreach (var item in HeaderItems(headerPanel))
@@ -334,16 +339,7 @@ namespace RefApp
         private async Task HubProbe(Grid host, int imageWidth = 0, int imageHeight = 0)
         {
             var image = imageWidth > 0;
-            var hub = new Hub { Name = "hub", Header = "hub", Margin = new Thickness(0, HeaderHeight, 0, 0) };
-            for (var i = 1; i <= 4; i++)
-            {
-                hub.Sections.Add(new HubSection
-                {
-                    Header = "section " + i,
-                    ContentTemplate = (DataTemplate)XamlReader.Load("<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"><TextBlock Text=\"section " + i + " content\" FontSize=\"30\" /></DataTemplate>"),
-                });
-            }
-
+            var hub = NewHub();
             var header = Header();
             var page = await Page(host, header, hub);
             var sv = Find(hub, "ScrollViewer") as ScrollViewer;
@@ -388,6 +384,57 @@ namespace RefApp
                 Log("layout", "after the entrance: hub " + Num(hub.ActualWidth) + " x " + Num(hub.ActualHeight) + string.Concat(parts.Select(part => ", " + part.Name + " " + Num(part.ActualWidth) + " x " + Num(part.ActualHeight) + " at " + Num(Left(part)))));
             }
 
+            WatchHub(hub, sv, headerHost, image ? parts : null);
+            var y = 500.0;
+            var start = OffsetX(sv, 0);
+            Func<Task> none = () => Task.FromResult(true);
+            for (var i = 0; i < 3; i++)
+            {
+                Swipe(hub, "swipe left " + (i + 1), i == 0 ? start : none, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
+            }
+
+            Swipe(hub, "swipe right", none, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
+            Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, dx: -150, moveMs: 500, holdMs: 300, gapMs: 3000);
+            // To the end and past it (#136): the offset set to the end from code, then a swipe left there and one back.
+            var end = OffsetX(sv, double.MaxValue);
+            Swipe(hub, "swipe left at the end", end, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
+            Swipe(hub, "swipe right from the end", end, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
+
+            await RunScheduled(page, header);
+        }
+
+        /// <summary>The probes' Hub: the header "hub" and four sections, "section 1" to "section 4", each a line of text, below the header band.</summary>
+        private static Hub NewHub()
+        {
+            var hub = new Hub { Name = "hub", Header = "hub", Margin = new Thickness(0, HeaderHeight, 0, 0) };
+            for (var i = 1; i <= 4; i++)
+            {
+                hub.Sections.Add(new HubSection
+                {
+                    Header = "section " + i,
+                    ContentTemplate = (DataTemplate)XamlReader.Load("<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"><TextBlock Text=\"section " + i + " content\" FontSize=\"30\" /></DataTemplate>"),
+                });
+            }
+
+            return hub;
+        }
+
+        /// <summary>
+        /// Logs a Hub's view changes and layout, and watches every frame (see the class summary): the offset, the header's
+        /// left edge and transform and each section's left edge; with the background's parts (the template's Background
+        /// grid, WrapBackground and MainBackground, in that order), each one's left edge, width and transform, the grid's
+        /// opacity and WrapBackground's visibility. <paramref name="parts"/> is null for a Hub read without them.
+        /// </summary>
+        private void WatchHub(Hub hub, ScrollViewer sv, FrameworkElement headerHost, FrameworkElement[] parts)
+        {
+            var image = parts != null;
+            if (image && parts.Length != 3)
+            {
+                throw new ArgumentException("the background's parts are Background, WrapBackground and MainBackground", nameof(parts));
+            }
+
+            var bg = image ? parts[0] : null;
+            var wrap = image ? parts[1] : null;
             sv.ViewChanging += (s, e) => Log("viewchanging", "next " + Num(e.NextView.HorizontalOffset) + " final " + Num(e.FinalView.HorizontalOffset) + " inertial " + e.IsInertial);
             sv.ViewChanged += (s, e) => Log("viewchanged", Num(sv.HorizontalOffset) + " intermediate " + e.IsIntermediate);
             var hb = Bounds(headerHost);
@@ -443,42 +490,15 @@ namespace RefApp
 
                 return text.ToString();
             });
-
-            var y = 500.0;
-            Func<Task> start = () =>
-            {
-                var ok = sv.ChangeView(0, null, null, true);
-                Log("setup", "offset 0" + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
-            Func<Task> none = () => Task.FromResult(true);
-            for (var i = 0; i < 3; i++)
-            {
-                Swipe(hub, "swipe left " + (i + 1), i == 0 ? start : none, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
-            }
-
-            Swipe(hub, "swipe right", none, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
-            Swipe(hub, "drag 150 px left, held 300 ms", start, 300, y, dx: -150, moveMs: 500, holdMs: 300, gapMs: 3000);
-            // To the end and past it (#136): the offset set to the end from code, then a swipe left there and one back.
-            Func<Task> end = () =>
-            {
-                var ok = sv.ChangeView(sv.ScrollableWidth, null, null, true);
-                Log("setup", "offset " + Num(sv.ScrollableWidth) + (ok ? "" : " (ChangeView returned false)"));
-                return Task.FromResult(true);
-            };
-            Swipe(hub, "swipe left at the end", end, 380, y, dx: -200, moveMs: 150, holdMs: 0, gapMs: 3000);
-            Swipe(hub, "swipe right from the end", end, 70, y, dx: 200, moveMs: 150, holdMs: 0, gapMs: 3000);
-
-            await RunScheduled(page, header);
         }
 
         /// <summary>
-        /// A picture to tell places by, written to the app's temporary folder as hub-background.png and loaded from there
+        /// A picture to tell places by, written to the app's temporary folder as <paramref name="file"/> and loaded from there
         /// (not the local folder, which the run pulls: the image holds its file open, and ISETool's pull then fails): width x
         /// height pixels, its hue going once round the colour wheel from left to right, with a black column every 50 px
         /// and a white one every 250 px, each 4 px wide, and a black row every 100 px.
         /// </summary>
-        private async Task<ImageSource> StripeImage(int width, int height)
+        private async Task<ImageSource> StripeImage(int width, int height, string file = "hub-background.png")
         {
             var pixels = new byte[width * height * 4];
             for (var x = 0; x < width; x++)
@@ -497,16 +517,16 @@ namespace RefApp
                 }
             }
 
-            var file = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("hub-background.png", CreationCollisionOption.ReplaceExisting);
-            using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+            var png = await ApplicationData.Current.TemporaryFolder.CreateFileAsync(file, CreationCollisionOption.ReplaceExisting);
+            using (var stream = await png.OpenAsync(FileAccessMode.ReadWrite))
             {
                 var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
                 encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, pixels);
                 await encoder.FlushAsync();
             }
 
-            Log("layout", "background image " + width + " x " + height + " px, hub-background.png");
-            return new BitmapImage(new Uri("ms-appdata:///temp/hub-background.png"));
+            Log("layout", "background image " + width + " x " + height + " px, " + file);
+            return new BitmapImage(new Uri("ms-appdata:///temp/" + file));
         }
 
         /// <summary>
@@ -521,8 +541,22 @@ namespace RefApp
         /// open bar; a tap on the page above the open bar; a tap on add on the closed bar; then minimal: a tap on the
         /// bar away from the ellipsis, a tap on its ellipsis, and a tap on the ellipsis of the open bar. Each touch's setup
         /// puts the bar in the state the touch needs from code (IsOpen, ClosedDisplayMode), 1.2 s before it, and logs it.
+        ///
+        /// With <paramref name="light"/> (-Probe appbarlight, #148) the bar's RequestedTheme is Light, the page staying
+        /// dark so that the bar's edge shows in the recording as before, and one more touch comes last: favorite, checked
+        /// by then, held 1 s on the closed bar.
         /// </summary>
-        private async Task AppBarProbe(Grid host)
+        private async Task AppBarProbe(Grid host, bool light = false)
+        {
+            await WithAppBar(host, new[] { "first menu item", "second menu item" }, light, (h, bar) => AppBarTouches(h, bar, light));
+        }
+
+        /// <summary>
+        /// A CommandBar as the page's BottomAppBar while <paramref name="touches"/> runs: compact, with the primary commands
+        /// add, favorite (a toggle) and delete, and a secondary command for each label; every Click, Opened and Closed
+        /// logged; in the light theme with <paramref name="light"/>. Taken off after the run.
+        /// </summary>
+        private async Task WithAppBar(Grid host, string[] secondary, bool light, Func<Grid, CommandBar, Task> touches)
         {
             var frame = Window.Current.Content as Frame;
             var shell = frame != null ? frame.Content as Page : null;
@@ -533,12 +567,16 @@ namespace RefApp
             }
 
             var bar = new CommandBar { ClosedDisplayMode = AppBarClosedDisplayMode.Compact };
+            if (light)
+            {
+                bar.RequestedTheme = ElementTheme.Light;
+            }
+
             var add = new AppBarButton { Label = "add", Icon = new SymbolIcon(Symbol.Add) };
             var favorite = new AppBarToggleButton { Label = "favorite", Icon = new SymbolIcon(Symbol.Favorite) };
             var delete = new AppBarButton { Label = "delete", Icon = new SymbolIcon(Symbol.Delete) };
-            var first = new AppBarButton { Label = "first menu item" };
-            var second = new AppBarButton { Label = "second menu item" };
-            foreach (var command in new[] { add, delete, first, second })
+            var lines = secondary.Select(label => new AppBarButton { Label = label }).ToList();
+            foreach (var command in new[] { add, delete }.Concat(lines))
             {
                 var c = command;
                 c.Click += (s, e) => Log("click", c.Label + ", bar open " + bar.IsOpen);
@@ -548,14 +586,17 @@ namespace RefApp
             bar.PrimaryCommands.Add(add);
             bar.PrimaryCommands.Add(favorite);
             bar.PrimaryCommands.Add(delete);
-            bar.SecondaryCommands.Add(first);
-            bar.SecondaryCommands.Add(second);
+            foreach (var line in lines)
+            {
+                bar.SecondaryCommands.Add(line);
+            }
+
             bar.Opened += (s, e) => Log("bar", "Opened");
             bar.Closed += (s, e) => Log("bar", "Closed");
             shell.BottomAppBar = bar;
             try
             {
-                await AppBarTouches(host, bar);
+                await touches(host, bar);
             }
             finally
             {
@@ -565,30 +606,11 @@ namespace RefApp
         }
 
         /// <summary><see cref="AppBarProbe"/>'s page and touches, with the bar on the page.</summary>
-        private async Task AppBarTouches(Grid host, CommandBar bar)
+        private async Task AppBarTouches(Grid host, CommandBar bar, bool light)
         {
             var header = Header();
-            var page = await Page(host, header);
-            LogPointers(page, "page");
-            LogGestures(page, "page");
-            var b = Bounds(bar);
-            Log("layout", "bar " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + ", page " + Num(page.ActualWidth) + " x " + Num(page.ActualHeight));
-
-            Func<AppBarClosedDisplayMode, bool, Func<Task>> state = (mode, isOpen) => () =>
-            {
-                if (bar.ClosedDisplayMode != mode)
-                {
-                    bar.ClosedDisplayMode = mode;
-                }
-
-                if (bar.IsOpen != isOpen)
-                {
-                    bar.IsOpen = isOpen;
-                }
-
-                Log("setup", mode + (isOpen ? ", open" : ", closed"));
-                return Task.FromResult(true);
-            };
+            var page = await AppBarPage(host, header, bar);
+            var state = AppBarState(bar);
             var closed = state(AppBarClosedDisplayMode.Compact, false);
             var open = state(AppBarClosedDisplayMode.Compact, true);
             var minimal = state(AppBarClosedDisplayMode.Minimal, false);
@@ -607,8 +629,45 @@ namespace RefApp
             Press(null, "minimal: tap the bar away from the ellipsis", minimal, 100, 788, 0, 0, 0, 0, 80, gap);
             Press(null, "minimal: tap the ellipsis", minimal, 420, 786, 0, 0, 0, 0, 80, gap);
             Press(null, "minimal: tap the ellipsis, bar open", minimalOpen, 420, 527, 0, 0, 0, 0, 80, gap);
+            if (light)
+            {
+                // Favorite was checked by the tap on the open bar.
+                Press(null, "hold favorite, checked, bar closed", closed, 224, 768, 0, 0, 0, 0, 1000, gap);
+            }
+
             Code("closed again", closed, 2000);
             await RunScheduled(page, header);
+        }
+
+        /// <summary>The app bar probes' dark page, with the header band, its pointer events and gestures logged, and the bar's place.</summary>
+        private async Task<Grid> AppBarPage(Grid host, Border header, CommandBar bar)
+        {
+            var page = await Page(host, header);
+            LogPointers(page, "page");
+            LogGestures(page, "page");
+            var b = Bounds(bar);
+            Log("layout", "bar " + Num(b.X) + " " + Num(b.Y) + " " + Num(b.Width) + " " + Num(b.Height) + ", page " + Num(page.ActualWidth) + " x " + Num(page.ActualHeight) + ", bar theme " + bar.RequestedTheme);
+            return page;
+        }
+
+        /// <summary>A setup that puts the bar in a ClosedDisplayMode and opens or closes it from code, and logs it.</summary>
+        private Func<AppBarClosedDisplayMode, bool, Func<Task>> AppBarState(CommandBar bar)
+        {
+            return (mode, isOpen) => () =>
+            {
+                if (bar.ClosedDisplayMode != mode)
+                {
+                    bar.ClosedDisplayMode = mode;
+                }
+
+                if (bar.IsOpen != isOpen)
+                {
+                    bar.IsOpen = isOpen;
+                }
+
+                Log("setup", mode + (isOpen ? ", open" : ", closed"));
+                return Task.FromResult(true);
+            };
         }
 
         /// <summary>A horizontal touch: <see cref="Press"/> at (x, y), moved by dx over moveMs, held holdMs and let go; gapMs before the next. Its arguments are Press's, in Press's order, without the still time and dy.</summary>

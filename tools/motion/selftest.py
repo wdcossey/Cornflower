@@ -724,6 +724,286 @@ def appbar_motion():
     near(int(m.group(1)), 80, 6, 'the time constant')
     assert 'tap the ellipsis, bar closed: setup Compact, closed; bar Opened' in out, out
 
+
+@check
+def release_decisions_and_a_second_press():
+    # A synthetic -Probe pivotrelease run (#148). The start tap and two touches in touch.log; the app logs a press only
+    # for the first touch (the second's is held by the ScrollViewer), 5 ms after its planned time, so touch.log's times
+    # go onto the app's clock by the go line and that lag. Touch 1: a drag to +180 whose last 20 px reach the phone with
+    # the release, then back (FinalView the start). Touch 2: a swipe on (FinalView +450), and a press 100 ms after its
+    # release, held still 600 ms. Item events after the selection.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46.1 ms (planned      0) down 30 30 -> 36,36\n    86.1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046.1 ms (planned   2000) down 400 450 -> 480,540\n  2446.1 ms (planned   2400) move 220 450 -> 1,1\n')
+            f.write('  2846.1 ms (planned   2800) up 200 450 -> 240,540\n')
+            f.write('  6046.1 ms (planned   6000) down 380 450 -> 456,540\n  6196.1 ms (planned   6150) up 180 450 -> 216,540\n')
+            f.write('  6296.1 ms (planned   6250) down 225 450 -> 270,540\n  6896.1 ms (planned   6850) up 225 450 -> 270,540\n')
+        vc = '%.1f\tviewchanging\tnext %g final %g inertial %s\n'
+        fr = '%.1f\tframe\trt %g offset %g index %d panel none items none itemsAt 0\n'
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tslow left 200 px, held\n')
+            f.write(fr % (2900.0, 100, 900, 0))
+            f.write('3005.0\tpressed\tpivot 400 450 ts 1\n3030.0\tcapturelost\tpivot 400 450 ts 1\n')
+            for k in range(1, 19):
+                f.write(vc % (3000 + 20 * k, 900 + 10 * k, 900 + 10 * k, 'False'))
+            f.write(vc % (3810.0, 1100, 900, 'True'))
+            f.write(fr % (3812.0, 200, 1100, 0))
+            f.write(fr % (4300.0, 300, 900, 0))
+            f.write('5800.0\tstep\tswipe left, then a press held 600 ms 100 ms after the release\n')
+            for k in range(1, 8):
+                f.write(vc % (7000 + 20 * k, 900 + 25 * k, 900 + 25 * k, 'False'))
+            f.write(vc % (7155.0, 1100, 1350, 'True'))
+            f.write('7160.0\tselection\tindex 1\n7161.0\tpivotitem\tUnloading one, index 1\n7161.5\tpivotitem\tLoaded two, index 1\n')
+            f.write(vc % (7240.0, 1200, 1350, 'True'))
+            f.write(fr % (7250.0, 400, 1200, 1))
+            f.write(fr % (7500.0, 420, 1200, 1))
+            f.write(vc % (7860.0, 1250, 1350, 'True'))
+            f.write(fr % (8100.0, 500, 1350, 1))
+        code, out = run_script('release.py', run)
+    assert code == 0, out
+    # Touch 1: pressed at 3005 by the lag, released 800 ms later; the release's offset is the inertial line's +200, not
+    # the last drag line's +180; the speed over the drag's last 100 ms 0.5 px a ms; FinalView the start: back.
+    assert re.search(r'slow left 200 px, held +800 +\+200\.0 +0\.500 +\+5 +\+0\.0 back, index 0', out), out
+    assert re.search(r'then a press held 600 ms 100 ms after the release +150 +\+200\.0 +1\.250 +\+0 +\+450\.0 on \+1, index 1', out), out
+    assert ('the second press 100 ms after the release, the offset +300.0 from the start; it moved 0.0 px during the '
+            '600 ms press; inertial again 5 ms after its release; at the end +450.0') in out, out
+    assert '+1.0  Unloading one, index 1' in out and '+1.5  Loaded two, index 1' in out, out
+
+
+@check
+def release_on_a_hub():
+    # A synthetic -Probe hubrelease run (#148): touch.log with a decimal comma, as a VM in such a culture writes it; the
+    # page the sections' pitch, 380 here, read from the frames (the first frame's layout is mid-entrance, 300); a swipe
+    # right at the first section that loops to the end, which is no count of pages; a stray press far from any touch,
+    # left out of the lag; and ScrollToSection, whose frames count only those with a new offset.
+    import tempfile
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46,1 ms (planned      0) down 30 30 -> 36,36\n    86,1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046,1 ms (planned   2000) down 70 500 -> 84,600\n  2196,1 ms (planned   2150) up 270 500 -> 324,600\n')
+        fr = '%.1f\tframe\trt %g offset %g header 15 [none] | section 1 %g | section 2 %g | section 3 0 | section 4 0\n'
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\tsection section 1 5 76 300 708\n')
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tfirst section: swipe right\n')
+            f.write(fr % (2900.0, 100, 0, 0, 380))
+            f.write('3000.0\tpressed\thub 70 500 ts 1\n2400.0\tpressed\thub 1 1 ts 2\n')
+            f.write(fr % (3050.0, 105, 0, 40, -1100))
+            f.write('3400.0\tviewchanging\tnext 0 final 1140 inertial True\n')
+            f.write(fr % (3900.0, 200, 1140, -1140, -760))
+            f.write('5000.0\tstep\tScrollToSection 2\n5000.5\tsetup\tScrollToSection 2, offset 1140 before the call, 380 after\n')
+            f.write(fr % (5010.0, 300, 380, -380, 0))
+            f.write(fr % (5030.0, 316, 380, -380, 0.5))
+        code, out = run_script('release.py', run)
+    assert code == 0, out
+    assert 'a Hub, a page 380 px' in out, out
+    assert 'a press at 2400.0 ms is 600 ms from the nearest touch in touch.log: left out of the lag' in out, out
+    assert re.search(r'first section: swipe right +150 .* to \+1140\.0 \(a loop, not \+3 pages\)', out), out
+    assert 'ScrollToSection 2: ScrollToSection 2, offset 1140 before the call, 380 after; 1 frames with a new offset: 10:380.0' in out, out
+
+
+@check
+def hub_entrance_fit():
+    # A synthetic -Probe hubentrance run (#148): two Hubs placed, each turning from RotationY -90 by an ExponentialEase
+    # of 5 over 750 ms (48 ticks), the second with a frame missing; the fit finds 5 and 750 ms, and the two the same.
+    import tempfile
+    f = ml.expo_out(5)
+    line = ('%.1f\tframe\trt %g hub proj rot 0 %g 0 centreX -0.5 localX 0 global 0 0 0 | op 1 hubop 1 | header 15 flyin 0'
+            ' | section1 0 | bg op 1 0 x 800 at 0\n')
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as fp:
+            for n, t0 in enumerate((1000.0, 5000.0)):
+                fp.write('%.1f\tstep\tplace a Hub, %d\n' % (t0, n))
+                fp.write(line % (t0 + 5, t0, 0))
+                for k in range(49):
+                    if n == 1 and k == 3:
+                        continue
+                    v = -90 * (1 - f(k * ml.TICK / 750)) if k < 48 else 0
+                    fp.write(line % (t0 + 20 + 15 * k, t0 + ml.TICK * (k + 1), round(v, 3)))
+        code, out = run_script('entrance.py', run)
+    assert code == 0, out
+    assert 'RotationY -90 at tick 0, 0 at tick 48 (750.0 ms of rt)' in out, out
+    assert 'ExponentialEase 5.00 over 750.0 ms, the first frame its start' in out, out
+    assert 'The 2 entrances have the same RotationY on every tick each shows' in out, out
+    # A turn the segment cuts off before 0 isn't fitted.
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as fp:
+            fp.write('5000.0\tstep\tplace a Hub, cut off\n')
+            for k in range(20):
+                fp.write(line % (5020 + 15 * k, 5000 + ml.TICK * k, round(-90 * (1 - f(k * ml.TICK / 750)), 3)))
+        code, out = run_script('entrance.py', run)
+    assert code == 0, out
+    assert 'place a Hub, cut off: RotationY -90 at tick 0, never back to 0 in the segment' in out, out
+
+
+def band_frame(bands, w=540, h=960, d=999.0, cy=400.0, cx=225.0, level=31):
+    """A synthetic recorded frame of full-width bands on black: each (top, bottom, angle) at rest from top to bottom
+    (view px), turned by angle degrees about its centre line (positive: the lower edge nearer), seen by PlaneProjection's
+    camera and cut by the screen's sides. Each row is filled where a band covers its middle, with the edges' coverage."""
+    s = ml.VIEW_W / w
+    img = bytearray(w * h)
+    for top, bottom, ang in bands:
+        c, half, r = (top + bottom) / 2, (bottom - top) / 2, math.radians(ang)
+        for k in range(2001):
+            u = -half + 2 * half * k / 2000
+            y, z = c + u * math.cos(r), u * math.sin(r)
+            q = d / (d - z)
+            yp = cy + (y - cy) * q
+            row = int(yp / s)
+            if not 0 <= row < h:
+                continue
+            l, rr = (cx - 225 * q) / s, (cx + 225 * q) / s
+            for x in range(w):
+                cover = max(0.0, min(x + 1, rr) - max(x, l))
+                if cover > 0:
+                    img[row * w + x] = max(img[row * w + x], int(round(level * min(cover, 1.0))))
+    return bytes(img), w, h, s
+
+
+@check
+def strips_band_about_its_centre():
+    # A band 100 px tall at rest from 100 to 200, turned 40 degrees about its centre: the pieces' line crosses the
+    # screen's plane at its centre, the angle comes back, and the near half, which the screen's sides cut, ends where
+    # the band's lower edge is. A second band, at rest, adds nothing.
+    import strips
+    frame, w, h, s = band_frame([(100, 200, 40.0), (200, 300, 0.0)])
+    page = bytes(w * h)
+    pieces = strips.trapezoids(strips.row_edges(frame, page, w, h), w)
+    turned = [strips.strip(p, s, 450.0) for p in pieces]
+    assert len(turned) == 1, turned
+    yt, zt, yb, zb, ang, cross, nend = turned[0]
+    near(ang, 40.0, 1.0, 'the angle')
+    near(cross, 150.0, 1.5, 'the line the band turns about')
+    near(yt, 150 - 50 * math.cos(math.radians(40)), 1.5, 'the far edge y')
+    near(zt, -50 * math.sin(math.radians(40)), 2.0, 'the far edge z')
+    assert nend is not None
+    near(nend[0], 150 + 50 * math.cos(math.radians(40)), 2.5, 'the near end y')
+    near(nend[1], 50 * math.sin(math.radians(40)), 3.0, 'the near end z')
+    # Turned the other way, the far half is the lower one, and nothing is cut below it.
+    frame, w, h, s = band_frame([(500, 600, -30.0)])
+    turned = [strips.strip(p, s, 450.0) for p in strips.trapezoids(strips.row_edges(frame, page, w, h), w)]
+    assert len(turned) == 1, turned
+    near(turned[0][4], -30.0, 1.0, 'a negative angle')
+    near(turned[0][5], 550.0, 1.5, 'its line')
+    # The unprojection undoes project().
+    yp, wp, _, _ = strips.project(120.0, -30.0, 180.0, 30.0, 450.0)
+    y, z = strips.unproject(yp, wp, 450.0)
+    near(y, 120.0, 1e-9, 'unproject y')
+    near(z, -30.0, 1e-9, 'unproject z')
+
+
+@check
+def strips_bands_and_their_eases():
+    # Readings of two bands from several calls: bands() finds each band by its line, and the opening's distinct
+    # angles fit the ExponentialEase they were made with, one a tick.
+    import strips
+    f = ml.expo_out(4)
+    readings = []
+    for call in range(3):
+        for k in range(0, 20):
+            if (k + call) % 3 == 0:
+                continue
+            a = 80 * (1 - f(k * ml.TICK / 300)) if k * ml.TICK < 300 else 0.0
+            readings.append((k * 15.625, (0, 0, 0, 0, a, 50.0 + 0.3 * call, None)))
+            readings.append((k * 15.625 + 30, (0, 0, 0, 0, a, 150.0 - 0.3 * call, None)))
+    found = strips.bands(readings)
+    assert [round(c) for c, _ in found] == [50, 150], found
+    vals = ml.distinct([x[4] for _, x in readings if abs(x[5] - 50) < 8], decimals=1, tol=0.6)
+    assert len(vals) >= 15, vals
+    e, d, ph, A = ml.fit_scaled([abs(v) for v in vals if v > 0.5], list(range(len([v for v in vals if v > 0.5]))), f,
+                                durations=range(100, 601, 5), phases=[i / 5 for i in range(-10, 51)])
+    near(d, 300, 10, 'the duration')
+    near(A, 80, 1.5, 'the start angle')
+
+
+@check
+def strips_steps_and_edge_on():
+    # The turn a tick from distinct angles with a tick no call showed (a gap of two), and a band at 80 degrees, whose
+    # far edge shows below its near one, read as 80, not -100.
+    import strips
+    rate, gaps = strips.steps([80.0, 69.05, 47.15, 36.2, 25.25])
+    near(rate, 10.95, 0.01, 'the turn a tick')
+    assert gaps == [1, 2, 1, 1], gaps
+    frame, w, h, s = band_frame([(0, 100, 80.0)])
+    turned = [strips.strip(p, s, 450.0) for p in strips.trapezoids(strips.row_edges(frame, bytes(w * h), w, h), w)]
+    assert turned and all(t[4] > 0 for t in turned), turned
+
+
+@check
+def looping_snap_coast_recentring_and_fade():
+    # A synthetic -Probe looping run (#149): a month drag let go 45 px short of the next item, which then slows at a
+    # constant deceleration to it over 280 ms and recentres by one item; and the day column's unselected items fading
+    # out over 21.3 frames, 0.0469 a frame.
+    import tempfile
+    pitch, start = 138.375, 69325.875
+    with tempfile.TemporaryDirectory() as run:
+        with open(os.path.join(run, 'touch.log'), 'w', encoding='utf-8') as f:
+            f.write('header line\n    46.1 ms (planned      0) down 30 30 -> 36,36\n    86.1 ms (planned     80) up 30 30 -> 36,36\n')
+            f.write('  2046.1 ms (planned   2000) down 86 387 -> 104,464\n  2846.1 ms (planned   2800) up 86 294 -> 104,350\n')
+        fin = start + pitch
+        with open(os.path.join(run, 'probe.txt'), 'w', encoding='utf-8') as f:
+            f.write('0.0\tlayout\tselector 0 17.5 37 138 700 item 123 x 123 loop True items 12\n')
+            f.write('1000.0\tgo\ttap at 30 30\n')
+            f.write('1800.0\tstep\tmonth drag up, held\n')
+            f.write('3005.0\tpressed\tsel0 86 387 handled ts 1\n')
+            fr = '%.1f\tframe\trt %g sel0 offset %.3f items 6@%.3f:1x1.125 7@%.3f:1x1.125\n'
+            f.write(fr % (2900.0, 1000.0, start, 4.0, 4.0 + pitch))
+            for k in range(1, 6):
+                f.write('%.1f\tviewchanging\tnext %.3f final %.3f inertial False sel0\n' % (3500 + 50 * k, start + 18.6 * k, start + 18.6 * k))
+            off0 = start + 93.375
+            f.write('%.1f\tviewchanging\tnext %.3f final %.3f inertial True sel0\n' % (3812.0, off0, fin))
+            T = 280.0
+            for k in range(0, 19):
+                t = k * ml.TICK
+                u = min(t / T, 1.0)
+                off = fin - 45.0 * (1 - u) ** 2
+                f.write(fr % (3813.0 + 15 * k, 2000.0 + t, off, 4.0 - (off - start), 4.0 + pitch - (off - start)))
+            f.write('4200.0\tevent\tsel0 SelectionChanged 7 rt 2328.125\n')
+            f.write(fr % (4210.0, 2343.75, start, 4.0, 4.0 + pitch))
+            fr1 = '%.1f\tframe\trt %g sel1 offset %.3f items 14@4:%.3fx1.125 15@142:1x1.125 16@280:%.3fx1.125 17@418:%.3fx1.125\n'
+            f.write(fr1 % (5000.0, 3000.0, start, 1, 1, 1))
+            for k in range(1, 23):
+                o = max(0.0, 1 - k * ml.TICK / 333.0)
+                f.write(fr1 % (5100.0 + 15 * k, 3100.0 + k * ml.TICK, start, o, o, o))
+        code, out = run_script('looping.py', run)
+    assert code == 0, out
+    assert 'FinalView +138.4 px from the press (+1.000 items)' in out, out
+    assert re.search(r'constant deceleration \(quadratic ease-out\) over 2[78]\d ms', out), out
+    assert 'recentred at rt 2343.750: the offset jumps -138.375 px (-1.000 items)' in out, out
+    assert re.search(r'sel1 fade from rt [\d.]+: 1\.000 to 0\.000 over 2\d frames \(\d+ ms\), -0\.04[67]\d a frame', out), out
+
+
+@check
+def looping_and_strips_edges():
+    # The first review's cases (#149): a fade with one value repeated (two frames on one tick) is one fade; an item
+    # logged with opacity NaN is kept; a run of one frame isn't fitted; and a band whose angles end at 0.0 and aren't
+    # linear is reported, not stopped by the ratio test.
+    import looping
+    import strips
+    items = lambda o: [(1.0, 0.0, 1.0, 1.0), (2.0, 138.0, o, 1.0), (3.0, 276.0, o, 1.0)]
+    ops = [1.0, 0.95, 0.9, 0.9, 0.85, 0.8, 0.75]
+    fs = [(100.0 + 15 * k, 1000.0 + ml.TICK * k, 0.0, items(o)) for k, o in enumerate(ops)]
+    runs = looping.fades(fs)
+    assert len(runs) == 1 and runs[0][-1][1] == 0.75, runs
+    m = looping.FRAME.match('rt 1 sel0 offset 5 items 7@1:NaN 8@139:0x1.125')
+    got = [x for x in looping.ITEM.findall(m.group(4))]
+    assert len(got) == 2 and got[0][2] == 'NaN', got
+    assert looping.best_curves([(0.0, 100.0)], 50.0) == []
+    import contextlib
+    import io as _io
+    buf = _io.StringIO()
+    readings = []
+    for call in range(3):
+        for k, a in enumerate([45.0, 35.6, 27.7, 21.1, 15.7, 11.4, 7.8, 5.2, 0.0]):
+            readings.append((k * 15.6, (0, 0, 0, 0, a + 0.01 * call, 96.9, None)))
+    with contextlib.redirect_stdout(buf):
+        strips.band_report('dialog', 'open', readings, 3, 1.0)
+    assert 'band about y 96.9' in buf.getvalue() and 'eased' in buf.getvalue(), buf.getvalue()
+
+
 for fn in checks:
     fn()
     print('ok  %s' % fn.__name__)

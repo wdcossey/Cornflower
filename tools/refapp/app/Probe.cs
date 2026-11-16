@@ -113,6 +113,33 @@ namespace RefApp
                 case "appbar":
                     await probe.AppBarProbe(host);
                     break;
+                case "appbarlight":
+                    await probe.AppBarProbe(host, true);
+                    break;
+                case "appbarlong":
+                    await probe.AppBarLongProbe(host);
+                    break;
+                case "pivotrelease":
+                    await probe.PivotReleaseProbe(host);
+                    break;
+                case "hubrelease":
+                    await probe.HubReleaseProbe(host);
+                    break;
+                case "hubentrance":
+                    await probe.HubEntranceProbe(host);
+                    break;
+                case "hubstretch":
+                    await probe.HubStretchProbe(host);
+                    break;
+                case "listclick":
+                    await probe.ListClickProbe(host);
+                    break;
+                case "popupcurves":
+                    await probe.PopupCurvesProbe(host);
+                    break;
+                case "looping":
+                    await probe.LoopingProbe(host);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;

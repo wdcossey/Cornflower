@@ -33,5 +33,6 @@ by `real-window/drive.ps1`, which runs under both. The scripts in `refapp/vm/`, 
 
 `python` in the tools' READMEs is Python 3: where the command is `python3`, as on most Linux and
 macOS systems, use that. CI parses every script with `pwsh`, compiles the Python tools, checks the
-Node tools' syntax and runs `motion/selftest.py`, on Linux (`tools` in
-`.github/workflows/ci.yml`); the test suite runs `real-window/selftest.ps1` (`RealWindowTests`, in `build-test`).
+Node tools' syntax and runs `motion/selftest.py` and `real-window/selftest.ps1`, on Linux (`tools` in
+`.github/workflows/ci.yml`). The test suite runs `real-window/selftest.ps1` too (`RealWindowTests`, in
+`build-test`).

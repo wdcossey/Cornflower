@@ -34,12 +34,14 @@
   -Probe <name> runs one of the app's probes (app\Probe.cs) instead of the suite: the app lays a control out and
   writes the touches it wants, vm\touch.ps1 plays them on the emulator's display with the mouse, and the app's
   log of what the control did comes back as probe.txt, beside touch.log. Probes: toggleswitch, toggletap,
-  togglehalf, tilt, tiltedge, tiltgrid, motion, pages, projections, ring, ringsize, scroll, scrollend, listpress, listcheck, turnstile, pivot, pivotwide, pivottwo, hub, hubimage, hubimage900, appbar.
+  togglehalf, tilt, tiltedge, tiltgrid, motion, pages, projections, ring, ringsize, scroll, scrollend, listpress, listcheck, turnstile, pivot, pivotwide, pivottwo, hub, hubimage, hubimage900, appbar,
+  and for #148 pivotrelease, hubrelease, hubentrance, hubstretch, appbarlight, appbarlong, listclick, and for #149
+  popupcurves (with -Record) and looping.
   -Record (with -Probe) records the emulator's display with ffmpeg gdigrab from just before the touches until the
   probe is done, lossless, and brings back record.mkv and frames.csv, each frame's time in seconds. Probes motion,
   pages, projections and ring start their sequence on one tap, so the recording and the log start together;
   turnstile starts on one tap the same way; scroll, scrollend, listpress, listcheck, pivot, pivotwide, pivottwo, hub, hubimage, hubimage900 and appbar start on a tap on their header
-  band, which flashes white.
+  band, which flashes white, and so do #148's.
   -TouchMode real (the default) moves the VM's real cursor, which needs the emulator in front and the VM's
   mouse left alone; post posts the mouse messages to the emulator's display window, which the emulator
   ignored when tried (2026-11-09).
