@@ -111,13 +111,15 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 9. **The mouse clicks on the left button's release and selects nothing**; the right button clicks nothing.
    `A_Mouse_Clicks_On_The_Left_Buttons_Release_And_Selects_Nothing`; let go off the item, nothing,
    `A_Mouse_Let_Go_Off_The_Item_Clicks_Nothing`; a release with no press on the item, nothing,
-   `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
+   `A_Release_Without_A_Press_On_The_Item_Clicks_Nothing`; the right button clicked while the left is held, nothing,
+   `A_Right_Click_While_The_Left_Is_Held_Clicks_Nothing`; with Avalonia's hold on the mouse, which moves its selection to the
    release, neither button selects, `With_Hold_On_The_Mouse_Neither_Button_Selects`.
 10. **Space and Enter click the focused item once, as they are let go**, a held key's repeats included.
     `Space_And_Enter_Click_The_Focused_Item_Once_As_They_Are_Let_Go`; a key let go without its press, nothing,
     `A_Key_Let_Go_Without_Its_Press_Clicks_Nothing`.
 11. **A Button in an item takes its own tap.** `A_Button_In_An_Item_Takes_Its_Own_Tap`; a press something in the item
-    took clicks nothing, the mouse's and a touch's, `A_Press_Something_In_The_Item_Took_Clicks_Nothing`.
+    took clicks nothing, the mouse's and a touch's, `A_Press_Something_In_The_Item_Took_Clicks_Nothing`, and forgets
+    an earlier press whose release never came back, `A_Press_Something_In_The_Item_Took_Forgets_An_Earlier_Press`.
 12. **A list in an item clicks its own item alone**; the outer list hears nothing.
     `A_List_In_An_Item_Clicks_Its_Own_Item_Alone`.
 13. **Behaviour only**: under Simple's ListBox it clicks too. `It_Works_Under_Another_Theme`.

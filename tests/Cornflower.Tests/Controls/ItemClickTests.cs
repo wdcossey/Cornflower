@@ -453,6 +453,57 @@ public class ItemClickTests
         Assert.Equal(-1, outer.SelectedIndex);
     }
 
+    // The right button pressed and let go while the left is held on the item clicks nothing; the left's release then
+    // clicks once.
+    [AvaloniaFact]
+    public void A_Right_Click_While_The_Left_Is_Held_Clicks_Nothing()
+    {
+        using var page = new ClickPage();
+        var at = page.On(2);
+
+        page.Window.MouseDown(at, MouseButton.Left);
+        page.Window.MouseDown(at, MouseButton.Right);
+        page.Window.MouseUp(at, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(page.Clicked);
+        page.Window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["item 2"], page.Clicked);
+        Assert.Equal(0, page.SelectionChanges);
+    }
+
+    // A press something in the item took forgets an earlier press of the same pointer on the item, whose release never
+    // came back to it: letting go then clicks nothing.
+    [AvaloniaFact]
+    public void A_Press_Something_In_The_Item_Took_Forgets_An_Earlier_Press()
+    {
+        using var page = new ClickPage();
+        page.List.ItemTemplate = new FuncDataTemplate<string>((text, _) =>
+        {
+            var grabber = new Border { Name = "Grabber", Height = 20, Background = Avalonia.Media.Brushes.Transparent };
+            grabber.AddHandler(InputElement.PointerPressedEvent, (_, e) => e.Handled = true);
+            return new StackPanel { Children = { new TextBlock { Text = text }, grabber } };
+        });
+        Dispatcher.UIThread.RunJobs();
+        var item = page.Item(1);
+        var text = item.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "item 1");
+        var grabber = item.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "Grabber");
+        EventHandler<PointerPressedEventArgs> letGo = (_, e) => e.Pointer.Capture(null);
+        page.Window.AddHandler(InputElement.PointerPressedEvent, letGo, RoutingStrategies.Bubble, handledEventsToo: true);
+
+        page.Window.MouseDown(text.TranslatePoint(new Point(5, 5), page.Window)!.Value, MouseButton.Left);
+        page.Window.MouseMove(page.On(4));
+        page.Window.MouseUp(page.On(4), MouseButton.Left);
+        page.Window.RemoveHandler(InputElement.PointerPressedEvent, letGo);
+        var onGrabber = grabber.TranslatePoint(new Point(5, 5), page.Window)!.Value;
+        page.Window.MouseDown(onGrabber, MouseButton.Left);
+        page.Window.MouseUp(onGrabber, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(page.Clicked);
+    }
+
     // A release with no press on the item (the mouse pressed off it, its capture let go, and let go on the item) clicks
     // nothing.
     [AvaloniaFact]
