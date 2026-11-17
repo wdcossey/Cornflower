@@ -83,10 +83,18 @@ public static class RealInput {
   public static void Down() { mouse_event(2, 0, 0, 0, IntPtr.Zero); }
   public static void Up() { mouse_event(4, 0, 0, 0, IntPtr.Zero); }
   public static void Wheel(int d) { mouse_event(0x800, 0, 0, unchecked((uint)d), IntPtr.Zero); }
-  [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, IntPtr extra);
-  // Alt pressed and let go. Windows lets the process that sent the last input set the foreground window, so a
-  // process that isn't in front (the terminal minimised, Explorer holding the focus) can bring the sample forward.
-  public static void TapAlt() { keybd_event(0x12, 0, 0, IntPtr.Zero); keybd_event(0x12, 0, 2, IntPtr.Zero); }
+  [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
+  [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
+  [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+  // Windows refuses SetForegroundWindow to a process that didn't receive the last input, as when the terminal that
+  // started this is minimised and Explorer holds the focus. Sharing the front window's input state for the call lets
+  // it through without sending any input to that window.
+  public static bool Front(IntPtr h) {
+    uint pid; uint them = GetWindowThreadProcessId(GetForegroundWindow(), out pid), me = GetCurrentThreadId();
+    bool joined = them != 0 && them != me && AttachThreadInput(me, them, true);
+    try { BringWindowToTop(h); return SetForegroundWindow(h); }
+    finally { if (joined) AttachThreadInput(me, them, false); }
+  }
 
   // Touch, through InjectTouchInput: one contact, with no feedback drawn (TOUCH_FEEDBACK_NONE), so frames show only the app.
   [StructLayout(LayoutKind.Sequential)] public struct PT { public int x, y; }
@@ -206,10 +214,8 @@ function Px($dip) {
 }
 # Windows lets a process that isn't in front only ask, so it also asks through UI Automation, which the app itself acts on.
 function Fore {
-    # Windows refuses SetForegroundWindow to a process that sent no input since another app took the focus, as when
-    # the terminal that started this is minimised; tapping Alt first counts as input and lets it through.
-    if ([RealInput]::GetForegroundWindow() -ne $p.MainWindowHandle) { [RealInput]::TapAlt() }
-    [void][RealInput]::SetForegroundWindow($p.MainWindowHandle)
+    # Front shares the front window's input state for the call, so it works with the terminal minimised (RealInput).
+    [void][RealInput]::Front($p.MainWindowHandle)
     if ($win -and [RealInput]::GetForegroundWindow() -ne $p.MainWindowHandle) { try { $win.SetFocus() } catch { } }
     Start-Sleep -Milliseconds 150
 }
