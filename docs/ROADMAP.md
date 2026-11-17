@@ -139,8 +139,8 @@ Tier 2's reads owed after the roll-up, [#148](https://github.com/wdcossey/Cornfl
 | [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | none | New control, on the Flyout's popup host; done 2026-11-17 (#177), device and real-window runs owed | 5 |
 | [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | AutoCompleteBox | Theme. A different API (the plan's table); the page moving up for the keyboard is [#179](https://github.com/wdcossey/CornflowerUI/issues/179); done 2026-11-17 (#174), device and real-window runs owed | 1, 2 |
 | [#179](https://github.com/wdcossey/CornflowerUI/issues/179) | The shell's pan: the page moves up so the focused text box is at the window's top while the keyboard is up | none: `InputPane.OccludedRect` reports the keyboard, and nothing moves a page that doesn't scroll | A shared behaviour for every text box (TextBox, PasswordBox, AutoSuggestBox), decided by the user on 2026-11-16 (#174 left it out); run on the Pixel 8, as only a soft keyboard shows it | 2 |
-| [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. A subclass, `Cornflower.Controls.ComboBox`, opens `ListPickerFlyout` for the full-screen form a long list gets (6 items or more, #58) | 1, 4 |
-| [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, DatePickerFlyout, TimePickerFlyout, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. The columns are [#154](https://github.com/wdcossey/CornflowerUI/issues/154)'s wheel and the bar is [#153](https://github.com/wdcossey/CornflowerUI/issues/153)'s. Full-screen presentation to be measured; if Avalonia's presenter can't be placed full screen, the presenter becomes a part class. Whether the two flyouts are added as types is decided against the checklist | 1, 3 |
+| [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. The full-screen form a long list gets (6 items or more, #58) opens `ListPickerFlyout`; planned as a subclass, done as an attached behaviour on Avalonia's own ComboBox (`PhoneComboBox`), so every ComboBox has both forms and there is no new type; done 2026-11-17 (#182), device and real-window runs owed | 1, 2 |
+| [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, DatePickerFlyout, TimePickerFlyout, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. The columns are [#154](https://github.com/wdcossey/CornflowerUI/issues/154)'s wheel and the bar is [#153](https://github.com/wdcossey/CornflowerUI/issues/153)'s. Avalonia's presenters placed full screen on the phone's popup host, so no part class; the flyouts not added as types: [#184](https://github.com/wdcossey/CornflowerUI/issues/184); done 2026-11-17 (#183), device and real-window runs owed | 1, 2 |
 
 The reads Tier 3 needs: [#149](https://github.com/wdcossey/CornflowerUI/issues/149) LoopingSelector's physics, the pickers' row swing, the popups'
 open and close as curves, and the inline ComboBox's motion; [#150](https://github.com/wdcossey/CornflowerUI/issues/150) AutoSuggestBox's first
@@ -151,10 +151,14 @@ wait for [#148](https://github.com/wdcossey/CornflowerUI/issues/148), Tier 2's r
 #152, #153, #154, #157 and #158; then #155 and #156. Each issue names its own blockers and the
 full list of what each read covers; they are the record, not this list.
 
-**Done so far** (rolled up in the first Tier 3 roll-up): #148, #149 and #150 on 2026-11-16 (#170, #171, #172); #151
-on 2026-11-16 (#161); #152, #153, #154, #157 and #158 on 2026-11-17 (#175, #176, #178, #177, #174). Next: #155
-(ComboBox) and #156 (DatePicker, TimePicker), and #179. Owed: the Pixel 8 and real-window runs of #152, #153, #154,
-#157 and #158 (every page's ready line, and its popup opened on the phone), and the reads each control's README lists.
+**Tier 3 is complete** (2026-11-17, rolled up in the second Tier 3 roll-up), but for
+[#179](https://github.com/wdcossey/CornflowerUI/issues/179), the page moving up for the keyboard, and the runs owed:
+#148, #149 and #150 on 2026-11-16 (#170, #171, #172); #151 on 2026-11-16 (#161); #152, #153, #154, #157 and #158 on
+2026-11-17 (#175, #176, #178, #177, #174); #155 and #156 on 2026-11-17 (#182, #183); the shared popup host's
+consolidation (#181). The flyouts #156 left out are [#184](https://github.com/wdcossey/CornflowerUI/issues/184).
+Owed: the Pixel 8 and real-window runs of #152, #153, #154, #155, #156, #157 and #158 (every page's ready line, and
+its popup opened on the phone), and the reads each control's README lists. Next is the user's choice: #179, Tier 2's
+follow-ups (#162 to #169), or Tier 4.
 
 ### Tier 4
 
@@ -353,8 +357,11 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutPresenter (and `MenuItem` inside it) | Done 2026-11-17 (#175) |
 | [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | Done 2026-11-17 (#176) |
 | [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem | Done 2026-11-17 (#178) |
+| [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | Done 2026-11-17 (#182) |
+| [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, and their presenters | Done 2026-11-17 (#183) |
 | [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | Done 2026-11-17 (#177) |
 | [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | Done 2026-11-17 (#174) |
 
-Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Each row's device run on
+Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Tier 3 is complete but
+for #179 and the owed runs (above). Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.

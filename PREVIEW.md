@@ -76,6 +76,11 @@ ListPickerFlyout fills the window: in Multiple with check boxes and the pickers'
 tap picks. ContentDialog swings in at the top of the window over the dimmed page. LoopingSelector, the date and time
 pickers' wheel, here with the month wheel active (the picture is of the day it was drawn).
 
+ComboBox, Avalonia's own themed: with 5 items or fewer it opens inline, the box growing in place; with 6 or more it
+opens the full-screen ListPickerFlyout. DatePicker and TimePicker, Avalonia's own themed: closed, the value in the
+culture's short form (en-US here, as the phone's); open, the wheels fill the window over the pickers' bar (the date
+is the day the picture was drawn).
+
 <p>
 <img src="docs/preview/dark__listpicker__multiple.png" width="270" alt="ListPickerFlyout in Multiple, dark">
 <img src="docs/preview/light__listpicker__single.png" width="270" alt="ListPickerFlyout in Single, light">
@@ -87,6 +92,14 @@ pickers' wheel, here with the month wheel active (the picture is of the day it w
 <p>
 <img src="docs/preview/dark__loopingselector__active.png" width="270" alt="LoopingSelector, the month wheel active, dark">
 <img src="docs/preview/light__loopingselector__active.png" width="270" alt="LoopingSelector, the month wheel active, light">
+</p>
+<p>
+<img src="docs/preview/dark__combobox__inline.png" width="270" alt="ComboBox open inline, five items, dark">
+<img src="docs/preview/light__combobox__full.png" width="270" alt="ComboBox open full screen, seven items, light">
+</p>
+<p>
+<img src="docs/preview/dark__datetimepicker.png" width="270" alt="DatePicker and TimePicker closed, dark">
+<img src="docs/preview/light__datetimepicker__date.png" width="270" alt="DatePicker open, light">
 </p>
 
 ## Toggles, sliders and progress, in three accents
@@ -128,5 +141,5 @@ TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions h
 ## Not shown
 
 Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan, the popups' swing
-and the wheel's coast run on the phone's own measured curves, which still pictures can't show. ComboBox and the date
-and time pickers are next (Tier 3 of the [roadmap](docs/ROADMAP.md)).
+and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Nor does the page
+moving up for the keyboard, which is still to come (#179, in the [roadmap](docs/ROADMAP.md)).
