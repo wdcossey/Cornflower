@@ -30,8 +30,11 @@ WinRT's later documentation for WinUI says that with `IsItemClickEnabled` and a 
 Extended, `ItemClick` is raised and then `SelectionChanged`. That isn't what the 8.1 phone does in Single mode (above),
 and the phone is the reference.
 
-Not probed: `ItemClick` with `SelectionMode` Multiple (the check mode) or Extended, and with `None`; the keyboard (the
-phone has none). Below is what we do for each.
+Read since, in #148 (`-Probe listclick`, run `20261116-1717-dev11`, `tools/refapp/README.md`, "ListView: `ItemClick`
+in each `SelectionMode`"): with item click on, every tap clicks and nothing selects, in every mode. In `Multiple`, the
+check mode with its boxes shown, a tap on the box or on the text clicks the item and leaves it unchecked, and no
+`SelectionChanged` comes; a press on the box tilts the box alone, as in #136. `Extended`, `None` and `Single` click
+and select nothing. Not probed: the keyboard (the phone has none). Below is what we do for each.
 
 ## Avalonia's ListBox against the phone's ListView
 
@@ -45,9 +48,9 @@ phone has none). Below is what we do for each.
 | Space and Enter on the focused item | not read (no keyboard) | select it, on the press | click it once, as the key is let go; select nothing |
 | A control in an item that takes the press (a TextBox, a plain list) | no `ItemClick` | it takes the press; the item selects on a touch's release | nothing clicked or selected |
 | A Button in an item | the Button's click, no `ItemClick` | the Button takes the press; nothing selected | the same: the Button clicks, the item doesn't |
-| Multiple (the check mode) | not read | `Multiple, Toggle`: a tap toggles | toggles; no click (decided below) |
-| Extended | not read with item click; without it, no check boxes and a tap is Single's (#136) | `Multiple`, no check boxes (#142) | as Single: a tap clicks and selects nothing, Ctrl+A selects nothing (#145) |
-| None | `ItemClick` alone | no such mode | Single with item click on is the same: no tap selects |
+| Multiple (the check mode) | `ItemClick`; nothing checked, on the box or off it (#148); a press on the box tilts the box alone | `Multiple, Toggle`: a tap toggles | clicks; checks nothing (#169); the box's press as before |
+| Extended | `ItemClick`; nothing selected (#148) | `Multiple`, no check boxes (#142) | as Single: a tap clicks and selects nothing, Ctrl+A selects nothing (#145) |
+| None | `ItemClick` alone (#148) | no such mode | Single with item click on is the same: no tap selects |
 | Arrow keys | not read | move the selection | Avalonia's (a gap) |
 
 ### How a click is told
@@ -57,7 +60,7 @@ Avalonia's item selects in its own `OnPointerPressed`, `OnPointerReleased` and `
 accepts: a touch or a pen let go within the item, a mouse button (left or right) pressed on it, or Space or Enter
 from the focused item. An event that arrives handled selects nothing.
 
-So the behaviour **takes those events**: with item click on and the list out of the check mode, each event Avalonia's
+So the behaviour **takes those events**: with item click on, in any mode, each event Avalonia's
 item would select on is marked handled just before it reaches the item, and nothing is selected. Avalonia marked those
 same events handled when it selected, so an app's handler on the item or the list sees what it saw before.
 
@@ -108,10 +111,12 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 5. **A pan clicks nothing** (the 40-item probe). `A_Pan_Clicks_Nothing`.
 6. **Dragged off the item, a press clicks nothing** (the 12-item probe). `Dragged_Off_The_Item_Clicks_Nothing`.
 7. **A press moved 10 px sideways still clicks.** `A_Press_Moved_Ten_Pixels_Sideways_Still_Clicks`.
-8. **In the check mode a tap checks and clicks nothing**, `Multiple, Toggle`, with or without `AlwaysSelected`.
-   `In_The_Check_Mode_A_Tap_Checks_And_Clicks_Nothing`; Single's other flags keep item click,
+8. **In the check mode a tap clicks and checks nothing** (#169), `Multiple, Toggle`, with or without `AlwaysSelected`,
+   on the box and off it, with no `SelectionChanged`, and a press on the box still presses the box,
+   `In_The_Check_Mode_A_Tap_Clicks_And_Checks_Nothing`; Single's other flags keep item click,
    `Without_Multiple_A_Tap_Clicks`; and `Multiple` without `Toggle`, WinRT's Extended, clicks as Single does (#145),
-   `Multiple_Without_Toggle_A_Tap_Clicks`, by the mouse and the keys too, Ctrl+A selecting nothing,
+   `Multiple_Without_Toggle_A_Tap_Clicks`, by the mouse and the keys too, Ctrl+A selecting nothing there and in
+   the check mode,
    `Multiple_Without_Toggle_The_Mouse_And_Keys_Select_Nothing`, while a TextBox's own Ctrl+A in an item is the
    TextBox's, `Select_All_In_A_TextBox_In_An_Item_Is_The_TextBoxs`.
 9. **The mouse clicks on the left button's release and selects nothing**, the item pressed meanwhile; the right button clicks nothing.
@@ -137,19 +142,19 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
 14. **An item that is its own container is clicked as itself.**
     `An_Item_That_Is_Its_Own_Container_Is_Clicked_As_Itself`.
 15. **The sample's page** (`Sample/ItemClickPageTests.cs`): in the catalogue after the ListView's, both lists
-    clicking in the phone's look, its header, a tap's click shown, and "select" putting the list in the check mode and
-    taking it out with the checks cleared.
+    clicking in the phone's look, its header, a tap's click shown, and "select" turning item click off and putting the
+    list in the check mode, and taking it out with the checks cleared and item click back on.
 
 ## Decided on the user's behalf
 
-- **With item click on, out of the check mode, a tap selects nothing**, against the WinUI documentation's "both".
-  The 8.1 Update 1 phone, the reference, selected nothing on 30 taps in Single mode (above). To reverse: let the
+- **With item click on, a tap selects nothing**, against the WinUI documentation's "both". The 8.1 Update 1 phone,
+  the reference, selected nothing on 30 taps in Single mode (above), and none in any mode in #148. To reverse: let the
   events through in `ListBoxOptions.OnPressed` and `OnReleased` after raising the click.
-- **In the check mode (`Multiple` and `Toggle`, WinRT's Multiple), a tap checks and clicks nothing.** Not probed.
-  The check mode is how an 8.1 app lets the user choose items, with the boxes showing; on the phone a tap does one
-  thing, and in Single mode item click took the tap from selection. Owed: a probe of a ListView with
-  `IsItemClickEnabled` and `SelectionMode="Multiple"`. To reverse: drop the check-mode test in
-  `ListBoxOptions.Clicks`.
+- **In the check mode, Ctrl+A selects nothing** (#169). #132 decided, without a probe, that a tap in the check mode
+  (`Multiple` and `Toggle`, WinRT's Multiple) checks and clicks nothing; #148 read the phone: it clicks, on the box or
+  off it, and leaves the item unchecked, so that is what we do now. The keys follow the taps, so that no key selects
+  in a list that clicks; the phone has no keyboard to read. To reverse: let the select-all keys through in
+  `ListBoxOptions.OnListKeyDown` when the list's `SelectionMode` has both `Multiple` and `Toggle`.
 - **`Multiple` alone (WinRT's Extended) isn't the check mode: with item click on, a tap clicks and selects nothing, as
   in Single** (#145, following #142). #132 took any mode with `Multiple` as the check mode, when the theme showed the boxes for it too.
   #136 read the phone's Extended: no boxes, and a tap is Single's; #142 took the boxes away. Kept as before, a tap
@@ -157,8 +162,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ItemClickTests.cs` unless na
   wasn't read; Single's, the nearest read, clicks. Ctrl+A, which Avalonia's ListBox takes to select every item in
   any mode with `Multiple`, is taken from a list that clicks, from the list or its own items (not a control inside
   an item), so nothing selects there either. This is WinRT's rule, so it holds under any theme, where a `Multiple`
-  selection might draw: under item click an app's Extended list clicks, as WinRT's does. To reverse: test
-  `SelectionMode.Multiple` alone in `ListBoxOptions.Clicks` again, and drop `OnListKeyDown`.
+  selection might draw: under item click an app's Extended list clicks, as WinRT's does. #148 read the phone's
+  Extended with item click since: a tap clicks and selects nothing, as here.
 - **WinRT's `None` has no mode of its own.** Single with item click on is the same to the user: no tap, click or key
   selects. A selection set in code still shows (it draws nothing in a ListView outside the check mode, #119).
   To reverse: nothing to undo; a None mode would need a ListBox subclass.

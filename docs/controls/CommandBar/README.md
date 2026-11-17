@@ -1,6 +1,6 @@
 # CommandBar, AppBarButton, AppBarToggleButton and AppBarSeparator
 
-Status: done · [#118](https://github.com/wdcossey/CornflowerUI/issues/118), and [#141](https://github.com/wdcossey/CornflowerUI/issues/141) (the shell's press, the open bar's stepped height, the opening and closing motion) · #141's device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 379 ms, the bar opening with its labels and its two menu items) · #141's real-window run passed 2026-11-16 (`tools/real-window/drive.ps1`, Debug, on #161's head `d0a9ef6`: 160 of 160, every page opened from the list, ready, and left by Back) · light's pressed look read in [#148](https://github.com/wdcossey/CornflowerUI/issues/148): it differs, [#168](https://github.com/wdcossey/CornflowerUI/issues/168) · before #141: device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `fedf781`: cold 751 ms, the page opened in 329 ms, the compact bar drawn with its three commands (checked and disabled among them) and the ellipsis) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the commandbar page opened in 46 ms with 119 elements)
+Status: done · [#118](https://github.com/wdcossey/CornflowerUI/issues/118), and [#141](https://github.com/wdcossey/CornflowerUI/issues/141) (the shell's press, the open bar's stepped height, the opening and closing motion) · #141's device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 379 ms, the bar opening with its labels and its two menu items) · #141's real-window run passed 2026-11-16 (`tools/real-window/drive.ps1`, Debug, on #161's head `d0a9ef6`: 160 of 160, every page opened from the list, ready, and left by Back) · light's pressed and checked look brought to [#148](https://github.com/wdcossey/CornflowerUI/issues/148)'s reading (run `20261116-1724-dev11`) in [#168](https://github.com/wdcossey/CornflowerUI/issues/168) · owed for #168: the device run on the Pixel 8 and the real-window run · before #141: device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page commandbar` on `main` at `fedf781`: cold 751 ms, the page opened in 329 ms, the compact bar drawn with its three commands (checked and disabled among them) and the ellipsis) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the commandbar page opened in 46 ms with 119 elements)
 
 The Windows Phone 8.1 page's app bar: Avalonia 12's `CommandBar`, `CommandBarButton`, `CommandBarToggleButton` and
 `CommandBarSeparator`, themed by `Wp81Theme` in `src/Cornflower.Themes.Wp81/Controls/CommandBar.axaml` as the
@@ -58,10 +58,12 @@ The phone's shell draws the page's bar over the page and keeps its closed height
   falls over 200 ms, still showing its labels and its list. Frame by frame on `CornflowerClock`, as the shell's
   recording reads. The bar's layout height changes at once, so a page sees no motion; only the drawing moves.
 - **The ellipsis always shows**: the phone's opens a bar with no secondary commands to show its labels.
-- **States**: pressed fills the whole circle with the accent and shows the icon white, the circle sunk a little
-  (smaller, and with the icon 2.08 higher), checked or not; a checked toggle is filled with the ring's colour and
-  shows the icon in the bar's; disabled is the whole command at 0.451, as one layer. A pressed line of the list tilts
-  and keeps its colours.
+- **States**: in dark, pressed fills the whole circle with the accent and shows the icon white, the circle sunk a
+  little (smaller, and with the icon 2.08 higher), checked or not. In light, pressed is the checked look, with no
+  accent: the circle black, its ring white, the icon the bar's `#DDDDDD`, at the circle's own size and 2.08 higher
+  (#168). A checked toggle is filled with the ring's colour and shows the icon in the bar's; in light its ring is
+  white. Disabled is the whole command at 0.451, as one layer. A pressed line of the list tilts and keeps its
+  colours, in both themes.
 - **`CommandBarSeparator`** draws nothing and takes no room: the phone has no style for `AppBarSeparator`.
 - An app's `DefaultLabelPosition` shows the labels closed too, the bar as tall as its commands; the theme sets
   Collapsed closed and Bottom open.
@@ -82,9 +84,13 @@ default) or `Minimal` (1), WinRT's `AppBar.ClosedDisplayMode` and its 8.1 member
 
 `CommandBarBackgroundThemeBrush`, `CommandBarForegroundThemeBrush`,
 `AppBarItemForegroundThemeBrush`, `AppBarItemBackgroundThemeBrush`, `AppBarToggleButtonCheckedBorderThemeBrush`,
-`AppBarToggleButtonCheckedBackgroundThemeBrush`, `PhoneAccentBrush` and `PhoneButtonBasePressedForegroundBrush` (the
-press), `PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`, `Wp81.Glyph.AppBarEllipsis`. The theme's own:
-`Wp81CommandBarCompactHeight` (62.9166) and `Wp81CommandBarMinimalHeight` (26.25), the closed bar's heights. The themes of the bar's own parts are
+`AppBarToggleButtonCheckedBackgroundThemeBrush`, `PhoneFontFamilyNormal`, `PhoneFontFamilySemiLight`,
+`Wp81.Glyph.AppBarEllipsis`. The theme's own: `Wp81CommandBarCompactHeight` (62.9166) and `Wp81CommandBarMinimalHeight`
+(26.25), the closed bar's heights; and, one for each theme, the press and the checked ring, which the shell draws
+differently in dark and light (#168): `Wp81CommandBarPressedFillBrush`, `Wp81CommandBarPressedRingBrush`,
+`Wp81CommandBarPressedIconBrush`, `Wp81CommandBarPressedCircleTransform` and `Wp81CommandBarCheckedRingBrush`. They
+take the phone's colours (the accent, `PhoneTextOverAccentColor`, `PhoneForegroundColor`, `PhoneBackgroundColor`,
+`PhoneChromeColor`), so an app's accent still shows in the dark press. The themes of the bar's own parts are
 keyed `Wp81CommandBarItemsTheme` (its `ItemsControl`s) and `Wp81CommandBarEllipsisButtonTheme` (the ellipsis).
 
 ## The ladder
@@ -100,9 +106,10 @@ opens the minimal bar on a tap. The menu lines' tilt is `cf:Tilt`. No type subst
   inks 32 raw px where the shell's inks 51).
 - **The pressed circle rises the same open or closed**: 2.08 view px, the closed bar's. The shell's rises toward the
   screen's centre, so on the open bar it rises 0.83 and ours is 1.25 view px higher (1.4 as the frames measure it). The press jumps there and back: the
-  recording holds the press and doesn't show its edges. The pressed look is read in dark only; light is the same.
-- **A checked toggle, pressed**, shows the shell's press as an unchecked one does; the shell's isn't read (the
-  recording holds an unchecked command), and the template's ring alone isn't drawn.
+  recording holds the press and doesn't show its edges. The same in light (#168).
+- **A checked toggle, pressed, in dark**, shows the shell's press as an unchecked one does; the shell's isn't read in
+  dark (the recording holds an unchecked command), and the template's ring alone isn't drawn. In light it is read
+  (#168): the checked look, risen, as ours.
 - **A list of more than five lines** scrolls inside the 418.75 bar; whether the shell's scrolls isn't read (its sixth
   line runs off the screen). Why the shell's heights step as they do isn't modelled (COMPARISON, "Are the open bar's
   steps whole menu lines?"): a style per count sets the read height.

@@ -41,8 +41,10 @@ public partial class ItemClickPage : UserControl
     }
 
     /// <summary>
-    /// Into the check mode and out. Out of it, the checks are cleared: Avalonia keeps one selected when a list goes back
-    /// to Single, and with item click on no tap could clear it.
+    /// Into the check mode and out. On the phone a list with item click on clicks in the check mode too, and checks
+    /// nothing (#169), so an app turns item click off while it lets the user check items, as the phone's Mail does; and
+    /// back on after. Out of it, the checks are cleared: Avalonia keeps one selected when a list goes back to Single,
+    /// and with item click on no tap could clear it.
     /// </summary>
     private void OnSelectChanged(object? sender, RoutedEventArgs e)
     {
@@ -52,6 +54,7 @@ public partial class ItemClickPage : UserControl
             Clickable.UnselectAll();
         }
 
+        ListBoxOptions.SetIsItemClickEnabled(Clickable, !on);
         Clickable.SelectionMode = on ? ListViewPage.CheckMode : SelectionMode.Single;
         ShowState();
     }

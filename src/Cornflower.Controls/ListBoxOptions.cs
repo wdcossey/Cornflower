@@ -36,11 +36,12 @@ public sealed class ItemClickEventArgs : RoutedEventArgs
 /// the press itself, a Button or a TextBox, takes the tap as it would.
 /// </para>
 /// <para>
-/// In the check mode, a <see cref="ListBox.SelectionMode"/> with both <see cref="SelectionMode.Multiple"/> and
-/// <see cref="SelectionMode.Toggle"/> (WinRT's <c>Multiple</c>), a tap checks the item as before and nothing is clicked.
-/// <see cref="SelectionMode.Multiple"/> alone, WinRT's <c>Extended</c>, isn't the check mode (#145, after #142): a tap clicks and
-/// selects nothing, as in <c>Single</c>, and the select-all keys, which Avalonia's ListBox takes in any mode with
-/// <see cref="SelectionMode.Multiple"/>, select nothing. A selection set in code stands either way.
+/// Every <see cref="ListBox.SelectionMode"/> clicks, as on the phone (#169, read in #148): the check mode, both
+/// <see cref="SelectionMode.Multiple"/> and <see cref="SelectionMode.Toggle"/> (WinRT's <c>Multiple</c>), too, where a
+/// tap on the box or off it clicks the item and leaves it unchecked; and <see cref="SelectionMode.Multiple"/> alone,
+/// WinRT's <c>Extended</c>, as in <c>Single</c>. The select-all keys, which Avalonia's ListBox takes in any mode with
+/// <see cref="SelectionMode.Multiple"/>, select nothing. A selection set in code stands. An app whose check mode
+/// checks turns item click off while it is on, as the phone's apps do.
 /// </para>
 /// <para>
 /// A pointer's events are taken on the item's template root, by a class handler, so the root's own handlers don't see
@@ -106,13 +107,9 @@ public static class ListBoxOptions
 
     public static void SetIsItemClickEnabled(ListBox list, bool value) => list.SetValue(IsItemClickEnabledProperty, value);
 
-    /// <summary>The item's list, if it clicks its items now: item click on, and out of the check mode (Multiple and Toggle).</summary>
+    /// <summary>The item's list, if it clicks its items: item click on, in any selection mode (#169).</summary>
     private static ListBox? Clicking(ListBoxItem item) =>
-        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list && Clicks(list) ? list : null;
-
-    /// <summary>Whether the list clicks its items now: item click on, and out of the check mode (Multiple and Toggle).</summary>
-    private static bool Clicks(ListBox list) =>
-        GetIsItemClickEnabled(list) && !list.SelectionMode.HasFlag(SelectionMode.Multiple | SelectionMode.Toggle);
+        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list && GetIsItemClickEnabled(list) ? list : null;
 
     /// <summary>
     /// The select-all keys on a list that clicks, from the list or one of its own items, not from a control inside an
@@ -120,7 +117,7 @@ public static class ListBoxOptions
     /// </summary>
     private static void OnListKeyDown(ListBox list, KeyEventArgs e)
     {
-        if (_enabled == 0 || !Clicks(list) ||
+        if (_enabled == 0 || !GetIsItemClickEnabled(list) ||
             !(ReferenceEquals(e.Source, list) ||
               e.Source is ListBoxItem item && ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(item), list)) ||
             Application.Current?.PlatformSettings?.HotkeyConfiguration is not { } keys ||

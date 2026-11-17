@@ -16,11 +16,21 @@ mode on the reference profile ([PLAN](PLAN.md#where-the-behaviour-comes-from)). 
 | Moved 10 px sideways over 300 ms | one | none | one | none |
 | The press tilts | the Button's tilt (#113) | | the Button's tilt (#119), held while the finger is down, back at rest after the release | |
 
+Each mode with item click on, #148's `listclick` (run `20261116-1717-dev11`): the list of `listcheck` with
+`IsItemClickEnabled`, against `ItemClickTests`.
+
+| `SelectionMode` (WinRT's) | The taps | Phone | Ours |
+|---|---|---|---|
+| Multiple (`Multiple, Toggle`), the check mode | item 1's box, its text, item 2's text, 600 ms on item 3 | each clicks its item at the release; nothing checked; no `SelectionChanged` | the same (#169): `In_The_Check_Mode_A_Tap_Clicks_And_Checks_Nothing` |
+| Multiple, a press on the box | | the box tilts alone (#136) | the same: `IsBoxPressed`, the box's tilt |
+| Extended (`Multiple`) | items 1, 2 and 2 again | each clicks; nothing selected | the same (#145) |
+| None (Single here) | item 3 | clicks; nothing selected | the same |
+| Single | item 4, twice | each clicks; nothing selected | the same |
+
 The order: on the phone `ItemClick` comes before the list's own `PointerReleased` handler sees the release, and
 before `Tapped`. Ours is raised as the release reaches the item's template root, so before a handler on the list.
 
 ## Not compared
 
-- The check mode, Extended and None with item click on: not probed (owed, PLAN).
 - The keyboard: the phone has none.
-- The device run on the Pixel 8: owed.
+- The device run on the Pixel 8 and the real-window run of #169's change: owed.

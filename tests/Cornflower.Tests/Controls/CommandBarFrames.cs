@@ -55,17 +55,29 @@ public class CommandBarFrames
             frame.Save(Path.Combine(folder, $"{variant.ToString().ToLowerInvariant()}__BottomAppBar__compact-open-{lines}-secondary__ours.png"), PngBitmapEncoderOptions.Default);
         }
 
-        // A finger held on add, closed and open, as the recording's stills (#141).
+        // A finger held on add, closed and open, as the recording's stills (#141; light #168), and on the checked
+        // favorite, closed, in light (#168).
+        foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
         foreach (var open in new[] { false, true })
         {
-            using var page = new AppBarPage();
+            using var page = new AppBarPage(variant);
             page.Bar.IsOpen = open;
             page.Settle();
             page.Window.MouseDown(page.CentreOf(page.Add), MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
             using var frame = page.Capture();
-            frame.Save(Path.Combine(folder, $"dark__AppBar__add-pressed-{(open ? "open" : "closed")}__ours.png"), PngBitmapEncoderOptions.Default);
+            frame.Save(Path.Combine(folder, $"{variant.ToString().ToLowerInvariant()}__AppBar__add-pressed-{(open ? "open" : "closed")}__ours.png"), PngBitmapEncoderOptions.Default);
             page.Window.MouseUp(page.CentreOf(page.Add), MouseButton.Left);
+        }
+
+        using (var page = new AppBarPage(ThemeVariant.Light))
+        {
+            page.Settle();
+            page.Window.MouseDown(page.CentreOf(page.Favorite), MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            using var frame = page.Capture();
+            frame.Save(Path.Combine(folder, "light__AppBar__favorite-checked-pressed__ours.png"), PngBitmapEncoderOptions.Default);
+            page.Window.MouseUp(page.CentreOf(page.Favorite), MouseButton.Left);
         }
     }
 }

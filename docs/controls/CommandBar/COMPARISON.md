@@ -42,6 +42,16 @@ and delete enabled there) and ours.
 | closed | ![](../../../ref/wp81/CommandBar/dark__recording__compact-at-rest__frame227.png) | ![](../../../ref/wp81/CommandBar/dark__recording__add-pressed-closed__frame268.png) | ![](frames/dark__AppBar__add-pressed-closed__ours.png) |
 | open | ![](../../../ref/wp81/CommandBar/dark__recording__open-at-rest__frame553.png) | ![](../../../ref/wp81/CommandBar/dark__recording__add-pressed-open__frame595.png) | ![](frames/dark__AppBar__add-pressed-open__ours.png) |
 
+**The same in light** (#168, run `20261116-1724-dev11`): a pressed command is the checked look, with no accent. The
+recording's favorite is unchecked under the add press and delete enabled; ours keeps the page's checked favorite and
+disabled delete. The last row is favorite, checked, held.
+
+| | Phone, at rest | Phone, pressed | Ours, pressed |
+|---|---|---|---|
+| closed | ![](../../../ref/wp81/CommandBar/light__recording__compact-at-rest__frame240.png) | ![](../../../ref/wp81/CommandBar/light__recording__add-pressed-closed__frame277.png) | ![](frames/light__AppBar__add-pressed-closed__ours.png) |
+| open | ![](../../../ref/wp81/CommandBar/light__recording__open-at-rest__frame566.png) | ![](../../../ref/wp81/CommandBar/light__recording__add-pressed-open__frame607.png) | ![](frames/light__AppBar__add-pressed-open__ours.png) |
+| favorite, checked | ![](../../../ref/wp81/CommandBar/light__recording__favorite-checked-at-rest__frame1823.png) | ![](../../../ref/wp81/CommandBar/light__recording__favorite-checked-pressed__frame1864.png) | ![](frames/light__AppBar__favorite-checked-pressed__ours.png) |
+
 ## Measurements
 
 Raw pixels (px) in the 1080 × 1920 frames, read the same way from both (the bounding box of each mark's ink against
@@ -69,6 +79,10 @@ the bar's colour).
 | The pressed disc, open bar (#141) | its centroid 0.99 recording px above the circle's at rest | 2.64 above | 1.65 recording px (1.4 view) high: ours draws the closed bar's rise on both |
 | The pressed disc's colour (#141) | #3E65FE | #3E65FF (`PhoneAccentBrush`, Cobalt) | match, within a level |
 | The pressed icon (#141) | white, the same ink as at rest | white, the same size | match |
+| The light pressed disc, closed bar, recording px (#168) | x 157..204, y 895..943; 49.1 across from its area; 2.5 above the circle at rest | x 156..204, y 894..943; 49.2; 2.5 above | match, within a recording pixel |
+| The light pressed disc, open bar (#168) | 1.0 recording px above the circle at rest | 2.5 above | 1.5 recording px high, as dark's |
+| The light pressed and checked colours (#168) | black, a white ring, the icon the bar's #DDDDDD | the same | match |
+| The light checked ring, row 1843 (#168) | 255 from x 489 to 494, 121 at 495, then 0 | the same, to the pixel | match |
 | The icons | Segoe UI Symbol: the plus inks 51 px | Lucide 20 × 20: the plus inks 32 px | deliberate difference: Lucide's shapes and sizes |
 
 ## Behaviours
@@ -80,8 +94,10 @@ the bar's colour).
 | The ellipsis always shows, and opens and closes the bar | match |
 | The checked toggle: the circle filled, the icon the bar's colour | match |
 | A disabled command at 0x73 | match |
-| The pressed command: the circle filled with the accent, the icon white, the circle sunk (#141) | match, dark (the recording is dark only; ours is the same in light). The rise is the closed bar's, open or closed |
-| Checked and pressed | the shell's press, as unchecked: decided (#141), as the recording holds an unchecked command and the template's ring alone isn't read on the bar |
+| The pressed command, dark: the circle filled with the accent, the icon white, the circle sunk (#141) | match. The rise is the closed bar's, open or closed |
+| The pressed command, light: the checked look, no accent, risen (#168) | match. The rise is the closed bar's, as dark's |
+| The checked toggle's ring in light: white (#168) | match |
+| Checked and pressed | light: the checked look, risen, as the phone's (#168). Dark: the shell's press, as unchecked: decided (#141), as the dark recording holds an unchecked command and the template's ring alone isn't read on the bar |
 | A pressed line of the list tilts and keeps its colours (#141) | match: ours is `cf:Tilt` |
 | A tap above the open bar closes it (#141) | match: Avalonia's light dismiss |
 | Invoking a command closes the open bar: a primary one, a menu line, the toggle (#141) | match. The order differs: the phone raises `Closed`, then `Click` 2 to 21 ms later; ours raises `Click`, then closes (#118: a bound `Command` runs with the bar still open) |

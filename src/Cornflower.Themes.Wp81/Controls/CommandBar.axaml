@@ -30,6 +30,36 @@
   <x:Double x:Key="Wp81CommandBarCompactHeight">62.9166</x:Double>
   <x:Double x:Key="Wp81CommandBarMinimalHeight">26.25</x:Double>
 
+  <!--
+    A pressed command and a checked toggle, which the shell draws differently in the two themes (#168; run
+    20261116-1724-dev11's recording, ref/wp81/CommandBar/light__recording__*). The phone's keys by colour, as the
+    tokens' brushes take them.
+    - Dark: pressed fills the circle, ring and all, with the accent (PhoneAccentBrush's colour), the icon white
+      (PhoneTextOverAccentColor), the circle drawn 0.9376 the size. Checked: the ring PhoneForegroundColor, as
+      AppBarToggleButtonCheckedBorderThemeBrush.
+    - Light: pressed is the checked look, no accent: the circle black (PhoneForegroundColor), its ring white
+      (PhoneBackgroundColor), the icon the bar's #DDDDDD (PhoneChromeColor), at its own size (49.1 recording px
+      across from its area, the checked circle's at rest 49.2). Checked: the same, at rest and held, the ring white
+      (6 raw px wide in the screenshots, 489..495 of a circle 98 across, as the ring is).
+    Both rise 2.0833 with the press (the styles below).
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="Wp81CommandBarPressedFillBrush" Color="{DynamicResource SystemColorControlAccentColor}" />
+      <SolidColorBrush x:Key="Wp81CommandBarPressedRingBrush" Color="{DynamicResource SystemColorControlAccentColor}" />
+      <SolidColorBrush x:Key="Wp81CommandBarPressedIconBrush" Color="{DynamicResource PhoneTextOverAccentColor}" />
+      <ScaleTransform x:Key="Wp81CommandBarPressedCircleTransform" ScaleX="0.9376" ScaleY="0.9376" />
+      <SolidColorBrush x:Key="Wp81CommandBarCheckedRingBrush" Color="{DynamicResource PhoneForegroundColor}" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="Wp81CommandBarPressedFillBrush" Color="{DynamicResource PhoneForegroundColor}" />
+      <SolidColorBrush x:Key="Wp81CommandBarPressedRingBrush" Color="{DynamicResource PhoneBackgroundColor}" />
+      <SolidColorBrush x:Key="Wp81CommandBarPressedIconBrush" Color="{DynamicResource PhoneChromeColor}" />
+      <ScaleTransform x:Key="Wp81CommandBarPressedCircleTransform" ScaleX="1" ScaleY="1" />
+      <SolidColorBrush x:Key="Wp81CommandBarCheckedRingBrush" Color="{DynamicResource PhoneBackgroundColor}" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
   <!-- The bar's ItemsControls: a presenter and the panel, so no theme keyed by ItemsControl reaches them (Wp81 has
        none, and without one an ItemsControl shows nothing). -->
   <ControlTheme x:Key="Wp81CommandBarItemsTheme" TargetType="ItemsControl">
@@ -249,11 +279,14 @@
     which puts Selawik's first letter's ink at 51, where the shell's is).
 
     The states, as the shell draws them (run 20261115-2354-dev11's recording, ref/wp81/CommandBar/):
-    - Pressed: the whole circle, ring and all, filled with the accent (PhoneAccentBrush: #3E65FE recorded, Cobalt
-      #FF3E65FF), the icon white (PhoneButtonBasePressedForegroundBrush, PhoneTextOverAccentColor), and the circle
+    - Pressed, dark: the whole circle, ring and all, filled with the accent (PhoneAccentBrush: #3E65FE recorded, Cobalt
+      #FF3E65FF), the icon white (PhoneTextOverAccentColor), and the circle
       sunk: drawn 0.9376 the size (its ink 45.85 recording px across, from its area, where it is 48.9 at rest) and,
       with the icon, 2.0833 higher (5 raw px; 2.5 recording px on the closed bar). The icon keeps its size and the
       label doesn't change. The press jumps there and back: the recording holds the press, and doesn't show its edges.
+    - Pressed, light (#168, run 20261116-1724-dev11): the checked look, not the accent: the circle black, its ring
+      white, the icon the bar's colour, at the circle's own size, 2.0833 higher as in dark. The brushes and the
+      circle's scale are the Wp81CommandBarPressed* resources above.
     - Pressed in the list (IsInOverflow): the line tilts (cf:Tilt, on PART_Ink) and keeps its colours.
     - Disabled: the command at 0.451 (0x73 / 0xFF), drawn as one layer: the ring #FF848484 on the dark bar and
       #FF797979 on the light, the icon and label #FF848484 and #FF868686. The template's
@@ -334,12 +367,12 @@
         <Setter Property="RenderTransform" Value="translate(0px, -2.0833px)" />
       </Style>
       <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Fill" Value="{DynamicResource PhoneAccentBrush}" />
-        <Setter Property="Stroke" Value="{DynamicResource PhoneAccentBrush}" />
-        <Setter Property="RenderTransform" Value="scale(0.9376)" />
+        <Setter Property="Fill" Value="{DynamicResource Wp81CommandBarPressedFillBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource Wp81CommandBarPressedRingBrush}" />
+        <Setter Property="RenderTransform" Value="{DynamicResource Wp81CommandBarPressedCircleTransform}" />
       </Style>
       <Style Selector="^ /template/ ContentPresenter#PART_Content">
-        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource Wp81CommandBarPressedIconBrush}" />
       </Style>
     </Style>
 
@@ -349,11 +382,11 @@
   </ControlTheme>
 
   <!--
-    A toggle command: the same, and its checked states. Checked: the circle filled, AppBarToggleButtonCheckedBorder-
-    and BackgroundThemeBrush, and the icon in the bar's colour (the shell's screenshots; the template's
-    AppBarToggleButtonCheckedForegroundThemeBrush is the page's). Pressed, checked or not: the shell's press, as the
-    command's (the recording holds an unchecked command; the template's CheckedPressed, the ring alone, isn't read
-    on the shell's bar). CheckedDisabled: the checked look at 0.451, as the shell dims a command. Indeterminate looks unchecked: the phone's toggle has no third state.
+    A toggle command: the same, and its checked states. Checked: the circle filled, AppBarToggleButtonChecked-
+    BackgroundThemeBrush, and the icon in the bar's colour (the shell's screenshots; the template's
+    AppBarToggleButtonCheckedForegroundThemeBrush is the page's); the ring PhoneForegroundColor in dark and white in
+    light (Wp81CommandBarCheckedRingBrush, #168). Pressed, checked or not: the shell's press, as the command's; in light
+    that is the checked look, risen (#168: a checked favorite held, run 20261116-1724-dev11). CheckedDisabled: the checked look at 0.451, as the shell dims a command. Indeterminate looks unchecked: the phone's toggle has no third state.
   -->
   <ControlTheme x:Key="{x:Type CommandBarToggleButton}" TargetType="CommandBarToggleButton">
     <Setter Property="Foreground" Value="{DynamicResource CommandBarForegroundThemeBrush}" />
@@ -427,7 +460,7 @@
 
     <Style Selector="^:checked">
       <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Stroke" Value="{DynamicResource AppBarToggleButtonCheckedBorderThemeBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource Wp81CommandBarCheckedRingBrush}" />
         <Setter Property="Fill" Value="{DynamicResource AppBarToggleButtonCheckedBackgroundThemeBrush}" />
       </Style>
       <Style Selector="^ /template/ ContentPresenter#PART_Content">
@@ -441,12 +474,12 @@
         <Setter Property="RenderTransform" Value="translate(0px, -2.0833px)" />
       </Style>
       <Style Selector="^ /template/ Ellipse#PART_Ellipse">
-        <Setter Property="Fill" Value="{DynamicResource PhoneAccentBrush}" />
-        <Setter Property="Stroke" Value="{DynamicResource PhoneAccentBrush}" />
-        <Setter Property="RenderTransform" Value="scale(0.9376)" />
+        <Setter Property="Fill" Value="{DynamicResource Wp81CommandBarPressedFillBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource Wp81CommandBarPressedRingBrush}" />
+        <Setter Property="RenderTransform" Value="{DynamicResource Wp81CommandBarPressedCircleTransform}" />
       </Style>
       <Style Selector="^ /template/ ContentPresenter#PART_Content">
-        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource Wp81CommandBarPressedIconBrush}" />
       </Style>
     </Style>
 
