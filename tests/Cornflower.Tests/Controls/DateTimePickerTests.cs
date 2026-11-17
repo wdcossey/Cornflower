@@ -271,6 +271,8 @@ public class DateTimePickerTests
         Assert.Equal("7/15", PhoneDateTimePicker.Date(July15, day: true, month: true, year: false, us));
         Assert.Equal("7/2014", PhoneDateTimePicker.Date(July15, day: false, month: true, year: true, us));
         Assert.Equal("2014", PhoneDateTimePicker.Date(July15, day: false, month: false, year: true, us));
+        // One letter alone is the custom field, not a standard format ("M" alone would be "July 15").
+        Assert.Equal("7", PhoneDateTimePicker.Date(July15, day: false, month: true, year: false, us));
         Assert.Equal(string.Empty, PhoneDateTimePicker.Date(July15, day: false, month: false, year: false, us));
         Assert.Equal("15.07", PhoneDateTimePicker.Date(July15, day: true, month: true, year: false, new CultureInfo("de-DE")));
         // All of it, the culture's own short date, what follows its last field too.
@@ -596,6 +598,20 @@ public class DateTimePickerTests
         Assert.False(stage.StandIn.IsSet(Popup.PlacementTargetProperty));
         Assert.False(stage.StandIn.IsOpen);
         Assert.False(popup.ShouldUseOverlayLayer);
+    }
+
+    [AvaloniaFact]
+    public void Without_A_Presenter_Nothing_Is_Shown()
+    {
+        var empty = new Popup();
+        var standIn = new Popup();
+        using var scene = new Scene(new Panel { Children = { standIn, empty } });
+        PhoneDateTimePicker.SetShownIn(standIn, empty);
+        standIn.IsOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(empty.IsOpen);
+        Assert.Null(PhoneDateTimePicker.HostOf(standIn));
+        PhoneDateTimePicker.SetShownIn(standIn, null);
     }
 
     [AvaloniaFact]
