@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.DateTimePickerPage"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 DatePicker and TimePicker: Avalonia's, in the Wp81 theme, headed. Tap one to open its picker, full screen,
+    its wheels swinging in; turn them, then the check to pick or the cross (or Back) to leave it as it was. A 24-hour
+    TimePicker in quarter hours too. What each holds is under them, and the switch makes the page light.
+  -->
+  <ThemeVariantScope x:Name="Scope">
+    <Grid Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" RowDefinitions="Auto,*">
+      <sample:SamplePageHeader x:Name="Header" Margin="19,12,19,0" />
+      <StackPanel Grid.Row="1" Margin="19,0">
+        <DatePicker x:Name="Date" cf:ControlHeader.Header="date picker" SelectedDateChanged="OnDateChanged" />
+        <TimePicker x:Name="Time" cf:ControlHeader.Header="time picker" ClockIdentifier="12HourClock"
+                    SelectedTimeChanged="OnTimeChanged" />
+        <TimePicker x:Name="Time24" cf:ControlHeader.Header="24-hour clock, quarter hours" ClockIdentifier="24HourClock"
+                    MinuteIncrement="15" SelectedTimeChanged="OnTimeChanged" />
+        <TextBlock x:Name="State" Margin="0,12,0,0" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" />
+        <ToggleSwitch x:Name="Light" cf:ControlHeader.Header="light theme" IsCheckedChanged="OnLightChanged" />
+      </StackPanel>
+    </Grid>
+  </ThemeVariantScope>
+</UserControl>

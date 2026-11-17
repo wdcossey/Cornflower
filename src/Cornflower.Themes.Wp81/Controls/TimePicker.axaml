@@ -1,0 +1,133 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 TimePicker and its full-screen picker: Avalonia's TimePicker and TimePickerPresenter in the
+    default styles of the 8.1 Update 1 runtime (timepicker.json and timepickerflyoutpresenter.json, which equal the SDK's
+    generic.xaml), re-expressed as Avalonia ControlThemes. docs/controls/DatePicker/PLAN.md has the values and their
+    sources; Controls/DatePicker.axaml says how the two are built, which is the same.
+
+    TimePicker: the DatePicker's template but for its FlyoutButton's background, which the phone's doesn't bind; the text
+    is the time in the culture's short pattern on the picker's clock ("12:30 PM", or "12:30" on the 24-hour clock).
+    Avalonia's control needs none of its text blocks, hosts or dividers: it shows nothing when they are missing.
+
+    TimePickerPresenter: the DatePickerPresenter's, its wheels hour, minute and AM/PM (none on the 24-hour clock, and
+    the two left centred), in the LoopingSelector's theme with the phone's TimePickerFlyoutPresenter's item template
+    (a style in the template, over the item theme's: one line, 43 SemiBold on the phone's 1.33 em line, at the bottom
+    left of the item, 5 in). Seconds aren't the phone's: a picker with UseSeconds shows Avalonia's second wheel between minute and AM/PM, in the same theme. The presenter
+    sets the minute wheel's Increment from MinuteIncrement.
+  -->
+  <ControlTheme x:Key="{x:Type TimePicker}" TargetType="TimePicker">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ContentControlFontSize}" />
+    <Setter Property="Foreground" Value="{DynamicResource TimePickerForegroundThemeBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel x:Name="LayoutRoot" Margin="{TemplateBinding Padding}">
+          <ContentPresenter x:Name="HeaderContentPresenter"
+                            Theme="{DynamicResource Wp81HeaderContentPresenterTheme}"
+                            Margin="0,0,0,-3"
+                            Content="{TemplateBinding (cf:ControlHeader.Header)}"
+                            ContentTemplate="{TemplateBinding (cf:ControlHeader.HeaderTemplate)}" />
+          <Button x:Name="PART_FlyoutButton"
+                  Foreground="{TemplateBinding Foreground}"
+                  BorderBrush="{TemplateBinding Foreground}"
+                  BorderThickness="2.5"
+                  Padding="6.5,0,0,3"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Left">
+            <Button.Content>
+              <MultiBinding Converter="{x:Static wp81:PhoneDateTimePicker.TimeText}">
+                <Binding Path="SelectedTime" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="ClockIdentifier" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="UseSeconds" RelativeSource="{RelativeSource TemplatedParent}" />
+              </MultiBinding>
+            </Button.Content>
+          </Button>
+          <Popup x:Name="PART_Popup" wp81:PhoneDateTimePicker.ShownIn="{Binding #PickerPopup}" />
+          <Popup x:Name="PickerPopup">
+            <TimePickerPresenter x:Name="PART_PickerPresenter" />
+          </Popup>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TimePickerPresenter}" TargetType="TimePickerPresenter">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Background"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid RowDefinitions="*,Auto">
+            <Panel x:Name="ContentPanel" Margin="{DynamicResource DateTimeFlyoutContentPanelPortraitThemeMargin}">
+              <Grid x:Name="PART_PickerContainer" IsVisible="False" />
+              <Grid x:Name="Columns" HorizontalAlignment="Center" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <Grid.Styles>
+                  <!-- The phone's TimePickerFlyoutPresenter's item template, over the LoopingSelector item theme's. -->
+                  <Style Selector="DateTimePickerPanel > ListBoxItem">
+                    <Setter Property="ContentTemplate">
+                  <DataTemplate x:DataType="sys:String">
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5">
+                      <TextBlock Text="{Binding}"
+                                 FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                                 FontSize="43" FontWeight="SemiBold"
+                                 LineHeight="57.193359375"
+                                 Margin="0.8,-5" />
+                    </StackPanel>
+                      </DataTemplate>
+                    </Setter>
+                  </Style>
+                </Grid.Styles>
+                <Panel x:Name="PART_HourHost" Grid.Column="0">
+                  <DateTimePickerPanel x:Name="PART_HourSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Hour" ShouldLoop="True" />
+                </Panel>
+                <Panel x:Name="PART_FirstSpacer" Grid.Column="1" />
+                <Panel x:Name="PART_MinuteHost" Grid.Column="2">
+                  <DateTimePickerPanel x:Name="PART_MinuteSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Minute" ShouldLoop="True" />
+                </Panel>
+                <Panel x:Name="PART_SecondSpacer" />
+                <Panel x:Name="PART_SecondHost">
+                  <DateTimePickerPanel x:Name="PART_SecondSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Second" ShouldLoop="True" />
+                </Panel>
+                <Panel x:Name="PART_ThirdSpacer" />
+                <Panel x:Name="PART_PeriodHost">
+                  <DateTimePickerPanel x:Name="PART_PeriodSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="TimePeriod" ShouldLoop="False" />
+                </Panel>
+              </Grid>
+            </Panel>
+            <Panel x:Name="PickerBarSpace" Grid.Row="1" Height="{DynamicResource Wp81CommandBarCompactHeight}" />
+            <CommandBar x:Name="PickerBar" Grid.RowSpan="2" VerticalAlignment="Bottom">
+              <CommandBarButton x:Name="PART_AcceptButton" Label="done">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerAcceptGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+              <CommandBarButton x:Name="PART_DismissButton" Label="cancel">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerCancelGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+            </CommandBar>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ Panel#ContentPanel">
+      <Setter Property="Margin" Value="{DynamicResource DateTimeFlyoutContentPanelLandscapeThemeMargin}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
