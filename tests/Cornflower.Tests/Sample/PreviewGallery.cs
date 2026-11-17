@@ -153,15 +153,14 @@ public class PreviewGallery
         if (popup is not null)
             OpenAtRest(file, scene.Window, shell, clock, popup);
 
+        // At rest, every picture: another TransitionTicks of Avalonia's transitions draw the same pixels. (The clock
+        // stands still meanwhile; a ring or bar that never rests runs on it, and a popup's motion was checked ended.)
         using var frame = scene.Capture();
-        if (popup is not null)
+        SettleTransitions();
+        using (var later = scene.Capture())
         {
-            // At rest: with nothing left on the clock (OpenAtRest), 600 ms more of Avalonia's transitions draw the
-            // same pixels.
-            SettleTransitions();
-            using var later = scene.Capture();
             if (!Frames.SameAs(frame, later))
-                throw new InvalidOperationException($"{file}: the page still moves with the popup open.");
+                throw new InvalidOperationException($"{file}: the page still moves.");
         }
 
         frame.Save(Path.Combine(folder, file + ".png"), PngBitmapEncoderOptions.Default);
@@ -176,7 +175,8 @@ public class PreviewGallery
         if (OpenPopups(window) != 0)
             throw new InvalidOperationException($"{file}: a popup is shown before the gallery opens one.");
         popup.Act(window, shell);
-        // The popup's motion on the TestClock, a frame at a time, then Avalonia's own transitions in it.
+        // The popup's motion on the TestClock, in steps of 100 ms each drawn (its frames in a step run one after
+        // another: only the end is pictured), then Avalonia's own transitions in it.
         var end = clock.Now.TotalMilliseconds + PopupMotion;
         while (clock.Now.TotalMilliseconds < end)
         {
@@ -227,6 +227,10 @@ public class PreviewGallery
         var control = Named<T>(shell, name);
         var at = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)
             ?? throw new InvalidOperationException($"The {typeof(T).Name} {name} isn't in the window.");
+        // The touch must land on the control itself, not on something over it or a control scrolled there in its place,
+        // so the popup that opens is the one it opens.
+        if (window.InputHitTest(at) is not Visual hit || (hit != control && !control.IsVisualAncestorOf(hit)))
+            throw new InvalidOperationException($"A touch at the middle of the {typeof(T).Name} {name} doesn't reach it.");
         var touch = window.TouchBegin(at, RawInputModifiers.None);
         window.TouchEnd(touch, at, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
