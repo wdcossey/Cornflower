@@ -19,8 +19,8 @@
 
       <ContentControl Theme="{DynamicResource Wp81ContentControlTheme}" />
 
-    A ContentControl in the template of a control Wp81 doesn't theme yet (Simple's ComboBox, DataValidationErrors,
-    MenuItem and the managed file dialog) keeps Avalonia's own, as under Simple alone: HoleParts.FallBack, and
+    A ContentControl in the template of a control Wp81 doesn't theme yet (Simple's DataValidationErrors, MenuItem and
+    the managed file dialog) keeps Avalonia's own, as under Simple alone: HoleParts.FallBack, and
     HoleParts.FallBackToOwn, as Simple has no ContentControl theme to fall back to. An app that hosts its pages in a
     ContentControl sets both content alignments to Stretch, as the phone's Frame has them (frame.json).
   -->
