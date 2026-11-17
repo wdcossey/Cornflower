@@ -12,10 +12,11 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The ToggleButtons and RepeatButtons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme
 /// under Wp81 for their own type, as <see cref="HolePartsTests"/> shows for Buttons. In Avalonia 12.1.4, Simple's
-/// templates for ComboBox (its drop-down toggle) and DrawerPage (three toggles) hold plain ToggleButtons with no theme
+/// templates for DrawerPage (three toggles) hold plain ToggleButtons with no theme
 /// of their own, and the menu ScrollViewer's (two) plain RepeatButtons: read from Simple's sources at the 12.1.4 tag.
-/// Without HoleParts they would take Wp81's, with the phone's 109 × 57.5 minimum and overhang, in every ComboBox and
-/// menu. Simple's ScrollBar held eight more; Wp81 themes ScrollBar now (#116), and its template has none.
+/// Without HoleParts they would take Wp81's, with the phone's 109 × 57.5 minimum and overhang, in every DrawerPage and
+/// menu. ComboBox was one until Wp81 themed it (#155); a hole's ComboBox (the managed file dialog's) is Wp81's, so its
+/// parts aren't counted. Simple's ScrollBar held eight more; Wp81 themes ScrollBar now (#116), and its template has none.
 /// </summary>
 public class HoleTogglePartsTests
 {
@@ -23,14 +24,16 @@ public class HoleTogglePartsTests
 
     /// <summary>The plain ToggleButtons and RepeatButtons (not their subclasses) in <paramref name="control"/>'s templates.</summary>
     private static List<Button> Plain(Control control) =>
-        control.GetVisualDescendants().OfType<Button>().Where(b => Kinds.Contains(b.GetType())).ToList();
+        control.GetVisualDescendants().OfType<Button>().Where(b => Kinds.Contains(b.GetType()) && !InComboBox(b)).ToList();
+
+    /// <summary>In a ComboBox's template: Wp81 themes ComboBox (#155), so a hole that holds one shows Wp81's.</summary>
+    internal static bool InComboBox(Avalonia.Visual part) => part.GetVisualAncestors().OfType<ComboBox>().Any();
 
     private static ControlTheme ThemeOf(IResourceNode theme, Type type) =>
         theme.TryGetResource(type, ThemeVariant.Dark, out var found) ? (ControlTheme)found! : throw new InvalidOperationException($"No {type.Name} theme.");
 
     // Every hole shown with Simple then Wp81: the same plain ToggleButtons and RepeatButtons as with Simple alone, none in
-    // Wp81's theme, and those that had none of their own in Simple's theme for their own type. (Their sizes are compared
-    // below for ComboBox: across all the holes, Wp81's font changes the rows some of them stretch to.)
+    // Wp81's theme, and those that had none of their own in Simple's theme for their own type.
     [AvaloniaFact]
     public void Every_Holes_ToggleButtons_And_RepeatButtons_Keep_The_Theme_Under_Wp81()
     {
@@ -60,26 +63,7 @@ public class HoleTogglePartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
-        Assert.Contains("ComboBox.ToggleButton.toggle", fellBack);
         Assert.Contains("ContextMenu.RepeatButton.", fellBack);
-    }
-
-    // ComboBox's drop-down toggle: Simple's ToggleButton theme, not Simple's Button theme and not Wp81's, so it is as
-    // small as with Simple alone and still toggles the drop-down.
-    [AvaloniaFact]
-    public void A_ComboBoxs_Toggle_Takes_Simples_ToggleButton_Theme()
-    {
-        var simple = new SimpleTheme();
-        var combo = new ComboBox { Items = { "one", "two" } };
-        using var scene = new Scene(combo, themes: [simple, new Wp81Theme()]);
-        var toggle = Plain(combo).OfType<ToggleButton>().Single();
-
-        Assert.Same(ThemeOf(simple, typeof(ToggleButton)), toggle.Theme);
-        Assert.NotSame(ThemeOf(simple, typeof(Button)), toggle.Theme);
-        Assert.True(toggle.Bounds.Width < 109, $"the toggle is {toggle.Bounds.Width} wide: the phone's minimum");
-
-        toggle.IsChecked = true;
-        Assert.True(combo.IsDropDownOpen);
     }
 
     // An app's own templated control isn't a hole: its ToggleButton and RepeatButton are the phone's.

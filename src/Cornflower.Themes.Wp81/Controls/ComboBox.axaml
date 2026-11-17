@@ -1,0 +1,238 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ComboBox and ComboBoxItem: the default styles of the 8.1 Update 1 runtime (combobox.json and
+    comboboxitem.json), re-expressed as Avalonia ControlThemes on Avalonia's own ComboBox, with PhoneComboBox (turned on
+    below) for what the phone's control does in code. docs/controls/ComboBox/PLAN.md has the values and their sources.
+
+    Five items or fewer open inline: the box grows in place. Six or more open the full-screen ListPickerFlyout
+    (wp81:PhoneComboBox.IsFull, the phone's PresenterStates Full). The template is the phone's:
+    - HeaderContentPresenter shows cf:ControlHeader.Header and HeaderTemplate (WinRT's Header, which Avalonia's ComboBox
+      lacks) in HeaderContentPresenterStyle, 4.5 into the box's overhang (Margin 0,0,0,-4.5). With no Header it is collapsed.
+    - Root, untilted, transparent, takes the hits across the touch target; the box inside it, PhoneTouchTargetOverhang
+      in from top and foot, is Background, which the press tilts (the phone's PointerDownThemeAnimation on Background,
+      #149: the Button's tilt). Open, the box doesn't tilt, and the tilt goes at once, as the phone's does on the release
+      that opens it.
+    - Inline (ShortListOuterBorder): ItemsPresenterHost holds the items, clipped to the box (PhoneComboBoxItemsHost: its
+      MinHeight closed, the selected item lifted into it; the items' height open), with the placeholder over them.
+    - Full (the phone's FlyoutButton): the selected item, SelectionBoxItem, 6.5 in and 0.8 down, MinHeight 32.5 (Update 1's
+      values); with none, the placeholder in ComboBoxPlaceholderTextBlockStyle.
+    - PART_Popup, empty: Avalonia's ComboBox needs it, and its opening and closing raise DropDownOpened and
+      DropDownClosed. It is in the overlay layer and draws nothing.
+
+    The visual states: Pressed (:pressed) fills the box with the accent and its text over it; Highlighted and Opened
+    (wp81:PhoneComboBox.IsShownOpen, 78 ms after IsDropDownOpen) the white box, the accent border and black text;
+    Disabled (:disabled) dims the header, the border and the text. InlinePlaceholder (inline, nothing selected, closed)
+    shows the placeholder in PlaceholderContentPresenterStyle (PhoneMidBrush) and hides the items. PointerOver changes
+    nothing; the phone has no focus states.
+
+    PlaceholderText defaults to the phone's "choose an item" (Wp81ComboBoxPlaceholderText), which also titles the
+    full-screen picker in capitals.
+  -->
+  <x:String x:Key="Wp81ComboBoxPlaceholderText">choose an item</x:String>
+
+  <ControlTheme x:Key="{x:Type ComboBox}" TargetType="ComboBox">
+    <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundThemeBrush}" />
+    <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundThemeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderThemeBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource ComboBoxBorderThemeThickness}" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ContentControlFontSize}" />
+    <Setter Property="Margin" Value="0" />
+    <!-- Not set by the phone's style: its default text, a StackPanel of items (the phone's), no focus adorner. -->
+    <Setter Property="PlaceholderText" Value="{DynamicResource Wp81ComboBoxPlaceholderText}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="wp81:PhoneComboBox.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel x:Name="ComboBoxGrid">
+          <ContentPresenter x:Name="HeaderContentPresenter"
+                            Theme="{DynamicResource Wp81HeaderContentPresenterTheme}"
+                            HorizontalAlignment="Left"
+                            IsVisible="{TemplateBinding (cf:ControlHeader.Header), Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Content="{TemplateBinding (cf:ControlHeader.Header)}"
+                            ContentTemplate="{TemplateBinding (cf:ControlHeader.HeaderTemplate)}" />
+          <Panel x:Name="Root" Margin="0,-4.5,0,0" Background="Transparent">
+            <Border x:Name="Background"
+                    cf:Tilt.IsTarget="True"
+                    Margin="{DynamicResource PhoneTouchTargetOverhang}"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+              <Panel x:Name="UserControl">
+                <!-- Inline: the phone's ShortListOuterBorder. -->
+                <Panel x:Name="ShortList" IsHitTestVisible="False">
+                  <wp81:PhoneComboBoxItemsHost x:Name="ItemsPresenterHost"
+                                               ClosedHeight="{DynamicResource ComboBoxItemMinHeightThemeSize}"
+                                               IsOpen="{TemplateBinding (wp81:PhoneComboBox.IsShownOpen)}"
+                                               SelectedIndex="{TemplateBinding SelectedIndex}">
+                    <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                    Margin="0,0.8,0,0"
+                                    ItemsPanel="{TemplateBinding ItemsPanel}" />
+                  </wp81:PhoneComboBoxItemsHost>
+                  <ContentPresenter x:Name="PlaceholderTextContentPresenter"
+                                    Margin="{DynamicResource ComboBoxPlaceholderTextThemeMargin}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Opacity="0"
+                                    IsHitTestVisible="False"
+                                    FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                                    FontSize="{DynamicResource ContentControlFontSize}"
+                                    FontWeight="Normal"
+                                    Foreground="{DynamicResource PhoneMidBrush}"
+                                    Content="{TemplateBinding PlaceholderText}"
+                                    wp81:PhoneHeaderLine.IsEnabled="True" />
+                </Panel>
+                <!-- Full: the phone's FlyoutButton's content. -->
+                <Panel x:Name="FlyoutContent" IsVisible="False" Margin="6.5,0,0,0" HorizontalAlignment="Left">
+                  <ContentPresenter x:Name="ContentPresenter"
+                                    Margin="0,0.8,0,0"
+                                    MinHeight="32.5"
+                                    Content="{TemplateBinding SelectionBoxItem}"
+                                    ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                    wp81:PhoneHeaderLine.IsEnabled="True" />
+                  <TextBlock x:Name="PlaceholderTextBlock"
+                             Theme="{DynamicResource ComboBoxPlaceholderTextBlockStyle}"
+                             Margin="0,0.8,0,0"
+                             Text="{TemplateBinding PlaceholderText}"
+                             IsVisible="{TemplateBinding SelectedItem, Converter={x:Static ObjectConverters.IsNull}}" />
+                </Panel>
+              </Panel>
+            </Border>
+          </Panel>
+          <Popup x:Name="PART_Popup"
+                 IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                 ShouldUseOverlayLayer="True"
+                 IsLightDismissEnabled="False"
+                 IsHitTestVisible="False" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- No header: the box at the top of its overhang, as the phone's collapsed header takes its margin with it. -->
+    <Style Selector="^[(wp81|PhoneComboBox.HasHeader)=False] /template/ Panel#Root">
+      <Setter Property="Margin" Value="0" />
+    </Style>
+
+    <!-- PresenterStates: Full. -->
+    <Style Selector="^[(wp81|PhoneComboBox.IsFull)=True]">
+      <Style Selector="^ /template/ Panel#ShortList">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ Panel#FlyoutContent">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+
+    <!-- PresenterStates: InlinePlaceholder, closed. -->
+    <Style Selector="^[SelectedIndex=-1][(wp81|PhoneComboBox.IsShownOpen)=False]">
+      <Style Selector="^ /template/ ContentPresenter#PlaceholderTextContentPresenter">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+      <Style Selector="^ /template/ ItemsPresenter#PART_ItemsPresenter">
+        <Setter Property="Opacity" Value="0" />
+      </Style>
+    </Style>
+
+    <!-- Open: no tilt on the box; its items take the presses. -->
+    <Style Selector="^:dropdownopen">
+      <Setter Property="cf:Tilt.IsEnabled" Value="False" />
+    </Style>
+
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource ComboBoxPressedBackgroundThemeBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxPressedBorderThemeBrush}" />
+      </Style>
+      <!-- On the control: its items and its content inherit it from there. -->
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxPressedForegroundThemeBrush}" />
+    </Style>
+
+    <!-- DropDownStates.Opened, with CommonStates.Highlighted. -->
+    <Style Selector="^[(wp81|PhoneComboBox.IsShownOpen)=True]">
+      <Style Selector="^ /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource ComboBoxHighlightedBackgroundThemeBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxHighlightedBorderThemeBrush}" />
+      </Style>
+      <!-- On the control: its items and its content inherit it from there. -->
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxHighlightedForegroundThemeBrush}" />
+      <Style Selector="^ /template/ Panel#ShortList">
+        <Setter Property="IsHitTestVisible" Value="True" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ ContentPresenter#HeaderContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxDisabledForegroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource ComboBoxDisabledBackgroundThemeBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxDisabledBorderThemeBrush}" />
+      </Style>
+      <!-- On the control: its items and its content inherit it from there. -->
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxDisabledForegroundThemeBrush}" />
+      <Style Selector="^ /template/ ContentPresenter#PlaceholderTextContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxDisabledForegroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PlaceholderTextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxDisabledForegroundThemeBrush}" />
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <!--
+    The item: the phone's Border, Grid, HighContrastBackground and ContentPresenter (Avalonia's PART_ContentPresenter). Padding 6.5,8.5,0,16 around text of
+    1.33 em (PhoneContentLine) makes it 51.67 tall on the reference, the phone's step. Its text takes the box's colour,
+    and while the box shows open the selected one is in PhoneHighContrastSelectedForegroundThemeBrush, the accent
+    (#149's open-5 dump; closed, the phone draws it as the rest). A press tilts its content (PointerDownThemeAnimation on
+    ContentPresenter); Disabled, the item's own, dims it to ComboBoxItemDisabledThemeOpacity.
+  -->
+  <ControlTheme x:Key="{x:Type ComboBoxItem}" TargetType="ComboBoxItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="6.5,8.5,0,16" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}">
+          <Panel>
+            <Border x:Name="HighContrastBackground"
+                    Background="Transparent"
+                    VerticalAlignment="Center"
+                    MinHeight="{DynamicResource ComboBoxItemMinHeightThemeSize}"
+                    Margin="{DynamicResource ComboBoxItemHighContrastBackgroundThemeMargin}" />
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              cf:Tilt.IsTarget="True"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Margin="{TemplateBinding Padding}"
+                              wp81:PhoneHeaderLine.IsEnabled="True" />
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:selected[(wp81|PhoneComboBox.IsShownOpen)=True] /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneHighContrastSelectedForegroundThemeBrush}" />
+    </Style>
+    <!-- The item's own IsEnabled: a disabled ComboBox dims its items by its foreground alone, as the phone's (its dump). -->
+    <Style Selector="^[IsEnabled=False] /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="{DynamicResource ComboBoxItemDisabledThemeOpacity}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

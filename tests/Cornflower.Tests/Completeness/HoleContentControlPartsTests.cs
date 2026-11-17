@@ -15,15 +15,16 @@ namespace Cornflower.Tests.Completeness;
 /// The plain ContentControls in the templates of controls Wp81 doesn't theme yet (the holes) keep Avalonia's own, as
 /// <see cref="HolePartsTests"/> shows for Buttons. Simple has no ContentControl theme, so such a part falls back to an
 /// empty theme for its type (<c>HoleParts.FallBackToOwn</c>), which gives it Avalonia's own template and defaults, as
-/// under Simple alone. In Avalonia 12.1.4 Simple's templates for ComboBox, DataValidationErrors, MenuItem and the
-/// managed file dialog hold them. Without the fallback they would take Wp81's, which puts the content at the top left
+/// under Simple alone. In Avalonia 12.1.4 Simple's templates for DataValidationErrors, MenuItem and the
+/// managed file dialog hold them (and ComboBox's did, until Wp81 themed it, #155: a hole's ComboBox is Wp81's, so its
+/// parts aren't counted). Without the fallback they would take Wp81's, which puts the content at the top left
 /// at its own size where Simple's template stretches it.
 /// </summary>
 public class HoleContentControlPartsTests
 {
     /// <summary>The plain ContentControls (not their subclasses) in <paramref name="control"/>'s templates, in tree order.</summary>
     private static List<ContentControl> Plain(Control control) =>
-        control.GetVisualDescendants().OfType<ContentControl>().Where(c => c.GetType() == typeof(ContentControl)).ToList();
+        control.GetVisualDescendants().OfType<ContentControl>().Where(c => c.GetType() == typeof(ContentControl) && !HoleTogglePartsTests.InComboBox(c)).ToList();
 
     /// <summary>Whether <paramref name="theme"/> is an empty theme for ContentControl: Avalonia's own, as with Simple alone.</summary>
     private static bool IsOwn(ControlTheme? theme) =>
@@ -58,7 +59,6 @@ public class HoleContentControlPartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
-        Assert.Contains(nameof(ComboBox), fellBack);
         Assert.Contains(nameof(DataValidationErrors), fellBack);
         Assert.Contains(nameof(MenuItem), fellBack);
         Assert.Contains("ManagedFileChooser", fellBack);
