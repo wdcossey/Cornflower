@@ -1,0 +1,98 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 AutoSuggestBox, as a theme for Avalonia's AutoCompleteBox: the default style of the 8.1 Update 1
+    runtime (autosuggestbox.json, which equals the SDK's generic.xaml), re-expressed, every value by the phone's resource
+    key through DynamicResource. docs/controls/AutoSuggestBox/PLAN.md has the values, their sources and every API
+    difference.
+
+    The template is the phone's, part for part:
+    - PART_TextBox is the phone's TextBox part: Wp81's TextBox (#36), keyed by type, as the phone's takes its default
+      style, with no margin of its own; the control's own margin is TextControlMarginThemeThickness, as the phone's. The
+      header is cf:ControlHeader.Header and HeaderTemplate (WinRT's Header), passed on to the box's.
+    - PART_Popup is the phone's SuggestionsPopup: drawn in the window's overlay layer, as the phone has one window, and
+      hung from the box's bottom border (PhoneSuggestionList moves it up by the border, so the two borders lie on each
+      other, and gives it the room down to the keyboard).
+    - SuggestionsContainer, the box's width, white (AutoSuggestBackgroundThemeBrush, the same in both themes) in a 2.5
+      border of the accent (PhoneAccentBrush, TextControlBorderThemeThickness).
+    - PART_SelectingItemsControl is the phone's SuggestionsList, a ListView: Wp81's ListBox, its items the phone's
+      ListViewItems in the AutoSuggestBox's ItemContainerStyle (AutoSuggestListViewItemMargin, ContentControlFontSize,
+      TextBoxForegroundThemeBrush, so the text is black on the white list in both themes).
+
+    What the phone's control does that Avalonia's doesn't by default, set here:
+    - FilterMode None: the phone's control doesn't filter; the app gives the suggestions as ItemsSource.
+    - MinimumPrefixLength 0: the phone tells the app of every change the user makes, to nothing too.
+    - MinimumPopulateDelay 150 ms: the phone raises TextChanged (UserInput), the app's cue, 150 to 177 ms after the key
+      (#150); Avalonia's cue is Populating, and the list opens after it, so the list comes when the phone's does. It is
+      Avalonia's wait after the last key: a key within 150 ms of the one before starts it again (the phone's two quick
+      keys weren't read).
+    - PhoneSuggestionList (internal): the list's place and height, and Back and the keyboard closing it.
+
+    The phone's Orientation states change nothing. FocusAdorner is cleared: the box's Focused state is the focus look.
+  -->
+
+  <ControlTheme x:Key="{x:Type AutoCompleteBox}" TargetType="AutoCompleteBox">
+    <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="FilterMode" Value="None" />
+    <Setter Property="MinimumPrefixLength" Value="0" />
+    <Setter Property="MinimumPopulateDelay" Value="0:0:0.15" />
+    <!-- The TextBox part's placeholder brush, which the template passes on (Avalonia's AutoCompleteBox has its own). -->
+    <Setter Property="PlaceholderForeground" Value="{DynamicResource TextBoxPlaceholderTextThemeBrush}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="wp81:PhoneSuggestionList.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <TextBox x:Name="PART_TextBox"
+                   Margin="0"
+                   cf:ControlHeader.Header="{TemplateBinding (cf:ControlHeader.Header)}"
+                   cf:ControlHeader.HeaderTemplate="{TemplateBinding (cf:ControlHeader.HeaderTemplate)}"
+                   CaretIndex="{TemplateBinding CaretIndex, Mode=TwoWay}"
+                   ClearSelectionOnLostFocus="{TemplateBinding ClearSelectionOnLostFocus}"
+                   DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}"
+                   PlaceholderText="{TemplateBinding PlaceholderText}"
+                   PlaceholderForeground="{TemplateBinding PlaceholderForeground}"
+                   MaxLength="{TemplateBinding MaxLength}"
+                   InnerLeftContent="{TemplateBinding InnerLeftContent}"
+                   InnerRightContent="{TemplateBinding InnerRightContent}" />
+          <!-- The placement no positioner adjusts: PhoneSuggestionList gives the list the room it has below the box. A tap
+               elsewhere closes the list (Avalonia's light dismiss); a tap on the box goes to the box, the list staying. -->
+          <Popup x:Name="PART_Popup"
+                 PlacementTarget="{Binding #PART_TextBox}"
+                 Placement="Bottom"
+                 PlacementConstraintAdjustment="None"
+                 ShouldUseOverlayLayer="True"
+                 IsLightDismissEnabled="True"
+                 OverlayInputPassThroughElement="{Binding #PART_TextBox}">
+            <Border x:Name="SuggestionsContainer"
+                    Width="{Binding #PART_TextBox.Bounds.Width}"
+                    Background="{DynamicResource AutoSuggestBackgroundThemeBrush}"
+                    BorderBrush="{DynamicResource PhoneAccentBrush}"
+                    BorderThickness="{DynamicResource TextControlBorderThemeThickness}">
+              <ListBox x:Name="PART_SelectingItemsControl"
+                       Focusable="False"
+                       Foreground="{DynamicResource TextBoxForegroundThemeBrush}"
+                       ItemTemplate="{TemplateBinding ItemTemplate}"
+                       ScrollViewer.IsScrollChainingEnabled="False">
+                <!-- The phone's ItemContainerStyle: the list's own items, over the ListViewItem theme's values. Neither the
+                     list nor its items take the focus, so a tap on a suggestion leaves it in the box and the keyboard up,
+                     as on the phone; the box's own keys move through the list (Avalonia's selection adapter). -->
+                <ListBox.Styles>
+                  <Style Selector="ListBox#PART_SelectingItemsControl > ListBoxItem">
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="Margin" Value="{DynamicResource AutoSuggestListViewItemMargin}" />
+                    <Setter Property="FontSize" Value="{DynamicResource ContentControlFontSize}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextBoxForegroundThemeBrush}" />
+                  </Style>
+                </ListBox.Styles>
+              </ListBox>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

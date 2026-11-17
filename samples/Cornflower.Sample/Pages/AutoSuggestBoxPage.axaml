@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.AutoSuggestBoxPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 AutoSuggestBox as Avalonia's AutoCompleteBox: no style, the header by cf:ControlHeader.Header (WinRT's
+    Header), WinRT's PlaceholderText. Type a letter: 150 ms after the last key the page gives the fruits that start with what is
+    typed (Populating, the phone's TextChanged with UserInput) and the list hangs from the box; tap one to put it in the
+    box. Back closes the list and takes the focus. The section headings are the type ramp's.
+  -->
+  <StackPanel Margin="19,12,19,24">
+    <sample:SamplePageHeader x:Name="Header" />
+
+    <TextBlock Text="default" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+    <AutoCompleteBox x:Name="Fruit" cf:ControlHeader.Header="fruit" PlaceholderText="type a fruit"
+                     Populating="OnPopulating" SelectionChanged="OnSelectionChanged" />
+    <TextBlock x:Name="State" Theme="{DynamicResource ControlContextualInfoTextBlockStyle}" Text="-" />
+
+    <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+    <AutoCompleteBox x:Name="Disabled" cf:ControlHeader.Header="disabled" Text="apple" IsEnabled="False" />
+
+    <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+      <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+        <StackPanel>
+          <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+          <AutoCompleteBox x:Name="Light" cf:ControlHeader.Header="fruit" PlaceholderText="type a fruit"
+                           Populating="OnPopulating" />
+        </StackPanel>
+      </Border>
+    </ThemeVariantScope>
+  </StackPanel>
+</UserControl>

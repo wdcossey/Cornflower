@@ -4,7 +4,6 @@
 # this list to the theme: a control's PR deletes its own line here, and an Avalonia upgrade adds
 # the lines it has to. One name per line, in ordinal order.
 
-AutoCompleteBox
 ButtonSpinner
 Calendar
 CalendarButton
