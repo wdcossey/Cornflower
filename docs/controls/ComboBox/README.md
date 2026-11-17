@@ -33,7 +33,9 @@ Avalonia's API stands: `ItemsSource`, `ItemTemplate`, `DisplayMemberBinding`, `S
   Back closes it before anything else sees Back.
 - **Full screen (6 or more)**: the box shows the selected item. Opening it opens a `ListPickerFlyout` titled with the
   placeholder in capitals ("CHOOSE AN ITEM"), the selected item in the accent; a tap picks it (`SelectedIndex`) and the
-  picker closes, then `IsDropDownOpen` goes false. Back closes the picker with the selection kept.
+  picker closes, then `IsDropDownOpen` goes false (of two equal items, the one tapped). Back closes the picker with the
+  selection kept. Opened again while closing, it opens once the close has run.
+- **The count crossing 6 while open** closes it.
 - **Disabled**: header, border and text in `PhoneBaseLowColor`. A disabled item is dimmed to 0.4.
 
 ## How it is built
@@ -70,5 +72,6 @@ and `ComboBoxPlaceholderTextBlockStyle`. Cornflower's, in `Controls/ComboBox.axa
 - **A tap outside and Back** on the open inline box weren't read; the picker's title source (placeholder or a fixed
   string) isn't told apart by the reads (PLAN.md, "Decided on the user's behalf").
 - **The editable ComboBox** (`IsEditable`, which the phone hasn't) isn't themed.
-- **Items that are controls** (a `ComboBoxItem` written in XAML) go to the full-screen picker as their content, or their
-  text if their content is a control.
+- **Items that are controls** (a `ComboBoxItem` written in XAML) go to the full-screen picker as their content, or the
+  text of a `TextBlock` content; other control content shows as its type's name. One disabled in the box is disabled in
+  the picker.

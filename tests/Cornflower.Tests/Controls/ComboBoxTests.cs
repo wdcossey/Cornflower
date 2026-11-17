@@ -241,7 +241,14 @@ public class ComboBoxTests
         Assert.Equal(1, opened);
         stage.At(stage.Now + 100);
 
-        stage.Tap(stage.CentreOf(stage.Items[2]));
+        // The press is the item's: the box stays open until the release (Avalonia's own press would close it).
+        var item = stage.CentreOf(stage.Items[2]);
+        stage.Scene.Window.MouseDown(item, MouseButton.Left);
+        stage.Layout();
+        Assert.True(PhoneComboBox.GetIsShownOpen(stage.Combo));
+        Assert.Equal(0, stage.Combo.SelectedIndex);
+        stage.Scene.Window.MouseUp(item, MouseButton.Left);
+        stage.Layout();
         Assert.Equal(2, stage.Combo.SelectedIndex);
         Assert.False(stage.Combo.IsDropDownOpen);
         Assert.Equal(1, closed);
@@ -418,5 +425,121 @@ public class ComboBoxTests
         stage.Layout();
         Assert.False(stage.Part<ContentPresenter>("HeaderContentPresenter").IsVisible);
         Near(9.5, stage.InCombo(stage.Box).Y);
+    }
+
+    // The hidden placeholder over the first item doesn't take its tap.
+    [AvaloniaFact]
+    public void A_Tap_On_The_First_Item_Selects_It_Under_The_Hidden_Placeholder()
+    {
+        using var stage = new Stage(5, selected: 3);
+        stage.OpenAtRest();
+        var text = stage.TextOf(stage.Items[0]);
+        stage.Tap(text.TranslatePoint(new Point(10, text.Bounds.Height / 2), stage.Scene.Window)!.Value);
+        Assert.Equal(0, stage.Combo.SelectedIndex);
+    }
+
+    // Of two equal items, the picker picks the one tapped, as the inline box does.
+    [AvaloniaFact]
+    public void Full_Of_Equal_Items_The_One_Tapped_Is_Picked()
+    {
+        using var stage = new Stage(0);
+        foreach (var name in new[] { "ann", "bob", "ann", "cy", "dee", "eve" })
+            stage.Combo.Items.Add(name);
+        stage.Combo.SelectedIndex = 1;
+        stage.Open();
+        stage.At(stage.Now + 600);
+        var list = Assert.IsType<ListPickerFlyoutPresenter>(PhoneComboBox.PickerOf(stage.Combo)!.Popup.Child).ItemsHost!;
+        stage.Tap(stage.CentreOf(list.ContainerFromIndex(2)!));
+        Assert.Equal(2, stage.Combo.SelectedIndex);
+    }
+
+    // An item disabled in the box is disabled in the picker; a ComboBoxItem's text content shows as its text.
+    [AvaloniaFact]
+    public void Full_A_Disabled_Item_Cant_Be_Picked_And_Items_Written_As_Controls_Show_Their_Text()
+    {
+        using var stage = new Stage(0);
+        for (var i = 0; i < 6; i++)
+            stage.Combo.Items.Add(new ComboBoxItem { Content = new TextBlock { Text = "row " + i }, IsEnabled = i != 3 });
+        stage.Combo.SelectedIndex = 0;
+        stage.Open();
+        stage.At(stage.Now + 600);
+        var list = Assert.IsType<ListPickerFlyoutPresenter>(PhoneComboBox.PickerOf(stage.Combo)!.Popup.Child).ItemsHost!;
+        Assert.Equal("row 3", list.Items[3]);
+        Assert.False(list.ContainerFromIndex(3)!.IsEnabled);
+        stage.Tap(stage.CentreOf(list.ContainerFromIndex(3)!));
+        Assert.Equal(0, stage.Combo.SelectedIndex);
+    }
+
+    // Closed and opened again while its picker is still closing, it opens once the close has run.
+    [AvaloniaFact]
+    public void Full_Opened_Again_While_Closing_It_Opens_After_The_Close()
+    {
+        using var stage = new Stage(6);
+        stage.Open();
+        stage.At(stage.Now + 600);
+        stage.Combo.IsDropDownOpen = false;
+        stage.Layout();
+        stage.Combo.IsDropDownOpen = true;
+        stage.Layout();
+        stage.At(stage.Now + 600);
+        Assert.True(stage.Combo.IsDropDownOpen);
+        Assert.True(PhoneComboBox.PickerOf(stage.Combo)!.IsOpen);
+    }
+
+    // Opened before it is in a window, it opens there, and a tap outside closes it.
+    [AvaloniaFact]
+    public void Opened_Before_It_Is_In_A_Window_It_Opens_There()
+    {
+        using var clock = new TestClock();
+        var combo = new ComboBox { Items = { "one", "two" }, SelectedIndex = 0, IsDropDownOpen = true, VerticalAlignment = VerticalAlignment.Top };
+        var below = new Button { Content = "below", VerticalAlignment = VerticalAlignment.Bottom };
+        using var scene = new Scene(new Grid { Children = { combo, below } });
+        clock.At(200);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(PhoneComboBox.GetIsShownOpen(combo));
+        var at = below.TranslatePoint(new Point(5, 5), scene.Window)!.Value;
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(combo.IsDropDownOpen);
+    }
+
+    // The count crossing 6 while open closes it: neither form is left half open.
+    [AvaloniaFact]
+    public void A_Sixth_Item_Added_While_Open_Closes_It()
+    {
+        using var stage = new Stage(5);
+        stage.OpenAtRest();
+        stage.Combo.Items.Add("item 6");
+        stage.Layout();
+        Assert.False(stage.Combo.IsDropDownOpen);
+        Assert.False(PhoneComboBox.GetIsShownOpen(stage.Combo));
+        Assert.True(PhoneComboBox.GetIsFull(stage.Combo));
+    }
+
+    // Not stretched, the box fits its widest item.
+    [AvaloniaFact]
+    public void Not_Stretched_The_Box_Fits_Its_Items()
+    {
+        using var stage = new Stage(0);
+        stage.Combo.HorizontalAlignment = HorizontalAlignment.Left;
+        stage.Combo.Items.Add("an item far longer than the header");
+        stage.Combo.SelectedIndex = 0;
+        stage.Layout();
+        var text = stage.TextOf(stage.Items[0]);
+        Assert.True(stage.Box.Bounds.Width >= text.Bounds.Width + 6.5 + 5, $"the box is {stage.Box.Bounds.Width}, the text {text.Bounds.Width}");
+    }
+
+    // The theme's behaviour turned off lets go: nothing shows open, and the form is no longer set.
+    [AvaloniaFact]
+    public void Turned_Off_It_Lets_Go()
+    {
+        using var stage = new Stage(6);
+        PhoneComboBox.SetIsEnabled(stage.Combo, false);
+        Assert.False(PhoneComboBox.GetIsFull(stage.Combo));
+        stage.Combo.IsDropDownOpen = true;
+        stage.At(stage.Now + 200);
+        Assert.Null(PhoneComboBox.PickerOf(stage.Combo));
+        Assert.False(PhoneComboBox.GetIsShownOpen(stage.Combo));
     }
 }

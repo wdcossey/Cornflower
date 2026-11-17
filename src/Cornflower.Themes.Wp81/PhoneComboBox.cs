@@ -134,6 +134,9 @@ internal static class PhoneComboBox
         private ListBox? _pickerList;
         private IDisposable? _accent;
         private Control? _accented;
+        private List<object> _rows = [];
+        private int _tapped = -1;
+        private bool _reopen;
 
         public ComboBox Combo => combo;
 
@@ -175,7 +178,14 @@ internal static class PhoneComboBox
         private void OnChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
             if (e.Property == ItemsControl.ItemCountProperty)
-                combo.SetValue(IsFullProperty, combo.ItemCount >= FullFrom);
+            {
+                var full = combo.ItemCount >= FullFrom;
+                if (full == combo.GetValue(IsFullProperty))
+                    return;
+                combo.SetValue(IsFullProperty, full);
+                // Open in the other form, it closes: the picker over an inline box, or an open box with nothing in it.
+                combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
+            }
             else if (e.Property == ControlHeader.HeaderProperty)
                 combo.SetValue(HasHeaderProperty, e.NewValue is not null);
             else if (e.Property == ComboBox.IsDropDownOpenProperty)
@@ -197,7 +207,14 @@ internal static class PhoneComboBox
             }
 
             _top = TopLevel.GetTopLevel(combo);
-            _top?.AddHandler(InputElement.PointerPressedEvent, OnWindowPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+            if (_top is null)
+            {
+                // Opened before it is in a window: it opens when it gets there, as Avalonia's popup does.
+                combo.AttachedToVisualTree += OnAttached;
+                return;
+            }
+
+            _top.AddHandler(InputElement.PointerPressedEvent, OnWindowPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             OpenInline.Add(this);
             _pending = CornflowerClock.Schedule(() =>
             {
@@ -207,8 +224,17 @@ internal static class PhoneComboBox
             }, InlineOpenDelay);
         }
 
+        private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
+        {
+            combo.AttachedToVisualTree -= OnAttached;
+            if (combo.IsDropDownOpen)
+                Open();
+        }
+
         private void Close()
         {
+            combo.AttachedToVisualTree -= OnAttached;
+            _reopen = false;
             _pending?.Dispose();
             _pending = null;
             _top?.RemoveHandler(InputElement.PointerPressedEvent, OnWindowPressed);
@@ -243,26 +269,42 @@ internal static class PhoneComboBox
             if (_picker is null)
             {
                 _picker = new ListPickerFlyout();
-                _picker.ItemsPicked += (_, _) => combo.SetCurrentValue(ComboBox.SelectedIndexProperty, _picker.SelectedIndex);
+                _picker.ItemsPicked += (_, _) => combo.SetCurrentValue(ComboBox.SelectedIndexProperty, PickedIndex());
                 _picker.Opened += (_, _) => FindList();
                 _picker.Closed += (_, _) =>
                 {
                     Unaccent();
-                    combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
+                    _tapped = -1;
+                    if (_reopen)
+                    {
+                        // Opened again while it was closing: it opens now its close has run.
+                        _reopen = false;
+                        OpenPicker();
+                    }
+                    else
+                        combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
                 };
             }
 
-            // Items that are controls (a ComboBoxItem in XAML) can't go in a second list: their content goes, or their text.
-            var items = combo.Items.Select(item => item switch
+            if (_picker.IsOpen)
+            {
+                _reopen = true;
+                return;
+            }
+
+            // Items that are controls (a ComboBoxItem in XAML) can't go in a second list: their content goes, or its text.
+            _rows = combo.Items.Select(item => item switch
             {
                 ContentControl { Content: not Control and not null } container => container.Content!,
+                ContentControl { Content: TextBlock text } => text.Text ?? string.Empty,
+                TextBlock text => text.Text ?? string.Empty,
                 Control control => control.ToString() ?? string.Empty,
                 _ => item!,
             }).ToList();
-            _picker.ItemsSource = items;
+            _tapped = -1;
+            _picker.ItemsSource = _rows;
             _picker.ItemTemplate = combo.ItemTemplate;
             _picker.DisplayMemberBinding = combo.DisplayMemberBinding;
-            _picker.SelectedIndex = combo.SelectedIndex;
             PickerFlyoutBase.SetTitle(_picker, combo.PlaceholderText?.ToUpper(CultureInfo.CurrentCulture));
             _picker.ShowAt(combo);
             if (!_picker.IsOpen)
@@ -280,27 +322,58 @@ internal static class PhoneComboBox
                 {
                     _pickerList.ContainerPrepared -= OnContainerPrepared;
                     _pickerList.ContainerClearing -= OnContainerClearing;
+                    _pickerList.RemoveHandler(InputElement.PointerPressedEvent, OnListPressed);
                 }
 
                 _pickerList = list;
                 list.ContainerPrepared += OnContainerPrepared;
                 list.ContainerClearing += OnContainerClearing;
+                list.AddHandler(InputElement.PointerPressedEvent, OnListPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             }
 
-            if (list.ContainerFromIndex(combo.SelectedIndex) is { } container)
-                Accent(container);
+            for (var i = 0; i < list.ItemCount; i++)
+            {
+                if (list.ContainerFromIndex(i) is { } container)
+                    Prepare(container, i);
+            }
+        }
+
+        /// <summary>
+        /// The row picked: the one pressed, so of two equal items the one under the finger (the picker gives the first
+        /// equal one); else the picker's.
+        /// </summary>
+        private int PickedIndex() =>
+            _picker is { } picker && _tapped >= 0 && _tapped < _rows.Count && Equals(_rows[_tapped], picker.SelectedItem)
+                ? _tapped
+                : _picker?.SelectedIndex ?? -1;
+
+        private void OnListPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (_pickerList is { } list && e.Source is Visual source &&
+                source.FindAncestorOfType<ListBoxItem>(includeSelf: true) is { } row)
+                _tapped = list.IndexFromContainer(row);
         }
 
         private void OnContainerPrepared(object? sender, ContainerPreparedEventArgs e)
         {
-            if (_picker is { IsOpen: true } && e.Index == combo.SelectedIndex)
-                Accent(e.Container);
+            if (_picker is { IsOpen: true })
+                Prepare(e.Container, e.Index);
+        }
+
+        /// <summary>A row of the picker: the item selected in the box in the accent; an item disabled in the box, disabled.</summary>
+        private void Prepare(Control container, int index)
+        {
+            if (index == combo.SelectedIndex)
+                Accent(container);
+            if (index < combo.ItemCount && combo.Items[index] is Control { IsEnabled: false })
+                container.SetCurrentValue(InputElement.IsEnabledProperty, false);
         }
 
         private void OnContainerClearing(object? sender, ContainerClearingEventArgs e)
         {
             if (e.Container == _accented)
                 Unaccent();
+            e.Container.ClearValue(InputElement.IsEnabledProperty);
         }
 
         private void Accent(Control container)

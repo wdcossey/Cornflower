@@ -66,15 +66,18 @@ internal sealed class PhoneComboBoxItemsHost : Panel
     protected override Size MeasureOverride(Size availableSize)
     {
         var height = 0.0;
+        var width = 0.0;
         foreach (var child in Children)
         {
             child.Measure(availableSize.WithHeight(double.PositiveInfinity));
             // The items' height without their margin: the ItemsPresenter's 0.8 above runs past the host's foot, as on the phone.
             height = Math.Max(height, child.DesiredSize.Height - child.Margin.Top - child.Margin.Bottom);
+            width = Math.Max(width, child.DesiredSize.Width);
         }
 
         var closed = UseLayoutRounding ? LayoutHelper.RoundLayoutValue(ClosedHeight, LayoutHelper.GetLayoutScale(this)) : ClosedHeight;
-        return new Size(0, IsOpen ? Math.Max(height, closed) : closed);
+        // As wide as the items, so a box that isn't stretched fits them (the phone's Canvas is 0 wide, its width set from outside).
+        return new Size(width, IsOpen ? Math.Max(height, closed) : closed);
     }
 
     protected override Size ArrangeOverride(Size finalSize)

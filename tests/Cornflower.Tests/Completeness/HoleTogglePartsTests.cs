@@ -33,8 +33,7 @@ public class HoleTogglePartsTests
         theme.TryGetResource(type, ThemeVariant.Dark, out var found) ? (ControlTheme)found! : throw new InvalidOperationException($"No {type.Name} theme.");
 
     // Every hole shown with Simple then Wp81: the same plain ToggleButtons and RepeatButtons as with Simple alone, none in
-    // Wp81's theme, and those that had none of their own in Simple's theme for their own type. (Their sizes are compared
-    // below for ComboBox: across all the holes, Wp81's font changes the rows some of them stretch to.)
+    // Wp81's theme, and those that had none of their own in Simple's theme for their own type.
     [AvaloniaFact]
     public void Every_Holes_ToggleButtons_And_RepeatButtons_Keep_The_Theme_Under_Wp81()
     {

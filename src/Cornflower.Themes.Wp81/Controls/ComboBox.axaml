@@ -85,6 +85,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
                                     Opacity="0"
+                                    IsHitTestVisible="False"
                                     FontFamily="{DynamicResource PhoneFontFamilyNormal}"
                                     FontSize="{DynamicResource ContentControlFontSize}"
                                     FontWeight="Normal"
