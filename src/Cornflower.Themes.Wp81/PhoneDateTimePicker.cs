@@ -143,8 +143,9 @@ internal static class PhoneDateTimePicker
             pattern = MapUnquoted(pattern, (c, next) => c == 'H' ? (next == 'H' ? "" : "h") : c.ToString()) + " tt";
         else if (!twelve && hasTwelve)
             pattern = MapUnquoted(pattern, (c, _) => c switch { 'h' => "H", 't' => "", _ => c.ToString() }).Trim();
-        // Trimmed: a culture with no AM and PM leaves the space before them.
-        return DateTime.MinValue.Add(value).ToString(pattern, culture).Trim();
+        // Trimmed: a culture with no AM and PM leaves the space before them. ICU's patterns (Linux, Android) put a narrow
+        // no-break space before them, where the phone's text has a space.
+        return DateTime.MinValue.Add(value).ToString(pattern, culture).Replace('\u202F', ' ').Trim();
     }
 
     /// <summary>The pattern's letters outside quotes and escapes.</summary>
