@@ -38,6 +38,11 @@ namespace Cornflower.Controls;
 /// one back, as the phone's does (its 188 to 241 ms and 152 to 174 ms after the press, for the probes' 150 ms swipe),
 /// and at once for a tap or a change from code.
 /// </para>
+/// <para>
+/// <b>Where a release goes</b> (#148, #162): on where the offset plus its speed over <see cref="ReleaseLookAhead"/>
+/// passes <see cref="ReleaseReach"/> of a page, a fit to every release read. <b>A press while a swipe moves</b> (#163)
+/// holds it where it is; let go without a drag, it goes on where it was going.
+/// </para>
 /// </remarks>
 internal sealed class PivotMotion
 {
@@ -72,11 +77,18 @@ internal sealed class PivotMotion
     public static readonly TimeSpan BackSelectionDelay = TimeSpan.FromMilliseconds(15.625);
 
     /// <summary>
-    /// A release moving at least this fast, in view pixels a millisecond, the way the drag went, goes on to the next
-    /// page; slower, it goes on only past half a page. Not read on the phone (owed); the probes' swipes, 200 px in
-    /// 150 ms, go on, and a drag of 100 px held still goes back.
+    /// Where a release goes, #148's fit: on when the offset at the release, plus its speed the way the drag went over
+    /// this, passes <see cref="ReleaseReach"/>; back short of it, or when the release moves back the other way. A fit
+    /// to every release #148 read (<c>tools/refapp/README.md</c>, "Where a Pivot's release goes"), not a read: T fits
+    /// from 350 to 420 ms, and this is the middle.
     /// </summary>
-    public const double FlickVelocity = 0.3;
+    public static readonly TimeSpan ReleaseLookAhead = TimeSpan.FromMilliseconds(385);
+
+    /// <summary>
+    /// <see cref="ReleaseLookAhead"/>'s H, as a share of a page: 0.52, 234 px of the emulator's 450, the middle of
+    /// the fit's 228.3 to 239.3 px, where a release held still goes back at 228.3 and on at 239.3.
+    /// </summary>
+    public const double ReleaseReach = 0.52;
 
     private const double SlideExponent = 4;
 
@@ -96,6 +108,13 @@ internal sealed class PivotMotion
     private bool _jumped;
     private TimeSpan _jumpAt;
     private bool _oldGone;
+
+    // A drag: the offset it began from, and how far the item shown is ahead of the offset (sliding), which it keeps.
+    private double _dragFrom;
+    private double _ahead;
+
+    // A held swipe's pages still to go from the item shown, until the finger drags: let go without a drag, it goes on.
+    private int? _resume;
 
     // A move under way, and which: a handler the move's events reach can start another, and the old one's frame then
     // stops, so only one chain of frames runs.
@@ -124,27 +143,51 @@ internal sealed class PivotMotion
     {
         StopFrames();
         IsDragging = false;
+        _ahead = 0;
+        _resume = null;
         Lead = index;
         Offset = 0;
         ItemX = 0;
         _pivot.ApplyMotion();
     }
 
-    /// <summary>A finger has taken the content: from now on <see cref="Drag"/> moves it.</summary>
+    /// <summary>
+    /// Whether a finger coming down now holds the move where it is: a swipe's move, as the phone's does (#148). A
+    /// header tap's or a change from code's isn't held; a drag ends it at its target.
+    /// </summary>
+    public bool CanHold => _moving && _gesture;
+
+    /// <summary>
+    /// A finger has taken the content: from now on <see cref="Drag"/> moves it. A swipe's move stops where it is, its
+    /// selection, if it hasn't come yet, with it; let go without a drag, it goes on where it was going. Any other move
+    /// ends at its target.
+    /// </summary>
     public void BeginDrag()
     {
-        if (IsMoving)
+        _resume = null;
+        if (CanHold)
+        {
+            _resume = _jumped ? 0 : _steps;
+            StopFrames();
+        }
+        else if (IsMoving)
+        {
             Finish();
+        }
+
         IsDragging = true;
+        _dragFrom = Offset;
+        _ahead = -(ItemX + Offset);
     }
 
     /// <summary>The finger is <paramref name="travel"/> view pixels left of where it pressed (right is negative).</summary>
     public void Drag(double travel)
     {
         if (!IsDragging) return;
+        _resume = null;
         var page = _pivot.PageWidth;
-        Offset = Math.Clamp(travel, -page, page);
-        ItemX = -Offset;
+        Offset = Math.Clamp(_dragFrom + travel, -page, page);
+        ItemX = -Offset - _ahead;
         _pivot.ApplyMotion();
     }
 
@@ -159,16 +202,20 @@ internal sealed class PivotMotion
         var page = _pivot.PageWidth;
         var forward = -velocity;
         var steps = 0;
-        if (_pivot.ItemCount > 1 && Offset != 0)
+        if (_resume is { } resume)
         {
-            // A flick the way the drag went goes on; one back the other way stays; else half a page decides.
-            if (Math.Abs(forward) >= FlickVelocity)
-                steps = Math.Sign(forward) == Math.Sign(Offset) ? Math.Sign(forward) : 0;
-            else if (Math.Abs(Offset) >= page / 2)
+            steps = resume;                               // held, not dragged: on where it was going (#148)
+            _resume = null;
+        }
+        else if (_pivot.ItemCount > 1 && Offset != 0)
+        {
+            // On if where the release is heading passes the reach, the way the drag went; one heading back stays.
+            var heading = Offset + forward * ReleaseLookAhead.TotalMilliseconds;
+            if (Math.Sign(heading) == Math.Sign(Offset) && Math.Abs(heading) >= page * ReleaseReach)
                 steps = Math.Sign(Offset);
         }
 
-        if (steps == 0 && Offset == 0)
+        if (steps == 0 && Offset == 0 && _ahead == 0)
         {
             Rest(Lead);
             return;
@@ -186,6 +233,7 @@ internal sealed class PivotMotion
     {
         StopFrames();
         IsDragging = false;
+        _ahead = 0;
         Lead = from;
         Offset = 0;
         ItemX = 0;
@@ -297,7 +345,10 @@ internal sealed class PivotMotion
         }
         else
         {
-            itemX = -offset - (_steps > 0 ? page * Slide(t - PhoneFrame) : 0);
+            // Going forward, the item slides out ahead of the offset; any way, it is first where a held drag left it.
+            itemX = _steps > 0
+                ? -offset - _ahead - (page - _ahead) * Slide(t - PhoneFrame)
+                : -offset - _ahead * (1 - Slide(t));
             if (_steps > 0 && itemX <= -page)
                 _oldGone = true;
         }
