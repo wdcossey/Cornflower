@@ -26,7 +26,7 @@ public partial class DateTimePickerPage : UserControl
 
     private void ShowState()
     {
-        if (State is not null)
+        if (State is not null && Date is not null && Time is not null && Time24 is not null)
             State.Text = $@"{Date.SelectedDate:yyyy-MM-dd}, {Time.SelectedTime:hh\:mm}, {Time24.SelectedTime:hh\:mm}";
     }
 

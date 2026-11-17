@@ -273,6 +273,9 @@ public class DateTimePickerTests
         Assert.Equal("2014", PhoneDateTimePicker.Date(July15, day: false, month: false, year: true, us));
         Assert.Equal(string.Empty, PhoneDateTimePicker.Date(July15, day: false, month: false, year: false, us));
         Assert.Equal("15.07", PhoneDateTimePicker.Date(July15, day: true, month: true, year: false, new CultureInfo("de-DE")));
+        // All of it, the culture's own short date, what follows its last field too.
+        var ko = new CultureInfo("ko-KR");
+        Assert.Equal(July15.ToString("d", ko), PhoneDateTimePicker.Date(July15, day: true, month: true, year: true, ko));
 
         using var stage = new Stage(Date());
         ((DatePicker)stage.Picker).YearVisible = false;
@@ -496,13 +499,18 @@ public class DateTimePickerTests
         Assert.Equal(July15, ((DatePicker)stage.Picker).SelectedDate);
     }
 
-    [AvaloniaFact]
-    public void Opened_Again_While_It_Closes_It_Opens_Once_Closed()
+    [AvaloniaTheory]
+    [InlineData("cancel")]
+    [InlineData("back")]
+    public void Opened_Again_While_It_Closes_It_Opens_Once_Closed(string how)
     {
         using var stage = new Stage(Time());
         stage.OpenAtRest();
         stage.InPresenter<DateTimePickerPanel>("PART_MinuteSelector").SelectedValue = 45;
-        stage.Tap(stage.InPresenter<Button>("PART_DismissButton"));
+        if (how == "back")
+            stage.Back();
+        else
+            stage.Tap(stage.InPresenter<Button>("PART_DismissButton"));
         var called = stage.Now;
         stage.At(stage.Now + 4 * Tick);
         stage.FlyoutButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -513,6 +521,44 @@ public class DateTimePickerTests
         Assert.True(stage.Popup.IsOpen);
         Assert.True(stage.StandIn.IsOpen);
         Assert.Equal(30, stage.InPresenter<DateTimePickerPanel>("PART_MinuteSelector").SelectedValue);
+    }
+
+    [AvaloniaFact]
+    public void Closing_It_Takes_No_Keys()
+    {
+        using var stage = new Stage(Date());
+        stage.OpenAtRest();
+        stage.InPresenter<DateTimePickerPanel>("PART_MonthSelector").SelectedValue = 8;
+        stage.Tap(stage.InPresenter<Button>("PART_DismissButton"));
+        stage.Scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(July15, ((DatePicker)stage.Picker).SelectedDate);
+        Assert.False(stage.Presenter.IsEffectivelyEnabled);
+
+        stage.At(stage.Now + 500);
+        stage.OpenAtRest();
+        Assert.True(stage.Presenter.IsEffectivelyEnabled);
+    }
+
+    [AvaloniaFact]
+    public void A_Window_Of_Another_Height_Is_Cut_In_Five_Rows_And_Closes_At_16_Ticks()
+    {
+        using var stage = new Stage(Date(), width: 411, height: 914);
+        var call = stage.Now;
+        stage.Open();
+        var first = stage.FirstFrameAfter(call);
+        stage.At(first);
+        Assert.Equal(5, stage.Bands!.Bands.Count);
+        Assert.Equal(914 / 5.0, stage.Bands.Bands[0].Height, 1);
+        stage.At(first + 20 * Tick);
+
+        var hidden = stage.Now;
+        stage.Tap(stage.InPresenter<Button>("PART_AcceptButton"));
+        var closing = stage.FirstFrameAfter(hidden);
+        stage.At(closing + (ClosedTicks - 1) * Tick);
+        Assert.True(stage.Popup.IsOpen);
+        stage.At(closing + ClosedTicks * Tick);
+        Assert.False(stage.Popup.IsOpen);
     }
 
     [AvaloniaFact]

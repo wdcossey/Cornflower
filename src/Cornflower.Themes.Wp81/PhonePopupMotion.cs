@@ -108,7 +108,9 @@ internal static class PhonePopupMotion
     /// <see cref="OpenFrom"/> at once, at 12.5, 9.6, 7.84, 6.6 and 5.67° a tick from the top, so nothing is left to
     /// reveal. They close as five bands, the last gone at 16.2 ticks: the popup closes at <see cref="ClosedAfter"/>(5),
     /// 16 ticks. (The DatePickerFlyout's own <c>Closed</c> event comes at 17, a tick after its last band has gone, where
-    /// the Flyout's comes as its last band goes; the bands move as the Flyout's. docs/controls/DatePicker/PLAN.md.)
+    /// the Flyout's comes as its last band goes; the bands move as the Flyout's. docs/controls/DatePicker/PLAN.md.) The
+    /// rates are the date and time pickers' own reading, close to the list pickers' but not the same. The pickers cut a
+    /// window of another height in five rows too, a fifth of it each.
     /// </summary>
     internal static readonly PhonePopupRows DateTimeRows = new(160, [12.5, 9.6, 7.84, 6.6, 5.67], []);
 

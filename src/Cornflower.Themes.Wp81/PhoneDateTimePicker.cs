@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
+using Avalonia.Input;
 using Avalonia.Threading;
 
 namespace Cornflower.Themes.Wp81;
@@ -89,6 +90,8 @@ internal static class PhoneDateTimePicker
     {
         if (date is not { } value)
             return string.Empty;
+        if (day && month && year)
+            return value.ToString("d", culture);
 
         // The pattern's fields (runs of d, M or y) and what lies between them.
         var pattern = culture.DateTimeFormat.ShortDatePattern;
@@ -116,8 +119,9 @@ internal static class PhoneDateTimePicker
             i = j;
         }
 
-        // A field alone is formatted as a pattern, not as a standard format's one letter.
-        return fields.Count == 0 ? string.Empty : value.ToString(string.Join(separator, fields) + (fields.Count == 1 ? " " : ""), culture).TrimEnd();
+        // A field alone is a custom format ("%M"), not a standard format's one letter.
+        return fields.Count == 0 ? string.Empty
+            : value.ToString(fields is [{ Length: 1 } only] ? "%" + only : string.Join(separator, fields), culture);
     }
 
     /// <summary>
@@ -139,7 +143,8 @@ internal static class PhoneDateTimePicker
             pattern = MapUnquoted(pattern, (c, next) => c == 'H' ? (next == 'H' ? "" : "h") : c.ToString()) + " tt";
         else if (!twelve && hasTwelve)
             pattern = MapUnquoted(pattern, (c, _) => c switch { 'h' => "H", 't' => "", _ => c.ToString() }).Trim();
-        return DateTime.MinValue.Add(value).ToString(pattern, culture);
+        // Trimmed: a culture with no AM and PM leaves the space before them.
+        return DateTime.MinValue.Add(value).ToString(pattern, culture).Trim();
     }
 
     /// <summary>The pattern's letters outside quotes and escapes.</summary>
@@ -191,6 +196,7 @@ internal static class PhoneDateTimePicker
         private readonly Popup _popup;
         private readonly IDisposable? _target;
         private bool _reopen;
+        private IDisposable? _disabled;
 
         public Bridge(Popup standIn, Popup popup)
         {
@@ -213,6 +219,7 @@ internal static class PhoneDateTimePicker
             _standIn.PropertyChanged -= OnStandInChanged;
             _popup.Closed -= OnClosed;
             Host?.Dispose();
+            _disabled?.Dispose();
             _popup.IsOpen = false;
             _target?.Dispose();
             if (_standIn.IsOpen)
@@ -232,6 +239,9 @@ internal static class PhoneDateTimePicker
             {
                 _reopen = false;
                 Host?.Dismiss();
+                // Closing, it takes no keys: Enter would pick what a cancel left on the wheels.
+                if (Host is { IsClosing: true } && _popup.Child is { } presenter)
+                    _disabled ??= presenter.SetValue(InputElement.IsEnabledProperty, false, BindingPriority.Animation);
             }
         }
 
@@ -242,9 +252,14 @@ internal static class PhoneDateTimePicker
                 Host = new PhonePopupHost(_popup, content, () => _popup.IsOpen = false, host =>
                 {
                     host.Placement = PhonePopupPlacement.Full;
-                    host.Rows = PhonePopupMotion.DateTimeRows;
+                    // Back closes Avalonia's popup too, so a tap while it closes opens it again, as after cancel.
+                    host.Back = () => _standIn.Close();
                 });
             }
+
+            // Without its presenter there is nothing to host: Avalonia's popup isn't shown in its place.
+            if (Host is null)
+                return;
 
             // Asked again while it closes: it opens again once closed.
             if (Host is { IsClosing: true })
@@ -253,6 +268,11 @@ internal static class PhoneDateTimePicker
                 return;
             }
 
+            _disabled?.Dispose();
+            _disabled = null;
+            // Five rows, as the phone's on its 800: a fifth of the window each.
+            if (TopLevel.GetTopLevel(_standIn) is { } top)
+                Host.Rows = PhonePopupMotion.DateTimeRows with { Height = PhonePopupHost.AreaOf(top).Height / PhonePopupMotion.DateTimeRows.Rates.Length };
             Reset(_popup.Child);
             _popup.IsOpen = true;
         }

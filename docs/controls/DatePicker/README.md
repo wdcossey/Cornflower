@@ -31,10 +31,9 @@ WinRT's `Header` and `HeaderTemplate` are `cf:ControlHeader.Header` and `HeaderT
   time's one, at 43. Wheels hidden by `DayVisible` and the others, or the 24-hour clock, leave the rest centred.
 - **Picking:** the check (or Enter) sets the value, and `SelectedDateChanged` or `SelectedTimeChanged` comes, in the
   tap's frame (none when the value is the same); the cross, Back or Escape set nothing. Either way the picker swings
-  out and is closed 16 ticks (250 ms) later on the reference's 800 px; a taller window has more rows and closes later
-  (two ticks a row), as the list picker's. Opened again, it is at the picker's value; opened again while it closes, it
+  out and is closed 16 ticks (250 ms) later. While it closes it takes no keys. Opened again, it is at the picker's value; opened again while it closes, it
   opens once closed.
-- **Motion:** in five 160 px rows, every row from 80° at once, the lower ones slower (12.5 to 5.67° a tick), at rest
+- **Motion:** in five rows, each a fifth of the window (160 px on the reference's 800), every row from 80° at once, the lower ones slower (12.5 to 5.67° a tick), at rest
   after 14.1 ticks; closing, the rows turn away two ticks apart, top first.
 - The month and day formats are set by the theme for the wheels (`MM↵MMMM`, `dd↵dddd`); set your own and the wheels
   show them.
@@ -69,8 +68,10 @@ added (PLAN.md, "The checklists").
 
 - **The bar turns with the bottom row**; the phone draws its bar at rest, last, by 400 ms (#149), as the list pickers'
   (#153).
-- **A window taller than 800** has a sixth row, which doesn't turn (only five rates were read) and adds two ticks to
-  the close; the phone's on a taller screen wasn't read.
+- **A window of another height** is cut in five rows too, a fifth of it each; the phone's on another screen wasn't read.
+  The rows are worked out as it opens, not again if the window is resized while it is open.
+- **Avalonia's pickers place the 12-hour clock's AM and PM last**, and so does the button's text when it moves a
+  24-hour culture's pattern to the 12-hour clock; a culture that writes them first (ja-JP) is shown with them last.
 - **No `Closed` event**: Avalonia's pickers have none, nor have WinRT's. The DatePickerFlyout's, a tick after its bands
   have gone (17 ticks), is for that type, not added (PLAN.md).
 - **`SelectedDateChanged` isn't raised on an unchanged accept**, as Avalonia's property; the phone's `DateChanged` on an
