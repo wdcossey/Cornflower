@@ -5,7 +5,7 @@ A faithful reproduction of the Windows Phone design languages for
 
 <p>
 <img src="docs/preview/dark__pivot.png" width="250" alt="Pivot, dark">
-<img src="docs/preview/light__commandbar.png" width="250" alt="The app bar, light">
+<img src="docs/preview/light__contentdialog__dialog.png" width="250" alt="ContentDialog, light">
 <img src="docs/preview/dark__theme.png" width="250" alt="The accent and the 20 named accents">
 </p>
 
@@ -14,9 +14,10 @@ More in [PREVIEW.md](PREVIEW.md).
 > **Status: in progress, not yet published.** Done, each measured against the Windows Phone 8.1 emulator: the type
 > ramp, Button, HyperlinkButton, RepeatButton, ToggleButton, CheckBox, RadioButton, ToggleSwitch, Slider,
 > ProgressBar, ProgressRing, TextBox and PasswordBox (Tier 1, each also run on a phone); ScrollViewer,
-> ContentControl, the app bar (CommandBar), ListView, Page with its transitions, Pivot and Hub (Tier 2; still owed on
-> a phone: Page, Pivot, Hub, the app bar's motion and ListView's check mode). Next, the pickers, flyouts and dialogs (Tier 3). The
-> [roadmap](docs/ROADMAP.md) has the rest.
+> ContentControl, the app bar (CommandBar), ListView, Page with its transitions, Pivot and Hub (Tier 2, each also
+> run on a phone); Flyout, MenuFlyout, ListPickerFlyout and PickerFlyout, LoopingSelector, ContentDialog and
+> AutoSuggestBox (Tier 3 so far; the Flyout run on a phone, the others' phone and desktop window runs still owed).
+> Next, ComboBox, and DatePicker and TimePicker. The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here
 

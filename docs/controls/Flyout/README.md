@@ -1,6 +1,6 @@
 # Flyout and FlyoutPresenter
 
-Status: done but for the device and real-window runs · [#151](https://github.com/wdcossey/CornflowerUI/issues/151) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done · [#151](https://github.com/wdcossey/CornflowerUI/issues/151) · device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page flyout` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 332 ms; the top flyout below the status bar at full width, the full flyout filling the window, Back closing each and the page staying) · real-window run passed 2026-11-16 (`tools/real-window/drive.ps1`, Debug, on #161's head `d0a9ef6`: 160 of 160, the flyout page opened, ready, with no button without a size, its cost 11 ms, 57 elements and 0 rules, and Back left it; drive.ps1 opens no flyout)
 
 The Windows Phone 8.1 Flyout: Avalonia's `Flyout`, its `FlyoutPresenter` themed by `Wp81Theme` in
 `src/Cornflower.Themes.Wp81/Controls/FlyoutPresenter.axaml`, and the phone's popup round it: drawn across the top of the
