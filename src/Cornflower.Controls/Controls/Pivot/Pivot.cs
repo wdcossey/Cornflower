@@ -97,16 +97,29 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
         UpdateOrientation();
     }
 
-    /// <summary>Raised when an item is about to be shown: as it is selected.</summary>
+    /// <summary>
+    /// Raised for the item selected as it comes in, after <see cref="PivotItemUnloaded"/> for the one it replaces and
+    /// before <see cref="PivotItemLoaded"/>; and for the first item shown in a window.
+    /// </summary>
+    /// <remarks>
+    /// The four item events come together, in the order <see cref="PivotItemUnloading"/>,
+    /// <see cref="PivotItemUnloaded"/>, <see cref="PivotItemLoading"/>, <see cref="PivotItemLoaded"/>, after
+    /// <c>SelectionChanged</c>, with <see cref="SelectingItemsControl.SelectedIndex"/> already the new one, as the
+    /// phone's do (#148): for a swipe at the selection change, before the new item slides in; for a header tap or a
+    /// change from code when the new item comes in.
+    /// </remarks>
     public event EventHandler<PivotItemEventArgs>? PivotItemLoading;
 
-    /// <summary>Raised when an item has been shown: when it comes in.</summary>
+    /// <summary>Raised for the item selected as it comes in, after <see cref="PivotItemLoading"/>; and for the first item shown.</summary>
+    /// <remarks><inheritdoc cref="PivotItemLoading" path="/remarks"/></remarks>
     public event EventHandler<PivotItemEventArgs>? PivotItemLoaded;
 
-    /// <summary>Raised when the shown item is about to go: as another is selected.</summary>
+    /// <summary>Raised for the item that was shown as the one selected comes in, first of the four item events.</summary>
+    /// <remarks><inheritdoc cref="PivotItemLoading" path="/remarks"/></remarks>
     public event EventHandler<PivotItemEventArgs>? PivotItemUnloading;
 
-    /// <summary>Raised when an item has gone: when the next one comes in.</summary>
+    /// <summary>Raised for the item that was shown as the one selected comes in, after <see cref="PivotItemUnloading"/>.</summary>
+    /// <remarks><inheritdoc cref="PivotItemLoading" path="/remarks"/></remarks>
     public event EventHandler<PivotItemEventArgs>? PivotItemUnloaded;
 
     /// <summary>What the template shows above the header strip; on the phone, the app's name in capitals.</summary>
@@ -163,8 +176,9 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
 
     bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => IsInSwipeArea(point);
 
-    // A press while it moves ends the move when the drag begins (PivotMotion.BeginDrag), and holds nothing.
-    bool ISidewaysSwipeTarget.HoldsAPress => false;
+    // A press while a swipe moves it holds it where it is (#148); one during a tap's or a code change's move ends that
+    // move when the drag begins (PivotMotion.BeginDrag).
+    bool ISidewaysSwipeTarget.HoldsAPress => _motion.CanHold;
 
     void ISidewaysSwipeTarget.BeginDrag() => _motion.BeginDrag();
 
@@ -188,9 +202,9 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
 
     /// <summary>
     /// Draws the motion's state: the strip laid out and slid, and the shown item and where it is. When the item shown
-    /// changes, the one that went raises <see cref="PivotItemUnloaded"/> and the one that came in
-    /// <see cref="PivotItemLoaded"/>, once it is visible; the first shown in a window raises
-    /// <see cref="PivotItemLoading"/> and <see cref="PivotItemLoaded"/>.
+    /// changes, the four item events come together: <see cref="PivotItemUnloading"/> and <see cref="PivotItemUnloaded"/>
+    /// for the one that went, then <see cref="PivotItemLoading"/> and <see cref="PivotItemLoaded"/> for the one that came
+    /// in; the first shown in a window raises <see cref="PivotItemLoading"/> and <see cref="PivotItemLoaded"/>.
     /// </summary>
     internal void ApplyMotion()
     {
@@ -220,11 +234,14 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
 
         var gone = _shown;
         _shown = shown;
-        if (gone is null)
-            PivotItemLoading?.Invoke(this, new PivotItemEventArgs(shown));
-        else
-            PivotItemUnloaded?.Invoke(this, new PivotItemEventArgs(gone));
-        PivotItemLoaded?.Invoke(this, new PivotItemEventArgs(shown));
+        // Together, in the phone's order; a handler that shows another item meanwhile ends the four, as they are stale.
+        RaiseFor(PivotItemUnloading, gone);
+        if (!ReferenceEquals(_shown, shown)) return;
+        RaiseFor(PivotItemUnloaded, gone);
+        if (!ReferenceEquals(_shown, shown)) return;
+        RaiseFor(PivotItemLoading, shown);
+        if (!ReferenceEquals(_shown, shown)) return;
+        RaiseFor(PivotItemLoaded, shown);
     }
 
     /// <summary>A <see cref="PivotItem"/>'s header has changed: its header in the strip shows the new one.</summary>
@@ -376,15 +393,7 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
             return;
         }
 
-        // Nothing shown yet, the first item to show raises its own Loading.
-        if (_shown is not null)
-        {
-            var going = previous as PivotItem ??
-                        (from >= 0 && from < ItemCount && ReferenceEquals(ItemsView[from], previous) ? ContainerFor(from) : null);
-            RaiseFor(PivotItemUnloading, going);
-            RaiseFor(PivotItemLoading, to >= 0 && to < ItemCount ? ContainerFor(to) : null);
-        }
-
+        // The item events come when the new item comes in (ApplyMotion), not here.
         if (fromMotion)
             return;
 

@@ -3,7 +3,8 @@
 **The phone:** the reference app's captures, Emulator 8.1 U1 1080P 5.5 inch (device 11), 1080 × 1920 at 2.4,
 2026-11-08, in [`ref/wp81/Pivot/`](../../../ref/wp81/Pivot/README.md): a Pivot titled "CORNFLOWER", items "one" and
 "two", full width on a 450 × 320 stage. Its motion: the probes of #128 and #136 (runs `20261115-2056-dev11`,
-`-2136-`, `-2339-`, `-2343-`), frame by frame. **Ours:** headless frames from
+`-2136-`, `-2339-`, `-2343-`), frame by frame, and #148's (`20261116-1706-dev11`: where a release goes, a press while
+it moves, the item events). **Ours:** headless frames from
 `tests/Cornflower.Tests/Controls/PivotFrames.cs`, Avalonia 12.1.4 with Skia, the same stage in a portrait window at
 2.4, in [`frames/`](frames).
 
@@ -74,9 +75,11 @@ probes' own gestures.
 | Two items | wrap both ways, the strip only two headers | the same | match |
 | A header cut by the edge | tapped like any | the same | match |
 | A tap on the selected header | `Tapped`, nothing else | the same | match |
-| Where a drag goes on or back | a 200 px swipe on, a 100 px drag held back | 0.3 px/ms the way it went, or half a page | **gap**: the threshold isn't read (owed) |
-| A press while it moves | DirectManipulation catches the content | the move ends at once and the drag starts from rest | **gap** (owed) |
-| The item events | not read | on the selection and on the new item coming in | **gap**: owed a probe |
+| Where a release goes, held still (#148) | back at 228.3 px, on at 239.3 (right: back at 201.0, on at 245.4) | on from 234 px (0.52 of 450) | match |
+| Where a release goes, moving (#148) | 60 px at 0.10 to 0.48 px/ms back, at 0.6 and 1.0 on; 120 px at 0.08, 0.19 back, at 0.33 on; heading back the other way, back | on where the offset plus 385 ms of the speed passes 234 px: each of these the phone's way | deliberate: a fit, not a read (#162) |
+| A press while a swipe moves (#148) | held within a frame (0 to 6.1 px over 600 ms; an 80 ms tap 22.3), then on to the next page | held where it is (0 px); let go, on | match |
+| The item events (#148) | all four together after `SelectionChanged`: Unloading, Unloaded, Loading, Loaded; `SelectedIndex` the new one | the same | match |
+| Their time after `SelectionChanged` | a swipe 0.1 to 2.7 ms; a tap 115; code 107 to 121 forward, 36 to 43 back | a swipe 0; a tap and code forward 109.4 (7 frames); code back 15.6 | match, but code going back: **gap** (a frame against 2 to 3) |
 
 ## Not compared
 

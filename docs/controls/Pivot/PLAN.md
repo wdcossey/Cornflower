@@ -54,15 +54,18 @@ WinRT `Windows.UI.Xaml.Controls.Pivot`; Avalonia none: a new control (rung 5), o
 
 | ✓ | WinRT | Handler | Avalonia | Action |
 |---|---|---|---|---|
-| [x] | `PivotItemLoaded` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | `EventHandler<PivotItemEventArgs>`, the sender the Pivot: when an item comes in (and the first when shown) |
-| [x] | `PivotItemLoading` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: as an item is selected (and the first when shown) |
-| [x] | `PivotItemUnloaded` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: when the next comes in |
-| [x] | `PivotItemUnloading` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: as another is selected |
+| [x] | `PivotItemLoaded` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | `EventHandler<PivotItemEventArgs>`, the sender the Pivot: fourth of the four, as the new item comes in (and the first when shown) |
+| [x] | `PivotItemLoading` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: third, for the new item (and the first when shown) |
+| [x] | `PivotItemUnloaded` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: second, for the item left |
+| [x] | `PivotItemUnloading` | `TypedEventHandler<Pivot, PivotItemEventArgs>` | none | The same: first, for the item left |
 | [x] | `SelectionChanged` | `SelectionChangedEventHandler` | none | `SelectingItemsControl.SelectionChanged` (a routed event): when the selection changes, part way through a swipe |
 
-The four item events' order and times aren't read on the phone (no probe logs them): they follow the API's own words
-("starts to load", "has loaded", "starts to unload", "has unloaded") on the motion's two moments, the selection change
-and the new item coming in. **Owed**: a probe of them.
+#148 read the four item events (run `20261116-1706-dev11`, #164): after every selection change they come together,
+within 0.4 ms, Unloading and Unloaded for the item left, then Loading and Loaded for the one selected, `SelectedIndex`
+already the new one; 0.1 to 2.7 ms after `SelectionChanged` for a swipe, 115 ms after for a header tap, 36 to 121 ms
+after for a change from code. Ours raises the four together when the new item comes in: at the selection for a swipe;
+7 frames (109.4 ms) after it for a tap or code going forward (the old item off screen); a frame after for code going
+back (the phone's 36 to 43 ms: a gap).
 
 #### Methods (0)
 
@@ -262,7 +265,12 @@ Each is a test in `tests/Cornflower.Tests/Controls/PivotTests.cs` (named in brac
 23. **IsLocked**: no swipe, no tap; code still selects; the other headers `:unselectedlocked`, their text at 0 and 40
     right over 0.33 s (`Locked_It_Neither_Swipes_Nor_Taps_And_The_Other_Headers_Go`,
     `A_Locked_Headers_Text_Goes_Right_And_Out_Over_A_Third_Of_A_Second`, `The_Translation_Draws_The_Element_That_Far_Right`).
-24. **The item events** (`The_Item_Events_Come_As_The_Items_Go_And_Come_In`, `The_First_Item_Loads_When_The_Pivot_Is_Shown`).
+24. **The item events**, together after the selection (#164) (`The_Item_Events_Come_Together_After_The_Selection`,
+    `The_First_Item_Loads_When_The_Pivot_Is_Shown`).
+25. **Where a release goes** (#162): on where the offset plus 385 ms of its speed passes 0.52 of a page, a fit to
+    #148's releases (`A_Drag_Held_Still_Goes_On_Past_Its_Reach`, `A_Release_Goes_On_By_Where_It_Heads`).
+26. **A press while a swipe moves** (#163) holds it; let go, it goes on
+    (`A_Press_While_A_Swipe_Moves_Holds_It_Then_It_Goes_On`, `A_Drag_From_A_Held_Press_Moves_On_From_Where_It_Was_Held`).
 
 ## The motion, as modelled
 
@@ -270,10 +278,11 @@ Each is a test in `tests/Cornflower.Tests/Controls/PivotTests.cs` (named in brac
 DirectManipulation's, and its code moves the strip's and the items' translates from it; ours keeps an offset of its own
 and moves the same two transforms.
 
-| What | The phone (#128, #136) | Ours |
+| What | The phone (#128, #136, #148) | Ours |
 |---|---|---|
 | The drag | The content with the finger | One for one, from the press, held to a page either way |
-| Let go | A swipe goes on (200 px in 150 ms); a 100 px drag held 300 ms goes back | On if it was moving 0.3 px/ms or faster the way it went; back if as fast the other way; else on past half a page, back short of it (the threshold isn't read: owed) |
+| Let go | Held still, back at 228.3 px and on at 239.3; no single speed decides (60 px at 0.48 px/ms back, 120 px at 0.33 on); moving back the other way, back (#148) | On where the offset plus 385 ms of its speed, the way it went, passes 0.52 of a page (234 px); else back. A fit, not a read: every release read fits T 350 to 420 ms and H 228.3 to 239.3 px, and ours takes the middle of each (#162) |
+| A press while it moves | After a swipe, held within a frame (0 to 6.1 px over 600 ms), then on to the next page; presses 245 to 443 px in (#148) | A swipe's move held where it is, offset, strip and item; let go without a drag, on where it was going; dragged, from where it was held, by the rule above. A tap's or code's move isn't held (#163) |
 | The swipe's offset after the release | Exactly a page; 33 to 35 frames; the same shape whatever the speed | `KeySpline` 0.24,0.60 0.22,1 over 515.625 ms: 1.07 px rms of 450 against the median of 20 |
 | A tap's (and a change from code's) | 500 ms; a page a header (900 px for two) | `KeySpline` 0.20,0.08 0.02,1 over 500 ms: 0.74 px rms against 6 |
 | Back after a drag let go | 35 frames | `KeySpline` 0.25,0 0.20,1 over 546.875 ms: 0.12 px rms of 109, the one read |
@@ -320,5 +329,6 @@ None. `Pivot.HeaderPanel`, `Motion` and the like are internal, for the tests.
 - #120 Page: a Pivot is the page, full width, not in the page margin; merged.
 - #114/#128 and #136, the motion's readings, read (#136's README section is in #137).
 - Wp81's `ContentControl` theme (#117) for the title, `PhoneHeaderLine` for the text's line.
-- **Owed**: a probe of the four item events; of where a drag goes on or back (the flick threshold); of a press while
-  the Pivot is still moving (the phone's DirectManipulation catches it; ours finishes the move at once).
+- #148's reads of the item events, where a release goes and a press while it moves (#170), followed in #162 to #164.
+- **Owed**: a press while it moves short of 239 px, or dragged, or during a tap's move; the device run and the
+  real-window run again for #162 to #164.
