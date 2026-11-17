@@ -1363,10 +1363,11 @@ at `Fill` and `None`. Each brush is read at offsets from 0 to the end, and the p
 - **The entrance turns the Hub in.** The template's `EntranceAnimationProjection` (on `HubRoot`) has `RotationY` −120° on
   the first frame and reaches 0 on the 64th tick after, 1,000 ms of animation time. `CenterOfRotationX` is −0.5, the
   axis half the Hub's width to its left; nothing else in the projection moves, and no opacity changes. The values are
-  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent ln 100, 4.605, out) over 1,000 ms
-  to under 0.00001 of the first value, the first frame taken as its start (`entrance.py` says why it isn't fitted).
-  `entrance.py` prints the exponent rounded, as 4.61, which is 0.04° off on the first ticks (#166). The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
-  draws it: the header and the first section are carried with it, and both are at rest when `RotationY` is 0.
+  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent ln 100, 4.605, out) over
+  1,000 ms to under 0.00001 of the first value, the first frame taken as its start (`entrance.py` says why it isn't
+  fitted). `entrance.py` prints the exponent rounded, as 4.61, which is 0.04° off on the first ticks (#166). The
+  header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection draws it: the header and the first
+  section are carried with it, and both are at rest when `RotationY` is 0.
 - **With no background**, the `Background` grid is 0 × 800.
 - **A plain colour** fills a grid the view's width by the window's height: 450 × 800 (the Hub is 740 tall here). It
   stays at 0 while the sections move, swiped and looped.

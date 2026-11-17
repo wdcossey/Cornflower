@@ -169,9 +169,9 @@ The device runs owed at the second roll-up are done:
   by a tap and looked right: the menu (Back closes it), the list picker single and multiple, the picker flyout, the
   ComboBox inline and full screen, the date and time pickers, the dialog normal and full size, and the suggestion list
   with 'a' typed, above the keyboard (the page doesn't move up: #179). So #152's, #153's, #154's, #155's, #156's,
-  #157's and #158's device runs passed.
+  #157's and #158's device runs passed, but for Back closing #158's list, which wasn't tried.
 
-Owed: the real-window runs (`drive.ps1`) of #152 to #158; both runs of #162 to #169 and #189, which merged after the
+Owed: the real-window runs (`drive.ps1`) of #152 to #158, and Back on #158's list on the Pixel 8; both runs of #162 to #169 and #189, which merged after the
 Pixel 8 run; and the reads each control's README lists. Next is the user's choice: #179, #184, or Tier 4.
 
 ### Tier 4
@@ -375,7 +375,7 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, and their presenters | Done 2026-11-17 (#183) |
 | [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | Done 2026-11-17 (#177) |
 | [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | Done 2026-11-17 (#174) |
-| [#162](https://github.com/wdcossey/CornflowerUI/issues/162) | Pivot: where a release goes on | Done 2026-11-17 (#187) |
+| [#162](https://github.com/wdcossey/CornflowerUI/issues/162) | Pivot: where a release goes | Done 2026-11-17 (#187) |
 | [#163](https://github.com/wdcossey/CornflowerUI/issues/163) | Pivot: a press while it moves holds it | Done 2026-11-17 (#187) |
 | [#164](https://github.com/wdcossey/CornflowerUI/issues/164) | Pivot: the item events after `SelectionChanged` | Done 2026-11-17 (#187) |
 | [#165](https://github.com/wdcossey/CornflowerUI/issues/165) | Hub: the loop backwards | Done 2026-11-17 (#188) |
@@ -386,5 +386,5 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#189](https://github.com/wdcossey/CornflowerUI/issues/189) | `CornflowerConfig`: motion settings, faithful by default | Done 2026-11-17 (#190) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
-reads (#162 to #169) are done, their runs owed. Tier 3 is complete but for #179 and the owed runs (above). Each row's device run on
+reads (#162 to #169) are done, their runs owed. Tier 3 is complete but for #179, #184 and the owed runs (above). Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.

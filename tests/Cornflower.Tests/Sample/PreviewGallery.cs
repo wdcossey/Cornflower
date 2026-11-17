@@ -219,7 +219,7 @@ public class PreviewGallery
         foreach (var hub in shell.GetVisualDescendants().OfType<Hub>())
         {
             if (hub.Entrance.IsRunning)
-                throw new InvalidOperationException($"{file}: the Hub is still turning in ({hub.Entrance.Angle:0.###}°).");
+                throw new InvalidOperationException($"{file}: the Hub is still turning in (its last frame hasn't run).");
             if (hub.Classes.Contains(":backgroundimagefadingin"))
                 throw new InvalidOperationException($"{file}: the Hub's background is still fading in.");
         }
