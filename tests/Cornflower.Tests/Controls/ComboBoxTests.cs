@@ -530,16 +530,91 @@ public class ComboBoxTests
         Assert.True(stage.Box.Bounds.Width >= text.Bounds.Width + 6.5 + 5, $"the box is {stage.Box.Bounds.Width}, the text {text.Bounds.Width}");
     }
 
-    // The theme's behaviour turned off lets go: nothing shows open, and the form is no longer set.
+    // Turned off while open, it lets go: the inline box shows closed, and the picker's close, still running, leaves the box
+    // to the behaviour turned on again.
     [AvaloniaFact]
-    public void Turned_Off_It_Lets_Go()
+    public void Turned_Off_While_Open_It_Lets_Go()
     {
-        using var stage = new Stage(6);
-        PhoneComboBox.SetIsEnabled(stage.Combo, false);
-        Assert.False(PhoneComboBox.GetIsFull(stage.Combo));
-        stage.Combo.IsDropDownOpen = true;
-        stage.At(stage.Now + 200);
-        Assert.Null(PhoneComboBox.PickerOf(stage.Combo));
+        using var inline = new Stage(5);
+        inline.OpenAtRest();
+        PhoneComboBox.SetIsEnabled(inline.Combo, false);
+        Assert.False(PhoneComboBox.GetIsShownOpen(inline.Combo));
+        Assert.False(PhoneComboBox.GetIsFull(inline.Combo));
+        inline.Dispose();
+
+        using var full = new Stage(6);
+        full.Open();
+        full.At(full.Now + 600);
+        var picker = PhoneComboBox.PickerOf(full.Combo)!;
+        PhoneComboBox.SetIsEnabled(full.Combo, false);
+        full.Combo.ClearValue(PhoneComboBox.IsEnabledProperty);   // the theme's again: a new behaviour, the box still open
+        full.At(full.Now + 600);
+        Assert.False(picker.IsOpen);
+        Assert.True(full.Combo.IsDropDownOpen);
+        Assert.True(PhoneComboBox.PickerOf(full.Combo)!.IsOpen);
+    }
+
+    // A Button just below the open box: the tap outside reaches it before the box closes and moves it up.
+    [AvaloniaFact]
+    public void A_Tap_On_A_Button_Just_Below_The_Open_Box_Clicks_It()
+    {
+        using var clock = new TestClock();
+        var combo = new ComboBox { Items = { "a", "b", "c", "d", "e" }, SelectedIndex = 0 };
+        var below = new Button { Content = "below" };
+        var clicked = 0;
+        below.Click += (_, _) => clicked++;
+        using var scene = new Scene(new StackPanel { Children = { combo, below } });
+        combo.IsDropDownOpen = true;
+        clock.At(200);
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        var at = below.TranslatePoint(new Point(20, below.Bounds.Height / 2), scene.Window)!.Value;
+        scene.Window.MouseDown(at, MouseButton.Left);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+        scene.Window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(1, clicked);
+        Assert.False(combo.IsDropDownOpen);
+    }
+
+    // The items changing under the open picker close it with no pick: its rows are a copy.
+    [AvaloniaFact]
+    public void Full_The_Items_Changing_Under_The_Picker_Close_It()
+    {
+        using var stage = new Stage(7, selected: 1);
+        stage.Open();
+        stage.At(stage.Now + 600);
+        stage.Combo.Items.Insert(0, "new");
+        stage.At(stage.Now + 600);
+        Assert.False(stage.Combo.IsDropDownOpen);
+        Assert.False(PhoneComboBox.PickerOf(stage.Combo)!.IsOpen);
+        Assert.Equal("item 2", stage.Combo.SelectedItem);
+    }
+
+    // A ComboBox in an item of another doesn't show open with it.
+    [AvaloniaFact]
+    public void A_ComboBox_Inside_An_Open_One_Doesnt_Show_Open()
+    {
+        using var stage = new Stage(0);
+        var inner = new ComboBox { Items = { "x", "y" }, SelectedIndex = 0 };
+        stage.Combo.Items.Add(new ComboBoxItem { Content = inner });
+        stage.Combo.Items.Add("two");
+        stage.Combo.SelectedIndex = 1;
+        stage.OpenAtRest();
+        Assert.True(PhoneComboBox.GetIsShownOpen(stage.Combo));
+        Assert.False(PhoneComboBox.GetIsShownOpen(inner));
+    }
+
+    // Taken out of the window while open, it closes.
+    [AvaloniaFact]
+    public void Taken_Out_Of_The_Window_Open_It_Closes()
+    {
+        using var stage = new Stage(5);
+        stage.OpenAtRest();
+        ((Panel)stage.Combo.Parent!).Children.Remove(stage.Combo);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(stage.Combo.IsDropDownOpen);
         Assert.False(PhoneComboBox.GetIsShownOpen(stage.Combo));
     }
 }

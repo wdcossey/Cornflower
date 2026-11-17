@@ -29,13 +29,13 @@ Avalonia's API stands: `ItemsSource`, `ItemTemplate`, `DisplayMemberBinding`, `S
 - **A press** fills the box with the accent and tilts it (the Button's tilt); the release opens it, the tilt gone at once.
 - **Inline (5 items or fewer)**: the box shows open 78 ms (five 64 Hz ticks) after `IsDropDownOpen`, in one frame, as
   tall as its items (51.67 each on the phone): white, the accent border, black text, the selected item in the accent.
-  A tap on an item selects it and closes the box at once. A tap anywhere else closes it and goes on to what it was on;
+  A tap on an item selects it and closes the box at once. A tap anywhere else goes on to what it was on, then closes it (on the release, so a Button below still clicks);
   Back closes it before anything else sees Back.
 - **Full screen (6 or more)**: the box shows the selected item. Opening it opens a `ListPickerFlyout` titled with the
   placeholder in capitals ("CHOOSE AN ITEM"), the selected item in the accent; a tap picks it (`SelectedIndex`) and the
   picker closes, then `IsDropDownOpen` goes false (of two equal items, the one tapped). Back closes the picker with the
   selection kept. Opened again while closing, it opens once the close has run.
-- **The count crossing 6 while open** closes it.
+- **The count crossing 6 while open**, or the items changing under the open picker, closes it; so does leaving the window.
 - **Disabled**: header, border and text in `PhoneBaseLowColor`. A disabled item is dimmed to 0.4.
 
 ## How it is built
@@ -71,7 +71,10 @@ and `ComboBoxPlaceholderTextBlockStyle`. Cornflower's, in `Controls/ComboBox.axa
   screen does.
 - **A tap outside and Back** on the open inline box weren't read; the picker's title source (placeholder or a fixed
   string) isn't told apart by the reads (PLAN.md, "Decided on the user's behalf").
-- **The editable ComboBox** (`IsEditable`, which the phone hasn't) isn't themed.
+- **The editable ComboBox** (`IsEditable`, which the phone hasn't) isn't themed: Wp81's template has no edit box, so an
+  editable ComboBox can't be typed in under Wp81 (it could under Simple's template while ComboBox was a hole).
+- **The Full form keeps its hidden inline items**: a container for each item, never shown, as the phone's template keeps
+  its ItemsPresenter.
 - **Items that are controls** (a `ComboBoxItem` written in XAML) go to the full-screen picker as their content, or the
-  text of a `TextBlock` content; other control content shows as its type's name. One disabled in the box is disabled in
+  text of a `TextBlock` content; other control content shows as an empty row. One disabled in the box is disabled in
   the picker.

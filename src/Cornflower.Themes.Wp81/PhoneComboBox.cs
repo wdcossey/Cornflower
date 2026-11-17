@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
 
@@ -137,6 +138,8 @@ internal static class PhoneComboBox
         private List<object> _rows = [];
         private int _tapped = -1;
         private bool _reopen;
+        private bool _detached;
+        private IPointer? _outside;
 
         public ComboBox Combo => combo;
 
@@ -144,6 +147,9 @@ internal static class PhoneComboBox
 
         public void Attach()
         {
+            _detached = false;
+            // Its own, so a ComboBox in another's item or header doesn't inherit the outer one's open state.
+            combo.SetValue(IsShownOpenProperty, false);
             combo.PropertyChanged += OnChanged;
             combo.SetValue(IsFullProperty, combo.ItemCount >= FullFrom);
             combo.SetValue(HasHeaderProperty, ControlHeader.GetHeader(combo) is not null);
@@ -157,13 +163,16 @@ internal static class PhoneComboBox
             combo.PropertyChanged -= OnChanged;
             _parts?.Dispose();
             Close();
+            // A picker still closing answers nothing more: its handlers check this.
+            _detached = true;
             combo.ClearValue(IsFullProperty);
             combo.ClearValue(HasHeaderProperty);
+            combo.ClearValue(IsShownOpenProperty);
         }
 
         private void Hook(Func<string, Control?> find)
         {
-            _root = combo.GetVisualChildren().FirstOrDefault() as Control;
+            _root = find("ComboBoxGrid");
             _items = find("ItemsPresenterHost");
             _root?.AddHandler(InputElement.PointerPressedEvent, OnPressed);
         }
@@ -200,21 +209,24 @@ internal static class PhoneComboBox
         private void Open()
         {
             Close();
-            if (combo.GetValue(IsFullProperty))
-            {
-                OpenPicker();
-                return;
-            }
-
-            _top = TopLevel.GetTopLevel(combo);
-            if (_top is null)
+            if (TopLevel.GetTopLevel(combo) is not { } top)
             {
                 // Opened before it is in a window: it opens when it gets there, as Avalonia's popup does.
                 combo.AttachedToVisualTree += OnAttached;
                 return;
             }
 
+            // Taken out of the window open, it closes.
+            combo.DetachedFromVisualTree += OnDetached;
+            if (combo.GetValue(IsFullProperty))
+            {
+                OpenPicker();
+                return;
+            }
+
+            _top = top;
             _top.AddHandler(InputElement.PointerPressedEvent, OnWindowPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+            _top.AddHandler(InputElement.PointerReleasedEvent, OnWindowReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
             OpenInline.Add(this);
             _pending = CornflowerClock.Schedule(() =>
             {
@@ -231,19 +243,30 @@ internal static class PhoneComboBox
                 Open();
         }
 
+        private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) =>
+            combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
+
         private void Close()
         {
             combo.AttachedToVisualTree -= OnAttached;
+            combo.DetachedFromVisualTree -= OnDetached;
+            combo.ItemsView.CollectionChanged -= OnItemsChanged;
             _reopen = false;
+            _outside = null;
             _pending?.Dispose();
             _pending = null;
             _top?.RemoveHandler(InputElement.PointerPressedEvent, OnWindowPressed);
+            _top?.RemoveHandler(InputElement.PointerReleasedEvent, OnWindowReleased);
             _top = null;
             OpenInline.Remove(this);
-            combo.ClearValue(IsShownOpenProperty);
+            combo.SetValue(IsShownOpenProperty, false);
             if (_picker is { IsOpen: true } picker)
                 picker.Hide();
         }
+
+        /// <summary>The items changed under the open picker: its rows are a copy, so it closes with no pick.</summary>
+        private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) =>
+            combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
 
         /// <summary>
         /// A press on the items of a box shown open is theirs: it is taken here, before the ComboBox, whose own press
@@ -256,12 +279,24 @@ internal static class PhoneComboBox
                 e.Handled = true;
         }
 
-        /// <summary>A press anywhere off the box closes it, and goes on to what it was on.</summary>
+        /// <summary>
+        /// A tap anywhere off the box closes it, and goes on to what it was on: it closes on the release, so what was
+        /// under the press is still there for it (a Button below the box, which the box closing would move up).
+        /// </summary>
         private void OnWindowPressed(object? sender, PointerPressedEventArgs e)
         {
             if (e.Source is Visual source && (source == combo || combo.IsVisualAncestorOf(source)))
                 return;
-            combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
+            _outside = e.Pointer;
+        }
+
+        private void OnWindowReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            if (e.Pointer != _outside)
+                return;
+            _outside = null;
+            // After the release has reached what it was on.
+            Dispatcher.UIThread.Post(() => combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false));
         }
 
         private void OpenPicker()
@@ -269,11 +304,17 @@ internal static class PhoneComboBox
             if (_picker is null)
             {
                 _picker = new ListPickerFlyout();
-                _picker.ItemsPicked += (_, _) => combo.SetCurrentValue(ComboBox.SelectedIndexProperty, PickedIndex());
+                _picker.ItemsPicked += (_, _) =>
+                {
+                    if (!_detached)
+                        combo.SetCurrentValue(ComboBox.SelectedIndexProperty, PickedIndex());
+                };
                 _picker.Opened += (_, _) => FindList();
                 _picker.Closed += (_, _) =>
                 {
                     Unaccent();
+                    if (_detached)
+                        return;
                     _tapped = -1;
                     if (_reopen)
                     {
@@ -298,7 +339,7 @@ internal static class PhoneComboBox
                 ContentControl { Content: not Control and not null } container => container.Content!,
                 ContentControl { Content: TextBlock text } => text.Text ?? string.Empty,
                 TextBlock text => text.Text ?? string.Empty,
-                Control control => control.ToString() ?? string.Empty,
+                Control => string.Empty,
                 _ => item!,
             }).ToList();
             _tapped = -1;
@@ -309,6 +350,8 @@ internal static class PhoneComboBox
             _picker.ShowAt(combo);
             if (!_picker.IsOpen)
                 combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
+            else
+                combo.ItemsView.CollectionChanged += OnItemsChanged;
         }
 
         /// <summary>The picker's list, once it has a template: the item selected in the box is drawn in the accent.</summary>
