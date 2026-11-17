@@ -569,7 +569,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void UpdateBackgroundState()
     {
         var hidden = Background is IImageBrush { Source: null };
-        var fadingIn = !hidden && _fadingIn;
+        var fadingIn = !hidden && _fadingIn && Background is not null;
         PseudoClasses.Set(BackgroundHiddenPseudoClass, hidden);
         PseudoClasses.Set(BackgroundImageFadingInPseudoClass, fadingIn);
         PseudoClasses.Set(BackgroundShowingPseudoClass, !hidden && !fadingIn);
