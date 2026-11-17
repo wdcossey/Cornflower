@@ -53,7 +53,7 @@ internal static class CommandBarReadings
 
     // The checked circle's ring: white in both themes. In light the black circle has a white ring, 6 raw px wide
     // (x 489..495 of 489..587 on row 1843; #168), where #118 read only its fill.
-    public static Color CheckedRing(bool dark) => Colors.White;
+    public static readonly Color CheckedRing = Colors.White;
 
     // The words, the icons and the dots: PhoneTextHighColor over the bar, #DE000000 over #FFDDDDDD in light.
     public static Color Text(bool dark) => Color.FromUInt32(dark ? 0xFFFFFFFFu : 0xFF1D1D1Du);

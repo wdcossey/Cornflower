@@ -221,7 +221,7 @@ public class CommandBarTests
         for (var i = 0; i < CircleCentres.Length; i++)
         {
             var x = CircleCentres[i];
-            var ring = i switch { 1 => CheckedRing(dark), 2 => DisabledRing(dark), _ => Ring(dark) };
+            var ring = i switch { 1 => CheckedRing, 2 => DisabledRing(dark), _ => Ring(dark) };
             var inside = i == 1 ? Ring(dark) : Bar(dark);
             var tolerance = i == 2 ? 3 : 0;
             Expect(misses, frame, x - CircleRadius + 3, centreY, ring, tolerance, $"circle {i}'s ring, left");
@@ -486,12 +486,11 @@ public class CommandBarTests
     }
 
     // Dark's press. Light's is the checked look (#168), below.
-    [AvaloniaTheory]
-    [InlineData("Dark")]
-    public void Pressed_Fills_The_Circle_With_The_Accent_And_Sinks_It(string variant)
+    [AvaloniaFact]
+    public void Pressed_Fills_The_Circle_With_The_Accent_And_Sinks_It()
     {
-        using var page = new AppBarPage(VariantOf(variant));
-        var dark = Dark(variant);
+        using var page = new AppBarPage(ThemeVariant.Dark);
+        const bool dark = true;
         var ellipse = Part<Ellipse>(page.Add, "PART_Ellipse");
         var content = Part<ContentPresenter>(page.Add, "PART_Content");
         var circle = Part<Panel>(page.Add, "PART_ContentRoot");
@@ -555,15 +554,21 @@ public class CommandBarTests
         var ellipse = Part<Ellipse>(page.Add, "PART_Ellipse");
         var content = Part<ContentPresenter>(page.Add, "PART_Content");
         var circle = Part<Panel>(page.Add, "PART_ContentRoot");
+        var label = Part<TextBlock>(page.Add, "PART_TextLabel");
+        var labelColour = ColourOf(label.Foreground);
 
+        Assert.Equal(Colors.Transparent, ColourOf(ellipse.Fill));
         page.Window.MouseDown(page.CentreOf(page.Add), MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(page.Add.IsPressed);
         Assert.Equal(Ring(dark: false), ColourOf(ellipse.Fill));
-        Assert.Equal(CheckedRing(dark: false), ColourOf(ellipse.Stroke));
+        Assert.Equal(CheckedRing, ColourOf(ellipse.Stroke));
         Assert.Equal(Bar(dark: false), ColourOf(content.Foreground));
+        Assert.Equal(labelColour, ColourOf(label.Foreground));
         Assert.Equal(1, ellipse.RenderTransform!.Value.M11, 0.0001);
+        Assert.Equal(1, ellipse.RenderTransform!.Value.M22, 0.0001);
+        Assert.Null(content.RenderTransform);
         Assert.Equal(-PressedRise / Scale, circle.RenderTransform!.Value.M32, 0.0001);
         Assert.Equal(default, Cornflower.Controls.Tilt.Current(page.Add));
 
@@ -600,6 +605,30 @@ public class CommandBarTests
         Assert.Null(circle.RenderTransform);
     }
 
+    // A command in a light scope in a dark window takes the light press: the theme's own brushes take their colours
+    // in the scope's theme, as the tokens' do.
+    [AvaloniaFact]
+    public void In_A_Light_Scope_Of_A_Dark_Window_Pressed_Is_Lights()
+    {
+        var button = new CommandBarButton { Label = "add" };
+        var scope = new ThemeVariantScope { RequestedThemeVariant = ThemeVariant.Light, Child = button };
+        using var scene = new Scene(scope, ThemeVariant.Dark);
+        var ellipse = Part<Ellipse>(button, "PART_Ellipse");
+        var content = Part<ContentPresenter>(button, "PART_Content");
+        var at = ellipse.TranslatePoint(new Point(ellipse.Bounds.Width / 2, ellipse.Bounds.Height / 2), scene.Window)!.Value;
+
+        Assert.Equal(Ring(dark: false), ColourOf(ellipse.Stroke));
+        scene.Window.MouseDown(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(button.IsPressed);
+        Assert.Equal(Ring(dark: false), ColourOf(ellipse.Fill));
+        Assert.Equal(CheckedRing, ColourOf(ellipse.Stroke));
+        Assert.Equal(Bar(dark: false), ColourOf(content.Foreground));
+        Assert.Equal(1, ellipse.RenderTransform!.Value.M11, 0.0001);
+        scene.Window.MouseUp(at, MouseButton.Left);
+    }
+
     [AvaloniaTheory]
     [InlineData("Dark")]
     [InlineData("Light")]
@@ -611,7 +640,7 @@ public class CommandBarTests
         var content = Part<ContentPresenter>(page.Favorite, "PART_Content");
 
         Assert.Equal(Ring(dark), ColourOf(ellipse.Fill));
-        Assert.Equal(CheckedRing(dark), ColourOf(ellipse.Stroke));
+        Assert.Equal(CheckedRing, ColourOf(ellipse.Stroke));
         Assert.Equal(Bar(dark), ColourOf(content.Foreground));
 
         // Pressed, checked or not, the shell's press: the accent in dark; in light the checked look (#168).
@@ -620,7 +649,7 @@ public class CommandBarTests
             page.Window.MouseDown(page.CentreOf(page.Favorite), MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(dark ? Accent : Ring(dark), ColourOf(ellipse.Fill));
-            Assert.Equal(dark ? Accent : CheckedRing(dark), ColourOf(ellipse.Stroke));
+            Assert.Equal(dark ? Accent : CheckedRing, ColourOf(ellipse.Stroke));
             Assert.Equal(dark ? Colors.White : Bar(dark), ColourOf(content.Foreground));
             Assert.Equal(dark ? PressedCircleScale : 1, ellipse.RenderTransform!.Value.M11, 0.0001);
 
