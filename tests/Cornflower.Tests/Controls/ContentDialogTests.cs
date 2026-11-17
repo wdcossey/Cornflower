@@ -422,6 +422,11 @@ public class ContentDialogTests
         Assert.True(stage.Dialog.Popup!.IsOpen);
         Assert.Equal(1, stage.Dialog.Opacity);
         Assert.Null(stage.Bands);
+        // At the read range's middle, 107.5 ms: the Flyout's 110 would still show it.
+        stage.At(hidden + 107);
+        Assert.True(stage.Dialog.Popup.IsOpen);
+        stage.At(hidden + 109);
+        Assert.False(stage.Dialog.Popup.IsOpen);
         stage.At(hidden + GoneBy);
         Assert.False(stage.Dialog.Popup.IsOpen);
         using var frame = stage.Scene.Capture();

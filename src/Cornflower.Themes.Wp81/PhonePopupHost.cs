@@ -366,12 +366,6 @@ internal sealed class PhonePopupHost : IDisposable
         _frame = null;
         if (_phase != Phase.Closing)
             return;
-        if (Swing.ClosedAfter <= Swing.GoneAfter)
-        {
-            Finish();
-            return;
-        }
-
         Hide();
         _frame = CornflowerClock.Schedule(Finish, Swing.ClosedAfter - Swing.GoneAfter);
     }

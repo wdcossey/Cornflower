@@ -146,7 +146,6 @@ internal static class PhoneContentDialog
                 Back = dialog.Hide,
             };
             OnThemeChanged(null, EventArgs.Empty);
-            popup.Opened += OnOpened;
             popup.Closed += OnClosed;
             dialog.ActualThemeVariantChanged += OnThemeChanged;
             dialog.CloseMotion = Go;
@@ -161,7 +160,6 @@ internal static class PhoneContentDialog
         /// <summary>Lets go of the dialog; one still going is closed now.</summary>
         public void Dispose()
         {
-            Popup.Opened -= OnOpened;
             Popup.Closed -= OnClosed;
             Dialog.ActualThemeVariantChanged -= OnThemeChanged;
             if (Dialog.CloseMotion == Go)
@@ -186,8 +184,6 @@ internal static class PhoneContentDialog
                 Host.Dim = null;
             }
         }
-
-        private void OnOpened(object? sender, EventArgs e) => Touchable();
 
         private void OnClosed(object? sender, EventArgs e) => Touchable();
 

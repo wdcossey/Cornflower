@@ -934,12 +934,17 @@ public class ListPickerFlyoutTests
                 Assert.Equal(Math.Max(0, 80 - ListPickerRowRates[row] * tick), stage.Bands!.Angles[row], 1e-9);
         }
 
+        // Below its rows, the Flyout's steps (428, 551 and 673 of 800, below its 400) scaled to the rows' 333.
+        double Scaled(double to) => 5 * ListPickerRowHeight + (to - 400) * (800 - 5 * ListPickerRowHeight) / 400;
+        stage.At(first + 8 * Tick);
+        Assert.Equal(Scaled(428), stage.Bands!.RevealedTo, 1e-9);
+
         // The slowest row, 5.7° a tick, is at rest after 14 ticks; the rest is all revealed at 269 ms, as the Flyout's,
         // so the popup is at rest on the first frame after it (tick 18).
         stage.At(first + 15 * Tick);
         Assert.All(stage.Bands!.Angles, a => Assert.Equal(0, a));
         stage.At(first + 17 * Tick);
-        Assert.True(stage.Bands!.RevealedTo < 800);
+        Assert.Equal(Scaled(673), stage.Bands!.RevealedTo, 1e-9);
         stage.At(first + 18 * Tick);
         Assert.Null(stage.Bands);
     }
