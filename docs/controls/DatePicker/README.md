@@ -23,15 +23,17 @@ Everything is Avalonia's: `SelectedDate`, `SelectedTime`, `SelectedDateChanged`,
 WinRT's `Header` and `HeaderTemplate` are `cf:ControlHeader.Header` and `HeaderTemplate`.
 
 - **Closed:** the header (WinRT's `HeaderContentPresenterStyle`), then a button the picker's width, in the picker's
-  `Foreground`, a 2.5 border, the value in the culture's short pattern ("7/15/2014"; "12:30 PM", or "12:30" on the
-  24-hour clock). With no value the button is empty. Pressed, the accent inside and white text; disabled,
+  `Foreground`, a 2.5 border, the value in the culture's short pattern, its visible parts only ("7/15/2014", "7/15"
+  with no year; "12:30 PM", "12:30" on the 24-hour clock, the seconds with `UseSeconds`). With no value the button is empty. Pressed, the accent inside and white text; disabled,
   `PhoneBaseLowColor`; the pointer over it changes nothing (the Button's states, #150's B19).
 - **Open:** the window filled in `FlyoutBackgroundThemeBrush`, the wheels 138.333 wide and centred, 37 down, 700 tall,
   in the culture's order (month, day, year; hour, minute, AM/PM). The date's items show two lines, 07 over July; the
   time's one, at 43. Wheels hidden by `DayVisible` and the others, or the 24-hour clock, leave the rest centred.
 - **Picking:** the check (or Enter) sets the value, and `SelectedDateChanged` or `SelectedTimeChanged` comes, in the
   tap's frame (none when the value is the same); the cross, Back or Escape set nothing. Either way the picker swings
-  out and is closed 16 ticks (250 ms) later.
+  out and is closed 16 ticks (250 ms) later on the reference's 800 px; a taller window has more rows and closes later
+  (two ticks a row), as the list picker's. Opened again, it is at the picker's value; opened again while it closes, it
+  opens once closed.
 - **Motion:** in five 160 px rows, every row from 80° at once, the lower ones slower (12.5 to 5.67° a tick), at rest
   after 14.1 ticks; closing, the rows turn away two ticks apart, top first.
 - The month and day formats are set by the theme for the wheels (`MM↵MMMM`, `dd↵dddd`); set your own and the wheels
@@ -65,11 +67,10 @@ added (PLAN.md, "The checklists").
 
 ## Known gaps
 
-- **Reopened after a cancel, the wheels are where they were left** when the value hasn't changed: Avalonia's picker
-  gives its presenter the value again, and its presenter sets its wheels only when that changes. The phone's starts at
-  the value. The value itself is right.
 - **The bar turns with the bottom row**; the phone draws its bar at rest, last, by 400 ms (#149), as the list pickers'
   (#153).
+- **A window taller than 800** has a sixth row, which doesn't turn (only five rates were read) and adds two ticks to
+  the close; the phone's on a taller screen wasn't read.
 - **No `Closed` event**: Avalonia's pickers have none, nor have WinRT's. The DatePickerFlyout's, a tick after its bands
   have gone (17 ticks), is for that type, not added (PLAN.md).
 - **`SelectedDateChanged` isn't raised on an unchanged accept**, as Avalonia's property; the phone's `DateChanged` on an

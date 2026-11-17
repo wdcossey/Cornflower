@@ -11,8 +11,9 @@
     DatePicker: the phone's LayoutRoot, a StackPanel of the header (cf:ControlHeader.Header and HeaderTemplate, WinRT's
     Header, in Wp81HeaderContentPresenterTheme, 3 over the button) and FlyoutButton, Wp81's Button with the picker's
     Foreground as its text and border, a 2.5 border and Padding 6.5,0,0,3, stretched; its text the date in the culture's
-    short pattern, as the phone's ("7/15/2014"). Its states are the Button's (#150, B19). Avalonia's control also needs
-    its three text blocks (one for each part of the date, which the phone doesn't show apart), kept here unseen.
+    short pattern with its visible parts, as the phone's ("7/15/2014"). Its states are the Button's (#150, B19).
+    Avalonia's control also needs its three text blocks (one for each part of the date, which the phone doesn't show
+    apart), kept here unseen.
     The month, day and year formats are the wheels' (two lines: 07 over July, 15 over Tuesday), which Avalonia's picker
     gives its presenter.
 
@@ -51,8 +52,16 @@
                   BorderThickness="2.5"
                   Padding="6.5,0,0,3"
                   HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Left"
-                  Content="{TemplateBinding SelectedDate, Converter={x:Static wp81:PhoneDateTimePicker.DateText}}" />
+                  HorizontalContentAlignment="Left">
+            <Button.Content>
+              <MultiBinding Converter="{x:Static wp81:PhoneDateTimePicker.DateText}">
+                <Binding Path="SelectedDate" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="DayVisible" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="MonthVisible" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="YearVisible" RelativeSource="{RelativeSource TemplatedParent}" />
+              </MultiBinding>
+            </Button.Content>
+          </Button>
           <Panel IsVisible="False">
             <TextBlock x:Name="PART_MonthTextBlock" />
             <TextBlock x:Name="PART_DayTextBlock" />

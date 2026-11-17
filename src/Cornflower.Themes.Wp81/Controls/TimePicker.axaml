@@ -43,6 +43,7 @@
               <MultiBinding Converter="{x:Static wp81:PhoneDateTimePicker.TimeText}">
                 <Binding Path="SelectedTime" RelativeSource="{RelativeSource TemplatedParent}" />
                 <Binding Path="ClockIdentifier" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="UseSeconds" RelativeSource="{RelativeSource TemplatedParent}" />
               </MultiBinding>
             </Button.Content>
           </Button>

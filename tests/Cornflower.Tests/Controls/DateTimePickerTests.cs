@@ -242,7 +242,16 @@ public class DateTimePickerTests
         Assert.Equal("14:05", PhoneDateTimePicker.Time(new TimeSpan(14, 5, 0), "24HourClock", us));
         var gb = new CultureInfo("en-GB");
         Assert.Equal("14:05", PhoneDateTimePicker.Time(new TimeSpan(14, 5, 0), "24HourClock", gb));
-        Assert.Equal("02:05 " + gb.DateTimeFormat.PMDesignator, PhoneDateTimePicker.Time(new TimeSpan(14, 5, 0), "12HourClock", gb));
+        Assert.Equal("2:05 " + gb.DateTimeFormat.PMDesignator, PhoneDateTimePicker.Time(new TimeSpan(14, 5, 0), "12HourClock", gb));
+        // A letter in quotes is the pattern's text (fr-CA's "HH 'h' mm").
+        var ca = new CultureInfo("fr-CA");
+        ca.DateTimeFormat.ShortTimePattern = "HH 'h' mm";
+        Assert.Equal("18 h 15", PhoneDateTimePicker.Time(new TimeSpan(18, 15, 0), "24HourClock", ca));
+        Assert.Equal("6 h 15 " + ca.DateTimeFormat.PMDesignator, PhoneDateTimePicker.Time(new TimeSpan(18, 15, 0), "12HourClock", ca));
+        // With seconds, the long pattern; a time outside a day, taken round it.
+        Assert.Equal("12:30:45 PM", PhoneDateTimePicker.Time(new TimeSpan(12, 30, 45), "12HourClock", us, seconds: true));
+        Assert.Equal("11:55 PM", PhoneDateTimePicker.Time(TimeSpan.FromMinutes(-5), "12HourClock", us));
+        Assert.Equal("1:00 AM", PhoneDateTimePicker.Time(TimeSpan.FromHours(25), "12HourClock", us));
 
         using var stage = new Stage(new TimePicker { SelectedTime = new TimeSpan(14, 5, 0), ClockIdentifier = "24HourClock" });
         var text = Part<ContentPresenter>(stage.FlyoutButton, "PART_ContentPresenter");
@@ -250,6 +259,25 @@ public class DateTimePickerTests
         ((TimePicker)stage.Picker).ClockIdentifier = "12HourClock";
         Dispatcher.UIThread.RunJobs();
         Assert.Equal("2:05 PM", text.Content);
+        ((TimePicker)stage.Picker).UseSeconds = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("2:05:00 PM", text.Content);
+    }
+
+    [AvaloniaFact]
+    public void The_Date_Shows_Its_Visible_Parts()
+    {
+        var us = new CultureInfo("en-US");
+        Assert.Equal("7/15", PhoneDateTimePicker.Date(July15, day: true, month: true, year: false, us));
+        Assert.Equal("7/2014", PhoneDateTimePicker.Date(July15, day: false, month: true, year: true, us));
+        Assert.Equal("2014", PhoneDateTimePicker.Date(July15, day: false, month: false, year: true, us));
+        Assert.Equal(string.Empty, PhoneDateTimePicker.Date(July15, day: false, month: false, year: false, us));
+        Assert.Equal("15.07", PhoneDateTimePicker.Date(July15, day: true, month: true, year: false, new CultureInfo("de-DE")));
+
+        using var stage = new Stage(Date());
+        ((DatePicker)stage.Picker).YearVisible = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("7/15", Part<ContentPresenter>(stage.FlyoutButton, "PART_ContentPresenter").Content);
     }
 
     [AvaloniaTheory]
@@ -459,9 +487,32 @@ public class DateTimePickerTests
         Assert.False(stage.Popup.IsOpen);
         Assert.False(stage.StandIn.IsOpen);
 
+        // Opened again, it is at the picker's value, not where the wheels were left; accepted, nothing changes.
         stage.OpenAtRest();
         Assert.True(stage.Popup.IsOpen);
         Assert.True(stage.StandIn.IsOpen);
+        Assert.Equal(7, stage.InPresenter<DateTimePickerPanel>("PART_MonthSelector").SelectedValue);
+        stage.Tap(stage.InPresenter<Button>("PART_AcceptButton"));
+        Assert.Equal(July15, ((DatePicker)stage.Picker).SelectedDate);
+    }
+
+    [AvaloniaFact]
+    public void Opened_Again_While_It_Closes_It_Opens_Once_Closed()
+    {
+        using var stage = new Stage(Time());
+        stage.OpenAtRest();
+        stage.InPresenter<DateTimePickerPanel>("PART_MinuteSelector").SelectedValue = 45;
+        stage.Tap(stage.InPresenter<Button>("PART_DismissButton"));
+        var called = stage.Now;
+        stage.At(stage.Now + 4 * Tick);
+        stage.FlyoutButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(stage.StandIn.IsOpen);
+
+        stage.At(stage.FirstFrameAfter(called) + ClosedTicks * Tick);
+        Assert.True(stage.Popup.IsOpen);
+        Assert.True(stage.StandIn.IsOpen);
+        Assert.Equal(30, stage.InPresenter<DateTimePickerPanel>("PART_MinuteSelector").SelectedValue);
     }
 
     [AvaloniaFact]
@@ -497,6 +548,7 @@ public class DateTimePickerTests
         Assert.Null(stage.Host);
         Assert.False(popup.IsOpen);
         Assert.False(stage.StandIn.IsSet(Popup.PlacementTargetProperty));
+        Assert.False(stage.StandIn.IsOpen);
         Assert.False(popup.ShouldUseOverlayLayer);
     }
 

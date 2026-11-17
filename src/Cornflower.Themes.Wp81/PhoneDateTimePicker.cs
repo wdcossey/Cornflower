@@ -1,9 +1,12 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Data.Converters;
+using Avalonia.Threading;
 
 namespace Cornflower.Themes.Wp81;
 
@@ -14,14 +17,15 @@ namespace Cornflower.Themes.Wp81;
 /// pickers' rows, <see cref="PhonePopupMotion.DateTimeRows"/>, Back closing it), and the closed picker's text.
 /// </summary>
 /// <remarks>
-/// <para>Avalonia's pickers open <c>PART_Popup</c> on a click of their button and close it with <c>Close()</c> the moment
-/// their presenter confirms or dismisses, before they set the value: there is no way to hold that close for the phone's
-/// closing motion, and a host whose popup closes another way ends its motion where it is. So <c>PART_Popup</c> is a
-/// stand-in that never shows (its placement target is a control in no window, so Avalonia's popup can't open, and keeps
-/// <c>IsOpen</c> as asked), and the presenter is in the popup <see cref="ShownInProperty"/> names. The stand-in's
-/// <c>IsOpen</c> going true opens that popup; going false (accept, cancel, Escape, Enter) dismisses it the phone's way,
-/// the picker's value already set, in the tap's frame. Back dismisses it too, and the stand-in is closed with it, so the
-/// next click opens it again.</para>
+/// <para>Avalonia's pickers open <c>PART_Popup</c> on a click of their button and, the moment their presenter confirms
+/// or dismisses, close it with <c>Close()</c> and then (on confirm) set the value, in the same call: there is no way to
+/// hold that close for the phone's closing motion, and a host whose popup closes another way ends its motion where it is.
+/// So <c>PART_Popup</c> is a stand-in that never shows (its placement target, at animation priority while this is on,
+/// is a control in no window, so Avalonia's popup can't open, and keeps <c>IsOpen</c> as asked), and the presenter is in
+/// the popup <see cref="ShownInProperty"/> names. The stand-in's <c>IsOpen</c> going true opens that popup, its
+/// presenter set again to the picker's value; going false (accept, cancel, Escape, Enter) dismisses it the phone's way,
+/// in the tap's frame, the value set by Avalonia straight after. Back dismisses it, and the stand-in is closed with it,
+/// so the next click opens it again. Opened again while it closes, it opens again once closed.</para>
 /// <para>The presenter, Avalonia's own, is placed full screen by the host as any popup's child is: no part class.</para>
 /// </remarks>
 internal static class PhoneDateTimePicker
@@ -30,19 +34,27 @@ internal static class PhoneDateTimePicker
     public static readonly AttachedProperty<Popup?> ShownInProperty =
         AvaloniaProperty.RegisterAttached<Popup, Popup?>("ShownIn", typeof(PhoneDateTimePicker));
 
-    /// <summary>The closed DatePicker's text: the date in the culture's short pattern ("7/15/2014"); none, nothing.</summary>
-    public static readonly IValueConverter DateText = new FuncValueConverter<DateTimeOffset?, string>(date =>
-        date?.ToString("d", CultureInfo.CurrentCulture) ?? string.Empty);
+    /// <summary>
+    /// The closed DatePicker's text from its <c>SelectedDate</c>, <c>DayVisible</c>, <c>MonthVisible</c> and
+    /// <c>YearVisible</c>: the date in the culture's short pattern with its visible parts ("7/15/2014"; "7/15" with no
+    /// year); none, nothing.
+    /// </summary>
+    public static readonly IMultiValueConverter DateText = new FuncMultiValueConverter<object?, string>(values =>
+    {
+        var list = values.ToList();
+        bool Shown(int i) => list.Count <= i || list[i] is not false;
+        return Date(list.Count > 0 ? list[0] as DateTimeOffset? : null, Shown(1), Shown(2), Shown(3), CultureInfo.CurrentCulture);
+    });
 
     /// <summary>
-    /// The closed TimePicker's text from its <c>SelectedTime</c> and <c>ClockIdentifier</c>: the culture's short pattern
-    /// on the picker's clock ("12:30 PM", "12:30"); none, nothing.
+    /// The closed TimePicker's text from its <c>SelectedTime</c>, <c>ClockIdentifier</c> and <c>UseSeconds</c>: the
+    /// culture's pattern on the picker's clock ("12:30 PM", "12:30", "12:30:45 PM"); none, nothing.
     /// </summary>
     public static readonly IMultiValueConverter TimeText = new FuncMultiValueConverter<object?, string>(values =>
     {
         var list = values.ToList();
         return Time(list.Count > 0 ? list[0] as TimeSpan? : null, list.Count > 1 ? list[1] as string : null,
-            CultureInfo.CurrentCulture);
+            CultureInfo.CurrentCulture, list.Count > 2 && list[2] is true);
     });
 
     private static readonly ConditionalWeakTable<Popup, Bridge> Bridges = new();
@@ -70,21 +82,106 @@ internal static class PhoneDateTimePicker
     internal static PhonePopupHost? HostOf(Popup standIn) => Bridges.TryGetValue(standIn, out var bridge) ? bridge.Host : null;
 
     /// <summary>
-    /// A time on a clock: the culture's short pattern, its hours made 12 (with the culture's AM and PM) or 24 as
-    /// <paramref name="clock"/> says (Avalonia's identifiers, 12 by default).
+    /// A date in the culture's short pattern, its hidden parts (and the separators by them) left out; none shown,
+    /// nothing.
     /// </summary>
-    internal static string Time(TimeSpan? time, string? clock, CultureInfo culture)
+    internal static string Date(DateTimeOffset? date, bool day, bool month, bool year, CultureInfo culture)
+    {
+        if (date is not { } value)
+            return string.Empty;
+
+        // The pattern's fields (runs of d, M or y) and what lies between them.
+        var pattern = culture.DateTimeFormat.ShortDatePattern;
+        var fields = new List<string>();
+        var separator = string.Empty;
+        for (var i = 0; i < pattern.Length;)
+        {
+            var j = i;
+            if ("dMy".Contains(pattern[i]))
+            {
+                while (j < pattern.Length && pattern[j] == pattern[i])
+                    j++;
+                var shown = pattern[i] switch { 'd' => day, 'M' => month, _ => year };
+                if (shown)
+                    fields.Add(pattern[i..j]);
+            }
+            else
+            {
+                while (j < pattern.Length && !"dMy".Contains(pattern[j]))
+                    j++;
+                if (separator.Length == 0)
+                    separator = pattern[i..j];
+            }
+
+            i = j;
+        }
+
+        // A field alone is formatted as a pattern, not as a standard format's one letter.
+        return fields.Count == 0 ? string.Empty : value.ToString(string.Join(separator, fields) + (fields.Count == 1 ? " " : ""), culture).TrimEnd();
+    }
+
+    /// <summary>
+    /// A time on a clock: the culture's short pattern (its long one with seconds), its hours made 12 (with the culture's
+    /// AM and PM, unpadded) or 24 as <paramref name="clock"/> says (Avalonia's identifiers, 12 by default). Letters in
+    /// quotes are the pattern's text and stay. A time outside a day is taken round it.
+    /// </summary>
+    internal static string Time(TimeSpan? time, string? clock, CultureInfo culture, bool seconds = false)
     {
         if (time is not { } value)
             return string.Empty;
 
-        var pattern = culture.DateTimeFormat.ShortTimePattern;
+        var day = TimeSpan.FromDays(1);
+        value = TimeSpan.FromTicks(((value.Ticks % day.Ticks) + day.Ticks) % day.Ticks);
+        var pattern = seconds ? culture.DateTimeFormat.LongTimePattern : culture.DateTimeFormat.ShortTimePattern;
         var twelve = clock != "24HourClock";
-        if (twelve && !pattern.Contains('h'))
-            pattern = pattern.Replace('H', 'h') + " tt";
-        else if (!twelve && pattern.Contains('h'))
-            pattern = pattern.Replace("tt", string.Empty).Replace('h', 'H').Trim();
+        var hasTwelve = Unquoted(pattern).Contains('h');
+        if (twelve && !hasTwelve)
+            pattern = MapUnquoted(pattern, (c, next) => c == 'H' ? (next == 'H' ? "" : "h") : c.ToString()) + " tt";
+        else if (!twelve && hasTwelve)
+            pattern = MapUnquoted(pattern, (c, _) => c switch { 'h' => "H", 't' => "", _ => c.ToString() }).Trim();
         return DateTime.MinValue.Add(value).ToString(pattern, culture);
+    }
+
+    /// <summary>The pattern's letters outside quotes and escapes.</summary>
+    private static string Unquoted(string pattern) => MapUnquoted(pattern, (c, _) => c.ToString(), quoted: false);
+
+    /// <summary>The pattern, each letter outside quotes and escapes mapped (given the next one); the rest kept, or dropped.</summary>
+    private static string MapUnquoted(string pattern, Func<char, char, string> map, bool quoted = true)
+    {
+        var text = new StringBuilder();
+        char? quote = null;
+        for (var i = 0; i < pattern.Length; i++)
+        {
+            var c = pattern[i];
+            if (quote is null && c == '\\' && i + 1 < pattern.Length)
+            {
+                if (quoted)
+                    text.Append(c).Append(pattern[i + 1]);
+                i++;
+            }
+            else if (quote is null && c is '\'' or '"')
+            {
+                quote = c;
+                if (quoted)
+                    text.Append(c);
+            }
+            else if (c == quote)
+            {
+                quote = null;
+                if (quoted)
+                    text.Append(c);
+            }
+            else if (quote is null)
+            {
+                text.Append(map(c, i + 1 < pattern.Length ? pattern[i + 1] : '\0'));
+            }
+            else if (quoted)
+            {
+                text.Append(c);
+            }
+        }
+
+        return text.ToString();
     }
 
     /// <summary>One picker's stand-in and the popup its presenter is shown in.</summary>
@@ -92,17 +189,16 @@ internal static class PhoneDateTimePicker
     {
         private readonly Popup _standIn;
         private readonly Popup _popup;
-        private readonly bool _hadTarget;
-        private readonly Control? _target;
+        private readonly IDisposable? _target;
+        private bool _reopen;
 
         public Bridge(Popup standIn, Popup popup)
         {
             _standIn = standIn;
             _popup = popup;
-            _hadTarget = standIn.IsSet(Popup.PlacementTargetProperty);
-            _target = standIn.PlacementTarget;
-            // In no window: Avalonia's popup asked to open can't, and stays asked (IsOpen true) until it is closed.
-            standIn.PlacementTarget = new Control();
+            // In no window: Avalonia's popup asked to open can't, and stays asked (IsOpen true) until it is closed. Over
+            // whatever the template or an app gives, until this goes.
+            _target = standIn.SetValue(Popup.PlacementTargetProperty, new Control(), BindingPriority.Animation);
             standIn.PropertyChanged += OnStandInChanged;
             popup.Closed += OnClosed;
             if (standIn.IsOpen)
@@ -118,10 +214,9 @@ internal static class PhoneDateTimePicker
             _popup.Closed -= OnClosed;
             Host?.Dispose();
             _popup.IsOpen = false;
-            if (_hadTarget)
-                _standIn.PlacementTarget = _target;
-            else
-                _standIn.ClearValue(Popup.PlacementTargetProperty);
+            _target?.Dispose();
+            if (_standIn.IsOpen)
+                _standIn.Close();
         }
 
         private void OnStandInChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -130,9 +225,14 @@ internal static class PhoneDateTimePicker
                 return;
 
             if (change.GetNewValue<bool>())
+            {
                 Open();
+            }
             else
+            {
+                _reopen = false;
                 Host?.Dismiss();
+            }
         }
 
         private void Open()
@@ -146,12 +246,58 @@ internal static class PhoneDateTimePicker
                 });
             }
 
+            // Asked again while it closes: it opens again once closed.
+            if (Host is { IsClosing: true })
+            {
+                _reopen = true;
+                return;
+            }
+
+            Reset(_popup.Child);
             _popup.IsOpen = true;
         }
 
-        /// <summary>Closed another way (Back): the picker's own popup closes too, so its next click opens it again.</summary>
+        /// <summary>
+        /// The presenter's wheels set again to its value: Avalonia's set them only when the value changes, so a picker
+        /// cancelled after its wheels were turned would open, and accept, where they were left.
+        /// </summary>
+        private static void Reset(Control? presenter)
+        {
+            switch (presenter)
+            {
+                case DatePickerPresenter date:
+                {
+                    var value = date.Date;
+                    date.SetCurrentValue(DatePickerPresenter.DateProperty, value.AddTicks(value >= date.MaxYear ? -1 : 1));
+                    date.SetCurrentValue(DatePickerPresenter.DateProperty, value);
+                    break;
+                }
+
+                case TimePickerPresenter time:
+                {
+                    var value = time.Time;
+                    time.SetCurrentValue(TimePickerPresenter.TimeProperty, value + TimeSpan.FromTicks(1));
+                    time.SetCurrentValue(TimePickerPresenter.TimeProperty, value);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>Closed: opened again if asked to while it closed; else the picker's own popup closed too.</summary>
         private void OnClosed(object? sender, EventArgs e)
         {
+            if (_reopen && _standIn.IsOpen)
+            {
+                // After the host has seen it close.
+                _reopen = false;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (_standIn.IsOpen && !_popup.IsOpen && Bridges.TryGetValue(_standIn, out var bridge) && bridge == this)
+                        Open();
+                });
+                return;
+            }
+
             if (_standIn.IsOpen)
                 _standIn.Close();
         }

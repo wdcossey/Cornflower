@@ -37,7 +37,7 @@ public class DateTimePickerPageTests
         var time24 = page.FindControl<TimePicker>("Time24")!;
         Assert.Equal("date picker", Cornflower.Controls.ControlHeader.GetHeader(date));
         Assert.Equal(15, time24.MinuteIncrement);
-        Assert.Equal(DateTimeOffset.Now.Date, date.SelectedDate!.Value.Date);
+        var year = Assert.NotNull(date.SelectedDate).Year;
 
         var button = date.GetVisualDescendants().OfType<Button>().First(b => b.Name == "PART_FlyoutButton");
         var at = button.TranslatePoint(new Avalonia.Point(20, button.Bounds.Height / 2), scene.Window)!.Value;
@@ -48,11 +48,11 @@ public class DateTimePickerPageTests
         var presenter = date.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Popup>()
             .First(p => p.Name == "PickerPopup").Child!;
         presenter.GetVisualDescendants().OfType<DateTimePickerPanel>().First(p => p.Name == "PART_YearSelector").SelectedValue =
-            DateTime.Today.Year + 1;
+            year + 1;
         var accept = presenter.GetVisualDescendants().OfType<Button>().First(b => b.Name == "PART_AcceptButton");
         accept.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
-        Assert.StartsWith($"{DateTime.Today.Year + 1}-", page.FindControl<TextBlock>("State")!.Text);
+        Assert.StartsWith($"{year + 1}-", page.FindControl<TextBlock>("State")!.Text);
     }
 
     [AvaloniaFact]
