@@ -1,0 +1,135 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 LoopingSelector and LoopingSelectorItem, the date and time pickers' wheel, on Avalonia's
+    DateTimePickerPanel and the ListBoxItems it makes: the default styles of the 8.1 Update 1 runtime
+    (loopingselector.json and loopingselectoritem.json, which equal the SDK's generic.xaml), re-expressed as two keyed
+    ControlThemes, and #149's readings of the phone's wheel (tools/refapp/README.md, "LoopingSelector").
+    docs/controls/LoopingSelector/PLAN.md has the values and their sources.
+
+    The phone's three types are the DatePickerFlyout's and TimePickerFlyout's own parts: an app can't make one. Avalonia's
+    DatePickerPresenter and TimePickerPresenter require a DateTimePickerPanel for each column, so the wheel is that
+    panel, given Wp81LoopingSelectorTheme; nothing is themed by type, and a panel in Simple's presenters keeps Simple's.
+
+    Wp81LoopingSelectorTheme, for a DateTimePickerPanel: the phone's items 123 square (ItemWidth and ItemHeight, which
+    the DatePickerFlyout sets), drawn 1.125 larger, so 138.375 apart: the panel's ItemHeight is that pitch.
+    PhoneLoopingSelector, turned on here, takes the drag, the release, the tap and the active wheel from the panel, and
+    gives each item Wp81LoopingSelectorItemTheme. The phone's template is a bar-less ScrollViewer with Mandatory snap
+    points; here there is none (a ScrollViewer would clamp a panel that doesn't loop short of its last items), and
+    PhoneLoopingSelector moves the panel itself. It clips to its bounds, as the ScrollViewer's viewport does.
+
+    Wp81LoopingSelectorItemTheme, for the panel's ListBoxItems, part for part: the item, 123 square at the top left of
+    its 138.375 cell; Root inside a margin of 5, scaled 1.125 about its top left (the phone's ContentScaleTransform, as
+    the reading found it); Border, 2.5 in LoopingSelectorForegroundThemeBrush, round ContentPresenter, at the bottom,
+    stretched, in the same brush: at the bottom whatever the item's VerticalContentAlignment, which the panel sets to
+    Center on each item it makes, where the phone's style sets Bottom. The states:
+    - Normal: Root at opacity 0. Expanded (the active wheel): Root at 1. The phone's generated 0.33 s between the two is
+      wp81:PhoneLoopingSelector.Expansion, which the behaviour moves in a straight line and the items inherit.
+    - Selected (:selected, the panel's own, while the wheel isn't moving): Root at 1 in
+      LoopingSelectorSelectionBackgroundThemeBrush, no border, the content in LoopingSelectorSelectionForegroundThemeBrush.
+    The item template is the phone's style's ItemTemplate: the text's first line large (its PrimaryText: PhoneFontFamilyNormal
+    45 SemiBold, CharacterSpacing -24) over the rest small (SecondaryText: 17 SemiBold), at the bottom left. The panel
+    gives each item one string, made by its ItemFormat, so a format with a line break ("MM&#10;MMMM") gives both.
+  -->
+
+  <!-- The phone's LoopingSelectorItem box: the DatePickerFlyout's ItemWidth and ItemHeight. -->
+  <x:Double x:Key="Wp81LoopingSelectorItemSize">123</x:Double>
+  <!-- The items' ContentScaleTransform, as #149 read it. -->
+  <x:Double x:Key="Wp81LoopingSelectorItemScale">1.125</x:Double>
+  <!-- The pitch, 123 × 1.125: the panel's ItemHeight. -->
+  <x:Double x:Key="Wp81LoopingSelectorItemPitch">138.375</x:Double>
+  <!-- The item template's text lines: the phone's own line, 1.33 em, of each size (PhoneTextLine.FontLine). -->
+  <x:Double x:Key="Wp81LoopingSelectorPrimaryLineHeight">59.853515625</x:Double>
+  <x:Double x:Key="Wp81LoopingSelectorSecondaryLineHeight">22.611328125</x:Double>
+
+  <ControlTheme x:Key="Wp81LoopingSelectorTheme" TargetType="DateTimePickerPanel">
+    <Setter Property="ItemHeight" Value="{StaticResource Wp81LoopingSelectorItemPitch}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="wp81:PhoneLoopingSelector.ItemTheme" Value="{DynamicResource Wp81LoopingSelectorItemTheme}" />
+    <Setter Property="wp81:PhoneLoopingSelector.IsEnabled" Value="True" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Wp81LoopingSelectorItemTheme" TargetType="ListBoxItem">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="0" />
+    <!-- The phone draws its items where the offset puts them, between pixels; rounded, they would be 138.33 and 138.75 apart. -->
+    <Setter Property="UseLayoutRounding" Value="False" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="ContentTemplate">
+      <DataTemplate x:DataType="sys:String">
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,5,0,5">
+          <TextBlock Text="{Binding Converter={x:Static wp81:PhoneLoopingSelector.PrimaryText}}"
+                     FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                     FontSize="45" FontWeight="SemiBold"
+                     LineHeight="{StaticResource Wp81LoopingSelectorPrimaryLineHeight}"
+                     wp81:PhoneTextLine.BaselineToBaseline="True"
+                     wp81:PhoneTextLine.CharacterSpacing="-24"
+                     Margin="0.8,-6.5" />
+          <TextBlock Text="{Binding Converter={x:Static wp81:PhoneLoopingSelector.SecondaryText}}"
+                     FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+                     FontSize="17" FontWeight="SemiBold"
+                     LineHeight="{StaticResource Wp81LoopingSelectorSecondaryLineHeight}"
+                     wp81:PhoneTextLine.BaselineToBaseline="True"
+                     Margin="0.8,-0.8" />
+        </StackPanel>
+      </DataTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel x:Name="Item"
+               Width="{StaticResource Wp81LoopingSelectorItemSize}"
+               Height="{StaticResource Wp81LoopingSelectorItemSize}"
+               HorizontalAlignment="Left"
+               VerticalAlignment="Top"
+               UseLayoutRounding="False">
+          <Grid x:Name="Root"
+                Margin="5"
+                UseLayoutRounding="False"
+                RenderTransformOrigin="0,0">
+            <Grid.RenderTransform>
+              <ScaleTransform ScaleX="{StaticResource Wp81LoopingSelectorItemScale}"
+                              ScaleY="{StaticResource Wp81LoopingSelectorItemScale}" />
+            </Grid.RenderTransform>
+            <Border x:Name="Border" BorderThickness="2.5">
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="Bottom" />
+            </Border>
+          </Grid>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- The template's values that a state changes are set here, as a template's own would win over a state's. -->
+    <Style Selector="^ /template/ Grid#Root">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Opacity" Value="{Binding $self.(wp81:PhoneLoopingSelector.Expansion)}" />
+    </Style>
+    <Style Selector="^ /template/ Border#Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource LoopingSelectorForegroundThemeBrush}" />
+    </Style>
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource LoopingSelectorForegroundThemeBrush}" />
+    </Style>
+    <Style Selector="^:selected[(wp81|PhoneLoopingSelector.IsMoving)=False]">
+      <Style Selector="^ /template/ Grid#Root">
+        <Setter Property="Opacity" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource LoopingSelectorSelectionBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource LoopingSelectorSelectionForegroundThemeBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
