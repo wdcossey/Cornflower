@@ -11,7 +11,7 @@ using Cornflower.Sample.Pages;
 
 namespace Cornflower.Tests.Sample;
 
-/// <summary>The sample's item click page: in the catalogue by #132, its lists clicking their items, its header, a tap's click shown, and the check mode.</summary>
+/// <summary>The sample's item click page: in the catalogue by #132, its lists clicking their items, its header, a tap's click shown, and the check mode with item click off.</summary>
 public class ItemClickPageTests
 {
     private static void Tap(Scene scene, Control item)
@@ -53,7 +53,7 @@ public class ItemClickPageTests
     }
 
     [AvaloniaFact]
-    public void A_Tap_Clicks_And_Select_Puts_The_List_In_The_Check_Mode()
+    public void A_Tap_Clicks_And_Select_Turns_Click_Off_For_The_Check_Mode()
     {
         var page = new ItemClickPage();
         using var scene = new Scene(page);
@@ -67,6 +67,7 @@ public class ItemClickPageTests
         page.FindControl<ToggleButton>("Select")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(ListViewPage.CheckMode, list.SelectionMode);
+        Assert.False(ListBoxOptions.GetIsItemClickEnabled(list));
         Tap(scene, list.ContainerFromIndex(2)!);
         Assert.Equal("clicked: item 2 · selected: item 3", state.Text);
 
@@ -74,6 +75,7 @@ public class ItemClickPageTests
         page.FindControl<ToggleButton>("Select")!.IsChecked = false;
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(SelectionMode.Single, list.SelectionMode);
+        Assert.True(ListBoxOptions.GetIsItemClickEnabled(list));
         Assert.Equal("clicked: item 2 · nothing selected", state.Text);
     }
 
