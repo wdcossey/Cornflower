@@ -1,0 +1,127 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 MenuFlyout: Avalonia's MenuFlyoutPresenter, and its MenuItems and Separators, in the default
+    styles of the 8.1 Update 1 runtime (menuflyoutpresenter.json, menuflyoutitem.json, togglemenuflyoutitem.json, which
+    equal the SDK's generic.xaml), re-expressed as Avalonia ControlThemes, and the phone's popup round it
+    (PhoneMenuFlyout, on the Flyout's PhonePopupHost). docs/controls/MenuFlyout/PLAN.md has the values and their sources.
+
+    Avalonia has no MenuFlyoutItem, ToggleMenuFlyoutItem or MenuFlyoutSeparator: a MenuFlyout holds MenuItems (a
+    ToggleType of CheckBox is the toggle item) and Separators. Their themes here are keyed, not by type, so a desktop
+    Menu's MenuItems keep theirs; the presenter's theme names them (PhoneMenuFlyout.ItemTheme, .SeparatorTheme) and
+    PhoneMenuFlyout gives them to the presenter's own items.
+  -->
+
+  <!--
+    MenuFlyoutItem and ToggleMenuFlyoutItem, one template: LayoutRoot (Background, Transparent) round InnerBorder
+    (Padding, MenuFlyoutItemThemePadding) round the text, left and centred. The toggle item has no check mark and no
+    check states: checked and unchecked draw the same (#150). Pressed is the tilt on InnerBorder (Tilt.IsTarget), no
+    colour; Disabled is the text in MenuFlyoutItemDisabledForegroundThemeBrush; PointerOver is Normal. The text is the
+    header in a ContentPresenter, at the phone's line (PhoneContentLine); its font is the presenter's.
+  -->
+  <ControlTheme x:Key="Wp81MenuFlyoutItemTheme" TargetType="MenuItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="{DynamicResource MenuFlyoutItemThemePadding}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Border x:Name="InnerBorder" Padding="{TemplateBinding Padding}" cf:Tilt.IsTarget="True">
+            <!-- The style's HorizontalContentAlignment Left and VerticalContentAlignment Center: MenuItem has neither. -->
+            <ContentPresenter x:Name="TextBlock"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Header}"
+                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                              RecognizesAccessKey="True"
+                              wp81:PhoneContentLine.IsEnabled="True" />
+          </Border>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled /template/ ContentPresenter#TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+    <!-- A MenuItem whose Header is "-" is Avalonia's other separator: drawn as the phone's, nothing. -->
+    <Style Selector="^:separator">
+      <Setter Property="Template">
+        <ControlTemplate />
+      </Setter>
+    </Style>
+  </ControlTheme>
+
+  <!-- MenuFlyoutSeparator: generic.xaml has no template for it; on the phone it draws nothing and is 0 tall (#150). -->
+  <ControlTheme x:Key="Wp81MenuFlyoutSeparatorTheme" TargetType="Separator">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate />
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    The phone's template: OuterBorder (BorderBrush) round CenterBorder (its BorderBrush the Background) round InnerBorder,
+    a StackPanel with the Background, round the ItemsPresenter, whose margin is the Padding. The borders draw only their
+    lines: the outer one MenuFlyoutBorderThemeBrush, the centre one the background's colour, inside it. The phone's
+    borders get their thickness from the storyboard (MenuFlyoutPortraitBorderThemeThickness at its end, held), which is
+    the style's BorderThickness: here they bind to it. The root, PhoneMenuFlyoutRoot, makes the menu as tall as its
+    items and padding, the borders taking from the bottom padding, as the phone's; InnerBorder clips what doesn't fit,
+    as WinRT's layout clip does. No ScrollViewer: a menu longer than the window is cut off and doesn't scroll.
+
+    PlacementStates (TopPortrait, BottomPortrait) are the opening motion, run by PhoneMenuFlyout on CornflowerClock;
+    LeftLandscape and RightLandscape aren't drawn (docs/controls/MenuFlyout/README.md, "Known gaps").
+  -->
+  <ControlTheme x:Key="{x:Type MenuFlyoutPresenter}" TargetType="MenuFlyoutPresenter">
+    <Setter Property="Background" Value="{DynamicResource MenuFlyoutBackgroundThemeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutBorderThemeBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPortraitBorderThemeThickness}" />
+    <Setter Property="Padding" Value="{DynamicResource MenuFlyoutPortraitThemePadding}" />
+    <Setter Property="MinHeight" Value="{DynamicResource FlyoutThemeMinHeight}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleExtraLargeFontSize}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilySemiLight}" />
+    <Setter Property="wp81:PhoneCharacterSpacing.CharacterSpacing" Value="-15" />
+    <Setter Property="LetterSpacing">
+      <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
+        <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding>
+    </Setter>
+    <!-- The phone's presenter inherits the foreground from the root it is drawn in; Wp81 themes no Window, so it is set,
+         as the FlyoutPresenter's is. -->
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="wp81:PhoneMenuFlyout.ItemTheme" Value="{StaticResource Wp81MenuFlyoutItemTheme}" />
+    <Setter Property="wp81:PhoneMenuFlyout.SeparatorTheme" Value="{StaticResource Wp81MenuFlyoutSeparatorTheme}" />
+    <Setter Property="wp81:PhoneMenuFlyout.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <wp81:PhoneMenuFlyoutRoot>
+          <Border x:Name="OuterBorder"
+                  FlowDirection="LeftToRight"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}">
+            <Border x:Name="CenterBorder"
+                    FlowDirection="LeftToRight"
+                    BorderBrush="{TemplateBinding Background}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+              <StackPanel x:Name="InnerBorder"
+                          FlowDirection="{TemplateBinding FlowDirection}"
+                          Background="{TemplateBinding Background}"
+                          ClipToBounds="True">
+                <ItemsPresenter x:Name="ItemsPresenter"
+                                Margin="{TemplateBinding Padding}"
+                                FlowDirection="{TemplateBinding FlowDirection}"
+                                ItemsPanel="{TemplateBinding ItemsPanel}"
+                                KeyboardNavigation.TabNavigation="Continue" />
+              </StackPanel>
+            </Border>
+          </Border>
+        </wp81:PhoneMenuFlyoutRoot>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
