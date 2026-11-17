@@ -6,7 +6,10 @@ namespace Cornflower.Themes.Wp81;
 /// <summary>
 /// A full popup's bands: <paramref name="Height"/> px rows from its top, the top ones turning as it opens at
 /// <paramref name="Rates"/> (degrees a tick, from the top), and below them the popup revealed at rest, downwards, as
-/// <paramref name="Reveal"/> has it (none: all of it at once). The Flyout's are <see cref="PhonePopupMotion.FlyoutRows"/>.
+/// <paramref name="Reveal"/> has it (none: all of it at once). The reveal's steps are on the reading of the full
+/// Flyout's (to y on the reference's 800, below its 400 still px), scaled to the rows' own still part
+/// (<see cref="PhonePopupMotion.RevealedTo"/>); a reveal read on another basis is given on that one. The Flyout's are
+/// <see cref="PhonePopupMotion.FlyoutRows"/>.
 /// </summary>
 internal sealed record PhonePopupRows(double Height, double[] Rates, (TimeSpan At, double To)[] Reveal);
 

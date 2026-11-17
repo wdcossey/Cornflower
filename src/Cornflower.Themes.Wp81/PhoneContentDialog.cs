@@ -139,12 +139,12 @@ internal static class PhoneContentDialog
         {
             Dialog = dialog;
             Popup = popup;
-            Host = new PhonePopupHost(popup, dialog, Close)
+            Host = new PhonePopupHost(popup, dialog, Close, host =>
             {
-                Placement = PhonePopupPlacement.Top,
-                Swing = PhonePopupMotion.DialogSwing,
-                Back = dialog.Hide,
-            };
+                host.Placement = PhonePopupPlacement.Top;
+                host.Swing = PhonePopupMotion.DialogSwing;
+                host.Back = dialog.Hide;
+            });
             OnThemeChanged(null, EventArgs.Empty);
             popup.Closed += OnClosed;
             dialog.ActualThemeVariantChanged += OnThemeChanged;

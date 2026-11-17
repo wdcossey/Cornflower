@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -258,6 +260,15 @@ public class PhonePopupHostTests
         Dispatcher.UIThread.RunJobs();
         Assert.Equal([450, 400], widths);
         Assert.Null(stage.Host.Window);
+    }
+
+    [AvaloniaFact]
+    public void The_Back_Handler_Is_Added_As_The_Module_Loads()
+    {
+        // Before any class handler an app adds at its start. Which comes first can't be shown in one test process, where
+        // whichever was added first stays.
+        var take = typeof(PhonePopupHost).GetMethod(nameof(PhonePopupHost.TakeBack), BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(take!.GetCustomAttribute<ModuleInitializerAttribute>());
     }
 
     // One Back hides the keyboard, closes an AutoSuggestBox's list and takes the focus, before any popup; the next closes

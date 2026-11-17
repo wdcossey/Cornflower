@@ -1004,6 +1004,20 @@ public class ListPickerFlyoutTests
     }
 
     [AvaloniaFact]
+    public void Turned_Off_And_On_While_Open_The_New_Host_Cuts_It_Full_In_Its_Rows()
+    {
+        // Placed full before the open picker's opening starts, and given its rows with the flyout: no frame of a top band.
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, false);
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(12, stage.Bands!.Bands.Count);
+    }
+
+    [AvaloniaFact]
     public void Turned_Off_And_On_Again_It_Keeps_The_Picker_Hosted()
     {
         // As the Flyout's: the new binder is made after the old has given the popup back what its host set.

@@ -643,6 +643,23 @@ public class MenuFlyoutTests
     }
 
     [AvaloniaFact]
+    public void Turned_Off_And_On_While_Open_The_New_Host_Turns_No_Band_Of_The_Menu()
+    {
+        // The new host is given Moves before it starts the open menu's opening.
+        using var stage = new Stage();
+        stage.OpenAtRest();
+
+        PhoneMenuFlyout.SetIsEnabled(stage.Presenter, false);
+        PhoneMenuFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+
+        var host = PhoneMenuFlyout.HostOf(stage.Presenter)!;
+        Assert.True(host.IsOpen);
+        Assert.Null(host.Bands);
+        Assert.Equal(1, stage.Presenter.Opacity);
+    }
+
+    [AvaloniaFact]
     public void Turned_Off_And_On_Again_It_Keeps_The_Menu_Hosted()
     {
         // The old binder lets go from the dispatcher: the new one is made after it has given the popup back what its

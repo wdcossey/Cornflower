@@ -105,12 +105,14 @@ internal sealed class PhoneHeldFlyout<TFlyout> : IPhonePopupBinder<TFlyout> wher
     /// <param name="presenter">What the host's motion moves.</param>
     /// <param name="popup">The presenter's popup.</param>
     /// <param name="bind">What the owner sets each time a flyout opens the popup: the host's placement, the light dismiss.</param>
-    public PhoneHeldFlyout(Control presenter, Popup popup, Action<PhoneHeldFlyout<TFlyout>, TFlyout> bind)
+    /// <param name="setUp">The host's settings, as <see cref="PhonePopupHost"/> takes them.</param>
+    public PhoneHeldFlyout(Control presenter, Popup popup, Action<PhoneHeldFlyout<TFlyout>, TFlyout> bind,
+        Action<PhonePopupHost>? setUp = null)
     {
         _popup = popup;
         _bind = bind;
         _lightDismiss = popup.IsLightDismissEnabled;
-        Host = new PhonePopupHost(popup, presenter, Close);
+        Host = new PhonePopupHost(popup, presenter, Close, setUp);
     }
 
     public PhonePopupHost Host { get; }

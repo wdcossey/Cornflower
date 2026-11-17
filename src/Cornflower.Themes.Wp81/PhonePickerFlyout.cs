@@ -27,12 +27,8 @@ internal static class PhonePickerFlyout
         AvaloniaProperty.RegisterAttached<PickerPresenterBase, bool>("IsEnabled", typeof(PhonePickerFlyout));
 
     private static readonly PhonePopupBinders<PickerPresenterBase, PickerFlyoutBase, PhoneHeldFlyout<PickerFlyoutBase>> Binders =
-        new(IsEnabledProperty, (presenter, popup) =>
-        {
-            var binder = new PhoneHeldFlyout<PickerFlyoutBase>(presenter, popup, Bind);
-            binder.Host.Placement = PhonePopupPlacement.Full;
-            return binder;
-        });
+        new(IsEnabledProperty, (presenter, popup) => new PhoneHeldFlyout<PickerFlyoutBase>(presenter, popup, Bind,
+            host => host.Placement = PhonePopupPlacement.Full));
 
     public static bool GetIsEnabled(PickerPresenterBase presenter) => presenter.GetValue(IsEnabledProperty);
 

@@ -113,7 +113,7 @@ internal static class PhoneMenuFlyout
             _presenter = presenter;
             _popup = popup;
             // The menu's motion is its template's own: the host opens it at rest and closes it at once.
-            Host = new PhonePopupHost(popup, presenter, Close) { Moves = false };
+            Host = new PhonePopupHost(popup, presenter, Close, host => host.Moves = false);
             Host.Resized += OnResized;
             _popup.Opened += OnOpened;
             _popup.Closed += OnClosed;

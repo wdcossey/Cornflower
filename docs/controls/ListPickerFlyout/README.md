@@ -47,7 +47,8 @@ They are flyouts, so `<Button.Flyout><cf:ListPickerFlyout ... /></Button.Flyout>
 - **The bar** shows in Multiple and with `ConfirmationButtonsVisible`; then the content ends at its top.
 - **Opening and closing**: the PickerFlyout's are the full Flyout's bands, as #149 read it. The list picker's are its
   rows, 66.7 px, rows 0 to 4 turning from 80° at 12.5, 9.6, 7.8, 6.6 and 5.7° a tick and the rest revealed downwards;
-  it closes in twelve bands, `Closed` at 30 ticks (468.8 ms). Back closes either ahead of the page.
+  it closes in twelve bands at the reference's 800 px, `Closed` at 30 ticks (468.8 ms); a shorter picker has fewer
+  and closes sooner. Back closes either ahead of the page.
 
 ## The pickers' bar
 

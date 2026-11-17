@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
@@ -102,21 +103,19 @@ internal sealed class PhonePopupHost : IDisposable
     private IDisposable? _hidden;
     private IDisposable? _untouchable;
     private int _uncut;
-    private int _bandCount;
     private TimeSpan? _start;
     private double[] _closeFrom = [];
     private double _closeRevealedTo = double.PositiveInfinity;
     private Phase _phase;
 
-    static PhonePopupHost()
-    {
-        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
-    }
-
     /// <param name="popup">The popup.</param>
     /// <param name="content">What the motion moves: the popup's child, or the part of it that is drawn.</param>
     /// <param name="close">The owner's close, which the closing motion ends with.</param>
-    public PhonePopupHost(Popup popup, Control content, Action close)
+    /// <param name="setUp">
+    /// The owner's settings (<see cref="Placement"/>, <see cref="Rows"/>, <see cref="Swing"/>, <see cref="Moves"/>,
+    /// <see cref="Back"/>), given before the opening of a popup already open starts.
+    /// </param>
+    public PhonePopupHost(Popup popup, Control content, Action close, Action<PhonePopupHost>? setUp = null)
     {
         _popup = popup;
         _content = content;
@@ -127,6 +126,7 @@ internal sealed class PhonePopupHost : IDisposable
                 ? popup.GetValue(property)
                 : AvaloniaProperty.UnsetValue));
         _popup.ShouldUseOverlayLayer = true;
+        setUp?.Invoke(this);
         _popup.Opened += OnOpened;
         _popup.Closed += OnClosed;
         if (_popup.IsOpen)
@@ -226,6 +226,15 @@ internal sealed class PhonePopupHost : IDisposable
     /// for each type that does.
     /// </summary>
     internal static void TakeBackFirst(Func<TopLevel, PhonePopupHost?, bool> takesBack) => FocusTakers.Add(takesBack);
+
+    /// <summary>
+    /// Adds the Back handler as the module loads, before any class handler an app adds at its start: class handlers run
+    /// in the order they were added, and a popup open over the page takes Back first.
+    /// </summary>
+#pragma warning disable CA2255 // A library's module initializer: the one way to come before an app's own class handler.
+    [ModuleInitializer]
+#pragma warning restore CA2255
+    internal static void TakeBack() => TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
 
     /// <summary>Whether <paramref name="visual"/> is in the popup: its child or inside it.</summary>
     public bool Holds(Visual visual) =>
@@ -347,8 +356,10 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        // Its bands as last cut: dropped by a resize mid-close, they are cut again on this frame, after this.
-        if (_phase == Phase.Closing && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? _bandCount))
+        // Bands dropped by a resize mid-close are cut again on this frame, after this: the close waits for them, so it
+        // keeps their number (none ever cut, it has none).
+        if (_phase == Phase.Closing && (_bands is not null || _uncut >= 4)
+            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
         {
             Finish();
             return;
@@ -446,7 +457,6 @@ internal sealed class PhonePopupHost : IDisposable
             bands.Add(new Rect(0, y, size.Width, i == count - 1 ? size.Height - y : height));
         }
 
-        _bandCount = count;
 
         // Over the content where it sits in the popup, at the area's top left; the camera over the area's centre, in the
         // content's own space.
