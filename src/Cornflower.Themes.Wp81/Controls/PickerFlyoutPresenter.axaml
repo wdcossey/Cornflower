@@ -1,0 +1,85 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 PickerFlyout: Cornflower's PickerFlyoutPresenter in the default style of the 8.1 Update 1
+    runtime (pickerflyoutpresenter.json, which equals the SDK's generic.xaml), re-expressed as an Avalonia ControlTheme,
+    with the pickers' bar the shell draws over it (docs/controls/ListPickerFlyout/PLAN.md has the values and their
+    sources).
+
+    The phone's template is a Border, Background, round a Grid, ContentPanel, set in by
+    PickerFlyoutContentPanelPortraitThemeMargin (19,37,19,0; PickerFlyoutContentPanelLandscapeThemeMargin in landscape),
+    of two rows: the title, TitlePresenter, in TitleTextBlockStyle above PickerFlyoutTitleThemeMargin's 32.5 (collapsed
+    with no title), and a ScrollViewer, FlyoutContentThemeMargin round it, round the content, stretched, its margin the
+    Padding. The style's HorizontalContentAlignment and VerticalContentAlignment, Stretch, are the template's here: the
+    presenter has no content alignment of its own.
+
+    With the buttons (ConfirmationButtonsVisible), the content ends at the bar's top, 737.08 (700 tall, as the dump),
+    and the pickers' bar (Controls/PickerBar.axaml) is laid over the foot; without, it goes to the window's foot.
+  -->
+  <ControlTheme x:Key="{x:Type cf:PickerFlyoutPresenter}" TargetType="cf:PickerFlyoutPresenter">
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
+    <Setter Property="wp81:PhonePickerFlyout.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Background"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid RowDefinitions="*,Auto">
+            <Grid x:Name="ContentPanel"
+                  Margin="{DynamicResource PickerFlyoutContentPanelPortraitThemeMargin}"
+                  RowDefinitions="Auto,*">
+              <TextBlock x:Name="TitlePresenter"
+                         Theme="{DynamicResource TitleTextBlockStyle}"
+                         Margin="{DynamicResource PickerFlyoutTitleThemeMargin}"
+                         Text="{TemplateBinding (cf:PickerPresenterOptions.Title)}"
+                         IsVisible="{TemplateBinding (cf:PickerPresenterOptions.Title), Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <ScrollViewer x:Name="ScrollViewer"
+                            Grid.Row="1"
+                            Margin="{DynamicResource FlyoutContentThemeMargin}"
+                            HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                            VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
+                <ContentPresenter x:Name="PART_ContentPresenter"
+                                  Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Margin="{TemplateBinding Padding}"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch" />
+              </ScrollViewer>
+            </Grid>
+            <Panel x:Name="PickerBarSpace" Grid.Row="1" Height="{DynamicResource Wp81CommandBarCompactHeight}" IsVisible="False" />
+            <CommandBar x:Name="PickerBar" Grid.RowSpan="2" VerticalAlignment="Bottom" IsVisible="False">
+              <CommandBarButton x:Name="PART_AcceptButton" Label="done">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerAcceptGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+              <CommandBarButton x:Name="PART_DismissButton" Label="cancel">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerCancelGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+            </CommandBar>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(cf|PickerPresenterOptions.ShowsConfirmationButtons)=True]">
+      <Style Selector="^ /template/ Panel#PickerBarSpace">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^ /template/ CommandBar#PickerBar">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ Grid#ContentPanel">
+      <Setter Property="Margin" Value="{DynamicResource PickerFlyoutContentPanelLandscapeThemeMargin}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,60 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The pickers' bar (B15, #150): the accept and cancel buttons the phone's shell draws at the foot of a full-screen
+    picker (ListPickerFlyout in Multiple, PickerFlyout with ConfirmationButtonsVisible, and the date and time pickers'
+    flyouts). It is the page's compact app bar, as #150 read it (tools/refapp/README.md, "The pickers' bar"): its top at
+    737.08, 62.92 tall, the rings 40.80 across with a 2.68 ring, centred at x 187.50 and 261.25, y 768.33; the "..." at
+    the right. So here it is Wp81's CommandBar, closed and compact, with two CommandBarButtons; a presenter's template
+    lays it over its foot (docs/controls/ListPickerFlyout/README.md, "The pickers' bar", has the snippet).
+
+    What this file adds is the two glyphs, Cornflower's own (Q-picker-icons: glyph), drawn to #150's measurements of the
+    shell's, in the button's 40.75 circle, its centre at 20.375, 20.375. Each is a stroke in the command's Foreground;
+    the stroke is the mean of the dark and light readings (the same outline, anti-aliased each way). No outline of
+    Microsoft's is here.
+
+    - Accept, a check: its centre line from the left end (-8.43, -0.32) to the bottom corner (-1.93, +6.76) to the right
+      end (+8.42, -6.22) from the ring's centre; stroke 3.16 (3.37 dark, 2.94 light read); round ends and corner, which
+      give the box read across (20.0) and centre it within 0.3 of the ring's (flat ends and a mitred corner put it a
+      whole px low). It is 16.1 tall to the 17.2 read.
+    - Cancel, a cross, flat ends: its box 16.01 x 15.82 (16.06 x 15.87 dark, 15.95 x 15.76 light) centred +0.19, +0.48 from the
+      ring's centre; stroke 3.10 (3.31 dark, 2.89 light). Its arms end 6.91 and 6.81 from its centre, so that with the
+      stroke's flat ends at 45 degrees its box is the box read.
+  -->
+  <StreamGeometry x:Key="Wp81.Glyph.PickerAccept">M 11.945,20.055 L 18.445,27.135 L 28.795,14.155</StreamGeometry>
+  <StreamGeometry x:Key="Wp81.Glyph.PickerCancel">M 13.655,14.045 L 27.475,27.665 M 27.475,14.045 L 13.655,27.665</StreamGeometry>
+  <x:Double x:Key="Wp81PickerAcceptGlyphThickness">3.16</x:Double>
+  <x:Double x:Key="Wp81PickerCancelGlyphThickness">3.10</x:Double>
+
+  <!-- A glyph in a CommandBarButton's Icon: a TemplatedControl with one of these themes fills the 40.75 circle, stroked in
+       the Foreground the button gives its icon (white on the accent while pressed). -->
+  <ControlTheme x:Key="Wp81PickerAcceptGlyphTheme" TargetType="TemplatedControl">
+    <Setter Property="Width" Value="40.75" />
+    <Setter Property="Height" Value="40.75" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Path x:Name="PART_Glyph"
+              Data="{DynamicResource Wp81.Glyph.PickerAccept}"
+              Stroke="{TemplateBinding Foreground}"
+              StrokeThickness="{DynamicResource Wp81PickerAcceptGlyphThickness}"
+              StrokeLineCap="Round"
+              StrokeJoin="Round" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="Wp81PickerCancelGlyphTheme" TargetType="TemplatedControl">
+    <Setter Property="Width" Value="40.75" />
+    <Setter Property="Height" Value="40.75" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Path x:Name="PART_Glyph"
+              Data="{DynamicResource Wp81.Glyph.PickerCancel}"
+              Stroke="{TemplateBinding Foreground}"
+              StrokeThickness="{DynamicResource Wp81PickerCancelGlyphThickness}"
+              StrokeLineCap="Flat"
+              StrokeJoin="Miter" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
