@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Cornflower.Controls;
 
 namespace Cornflower.Sample;
 
@@ -16,8 +17,27 @@ public partial class App : Application
     /// </summary>
     public const string PageExtra = "page";
 
+    /// <summary>
+    /// The Android intent's string extra that starts the sample at the phone's motion, with the value
+    /// <see cref="PhoneMotionValue"/>: <c>tools/android/run.ps1</c> passes <c>--es motion phone</c>.
+    /// </summary>
+    public const string MotionExtra = "motion";
+
+    /// <summary>The <see cref="MotionExtra"/> that starts the sample at the phone's motion.</summary>
+    public const string PhoneMotionValue = "phone";
+
+    /// <summary>The desktop head's argument that starts the sample at the phone's motion: <c>tools/real-window/drive.ps1</c> passes it.</summary>
+    public const string PhoneMotionArgument = "--phone-motion";
+
+    /// <summary>
+    /// The <see cref="CornflowerConfig.MotionSpeed"/> the sample starts at, so that trying it feels quick: 2, twice the
+    /// phone's. The theme page changes it, and the rest of the settings, at runtime.
+    /// </summary>
+    public const double SampleMotionSpeed = 2;
+
     private static string? _startPage;
     private static bool _startPageSet;
+    private static bool _motionStarted;
 
     /// <summary>
     /// The page a phone opens at start, by its catalogue title in any case, or null for the first page. A head sets it
@@ -38,6 +58,24 @@ public partial class App : Application
             _startPageSet = true;
         }
     }
+
+    /// <summary>
+    /// Sets the sample's motion as it starts, once a process: <see cref="SampleMotionSpeed"/>, or with
+    /// <paramref name="phone"/> the phone's own (<see cref="CornflowerConfig"/>'s defaults), as the device run and the
+    /// real-window run start it, whose timings are the phone's. Each head calls it before Avalonia makes the view; later
+    /// calls (an activity made again) do nothing, so what the theme page set stays. The tests never call it, so they
+    /// see the defaults.
+    /// </summary>
+    public static void StartMotion(bool phone)
+    {
+        if (_motionStarted)
+            return;
+        _motionStarted = true;
+        CornflowerConfig.MotionSpeed = phone ? 1 : SampleMotionSpeed;
+    }
+
+    /// <summary>Forgets <see cref="StartMotion"/>, as at a process's start; for a test.</summary>
+    internal static void ForgetStartMotion() => _motionStarted = false;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 

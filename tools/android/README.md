@@ -22,6 +22,10 @@ ever made it first, rather than ignore the page). Without it, the app opens the 
 `theme`, as a start from the launcher does. A title the catalogue doesn't have stops the app at
 start, naming the titles it has, and the script stops with the app's crash report.
 
+The script also passes `--es motion phone`, so the app starts at the phone's motion (`CornflowerConfig`'s
+defaults) and its times are the phone's. Started from the launcher, the sample runs its motion twice as fast
+(`App.SampleMotionSpeed`, #189).
+
 `run.ps1`:
 
 1. Checks that `adb devices` lists exactly one phone, and reads its model, Android version, screen

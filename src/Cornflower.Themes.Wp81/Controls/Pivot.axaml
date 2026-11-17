@@ -125,7 +125,8 @@
                             Margin="{TemplateBinding Padding}"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
-                            wp81:PhoneHeaderLine.IsEnabled="True">
+                            wp81:PhoneHeaderLine.IsEnabled="True"
+                            wp81:PhoneTransitions.Area="PivotAndHub">
             <ContentPresenter.Transitions>
               <Transitions>
                 <DoubleTransition Property="Opacity" Duration="0:0:0.33" />

@@ -1225,4 +1225,21 @@ public class ListViewTests
         Assert.Contains(":pointerover", stage.Item(2).Classes);
         Assert.True(Frames.SameAs(before, after), "focus or the pointer drew something");
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void The_Check_Boxes_Come_In_At_ControlSpeed_And_At_Once_With_Animated_Off()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.MotionSpeed = 3;
+        foreach (var (animated, expected) in new[] { (true, MultiSelectDuration / 3), (false, TimeSpan.Zero) })
+        {
+            CornflowerConfig.Animated = animated;
+            using var stage = new ListStage();
+            var item = stage.Item(0);
+            foreach (var part in new Control[] { Part<Grid>(item, "CheckboxContainer"), Part<Border>(item, "ContentBorder") })
+                Assert.Equal(expected, ((TransitionBase)Assert.Single(part.Transitions!)).Duration);
+        }
+    }
 }

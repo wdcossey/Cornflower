@@ -617,4 +617,20 @@ public class ComboBoxTests
         Assert.False(stage.Combo.IsDropDownOpen);
         Assert.False(PhoneComboBox.GetIsShownOpen(stage.Combo));
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_ControlSpeed_2_Inline_It_Opens_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.ControlSpeed = 2;
+        using var stage = new Stage(3, selected: 0);
+        stage.Layout();
+        stage.Open();
+        stage.At(OpenAfter / 2 - 1);
+        Assert.False(PhoneComboBox.GetIsShownOpen(stage.Combo));
+        stage.At(OpenAfter / 2);
+        Assert.True(PhoneComboBox.GetIsShownOpen(stage.Combo));
+    }
 }

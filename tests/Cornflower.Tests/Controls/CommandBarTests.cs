@@ -1115,4 +1115,48 @@ public class CommandBarTests
 
         public void Execute(object? parameter) => run();
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_ControlSpeed_2_The_Bar_Opens_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        double Rests(AppBarPage page)
+        {
+            page.Bar.IsOpen = true;
+            page.Window.UpdateLayout();
+            var from = page.Clock.Now.TotalMilliseconds;
+            return Frames16(page, from).First(f => Math.Abs(f.Top - OpenTop / Scale) < 0.001).Ms;
+        }
+
+        double phone;
+        using (var page = new AppBarPage())
+            phone = Rests(page);
+        CornflowerConfig.ControlSpeed = 2;
+        using (var page = new AppBarPage())
+        {
+            Assert.InRange(Rests(page), phone / 2 - 16, phone / 2 + 16);
+
+            // The close ends, and the bar stops showing open, at half the phone's 200 ms.
+            page.Settle();
+            page.Bar.IsOpen = false;
+            page.Window.UpdateLayout();
+            var from = page.Clock.Now.TotalMilliseconds;
+            page.At(from + 64);
+            Assert.True(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+            page.At(from + 100 + 32);
+            Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+        }
+
+        // With Animated off, the bar is there at once.
+        CornflowerConfig.Animated = false;
+        using (var page = new AppBarPage())
+        {
+            page.Bar.IsOpen = true;
+            page.Window.UpdateLayout();
+            Assert.Equal(OpenTop / Scale, page.DrawnTop, 0.001);
+            Assert.Equal(0, page.Clock.Pending);
+        }
+    }
 }

@@ -1,3 +1,4 @@
+using Cornflower.Controls;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -604,5 +605,46 @@ public class PageTransitionTests
         Assert.True(new TurnstileTransition().Start(null, null, true, default).IsCompletedSuccessfully);
         Assert.True(new SlideTransition().Start(null, page, true, cancelled.Token).IsCanceled);
         AssertAtRest(page);
+    }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_PageSpeed_2_A_Transition_Takes_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.MotionSpeed = 4;
+        CornflowerConfig.PageSpeed = 2;
+        var from = new Border { Background = Brushes.White };
+        var to = new Border { Background = Brushes.Blue, IsVisible = false };
+        using var scene = new Scene(new Grid { Children = { from, to } });
+        using var clock = new TestClock();
+
+        var task = new TurnstileTransition().Start(from, to, true, default);
+        // The first frame is time 0; the turn is over at half its 425 ms.
+        clock.At(16 + Turnstile.ForwardMs / 2 - 1);
+        Assert.False(task.IsCompleted);
+        clock.At(16 + Turnstile.ForwardMs / 2 + 16);
+        Assert.True(task.IsCompletedSuccessfully);
+        Assert.False(from.IsVisible);
+        AssertAtRest(from, to);
+    }
+
+    [AvaloniaFact]
+    public void With_Animated_Off_A_Transition_Is_At_Its_End_At_Once()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        var from = new Border { Background = Brushes.White };
+        var to = new Border { Background = Brushes.Blue, IsVisible = false };
+        using var scene = new Scene(new Grid { Children = { from, to } });
+        using var clock = new TestClock();
+
+        var task = new SlideTransition().Start(from, to, true, default);
+        Assert.True(task.IsCompletedSuccessfully);
+        Assert.True(to.IsVisible);
+        Assert.False(from.IsVisible);
+        AssertAtRest(from, to);
+        Assert.Equal(0, clock.Pending);
     }
 }

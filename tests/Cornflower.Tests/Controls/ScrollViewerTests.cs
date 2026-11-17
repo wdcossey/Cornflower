@@ -1,3 +1,4 @@
+using Cornflower.Controls;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -939,5 +940,31 @@ public class ScrollViewerTests
         scene.Window.MouseUp(new Point(50, 50), MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal((1.0, 0.0), (background.Opacity, pressed.Opacity));
+    }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void The_Indicator_Fades_At_ControlSpeed_And_At_Once_With_Animated_Off()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.ControlSpeed = 2;
+        using (var clock = new TestClock())
+        using (var stage = new Stage())
+        {
+            stage.ScrollTo(100);
+            clock.At(96);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(2 * 96 / FadeInMs, Shown(stage.Vertical), 32 / FadeInMs);
+        }
+
+        CornflowerConfig.Animated = false;
+        using (var clock = new TestClock())
+        using (var stage = new Stage())
+        {
+            stage.ScrollTo(100);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(1, Shown(stage.Vertical));
+        }
     }
 }

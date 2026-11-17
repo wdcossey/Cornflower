@@ -1114,4 +1114,37 @@ public class ToggleSwitchTests
 
         public void Execute(object? parameter) => Runs++;
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void The_Knob_Slides_At_ControlSpeed_And_Is_There_At_Once_With_Animated_Off()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.ControlSpeed = 2;
+        using (var stage = new Stage())
+        {
+            var transition = Assert.IsType<DoubleTransition>(Assert.Single(stage.Toggle.KnobTransitions));
+            Assert.Equal(SlideDuration / 2, transition.Duration);
+        }
+
+        CornflowerConfig.Animated = false;
+        using (var stage = new Stage())
+        {
+            var transition = Assert.IsType<DoubleTransition>(Assert.Single(stage.Toggle.KnobTransitions));
+            Assert.Equal(TimeSpan.Zero, transition.Duration);
+        }
+
+        // Back at the defaults, a switch's are the phone's again, and a change reaches one already placed.
+        CornflowerConfig.Reset();
+        using (var stage = new Stage())
+        {
+            var transition = (TransitionBase)Assert.Single(stage.Toggle.KnobTransitions);
+            Assert.Equal(SlideDuration, transition.Duration);
+            CornflowerConfig.ControlSpeed = 4;
+            Assert.Equal(SlideDuration / 4, transition.Duration);
+            CornflowerConfig.Reset();
+            Assert.Equal(SlideDuration, transition.Duration);
+        }
+    }
 }

@@ -13,6 +13,8 @@ internal static class Program
         // reads Avalonia's own meter (docs/performance/README.md).
         Diagnostics.PerformanceMonitor.EnableDiagnostics();
 #endif
+        // Twice the phone's motion, so trying the sample feels quick; --phone-motion, the phone's (drive.ps1 passes it).
+        App.StartMotion(phone: args.Contains(App.PhoneMotionArgument));
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

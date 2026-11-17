@@ -57,6 +57,8 @@ $ReadyMarker = 'CORNFLOWER ready'
 $CostMarker = 'CORNFLOWER cost'
 # The intent extra the app reads its start page from (App.PageExtra).
 $PageExtra = 'page'
+# The intent extra that starts the app at the phone's motion with 'phone' (App.MotionExtra), not twice it.
+$MotionExtra = 'motion'
 
 # Where Android Studio puts the SDK on this OS.
 function Get-DefaultSdk {
@@ -188,6 +190,8 @@ Start-Sleep -Seconds 1
 Adb logcat -c | Out-Null
 # adb joins its arguments into one command for the phone's shell, so the title is quoted for that shell.
 $extra = if ($Page) { @('--es', $PageExtra, ("'" + ($Page -replace "'", "'\''") + "'")) } else { @() }
+# At the phone's motion, not the sample's quicker one, so the run times what the phone would (App.MotionExtra).
+$extra += @('--es', $MotionExtra, 'phone')
 # A failure here is read, not thrown: a start that crashes the app (a title the catalogue doesn't have, say) has to
 # be reported with the app's own message, which is in its crash report, not in am's output.
 try { $start = Adb shell am start -W -S -n $Activity @extra } catch { $start = "Error: $($_.Exception.Message)" }

@@ -126,7 +126,7 @@
                 <Border.Clip>
                   <RectangleGeometry Rect="0,0,25.5,25.5" />
                 </Border.Clip>
-                <Grid x:Name="CheckboxContainer" RenderTransform="translateX(-40.5px)">
+                <Grid x:Name="CheckboxContainer" RenderTransform="translateX(-40.5px)" wp81:PhoneTransitions.Area="Control">
                   <Grid.Transitions>
                     <Transitions>
                       <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
@@ -154,7 +154,8 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        RenderTransform="none">
+                        RenderTransform="none"
+                        wp81:PhoneTransitions.Area="Control">
                   <Border.Transitions>
                     <Transitions>
                       <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />

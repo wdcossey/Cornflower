@@ -1,3 +1,4 @@
+using Cornflower.Controls;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
@@ -649,5 +650,25 @@ public class LoopingSelectorTests
         Assert.False(wheel.IsActive);
         wheel.Activate();
         Assert.Equal(1, Expansion(panel));
+    }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_ControlSpeed_2_A_Wheel_Fades_Out_Twice_As_Fast()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.ControlSpeed = 2;
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        Tap(stage, clock, stage.Month, 350, 0);
+        Tap(stage, clock, stage.Day, 350, 1000);
+        var start = clock.Now.TotalMilliseconds;
+        clock.At(start + Frame + 1);
+        var last = Expansion(stage.Month);
+        clock.At(start + 2 * Frame + 1);
+        Assert.Equal(2 * FadePerFrame, last - Expansion(stage.Month), 0.001);
+        clock.At(start + 200);
+        Assert.Equal(0, Expansion(stage.Month));
     }
 }

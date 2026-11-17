@@ -145,7 +145,9 @@ internal static class PhoneListMultiSelect
         };
         item.SetValue(PressProperty, press);
         item.SetValue(IsBoxPressedProperty, true);
-        press.Step();
+        // With CornflowerConfig.Animated off the box doesn't tilt, as no tilt does.
+        if (CornflowerConfig.Animated)
+            press.Step();
     }
 
     private static void OnCaptureLost(ListBoxItem item, PointerCaptureLostEventArgs e)

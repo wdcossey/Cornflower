@@ -28,6 +28,12 @@ More in [PREVIEW.md](PREVIEW.md).
   themes it. Where it has none (Pivot, Hub, ProgressRing, ContentDialog and others), Cornflower
   adds one, with the WinRT name.
 - **Fonts and icons are substituted.** No Microsoft font or file ships.
+- **The phone's by default; quicker if you ask.** Every motion runs at the phone's measured time unless an app sets
+  `CornflowerConfig` ([ADR 0006](docs/decisions/0006-faithful-defaults-and-cornflowerconfig.md)): `Animated`,
+  `MotionSpeed` (2 is twice as fast), a speed for each area (`PopupSpeed`, `PageSpeed`, `TiltSpeed`,
+  `PivotAndHubSpeed`, `ControlSpeed`), and `Deviations`, the named departures from the phone, each off by default.
+  Set them at start-up or at any time: each motion reads them as it starts. The sample starts at speed 2, and its
+  theme page changes them.
 
 ## Packages
 

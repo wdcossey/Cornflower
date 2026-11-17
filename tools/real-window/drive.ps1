@@ -348,7 +348,8 @@ function Section($title, [scriptblock]$body) {
     if ($p.HasExited) { throw "The app exited during $title, with code $($p.ExitCode)" }
 }
 
-$p = Start-Process $Exe -PassThru -RedirectStandardOutput $stdout
+# At the phone's motion (App.PhoneMotionArgument), not the sample's twice as quick one: the waits here are the phone's.
+$p = Start-Process $Exe -ArgumentList '--phone-motion' -PassThru -RedirectStandardOutput $stdout
 try {
     $win = $null
     for ($i = 0; $i -lt 40 -and -not $win; $i++) {

@@ -44,6 +44,7 @@ internal sealed class HubEntrance
     private IDisposable? _origin;
     private IDisposable? _frame;
     private TimeSpan _start;
+    private double _speed = 1;                            // read from CornflowerConfig as the motion starts
     private int _generation;
 
     public HubEntrance(Visual owner) => _owner = owner;
@@ -52,7 +53,7 @@ internal sealed class HubEntrance
     public bool IsRunning { get; private set; }
 
     /// <summary>The angle about Y now, in degrees: 0 when the turn isn't under way.</summary>
-    public double Angle => IsRunning ? AngleAt(CornflowerClock.Now - _start) : 0;
+    public double Angle => IsRunning ? AngleAt(CornflowerClock.Since(_start, _speed)) : 0;
 
     /// <summary>The angle <paramref name="time"/> after the first frame, in degrees.</summary>
     public static double AngleAt(TimeSpan time) =>
@@ -85,9 +86,11 @@ internal sealed class HubEntrance
     public void Begin(Visual? root)
     {
         Finish();
-        if (root is null) return;
+        // With CornflowerConfig.Animated off there is no turn: the root is at rest at once.
+        if (root is null || !CornflowerConfig.Animated) return;
         _root = root;
         _start = CornflowerClock.Now;
+        _speed = CornflowerConfig.SpeedOf(MotionArea.PivotAndHub);
         IsRunning = true;
         _origin = root.SetValue(Visual.RenderTransformOriginProperty, RelativePoint.TopLeft, BindingPriority.Animation);
         _shown = root.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
@@ -122,7 +125,7 @@ internal sealed class HubEntrance
     private void Step(int generation)
     {
         if (generation != _generation) return;
-        if (CornflowerClock.Now - _start >= Duration)
+        if (CornflowerClock.Since(_start, _speed) >= Duration)
         {
             Finish();
             return;

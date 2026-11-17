@@ -84,6 +84,7 @@ internal static class PhoneIndicatorFade
         private readonly Track _track;
         private IDisposable? _frame;
         private TimeSpan _last;
+        private double _speed = 1;                        // read from CornflowerConfig as the fade starts
 
         public Fader(Track track)
         {
@@ -127,7 +128,8 @@ internal static class PhoneIndicatorFade
         public void Retarget(bool animate)
         {
             var (target, duration) = Goal();
-            if (!animate || duration == TimeSpan.Zero || !_track.IsAttachedToVisualTree())
+            // With CornflowerConfig.Animated off, at the target at once.
+            if (!animate || duration == TimeSpan.Zero || !_track.IsAttachedToVisualTree() || !CornflowerConfig.Animated)
             {
                 Stop();
                 _track.SetValue(Visual.OpacityProperty, target);
@@ -137,6 +139,7 @@ internal static class PhoneIndicatorFade
             if (_frame is null && _track.Opacity != target)
             {
                 _last = CornflowerClock.Now;
+                _speed = CornflowerConfig.SpeedOf(MotionArea.Control);
                 _frame = CornflowerClock.RequestFrame(_track, Step);
             }
         }
@@ -146,7 +149,7 @@ internal static class PhoneIndicatorFade
             _frame = null;
             var (target, duration) = Goal();
             var now = CornflowerClock.Now;
-            var step = duration == TimeSpan.Zero ? 1 : (now - _last).TotalMilliseconds / duration.TotalMilliseconds;
+            var step = duration == TimeSpan.Zero ? 1 : CornflowerClock.AtSpeed(now - _last, _speed).TotalMilliseconds / duration.TotalMilliseconds;
             _last = now;
 
             var opacity = _track.Opacity;
