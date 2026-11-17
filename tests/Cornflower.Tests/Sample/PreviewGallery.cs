@@ -168,6 +168,7 @@ public class PreviewGallery
         }
 
         SettleTransitions();
+        HubsAtRest(file, shell);
         if (popup is not null)
             OpenAtRest(file, scene.Window, shell, clock, popup);
 
@@ -207,6 +208,21 @@ public class PreviewGallery
             throw new InvalidOperationException($"{file}: {shown} popups are shown, not {popup.Popups}.");
         if (clock.Pending != 0)
             throw new InvalidOperationException($"{file}: {clock.Pending} timelines still run on the clock: the popup isn't at rest.");
+    }
+
+    /// <summary>
+    /// A Hub turns in when it is placed (1,000 ms, #166) and fades its background in (90 ms, #167), on the clock: the
+    /// gallery stops rather than picture one still turning or fading in.
+    /// </summary>
+    private static void HubsAtRest(string file, Control shell)
+    {
+        foreach (var hub in shell.GetVisualDescendants().OfType<Hub>())
+        {
+            if (hub.Entrance.IsRunning)
+                throw new InvalidOperationException($"{file}: the Hub is still turning in ({hub.Entrance.Angle:0.###}°).");
+            if (hub.Classes.Contains(":backgroundimagefadingin"))
+                throw new InvalidOperationException($"{file}: the Hub's background is still fading in.");
+        }
     }
 
     /// <summary>

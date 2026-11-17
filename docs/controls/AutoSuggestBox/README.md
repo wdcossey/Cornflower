@@ -1,6 +1,6 @@
 # AutoSuggestBox
 
-Status: done but for the device and real-window runs · [#158](https://github.com/wdcossey/CornflowerUI/issues/158) · owed: the device run on the Pixel 8 (the keyboard's rectangle and Back on Android) · owed: the real-window run · owed: captures of the list's motion and of landscape
+Status: done but for the real-window run · [#158](https://github.com/wdcossey/CornflowerUI/issues/158) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 385 ms; the suggestion list shown with 'a' typed, above the keyboard; the page stays where it is, which is [#179](https://github.com/wdcossey/CornflowerUI/issues/179)) · owed: Back closing the list on Android · owed: the real-window run · owed: captures of the list's motion and of landscape
 
 The Windows Phone 8.1 AutoSuggestBox: Avalonia's `AutoCompleteBox`, themed by `Wp81Theme` with the phone's default
 style and template, in `src/Cornflower.Themes.Wp81/Controls/AutoCompleteBox.axaml`. WinRT's `Header` is

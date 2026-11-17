@@ -930,7 +930,7 @@ to about a frame.
 | Hub's background rate and the header's 420 ms ease after the loop (#136) | frames: `RenderingTime` | as given; the jump's time after the press is the stopwatch's |
 | The app bar's opening and closing, its time constants and settle times (#136) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | Where a Pivot's or Hub's release goes: the release times, and the item events' times after `SelectionChanged` (#148) | the stopwatch, with touch.log's press-to-release times put on it by the start tap | left as read |
-| `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` 4.61 over 1,000 ms (#148) | frames: `RenderingTime` | as given |
+| `ScrollToSection`'s jump, the Hub's backwards loop's return (780 ms) and its entrance, `ExponentialEase` ln 100 (4.605) over 1,000 ms (#148) | frames: `RenderingTime` | as given |
 | The light app bar's motion, and the long list's scroll (#148) | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The end-of-content squash and the indicator's fades (#113): about 200 ms back, 370 ms in, 340 ms out | the recording, paired with the log by the header's flash | **open**, as the row below |
 | The popups' bands (#149): each band's turn a tick, its ticks, and the closing's two ticks between bands | frames: distinct angles, one a 15.625 ms step | as given |
@@ -1363,8 +1363,9 @@ at `Fill` and `None`. Each brush is read at offsets from 0 to the end, and the p
 - **The entrance turns the Hub in.** The template's `EntranceAnimationProjection` (on `HubRoot`) has `RotationY` −120° on
   the first frame and reaches 0 on the 64th tick after, 1,000 ms of animation time. `CenterOfRotationX` is −0.5, the
   axis half the Hub's width to its left; nothing else in the projection moves, and no opacity changes. The values are
-  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent 4.61, out) over 1,000 ms
-  to under 0.00001 of the first value, the first frame taken as its start (`entrance.py` says why it isn't fitted). The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
+  the same, frame for frame, in all three placements. They fit an `ExponentialEase` (exponent ln 100, 4.605, out) over 1,000 ms
+  to under 0.00001 of the first value, the first frame taken as its start (`entrance.py` says why it isn't fitted).
+  `entrance.py` prints the exponent rounded, as 4.61, which is 0.04° off on the first ticks (#166). The header's "slide from 19.7 to 15" (#114) is this turn's tail as the projection
   draws it: the header and the first section are carried with it, and both are at rest when `RotationY` is 0.
 - **With no background**, the `Background` grid is 0 × 800.
 - **A plain colour** fills a grid the view's width by the window's height: 450 × 800 (the Hub is 740 tall here). It
