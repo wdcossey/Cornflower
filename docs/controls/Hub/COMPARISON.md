@@ -45,7 +45,7 @@ The eight captures (`two-sections`, base and the three `BackgroundImageLoadState
 the Hub's entrance animation still turned it (−53.7° to −3.2° about Y), so none is a frame at rest: they confirm the
 header's size (78) and weight (Light), the section headers' (19 SemiBold) and the colours (`#FFFFFFFF` on black, dark;
 `#FF000000` on white, light), which the tests assert from the dumps' values, not pixel by pixel. The entrance itself
-isn't ours (README, "Known gaps").
+is compared below ("The motion"), by its angle a tick, as #148 read it.
 
 ## A background image
 
@@ -64,6 +64,12 @@ edge at −593.25, the phone's at that offset (run `20261116-0009-dev11`: −593
 
 The copy flips from W − 1 left to W − 1 right between offsets 582.9 and 586.3 on the phone; ours at (L − V) / 2, 585.
 
+**An image narrower than the screen** (#148, run `20261116-1754-dev11`, a 300 × 400 picture): the phone's background
+grid and `MainBackground` are 450 × 800, at 0 at every offset from 0 to the end; `Fill` stretches the picture across
+them, `None` centres it at 300 × 400. Ours: the same box (`An_Image_Narrower_Than_The_View_Fills_It_And_Stays`), the
+brush's own stretch in it. The phone's copy moved from −899 to +899 off the screen, left over from the 900 px picture
+before it; ours hides it.
+
 ## The motion
 
 Each against the phone's frames, on an emulator-grid `TestClock` with the release on a frame:
@@ -79,11 +85,23 @@ Each against the phone's frames, on an emulator-grid `TestClock` with the releas
 | The jump | On frame 6 (one run 7), to 451 to 459 drawn | On frame 6, to 465 | ours 6 to 14 px further right on that one frame: the phone jumps between frames, on its stopwatch |
 | The fly-in | Each frame 0.7699 to 0.7708 of the last's way left | 0.7708 | at its place 27 frames after the jump, as the phone |
 | The background against the offset | Two straight lines, within 0.001 px | The same | none |
+| A drag right at the first section | Section 1 with the finger (144 px for a 150 px drag), the header 15 + its move / 18 | The same, one for one from the press | the phone's lags the finger by 6 px, as its forward drags do |
+| Back from there, held | Section 1 a frame from frame 2 after the release to its place on frame 52 | `KeySpline` fit, 781.25 ms | within 0.008 of the way a frame (1.2 px of 144), 0.25 px rms |
+| The loop backwards: the sections | To 1 px short of where the end shows the first, then the end on frame 19 | `LoopCurve` mirrored to it, the end on frame 19 | within 0.009 a frame (worst on frame 3, 1.9 px); the phone's 1 px step at the reset, none on ours |
+| The loop backwards: the header | Held 2 frames, 15.996 px a frame right, on frame 30 33.836 left of its place, then 6.509, 1.221, 0.198, 0 | The same, the ease fitted | under 0.01 px out, under 0.1 px in |
+| Left of the first section on the way | Nothing: only section 2 is moved, to L left, off the screen | Nothing | none on the screen |
+| The entrance | `RotationY` −120° to 0 over 64 ticks, the same in every placement | ln 100 (4.605) ease over 1,000 ms | under 0.0005° on the 12 ticks tested, the log's last place |
+| `BackgroundImageFadingIn` | 88 to 92 ms after `Loaded`, placed with an image or a colour | 90 ms after the Hub is placed | within the phone's spread |
 
 ## Deliberate differences
 
 - **The offset's curves are fits** to the phone's frames (above): the swipe's 0.36 px rms, the way back's 1.05, the
-  loop's 0.93.
+  loop's 0.93; backwards, the way back's 0.25 and the loop's 0.68.
+- **The entrance's look** is PlaneProjection's camera (#24) applied to the read angles; no recording frame of the Hub
+  turning is compared pixel by pixel (owed).
+- **An image given to a Hub on the screen** goes straight to `:backgroundshowing`, as #137 read; #148's stretch runs
+  stayed in `BackgroundImageFadingIn` after one, through six more brushes, which ours doesn't copy (the two reads
+  disagree; the look is the same, the background at 1).
 - **The ScrollViewer doesn't scroll**: the Hub moves its panel (PLAN.md, "The ScrollViewer").
 - **The background is clipped at the Hub's edge**; the phone's code clips it to a rectangle dumped as 450 × 800 from
   the Hub's top left, so on the phone a tall image can draw below a short Hub.

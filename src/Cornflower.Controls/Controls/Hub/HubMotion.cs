@@ -3,13 +3,15 @@ namespace Cornflower.Controls;
 /// <summary>
 /// The phone's Hub motion, as #128 and #137 read it from the 8.1 emulator (runs <c>20261115-2059-dev11</c>,
 /// <c>20261116-0001-dev11</c>, <c>-0007-</c>, <c>-0009-</c> and <c>-0025-</c>; <c>tools/refapp/README.md</c>, "Hub's
-/// header" and "Hub: a background image, and the end of the sections"), run frame by frame on
+/// header" and "Hub: a background image, and the end of the sections"), and #148 read the loop backwards (run
+/// <c>20261116-1751-dev11</c>, "Pivot and Hub: where a release goes"), run frame by frame on
 /// <see cref="CornflowerClock"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The <b>offset</b> is how far the sections have moved left, in view pixels. A finger moves it one for one, from 0 to
-/// past the last section's start (the end), on into the wrap. At rest it is a section's start: let go, it goes on to the
+/// past the last section's start (the end), on into the wrap; and at the first section, right of 0, into the loop
+/// backwards, as far as the end less the sections' width. At rest it is a section's start: let go, it goes on to the
 /// next section's start or back to its own, by one of two curves fitted to the phone's frames
 /// (<c>docs/controls/Hub/PLAN.md</c>): the swipe's, after a flick, and the way back's, after a slow release.
 /// </para>
@@ -22,6 +24,14 @@ namespace Cornflower.Controls;
 /// header holds two frames, flies out left at <see cref="HeaderFlyOutSpeed"/>, and at <see cref="HeaderJump"/> after
 /// the release jumps a view's width right of its place and eases in, an <c>ExponentialEase</c> of exponent 7 over
 /// 420 ms.
+/// </para>
+/// <para>
+/// The <b>loop backwards</b> mirrors it: let go right of 0 going right, the sections carry on right by the same curve
+/// over the same time, to where the end would show them (the end less the sections' width), and the offset becomes the
+/// end. Nothing is drawn left of the first section on the way, as on the phone. The header holds two frames, flies out
+/// right (<see cref="HeaderBackFlyOutSpeed"/>), and at <see cref="HeaderBackJump"/> is
+/// <see cref="HeaderBackJumpDistance"/> left of its place and eases in. A slow release goes back to 0 on the phone's way
+/// back from there (<see cref="BackReturnCurve"/>).
 /// </para>
 /// </remarks>
 internal sealed class HubMotion
@@ -66,6 +76,30 @@ internal sealed class HubMotion
     public const double HeaderFlyInExponent = 7;
 
     /// <summary>
+    /// The sections' way back to 0 from right of it, after a slow release: fitted to the phone's 50 frames to 0.25 px rms
+    /// (worst 1.03) of a 144 px pull (#148, run <c>20261116-1751-dev11</c>, a 150 px drag held and let go).
+    /// </summary>
+    public static readonly KeySplineCurve BackReturnCurve = new(0.195, 0.859, 0.306, 1);
+
+    /// <inheritdoc cref="BackReturnCurve"/>
+    public static readonly TimeSpan BackReturnDuration = TimeSpan.FromMilliseconds(781.25);
+
+    /// <summary>The header's flight out to the right in the loop backwards, in view pixels a millisecond (15.996 a frame).</summary>
+    public const double HeaderBackFlyOutSpeed = 1.02374;
+
+    /// <summary>When the header, flown out right, jumps back after the loop backwards's release: 30 frames (#148).</summary>
+    public static readonly TimeSpan HeaderBackJump = TimeSpan.FromMilliseconds(468.75);
+
+    /// <summary>How far left of its place the header is drawn on that jump, in view pixels (#148, the one swipe read).</summary>
+    public const double HeaderBackJumpDistance = 33.836;
+
+    /// <summary>
+    /// The header's ease back in after that jump: an <c>ExponentialEase</c> of exponent 7 (<see cref="HeaderFlyInExponent"/>),
+    /// out, over 66 ms, fitted to the phone's four frames to 0.04 px rms.
+    /// </summary>
+    public static readonly TimeSpan HeaderBackFlyInDuration = TimeSpan.FromMilliseconds(66);
+
+    /// <summary>
     /// A release moving at least this fast, in view pixels a millisecond, goes on the way it went (or, past the end,
     /// loops); slower, the nearer section start. Not read on the phone (owed); the probes' swipes, 200 px in 150 ms,
     /// go on, and a 150 px drag held still goes back. Pivot's.
@@ -93,8 +127,11 @@ internal sealed class HubMotion
     /// <summary>Whether a move is under way after a release.</summary>
     public bool IsMoving => _moving;
 
-    /// <summary>Whether the move under way is the loop past the end.</summary>
+    /// <summary>Whether the move under way is the loop past the end, or the one backwards past the start.</summary>
     public bool IsLooping { get; private set; }
+
+    /// <summary>Whether the loop under way is the one backwards, past the start.</summary>
+    public bool IsLoopingBack { get; private set; }
 
     /// <summary>Whether the sections themselves are moving: not in the loop's last part, where only the header is.</summary>
     public bool AreSectionsMoving => _moving && !(IsLooping && CornflowerClock.Now - _start >= LoopDuration);
@@ -105,7 +142,7 @@ internal sealed class HubMotion
     /// <summary>How far right of its place the header is drawn, in view pixels.</summary>
     public double HeaderX { get; private set; }
 
-    /// <summary>Where the move under way ends: a section's start, or 0 for the loop.</summary>
+    /// <summary>Where the move under way ends: a section's start, 0 for the loop, the end for the loop backwards.</summary>
     public double Target => _to;
 
     /// <summary>Puts everything at rest at <paramref name="offset"/>, stopping any move, and draws it.</summary>
@@ -136,7 +173,7 @@ internal sealed class HubMotion
     public void Drag(double travel)
     {
         if (!IsDragging) return;
-        Offset = Math.Clamp(_dragFrom + travel, 0, _hub.SectionsLength);
+        Offset = Math.Clamp(_dragFrom + travel, LowestOffset, _hub.SectionsLength);
         HeaderX = -Offset * HeaderRatio;
         _hub.ApplyMotion();
     }
@@ -159,6 +196,18 @@ internal sealed class HubMotion
         }
 
         var end = starts[^1];
+        if (Offset < 0)
+        {
+            // Right of the first section: on round the loop backwards, or back to 0 on the phone's way back from there.
+            var pulled = -Offset;
+            var span = _hub.SectionsLength - end;
+            if (forward <= -FlickVelocity || (forward < FlickVelocity && pulled >= span / 2))
+                StartLoopBack(end);
+            else
+                Start(0, BackReturnCurve, BackReturnDuration);
+            return;
+        }
+
         if (Offset > end)
         {
             // Past the end: on round the loop, or back to the end.
@@ -211,15 +260,22 @@ internal sealed class HubMotion
         }
         else if (IsDragging)
         {
-            // The nearest start, or past the end the first section's place after the last (L), which is 0 again.
+            // The nearest start; past the end, the first section's place after the last (L), which is 0 again; right of
+            // the first, the end less L, which is the end.
+            var starts = _hub.SectionStarts;
             var nearest = 0.0;
-            foreach (var start in _hub.SectionStarts)
+            foreach (var start in starts)
             {
                 if (Math.Abs(start - Offset) < Math.Abs(nearest - Offset)) nearest = start;
             }
 
             var length = _hub.SectionsLength;
-            Rest(length > 0 && Math.Abs(length - Offset) < Math.Abs(nearest - Offset) ? 0 : nearest);
+            var rest = nearest;
+            if (length > 0 && Math.Abs(length - Offset) < Math.Abs(nearest - Offset))
+                rest = 0;
+            else if (starts.Count > 1 && Math.Abs(starts[^1] - length - Offset) < Math.Abs(nearest - Offset))
+                rest = starts[^1];
+            Rest(rest);
         }
     }
 
@@ -230,6 +286,7 @@ internal sealed class HubMotion
         _frame = null;
         _moving = false;
         IsLooping = false;
+        IsLoopingBack = false;
         _generation++;
     }
 
@@ -243,6 +300,30 @@ internal sealed class HubMotion
         if (elapsed < HeaderJump)
             return from - HeaderFlyOutSpeed * Math.Max(0, (elapsed - HeaderHold).TotalMilliseconds);
         return view * (1 - PhoneEase.ExponentialOut(HeaderFlyInExponent, (elapsed - HeaderJump) / HeaderFlyInDuration));
+    }
+
+    /// <summary>
+    /// The header during the loop backwards, <paramref name="elapsed"/> after the release, right of its place at 0:
+    /// where it was at the release (<paramref name="from"/>), held, then flying out right; from
+    /// <see cref="HeaderBackJump"/>, <see cref="HeaderBackJumpDistance"/> left of its place at the end
+    /// (<paramref name="end"/>), easing in.
+    /// </summary>
+    public static double LoopBackHeader(TimeSpan elapsed, double from, double end)
+    {
+        if (elapsed < HeaderBackJump)
+            return from + HeaderBackFlyOutSpeed * Math.Max(0, (elapsed - HeaderHold).TotalMilliseconds);
+        return -end * HeaderRatio
+               - PhoneEase.Remaining(HeaderBackJumpDistance, HeaderFlyInExponent, elapsed - HeaderBackJump, HeaderBackFlyInDuration);
+    }
+
+    /// <summary>How far right a finger can pull the sections: the end less their width, where the loop backwards ends.</summary>
+    private double LowestOffset
+    {
+        get
+        {
+            var starts = _hub.SectionStarts;
+            return starts.Count > 1 ? Math.Min(0, starts[^1] - _hub.SectionsLength) : 0;
+        }
     }
 
     private void Start(double to, KeySplineCurve curve, TimeSpan duration)
@@ -270,11 +351,31 @@ internal sealed class HubMotion
         _frame = CornflowerClock.RequestFrame(_hub, () => Step(generation));
     }
 
+    private void StartLoopBack(double end)
+    {
+        StartLoop();
+        _to = end;
+        IsLoopingBack = true;
+    }
+
     private void Step(int generation)
     {
         if (generation != _generation) return;
         var t = CornflowerClock.Now - _start;
-        if (IsLooping)
+        if (IsLoopingBack)
+        {
+            if (t >= HeaderBackJump + HeaderBackFlyInDuration)
+            {
+                Rest(_to);
+                return;
+            }
+
+            // The sections carry on right to where the end would show them, the end less L; then the offset is the end.
+            var carry = _to - _hub.SectionsLength;
+            Offset = t < LoopDuration ? _from + (carry - _from) * LoopCurve.Ease(t / LoopDuration) : _to;
+            HeaderX = LoopBackHeader(t, -_from * HeaderRatio, _to);
+        }
+        else if (IsLooping)
         {
             if (t >= HeaderJump + HeaderFlyInDuration)
             {

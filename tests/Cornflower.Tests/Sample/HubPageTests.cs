@@ -51,6 +51,7 @@ public class HubPageTests
         var hub = page.FindControl<Hub>("Hub")!;
         hub.ScrollToSection(hub.Sections[2]);
         scene.Window.UpdateLayout();
+        hub.Entrance.Finish();                                              // at rest, after its entrance
         _ = scene.Capture();
         var header = hub.Sections[2].GetTemplateDescendants().OfType<Control>().Single(c => c.Name == "PART_Header");
         var at = header.TranslatePoint(new Point(header.Bounds.Width / 2, header.Bounds.Height / 2), scene.Window)!.Value;

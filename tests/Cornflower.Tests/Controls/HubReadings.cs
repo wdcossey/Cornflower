@@ -107,4 +107,50 @@ internal static class HubReadings
 
     /// <summary>The header is at its place 27 frames (421.875 ms) after the jump.</summary>
     public const int FlyInFrames = 27;
+
+    // The loop backwards (#148, run 20261116-1751-dev11, -Probe hubrelease): a drag right at the first section. Section 1's
+    // left edge, frame by frame, the release on frame 0.
+
+    /// <summary>
+    /// A drag right of 150 px at the first section (section 1 at 143.87), held and let go: section 1's way back to its
+    /// place, as a fraction, from frame 2 after the release (frame 1 isn't in the log). At its place on frame 52.
+    /// </summary>
+    public static readonly double[] BackReturnFractions =
+    [
+        0.1631, 0.2447, 0.3299, 0.3937, 0.4620, 0.5182, 0.5690, 0.6166, 0.6558, 0.6930, 0.7283, 0.7566, 0.7824, 0.8083,
+        0.8284, 0.8475, 0.8647, 0.8795, 0.8933, 0.9059, 0.9158, 0.9253, 0.9344, 0.9418, 0.9485, 0.9548, 0.9607, 0.9653,
+        0.9700, 0.9738, 0.9773, 0.9806, 0.9832, 0.9858, 0.9878, 0.9899, 0.9914, 0.9930, 0.9943, 0.9954, 0.9962, 0.9970,
+        0.9977, 0.9983, 0.9987, 0.9991, 0.9994, 0.9996, 0.9998, 0.9999,
+    ];
+
+    /// <summary>
+    /// A swipe right (200 px in 150 ms) at the first section: the sections' carry right, as a fraction of the way from
+    /// where the finger left them to where the end shows them (L less the end, 404.58), frames 1 to 18; on frame 19 the
+    /// offset is the end. The phone stops 1 px short.
+    /// </summary>
+    public static readonly double[] BackLoopFractions =
+    [
+        0.2758, 0.4733, 0.6117, 0.7291, 0.8038, 0.8616, 0.8986, 0.9277, 0.9480, 0.9640, 0.9746, 0.9825, 0.9875, 0.9912,
+        0.9935, 0.9948, 0.9955, 0.9958,
+    ];
+
+    /// <summary>The header in that swipe: held on frames 0 to 2, then 15.996 px further right each frame.</summary>
+    public const double HeaderBackFlyOutPerFrame = 15.996;
+
+    /// <summary>On frame 30 the header is left of its place at the end by these, frame by frame, then at it.</summary>
+    public const int HeaderBackJumpFrame = 30;
+    public static readonly double[] HeaderBackFlyIn = [33.836, 6.509, 1.221, 0.198, 0];
+
+    /// <summary>
+    /// The entrance's RotationY on the first 12 ticks (#148, runs 20261116-1721-dev11 and -1811-, the same in every
+    /// placement); 0 on tick 64.
+    /// </summary>
+    public static readonly double[] EntranceAngles =
+        [-120, -111.584, -103.753, -96.466, -89.684, -83.373, -77.501, -72.036, -66.950, -62.218, -57.814, -53.716];
+
+    public const int EntranceTicks = 64;
+
+    /// <summary>A Hub placed with a brush is in BackgroundImageFadingIn until 88 to 92 ms after Loaded (#148).</summary>
+    public const double FadingInMin = 88;
+    public const double FadingInMax = 92;
 }
