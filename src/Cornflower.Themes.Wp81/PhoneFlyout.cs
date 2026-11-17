@@ -1,9 +1,6 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Threading;
 using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
@@ -21,6 +18,8 @@ namespace Cornflower.Themes.Wp81;
 /// <see cref="Popup"/> (its parent); the flyout is found as it opens, from <see cref="FlyoutBase.IsOpenProperty"/>,
 /// which a flyout sets before it opens its popup when shown with <c>ShowAt</c>, and after when opened by
 /// <c>IsOpen</c>: then the popup is placed again, before it is drawn.</para>
+/// <para>The binder is <see cref="PhoneHeldFlyout{TFlyout}"/>, made and let go of by <see cref="PhonePopupBinders{TPresenter, TFlyout, TBinder}"/>,
+/// which a picker shares (<see cref="PhonePickerFlyout"/>).</para>
 /// <para>A presenter outside a popup, or under a theme that doesn't turn this on, is Avalonia's own.</para>
 /// </remarks>
 internal static class PhoneFlyout
@@ -29,112 +28,22 @@ internal static class PhoneFlyout
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<FlyoutPresenter, bool>("IsEnabled", typeof(PhoneFlyout));
 
-    private static readonly ConditionalWeakTable<FlyoutPresenter, Binder> Binders = new();
-
-    static PhoneFlyout()
-    {
-        IsEnabledProperty.Changed.AddClassHandler<FlyoutPresenter>((presenter, change) =>
-        {
-            if (Binders.TryGetValue(presenter, out var old))
-            {
-                // From the dispatcher: a theme going unsets this first, and taking values off the presenter (and closing
-                // its flyout) in the middle of that would stop the rest being unset (CLAUDE.md, the Avalonia facts).
-                Binders.Remove(presenter);
-                Dispatcher.UIThread.Post(old.Dispose);
-            }
-
-            if (change.GetNewValue<bool>() && presenter.Parent is Popup popup)
-                Binders.Add(presenter, new Binder(presenter, popup));
-        });
-        FlyoutBase.IsOpenProperty.Changed.AddClassHandler<Flyout>((flyout, change) =>
-        {
-            if (change.GetNewValue<bool>() && flyout.Popup.Child is FlyoutPresenter presenter
-                && Binders.TryGetValue(presenter, out var binder))
-                binder.Bind(flyout);
-        });
-    }
+    private static readonly PhonePopupBinders<FlyoutPresenter, Flyout, PhoneHeldFlyout<Flyout>> Binders =
+        new(IsEnabledProperty, (presenter, popup) => new PhoneHeldFlyout<Flyout>(presenter, popup, Bind));
 
     public static bool GetIsEnabled(FlyoutPresenter presenter) => presenter.GetValue(IsEnabledProperty);
 
     public static void SetIsEnabled(FlyoutPresenter presenter, bool value) => presenter.SetValue(IsEnabledProperty, value);
 
     /// <summary>The host of one presenter's popup, if the theme has turned this on for it.</summary>
-    internal static PhonePopupHost? HostOf(FlyoutPresenter presenter) =>
-        Binders.TryGetValue(presenter, out var binder) ? binder.Host : null;
+    internal static PhonePopupHost? HostOf(FlyoutPresenter presenter) => Binders.Of(presenter)?.Host;
 
-    private sealed class Binder : IDisposable
+    /// <summary>The flyout opening its popup: its placement and its tap outside.</summary>
+    private static void Bind(PhoneHeldFlyout<Flyout> binder, Flyout flyout)
     {
-        private readonly Popup _popup;
-        private readonly bool _lightDismiss;
-        private Flyout? _flyout;
-        private bool _closing;
-
-        public Binder(FlyoutPresenter presenter, Popup popup)
-        {
-            _popup = popup;
-            _lightDismiss = popup.IsLightDismissEnabled;
-            Host = new PhonePopupHost(popup, presenter, Close);
-        }
-
-        public PhonePopupHost Host { get; }
-
-        /// <summary>
-        /// Lets go of the flyout, giving its popup back its light dismiss; one asked to close and still in its closing
-        /// motion closes now.
-        /// </summary>
-        public void Dispose()
-        {
-            var closing = Host.IsClosing;
-            Host.Dispose();
-            _popup.IsLightDismissEnabled = _lightDismiss;
-            if (closing)
-                Close();
-            if (_flyout is not null)
-                _flyout.Closing -= OnClosing;
-            _flyout = null;
-        }
-
-        /// <summary>The flyout opening this popup: its placement, its tap outside, and its closing.</summary>
-        public void Bind(Flyout flyout)
-        {
-            if (_flyout != flyout)
-            {
-                if (_flyout is not null)
-                    _flyout.Closing -= OnClosing;
-                _flyout = flyout;
-                _flyout.Closing += OnClosing;
-            }
-
-            Host.Placement = FlyoutOptions.GetIsFullScreen(flyout) ? PhonePopupPlacement.Full : PhonePopupPlacement.Top;
-            _popup.IsLightDismissEnabled = PhonePopupDismissal.FlyoutTapOutsideCloses;
-            if (!flyout.IsSet(PopupFlyoutBase.OverlayDismissEventPassThroughProperty))
-                _popup.OverlayDismissEventPassThrough = PhonePopupDismissal.TapOutsidePassesThrough;
-        }
-
-        /// <summary>Asked to close while open: not yet; the host's closing motion first, then <see cref="Close"/>.</summary>
-        private void OnClosing(object? sender, CancelEventArgs e)
-        {
-            if (_closing || e.Cancel || !Host.IsOpen)
-                return;
-            e.Cancel = true;
-            Host.Dismiss();
-        }
-
-        /// <summary>The closing motion is over: the flyout closes.</summary>
-        private void Close()
-        {
-            _closing = true;
-            try
-            {
-                if (_flyout is not null)
-                    _flyout.Hide();
-                else
-                    _popup.Close();
-            }
-            finally
-            {
-                _closing = false;
-            }
-        }
+        binder.Host.Placement = FlyoutOptions.GetIsFullScreen(flyout) ? PhonePopupPlacement.Full : PhonePopupPlacement.Top;
+        binder.Popup.IsLightDismissEnabled = PhonePopupDismissal.FlyoutTapOutsideCloses;
+        if (!flyout.IsSet(PopupFlyoutBase.OverlayDismissEventPassThroughProperty))
+            binder.Popup.OverlayDismissEventPassThrough = PhonePopupDismissal.TapOutsidePassesThrough;
     }
 }

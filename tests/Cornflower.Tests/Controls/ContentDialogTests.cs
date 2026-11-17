@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
@@ -397,7 +395,7 @@ public class ContentDialogTests
         stage.At(first + OpenTicks * Tick);
         Assert.Null(stage.Bands);
         Assert.Equal(1, stage.Dialog.Opacity);
-        Assert.Equal(OpenTicks * Tick, PhoneContentDialog.OpenLength.TotalMilliseconds);
+        Assert.Equal(OpenTicks * Tick, PhonePopupMotion.DialogOpenLength.TotalMilliseconds);
     }
 
     [AvaloniaFact]
@@ -429,7 +427,7 @@ public class ContentDialogTests
         using var frame = stage.Scene.Capture();
         Assert.Equal(Colors.White, Frames.PixelAt(frame, 1070, 5));
         Assert.Equal(Colors.White, Frames.PixelAt(frame, 1070, 1900));
-        Assert.InRange(PhoneContentDialog.GoneAfter.TotalMilliseconds, GoneFrom, GoneBy);
+        Assert.InRange(PhonePopupMotion.DialogGoneAfter.TotalMilliseconds, GoneFrom, GoneBy);
     }
 
     [AvaloniaFact]
@@ -643,7 +641,7 @@ public class ContentDialogTests
     [AvaloniaFact]
     public void Back_Kept_Open_By_Closing_Is_Still_Taken()
     {
-        // Even with a Flyout shown first, whose host takes Back for every popup: the dialog's handler comes before it.
+        // Even with a Flyout shown first: the hosts' one Back handler gives Back to the dialog, which asks the app.
         var flyout = new FlyoutTests.Stage();
         try
         {
@@ -655,11 +653,6 @@ public class ContentDialogTests
         {
             flyout.Dispose();
         }
-
-        // Which comes first can't be shown in one test process, where whichever was made first stays: so the handler is
-        // added as the module loads, before any host can be made.
-        var take = typeof(PhoneContentDialog).GetMethod(nameof(PhoneContentDialog.TakeBack), BindingFlags.Static | BindingFlags.NonPublic);
-        Assert.NotNull(take!.GetCustomAttribute<ModuleInitializerAttribute>());
 
         using var stage = new Stage();
         stage.Dialog.Closing += (_, e) => e.Cancel = true;
@@ -934,13 +927,6 @@ public class ContentDialogTests
 
         stage.Back();
         Assert.Equal(ContentDialogResult.None, Done(stage.Result));
-    }
-
-    [AvaloniaFact]
-    public void The_Dialog_Goes_Before_The_Host_Would_Hide_It()
-    {
-        // The binder closes the popup itself; the host's own close, which it pre-empts, comes later.
-        Assert.True(PhoneContentDialog.GoneAfter < PhonePopupMotion.TopGoneAfter);
     }
 
     [AvaloniaFact]

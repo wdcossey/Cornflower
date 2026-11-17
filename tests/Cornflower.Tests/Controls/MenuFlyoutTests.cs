@@ -619,6 +619,30 @@ public class MenuFlyoutTests
     }
 
     [AvaloniaFact]
+    public void Back_Kept_Open_By_The_Apps_Closing_Asks_Once_And_Leaves_The_Menu_Shown()
+    {
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        var closings = 0;
+        stage.Flyout.Closing += (_, e) =>
+        {
+            closings++;
+            e.Cancel = true;
+        };
+
+        var request = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+        stage.Scene.Window.RaiseEvent(request);
+        Assert.True(request.Handled);
+        Assert.Equal(1, closings);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+
+        // Asked once: the host isn't left closing, to close the menu again later.
+        Assert.Equal(1, closings);
+        Assert.True(stage.Flyout.IsOpen);
+        Assert.False(PhoneMenuFlyout.HostOf(stage.Presenter)!.IsClosing);
+    }
+
+    [AvaloniaFact]
     public void Turned_Off_And_On_Again_It_Keeps_The_Menu_Hosted()
     {
         // The old binder lets go from the dispatcher: the new one is made after it has given the popup back what its

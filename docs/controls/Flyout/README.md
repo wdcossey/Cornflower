@@ -68,20 +68,32 @@ the date and time pickers (#156) host their popups the same way, through these i
   - opens and closes it in bands: on a motion's first frame it takes a picture of the popup, lays it over the popup
     cut into bands (`PhonePopupBands`), hides the popup under them, and turns each band; at rest both go. It closes
     through `Dismiss()`: the closing motion, then the owner's close. Close through `Dismiss()`, not the popup:
-    anything else that closes it ends the motion where it is;
+    anything else that closes it ends the motion where it is. A full popup's bands are its `Rows` (the Flyout's
+    100 px by default; the list picker's `PhonePopupMotion.ListPickerRows`); a top popup's band turns by its `Swing`
+    (the Flyout's by default; the ContentDialog's `PhonePopupMotion.DialogSwing`, which also sets when it goes and is
+    closed). `Moves` false is for a popup with a motion of its own (the MenuFlyout's): it opens at rest and
+    `Dismiss()` closes it at once;
   - takes Back: a class handler on `TopLevel.BackRequestedEvent` runs before any handler an element adds (Avalonia's
-    `PageNavigationHost`'s included), dismisses the window's topmost open host that isn't already closing, and marks
-    the request handled; while it closes, Back is taken and does nothing, as the phone raises no Back of the app's
-    while a popup is open (#150);
+    `PageNavigationHost`'s included). It first leaves Back to a focused element that takes it
+    (`PhonePopupHost.TakeBackFirst`: an AutoSuggestBox's, `PhonePopupDismissal.BackTakesFocusFirst`); else it
+    dismisses the window's topmost open host, or gives Back to that host's owner if it set `Back` (the ContentDialog,
+    which asks its app first), and marks the request handled; while it closes, Back is taken and does nothing, as the
+    phone raises no Back of the app's while a popup is open (#150). It is the one Back handler of the phone's popups;
+  - gives its `Window` and `Area` (the window's client area inside the safe area, `PhonePopupHost.AreaOf` for any
+    window) while open, and raises `Resized` after sizing the popup to the window again, for an owner that places
+    the popup itself (the MenuFlyout, against its target);
   - sets `PhonePopupHost.IsLandscape` on the moved element while the window is wider than tall, for a theme's
     landscape values.
 - **`PhonePopupMotion`**: the bands and their turns, as #149 read them: the band matrix (a turn about a band's centre
-  line, seen from one camera over the window), the rates, the stagger and the times. The pickers' rows are bands of
-  their own heights and rates (#149 read them too); a popup with a motion of its own adds its
-  own beside it.
+  line, seen from one camera over the window), the rates, the stagger and the times; the rows (`PhonePopupRows`) and
+  swings (`PhonePopupSwing`) of the popups whose bands aren't the Flyout's. The date and time pickers' 160 px rows go
+  beside the list picker's.
 - **`PhonePopupDismissal`**: the rules (Back, a tap outside, a tap on the dim layer). The one place for #150's answers.
-- **`PhoneFlyout`**: how an Avalonia flyout is hooked to a host from its presenter's theme, holding the flyout's
-  `Closing` until the motion ends. A `PopupFlyoutBase` (MenuFlyout, a picker flyout) copies it with its own presenter.
+- **`PhoneFlyout`**: how an Avalonia flyout is hooked to a host from its presenter's theme. Its binder,
+  `PhoneHeldFlyout`, holds the flyout's `Closing` until the motion ends; `PhonePopupBinders` makes one for each
+  presenter its theme turns on and lets it go from the dispatcher, the new one after the old has given the popup
+  back. A `PopupFlyoutBase` uses both with its own presenter and flyout types (`PhonePickerFlyout`; `PhoneMenuFlyout`
+  with a binder of its own, as nothing is held).
 
 ## Extensions
 

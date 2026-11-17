@@ -24,10 +24,11 @@ namespace Cornflower.Themes.Wp81;
 /// <c>MaxSuggestionListHeight</c>). Worked out as it opens, and again while it is open when the keyboard, the window,
 /// its safe area or the page's layout changes, the list placed again under the box if the page moved it.</para>
 /// <para><b>Back and the keyboard.</b> On the phone one Back hides the keyboard, closes the list and takes the focus from
-/// the box, in one frame, and the next Back reaches the app (#150). Here a class handler on
-/// <see cref="TopLevel.BackRequestedEvent"/> does it for a box that has the focus: it closes the list, clears the focus
-/// and marks Back handled, so the page's <c>NavigationPage</c> doesn't go back. On Android the keyboard takes the first
-/// Back itself and Avalonia never sees it; so the keyboard going down while the box has the focus does the same.</para>
+/// the box, in one frame, and the next Back reaches the app (#150). Here the phone popups' Back handler
+/// (<see cref="PhonePopupHost.TakeBackFirst"/>, <see cref="PhonePopupDismissal.BackTakesFocusFirst"/>) does it for a
+/// box that has the focus, before any popup: it closes the list, clears the focus and marks Back handled, so neither a
+/// popup the box is in nor the page's <c>NavigationPage</c> takes it. On Android the keyboard takes the first Back
+/// itself and Avalonia never sees it; so the keyboard going down while the box has the focus does the same.</para>
 /// <para><b>A tap on a suggestion</b> closes the list and leaves the focus in the box, so the keyboard stays, as on the
 /// phone: the template's list and its items take no focus, and the list is closed here as the release selects.</para>
 /// <para>The page doesn't move up to put the box at the window's top, as the phone's does: that is the shell's, and
@@ -67,20 +68,20 @@ internal static class PhoneSuggestionList
             if (change.GetNewValue<bool>())
                 box.SetValue(HoldProperty, new Hold(box));
         });
-        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
+        PhonePopupHost.TakeBackFirst(TakesBack);
     }
 
     public static bool GetIsEnabled(AutoCompleteBox box) => box.GetValue(IsEnabledProperty);
 
     public static void SetIsEnabled(AutoCompleteBox box, bool value) => box.SetValue(IsEnabledProperty, value);
 
-    /// <summary>Back while a box of ours has the focus: close its list, take its focus, and leave the page alone.</summary>
-    private static void OnBackRequested(TopLevel top, RoutedEventArgs e)
+    /// <summary>Back while a box of ours has the focus: close its list and take its focus; Back is taken.</summary>
+    private static bool TakesBack(TopLevel top)
     {
-        if (e.Handled || BoxWithFocus(top) is not { } box)
-            return;
-        e.Handled = true;
+        if (BoxWithFocus(top) is not { } box)
+            return false;
         LetGo(box);
+        return true;
     }
 
     /// <summary>The box of ours that has the focus in the top level, if one has.</summary>
@@ -262,7 +263,7 @@ internal static class PhoneSuggestionList
             _popup.VerticalOffset = offset;
             _placedAt = below;
             var top = below.Y + offset;
-            var bottom = new Rect(_top.ClientSize).Deflate(_top.InsetsManager?.SafeAreaPadding ?? default).Bottom;
+            var bottom = PhonePopupHost.AreaOf(_top).Bottom;
             if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0
                 && keyboard.Occluded.Top - KeyboardGap - top >= OneSuggestion)
                 bottom = Math.Min(bottom, keyboard.Occluded.Top);

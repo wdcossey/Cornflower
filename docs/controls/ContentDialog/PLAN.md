@@ -77,8 +77,8 @@ Each has its test in `tests/Cornflower.Tests/Controls/ContentDialogTests.cs`, ag
 |---|---|---|
 | Avalonia has no ContentDialog | 5 | `ContentDialog : ContentControl` in `Cornflower.Controls`, WinRT's API; `ShowAsync` returns a `Task<ContentDialogResult>` |
 | The phone shows it in its one window | 2 | the control opens a `Popup` with itself as child, in the target window's logical tree; Wp81's `PhoneContentDialog` hosts it in a `PhonePopupHost` (placement Top, the dim layer, Back) |
-| The dialog's opening is not the Flyout's (45° on an ease, not 80° linear) | 2 | `PhoneContentDialog` sets the band's angle over the host's each frame, after it |
-| The dialog's close is gone at about 107 ms with its dim; `Closed` at once | 2 | the control raises its events and completes at once, then asks the theme's `CloseMotion`; the theme closes the popup 107.5 ms later |
+| The dialog's opening is not the Flyout's (45° on an ease, not 80° linear) | 2 | the host takes the dialog's swing (`PhonePopupMotion.DialogSwing`); until the shared host change, `PhoneContentDialog` set the band's angle over the host's each frame |
+| The dialog's close is gone at about 107 ms with its dim; `Closed` at once | 2 | the control raises its events and completes at once, then asks the theme's `CloseMotion`; the host closes the popup 107.5 ms later, the swing's `GoneAfter` and `ClosedAfter` |
 | The shell draws the full dialog's buttons in a bar of its own (a CommandBar in the tree) | 2 | `PhoneContentDialogPanel`, the template's `ContentPanel`, places the dialog's own hosts in the bar's slots: the same Buttons, larger outlines |
 | WinRT's `ShowAsync()` takes no window | 5 | `ShowAsync()` uses the app's lifetime (the active or main window, or the single view); `ShowAsync(TopLevel)` names one (an extension) |
 | WinRT's handlers are `TypedEventHandler<ContentDialog, …>` | 5 | `EventHandler<…>`, the sender the dialog |

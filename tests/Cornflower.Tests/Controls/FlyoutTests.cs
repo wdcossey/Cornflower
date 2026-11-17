@@ -265,7 +265,7 @@ public class FlyoutTests
         stage.At(first + 9 * Tick);
         Assert.Null(stage.Bands);
         Assert.Equal(1, stage.Presenter.Opacity);
-        Assert.InRange(PhonePopupMotion.OpenLength(PhonePopupPlacement.Top).TotalMilliseconds, 134, 135);
+        Assert.InRange(PhonePopupMotion.FlyoutSwing.OpenLength.TotalMilliseconds, 134, 135);
     }
 
     [AvaloniaFact]
@@ -381,7 +381,7 @@ public class FlyoutTests
         }
 
         // At rest when the last piece is drawn.
-        Assert.Equal(Reveal[^1].At, PhonePopupMotion.OpenLength(PhonePopupPlacement.Full).TotalMilliseconds);
+        Assert.Equal(Reveal[^1].At, PhonePopupMotion.OpenLength(PhonePopupMotion.FlyoutRows).TotalMilliseconds);
         Assert.Null(stage.Bands);
     }
 
@@ -855,6 +855,26 @@ public class FlyoutTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(host.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void Turned_Off_And_On_Again_It_Keeps_The_Flyout_Hosted()
+    {
+        // The old binder lets go from the dispatcher: the new one is made after it has given the popup back what its
+        // host set, so the new host doesn't take those values for the popup's own and lose them.
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        stage.Flyout.Hide();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+
+        PhoneFlyout.SetIsEnabled(stage.Presenter, false);
+        PhoneFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+        stage.Open();
+
+        Assert.NotNull(PhoneFlyout.HostOf(stage.Presenter));
+        Assert.True(stage.Flyout.Popup.ShouldUseOverlayLayer);
+        Assert.NotNull(stage.Bands);
     }
 
     [AvaloniaFact]

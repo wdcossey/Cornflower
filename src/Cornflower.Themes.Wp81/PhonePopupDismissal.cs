@@ -18,6 +18,12 @@ internal static class PhonePopupDismissal
     /// <summary>The Back key closes the topmost popup, before the page or its Frame sees it.</summary>
     internal const bool BackCloses = true;
 
+    /// <summary>
+    /// A focused element that takes Back has it before any popup: one Back hides the keyboard, closes an
+    /// AutoSuggestBox's list and takes the focus; the next reaches the popup, or the app (#150).
+    /// </summary>
+    internal const bool BackTakesFocusFirst = true;
+
     /// <summary>A tap outside a Flyout (below a top one) closes it: Avalonia's light dismiss.</summary>
     internal const bool FlyoutTapOutsideCloses = true;
 

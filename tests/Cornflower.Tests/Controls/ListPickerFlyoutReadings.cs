@@ -77,4 +77,18 @@ internal static class ListPickerFlyoutReadings
     public const double MultipleClosedAfterAccept = 483;
 
     public const double PickerClosedAfterAccept = 323;
+
+    /// <summary>
+    /// The list picker's bands (#149, run <c>20261116-1835-dev11</c>): its rows, the header and each item, 66.7 px
+    /// (800 / 12), from 80°; rows 0 to 4 at about 12.5, 9.6, 7.8, 6.6 and 5.7° a tick, the rest drawn at rest.
+    /// </summary>
+    public const double ListPickerRowHeight = 800.0 / 12;
+
+    public static readonly double[] ListPickerRowRates = [12.5, 9.6, 7.8, 6.6, 5.7];
+
+    /// <summary>Closing, twelve bands two ticks apart at 10.95° a tick: the ListPickerFlyout's <c>Closed</c> at 30 ticks (468.8 ms).</summary>
+    public const int ListPickerClosedTicks = 30;
+
+    /// <summary>The PickerFlyout's are the full Flyout's: <c>Closed</c> at 22 ticks.</summary>
+    public const int PickerClosedTicks = 22;
 }
