@@ -439,9 +439,10 @@ public class ListPickerFlyoutTests
         Assert.Equal(3, picker.SelectedIndex);
         Assert.Equal("four", picker.SelectedItem);
         Assert.Equal(["four"], picker.SelectedItems);
-        // Closed when the closing motion has run: the full popup's, 22 ticks (the phone's list picker: 447 ms).
+        // Closed when the closing motion has run: the list picker's twelve bands, 30 ticks (the phone's: 447 ms).
+        stage.At(stage.FirstFrameAfter(tap) + (ListPickerClosedTicks - 1) * Tick);
         Assert.True(picker.Popup.IsOpen);
-        stage.At(stage.FirstFrameAfter(tap) + 22 * Tick);
+        stage.At(stage.FirstFrameAfter(tap) + ListPickerClosedTicks * Tick);
         Assert.False(picker.Popup.IsOpen);
         Assert.Equal("Closed", log.Names.Last());
     }
@@ -477,7 +478,7 @@ public class ListPickerFlyoutTests
         Assert.Equal(["one"], picker.SelectedItems);
         Assert.Equal(0, picker.SelectedIndex);
         Assert.Equal("one", picker.SelectedItem);
-        stage.At(stage.FirstFrameAfter(accept) + 22 * Tick);
+        stage.At(stage.FirstFrameAfter(accept) + ListPickerClosedTicks * Tick);
         Assert.False(picker.Popup.IsOpen);
     }
 
@@ -512,7 +513,7 @@ public class ListPickerFlyoutTests
         }
 
         Assert.False(result.IsCompleted);
-        stage.At(stage.FirstFrameAfter(at) + 22 * Tick);
+        stage.At(stage.FirstFrameAfter(at) + ListPickerClosedTicks * Tick);
         Assert.False(picker.Popup.IsOpen);
         Assert.True(result.IsCompleted);
         Assert.Null(Done(result));
@@ -568,7 +569,9 @@ public class ListPickerFlyoutTests
             Assert.False(result.IsCompleted);
         }
 
-        stage.At(stage.FirstFrameAfter(at) + 22 * Tick);
+        stage.At(stage.FirstFrameAfter(at) + (PickerClosedTicks - 1) * Tick);
+        Assert.True(picker.Popup.IsOpen);
+        stage.At(stage.FirstFrameAfter(at) + PickerClosedTicks * Tick);
         Assert.False(picker.Popup.IsOpen);
         Assert.True(result.IsCompleted);
         Assert.Equal(how == "accept", Done(result));
@@ -885,9 +888,9 @@ public class ListPickerFlyoutTests
     // ---- The motion ----
 
     [AvaloniaFact]
-    public void A_Picker_Opens_And_Closes_As_The_Full_Flyout_Does()
+    public void A_Picker_Flyout_Opens_And_Closes_As_The_Full_Flyout_Does()
     {
-        using var stage = new Stage(ListPicker());
+        using var stage = new Stage(Picker());
         stage.Open();
         var first = stage.FirstFrameAfter(0);
 
@@ -905,6 +908,132 @@ public class ListPickerFlyoutTests
         stage.At(stage.FirstFrameAfter(hidden) + 4 * Tick);
         Assert.Equal(-10.95 * 4, stage.Bands!.Angles[0], 1e-9);
         Assert.Equal(-10.95 * 2, stage.Bands.Angles[1], 1e-9);
+    }
+
+    [AvaloniaFact]
+    public void The_List_Picker_Opens_In_Its_Rows_The_Top_Five_Turning_Slower_Down_The_List()
+    {
+        using var stage = new Stage(ListPicker());
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+
+        stage.At(first);
+        var bands = Assert.IsType<PhonePopupBands>(stage.Bands);
+        Assert.Equal(12, bands.Bands.Count);
+        Assert.All(bands.Bands, b => Assert.Equal(ListPickerRowHeight, b.Height, 1e-9));
+        Assert.Equal(800, bands.Bands[^1].Bottom, 1e-9);
+        Assert.All(bands.Angles.Take(5), a => Assert.Equal(80, a, 1e-9));
+        Assert.All(bands.Angles.Skip(5), a => Assert.Equal(0, a));
+        // Below the five turning rows nothing is drawn yet.
+        Assert.Equal(5 * ListPickerRowHeight, bands.RevealedTo, 1e-9);
+
+        for (var tick = 1; tick <= 6; tick++)
+        {
+            stage.At(first + tick * Tick);
+            for (var row = 0; row < ListPickerRowRates.Length; row++)
+                Assert.Equal(Math.Max(0, 80 - ListPickerRowRates[row] * tick), stage.Bands!.Angles[row], 1e-9);
+        }
+
+        // Below its rows, the Flyout's steps (428, 551 and 673 of 800, below its 400) scaled to the rows' 333.
+        double Scaled(double to) => 5 * ListPickerRowHeight + (to - 400) * (800 - 5 * ListPickerRowHeight) / 400;
+        stage.At(first + 8 * Tick);
+        Assert.Equal(Scaled(428), stage.Bands!.RevealedTo, 1e-9);
+
+        // The slowest row, 5.7° a tick, is at rest after 14 ticks; the rest is all revealed at 269 ms, as the Flyout's,
+        // so the popup is at rest on the first frame after it (tick 18).
+        stage.At(first + 15 * Tick);
+        Assert.All(stage.Bands!.Angles, a => Assert.Equal(0, a));
+        stage.At(first + 17 * Tick);
+        Assert.Equal(Scaled(673), stage.Bands!.RevealedTo, 1e-9);
+        stage.At(first + 18 * Tick);
+        Assert.Null(stage.Bands);
+    }
+
+    [AvaloniaFact]
+    public void The_List_Picker_Closes_In_Twelve_Bands_Closed_At_30_Ticks()
+    {
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+        var hidden = stage.Now;
+        stage.Picker.Hide();
+        var first = stage.FirstFrameAfter(hidden);
+
+        stage.At(first + 4 * Tick);
+        Assert.Equal(12, stage.Bands!.Bands.Count);
+        Assert.Equal(-10.95 * 4, stage.Bands.Angles[0], 1e-9);
+        Assert.Equal(-10.95 * 2, stage.Bands.Angles[1], 1e-9);
+        Assert.Equal(0, stage.Bands.Angles[2], 1e-9);
+
+        // The last band starts 22 ticks in and is gone 8.2 ticks later: closed on the 30th, as the phone's.
+        stage.At(first + (ListPickerClosedTicks - 1) * Tick);
+        Assert.True(stage.Picker.Popup.IsOpen);
+        stage.At(first + ListPickerClosedTicks * Tick);
+        Assert.False(stage.Picker.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void Resized_Mid_Close_It_Still_Closes_At_30_Ticks()
+    {
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+        var hidden = stage.Now;
+        stage.Picker.Hide();
+        var first = stage.FirstFrameAfter(hidden);
+        stage.At(first + 10 * Tick);
+
+        // The bands are dropped and cut again; the close keeps its twelve bands' length.
+        stage.Scene.Window.Width = 400;
+        Dispatcher.UIThread.RunJobs();
+        stage.At(first + 11 * Tick);
+        stage.At(first + (ListPickerClosedTicks - 1) * Tick);
+        Assert.True(stage.Picker.Popup.IsOpen);
+        stage.At(first + ListPickerClosedTicks * Tick);
+        Assert.False(stage.Picker.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Height_Just_Over_Twelve_Rows_Makes_No_Sliver_Row()
+    {
+        // A height rounded to the device's pixels, a fraction over: the last row takes it.
+        using var stage = new Stage(ListPicker(), height: 800.5);
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0));
+        var bands = stage.Bands!.Bands;
+        Assert.Equal(12, bands.Count);
+        Assert.Equal(stage.Presenter.Bounds.Height, bands[^1].Bottom, 1e-9);
+    }
+
+    [AvaloniaFact]
+    public void Turned_Off_And_On_While_Open_The_New_Host_Cuts_It_Full_In_Its_Rows()
+    {
+        // Placed full before the open picker's opening starts, and given its rows with the flyout: no frame of a top band.
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, false);
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(12, stage.Bands!.Bands.Count);
+    }
+
+    [AvaloniaFact]
+    public void Turned_Off_And_On_Again_It_Keeps_The_Picker_Hosted()
+    {
+        // As the Flyout's: the new binder is made after the old has given the popup back what its host set.
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+        stage.Picker.Hide();
+        stage.At(stage.Now + 600);
+
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, false);
+        PhonePickerFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+        stage.Open();
+
+        Assert.NotNull(PhonePickerFlyout.HostOf(stage.Presenter));
+        Assert.True(stage.Picker.Popup.ShouldUseOverlayLayer);
+        Assert.Equal(12, stage.Bands!.Bands.Count);
     }
 
     [AvaloniaFact]

@@ -1,6 +1,6 @@
 # ListPickerFlyout, PickerFlyout and their presenters, and the pickers' bar
 
-Status: done but for the list picker's own rows motion and the device and real-window runs · [#153](https://github.com/wdcossey/CornflowerUI/issues/153) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done but for the device and real-window runs · [#153](https://github.com/wdcossey/CornflowerUI/issues/153) · owed: the device run on the Pixel 8 · owed: the real-window run
 
 The Windows Phone 8.1 full-screen pickers: Cornflower's `ListPickerFlyout` and `PickerFlyout` (on Avalonia's
 `PopupFlyoutBase`) and their presenters, `ListPickerFlyoutPresenter` and `PickerFlyoutPresenter` (on Avalonia's
@@ -45,7 +45,10 @@ They are flyouts, so `<Button.Flyout><cf:ListPickerFlyout ... /></Button.Flyout>
 - **The list picker's items**: Wp81's ListView, each item 39.17 tall with 19 under it, its text `PhoneFontFamilySemiLight`
   25.5; in Multiple a 25.5 check box at the left, the text beside it. An 80 footer under the last item.
 - **The bar** shows in Multiple and with `ConfirmationButtonsVisible`; then the content ends at its top.
-- **Opening and closing**: the full Flyout's bands (PickerFlyout's, as #149 read it), Back closing it ahead of the page.
+- **Opening and closing**: the PickerFlyout's are the full Flyout's bands, as #149 read it. The list picker's are its
+  rows, 66.7 px, rows 0 to 4 turning from 80° at 12.5, 9.6, 7.8, 6.6 and 5.7° a tick and the rest revealed downwards;
+  it closes in twelve bands at the reference's 800 px, `Closed` at 30 ticks (468.8 ms); a shorter picker has fewer
+  and closes sooner. Back closes either ahead of the page.
 
 ## The pickers' bar
 
@@ -116,11 +119,9 @@ Rung 5 for the four types and `PickerFlyoutBase` (Avalonia has none); rung 1 for
 
 ## Known gaps
 
-- **The list picker's motion is the full Flyout's.** The phone turns a list picker in 66.7 px rows, rows 0 to 4 at
-  about 12.5, 9.6, 7.8, 6.6 and 5.7° a tick, and closes it in twelve bands, `Closed` at 30 ticks (468.8 ms). Ours
-  turns 100 px bands at the Flyout's rates and closes at 22 ticks (343.8 ms): `PhonePopupHost` has one band motion
-  for a full popup. The change it needs is proposed for the shared files (#153's PR); the date and time pickers (#156)
-  need it too, for their 160 px rows at those rates.
+- **The list picker's reveal** below its five turning rows takes the Flyout's steps, scaled to the rows below 333 px,
+  all of it at 269 ms; #149 read the list picker's fill only as "the background fills downwards", done by about
+  367 ms. The rows are 66.7 px slices from the popup's top, not the header's and each item's own heights.
 - **`Closed` after accept** comes at 343.8 ms; the phone's PickerFlyout's at 323 (318 after Back): as the Flyout's.
 - **The bar is part of the picker**, not a popup of its own: it turns with the picker's bands. The phone's date picker
   draws its bar last, by 400 ms; the list pickers' wasn't read.

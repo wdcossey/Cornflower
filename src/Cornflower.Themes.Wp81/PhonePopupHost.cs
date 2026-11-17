@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
@@ -49,17 +50,23 @@ internal enum PhonePopupPlacement
 /// otherwise. (The MenuFlyout's full-window layer is a tap outside: Avalonia's light dismiss, with no dim.)</para>
 /// <para><b>Moving.</b> As the phone's shell does (<see cref="PhonePopupMotion"/>): on a motion's first frame a picture of
 /// the popup is taken and laid over it, cut into bands (<see cref="PhonePopupBands"/>), each turned about its own
-/// centre line, the popup hidden under them at animation priority; at rest both go. Closing goes through
+/// centre line, the popup hidden under them at animation priority; at rest both go. A full popup's bands are its
+/// <see cref="Rows"/>; a top popup's one band turns by its <see cref="Swing"/>. Closing goes through
 /// <see cref="Dismiss"/>, which runs the closing motion and then calls the owner's close; anything that closes the
-/// popup another way ends the motion where it is.</para>
+/// popup another way ends the motion where it is. A popup with a motion of its own (<see cref="Moves"/> false) opens
+/// at rest and is closed at once.</para>
 /// <para><b>Back.</b> A class handler on <see cref="TopLevel.BackRequestedEvent"/>, which runs before any handler an
 /// element adds (Avalonia's <c>PageNavigationHost</c>'s, which passes Back to its <c>NavigationPage</c>, included),
-/// dismisses the window's topmost open host and marks the request handled; while it is closing Back is taken and does
-/// nothing, as the phone raises no Back of the app's while a popup is open (#150).</para>
+/// first leaves Back to a focused element that takes it (<see cref="TakeBackFirst"/>, as
+/// <see cref="PhonePopupDismissal.BackTakesFocusFirst"/> has it); else it dismisses the window's topmost open host, or
+/// gives Back to that host's owner (<see cref="Back"/>), and marks the request handled. While the host is closing, Back
+/// is taken and does nothing, as the phone raises no Back of the app's while a popup is open (#150). It is the phone
+/// popups' one Back handler, so their order doesn't hang on which type was made first.</para>
 /// <para>What the host sets on the popup (its overlay layer, placement and size) it gives back when it is disposed: each
 /// value the popup had before, or none.</para>
 /// <para>To copy: make a host for the popup with its content (the element the motion moves) and the owner's close, set
-/// <see cref="Placement"/> and <see cref="Dim"/>, and close through <see cref="Dismiss"/>.</para>
+/// <see cref="Placement"/> and <see cref="Dim"/> (and <see cref="Rows"/>, <see cref="Swing"/>, <see cref="Moves"/> or
+/// <see cref="Back"/> where the popup's own differ), and close through <see cref="Dismiss"/>.</para>
 /// </remarks>
 internal sealed class PhonePopupHost : IDisposable
 {
@@ -69,6 +76,9 @@ internal sealed class PhonePopupHost : IDisposable
 
     /// <summary>The hosts open now, in the order they opened: Back takes its window's last.</summary>
     private static readonly List<PhonePopupHost> Open = [];
+
+    /// <summary>What takes Back before the popups: a focused element's (<see cref="TakeBackFirst"/>).</summary>
+    private static readonly List<Func<TopLevel, PhonePopupHost?, bool>> FocusTakers = [];
 
     /// <summary>What the host sets on the popup, given back as it was when the host is disposed.</summary>
     private static readonly AvaloniaProperty[] Taken =
@@ -84,6 +94,7 @@ internal sealed class PhonePopupHost : IDisposable
     private readonly Action _close;
     private readonly List<(AvaloniaProperty Property, object? Value)> _given = [];
     private PhonePopupPlacement _placement;
+    private PhonePopupRows _rows = PhonePopupMotion.FlyoutRows;
     private TopLevel? _top;
     private IInsetsManager? _insets;
     private Rectangle? _dim;
@@ -97,15 +108,14 @@ internal sealed class PhonePopupHost : IDisposable
     private double _closeRevealedTo = double.PositiveInfinity;
     private Phase _phase;
 
-    static PhonePopupHost()
-    {
-        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
-    }
-
     /// <param name="popup">The popup.</param>
     /// <param name="content">What the motion moves: the popup's child, or the part of it that is drawn.</param>
     /// <param name="close">The owner's close, which the closing motion ends with.</param>
-    public PhonePopupHost(Popup popup, Control content, Action close)
+    /// <param name="setUp">
+    /// The owner's settings (<see cref="Placement"/>, <see cref="Rows"/>, <see cref="Swing"/>, <see cref="Moves"/>,
+    /// <see cref="Back"/>), given before the opening of a popup already open starts.
+    /// </param>
+    public PhonePopupHost(Popup popup, Control content, Action close, Action<PhonePopupHost>? setUp = null)
     {
         _popup = popup;
         _content = content;
@@ -116,6 +126,7 @@ internal sealed class PhonePopupHost : IDisposable
                 ? popup.GetValue(property)
                 : AvaloniaProperty.UnsetValue));
         _popup.ShouldUseOverlayLayer = true;
+        setUp?.Invoke(this);
         _popup.Opened += OnOpened;
         _popup.Closed += OnClosed;
         if (_popup.IsOpen)
@@ -147,6 +158,52 @@ internal sealed class PhonePopupHost : IDisposable
     /// <summary>What dims the window under the popup while it is open; none by default.</summary>
     public IBrush? Dim { get; set; }
 
+    /// <summary>
+    /// A full popup's bands: the Flyout's by default (<see cref="PhonePopupMotion.FlyoutRows"/>), a list picker's
+    /// <see cref="PhonePopupMotion.ListPickerRows"/>. Set mid-motion, the popup is cut again on the next frame.
+    /// </summary>
+    public PhonePopupRows Rows
+    {
+        get => _rows;
+        set
+        {
+            if (_rows == value)
+                return;
+            _rows = value;
+            if (_bands is null || _placement != PhonePopupPlacement.Full)
+                return;
+            DropBands();
+            // Before the first frame, cut again now, so no frame shows the popup hidden with no bands over it.
+            if (_phase == Phase.Opening && _start is null)
+                Turn(TimeSpan.Zero);
+        }
+    }
+
+    /// <summary>A top popup's swing: the Flyout's by default (<see cref="PhonePopupMotion.FlyoutSwing"/>).</summary>
+    public PhonePopupSwing Swing { get; set; } = PhonePopupMotion.FlyoutSwing;
+
+    /// <summary>
+    /// Whether the host opens and closes the popup in bands; false for a popup with a motion of its own (the
+    /// MenuFlyout's): it opens at rest, and <see cref="Dismiss"/> calls the owner's close at once.
+    /// </summary>
+    public bool Moves { get; set; } = true;
+
+    /// <summary>
+    /// What Back does when this is its window's topmost popup, in place of <see cref="Dismiss"/>: for an owner that
+    /// asks its app first (the ContentDialog's <c>Hide()</c>, whose <c>Closing</c> may keep it open). Back is taken
+    /// either way; while the host is closing it does nothing.
+    /// </summary>
+    public Action? Back { get; set; }
+
+    /// <summary>The window the popup is shown over, while it is open.</summary>
+    public TopLevel? Window => _top;
+
+    /// <summary>The window's area for the popup while it is open (<see cref="AreaOf"/>); empty when it isn't.</summary>
+    public Rect Area => _top is null ? default : AreaOf(_top);
+
+    /// <summary>Raised after the host has sized the popup to its window, as it opens and as the window's size or safe area changes.</summary>
+    public event EventHandler? Resized;
+
     /// <summary>Whether the popup is open, opening or not yet closed.</summary>
     public bool IsOpen => _phase != Phase.Closed;
 
@@ -157,6 +214,31 @@ internal sealed class PhonePopupHost : IDisposable
     internal PhonePopupBands? Bands => _bands;
 
     public static bool GetIsLandscape(Control control) => control.GetValue(IsLandscapeProperty);
+
+    /// <summary>A window's area for a popup, or for a list hung below a box: its client area inside the safe area.</summary>
+    internal static Rect AreaOf(TopLevel top) =>
+        new Rect(top.ClientSize).Deflate(top.InsetsManager?.SafeAreaPadding ?? default);
+
+    /// <summary>
+    /// Adds what takes Back before the popups (after them, were <see cref="PhonePopupDismissal.BackTakesFocusFirst"/>
+    /// false): given the window Back came to and its topmost open popup (none if there is none, or once the popups have
+    /// had it), it takes Back and says so, or leaves it. A focused element under that popup, not in it, leaves it. Once
+    /// for each type that does.
+    /// </summary>
+    internal static void TakeBackFirst(Func<TopLevel, PhonePopupHost?, bool> takesBack) => FocusTakers.Add(takesBack);
+
+    /// <summary>
+    /// Adds the Back handler as the module loads, before any class handler an app adds at its start: class handlers run
+    /// in the order they were added, and a popup open over the page takes Back first.
+    /// </summary>
+#pragma warning disable CA2255 // A library's module initializer: the one way to come before an app's own class handler.
+    [ModuleInitializer]
+#pragma warning restore CA2255
+    internal static void TakeBack() => TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>(OnBackRequested);
+
+    /// <summary>Whether <paramref name="visual"/> is in the popup: its child or inside it.</summary>
+    public bool Holds(Visual visual) =>
+        _popup.Child is { } child && (child == visual || child.IsVisualAncestorOf(visual));
 
     /// <summary>
     /// Stops, and gives the popup back what the host set. The owner's close isn't called: an owner disposing a host
@@ -189,11 +271,17 @@ internal sealed class PhonePopupHost : IDisposable
         _frame?.Dispose();
         _frame = null;
         _start = null;
+        if (!Moves)
+        {
+            Finish();
+            return;
+        }
+
         if (_placement == PhonePopupPlacement.Top)
         {
             // No turn: at rest, mid-opening too, until it goes in one frame.
             Rest();
-            _frame = CornflowerClock.Schedule(Vanish, PhonePopupMotion.TopGoneAfter);
+            _frame = CornflowerClock.Schedule(Vanish, Swing.GoneAfter);
             return;
         }
 
@@ -220,6 +308,12 @@ internal sealed class PhonePopupHost : IDisposable
             _insets.SafeAreaChanged += OnSafeAreaChanged;
         Anchor();
         Resize();
+        if (!Moves)
+        {
+            _phase = Phase.Shown;
+            return;
+        }
+
         _start = null;
         _uncut = 0;
         // The start angles at once, so no frame shows the popup at rest first; time 0 is still the first frame.
@@ -254,14 +348,18 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         var start = _start ??= CornflowerClock.Now;
         var time = CornflowerClock.Now - start;
-        if (_phase == Phase.Opening && time >= PhonePopupMotion.OpenLength(_placement))
+        var length = _placement == PhonePopupPlacement.Full ? PhonePopupMotion.OpenLength(Rows) : Swing.OpenLength;
+        if (_phase == Phase.Opening && time >= length)
         {
             _phase = Phase.Shown;
             Rest();
             return;
         }
 
-        if (_phase == Phase.Closing && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
+        // Bands dropped by a resize mid-close are cut again on this frame, after this: the close waits for them, so it
+        // keeps their number (none ever cut, it has none).
+        if (_phase == Phase.Closing && (_bands is not null || _uncut >= 4)
+            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
         {
             Finish();
             return;
@@ -273,14 +371,14 @@ internal sealed class PhonePopupHost : IDisposable
         _frame = CornflowerClock.RequestFrame(_content, Step);
     }
 
-    /// <summary>The top popup is gone in one frame; it is closed a little later.</summary>
+    /// <summary>The top popup is gone in one frame: closed then, or a little later.</summary>
     private void Vanish()
     {
         _frame = null;
         if (_phase != Phase.Closing)
             return;
         Hide();
-        _frame = CornflowerClock.Schedule(Finish, PhonePopupMotion.TopClosedAfter - PhonePopupMotion.TopGoneAfter);
+        _frame = CornflowerClock.Schedule(Finish, Swing.ClosedAfter - Swing.GoneAfter);
     }
 
     /// <summary>The closing motion is over: the owner closes the popup.</summary>
@@ -312,13 +410,14 @@ internal sealed class PhonePopupHost : IDisposable
         {
             bands.Angles[band] = _phase == Phase.Closing
                 ? PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time)
-                : PhonePopupMotion.OpeningAngle(_placement, band, time);
+                : _placement == PhonePopupPlacement.Full ? PhonePopupMotion.OpeningAngle(Rows, band, time)
+                : Swing.Angle(time);
         }
 
         var revealedTo = _placement != PhonePopupPlacement.Full ? double.PositiveInfinity
-            : _phase == Phase.Opening ? PhonePopupMotion.RevealedTo(time, bands.Height)
+            : _phase == Phase.Opening ? PhonePopupMotion.RevealedTo(time, bands.Height, Rows)
             : _closeRevealedTo;
-        bands.Reveal(PhonePopupMotion.FullOpenRates.Length, revealedTo);
+        bands.Reveal(Rows.Rates.Length, revealedTo);
         bands.InvalidateVisual();
         return true;
     }
@@ -348,13 +447,20 @@ internal sealed class PhonePopupHost : IDisposable
         picture.Render(_content);
 
         var bands = new List<Rect>();
-        var height = _placement == PhonePopupPlacement.Top ? size.Height : PhonePopupMotion.BandHeight;
-        for (var y = 0.0; y < size.Height; y += height)
-            bands.Add(new Rect(0, y, size.Width, Math.Min(height, size.Height - y)));
+        var height = _placement == PhonePopupPlacement.Top ? size.Height : Rows.Height;
+        // Whole rows: a remainder under a view pixel (800 / 12's rounding, or a height rounded to the device's pixels) is
+        // the last row's, not a sliver of a row of its own, which would close two ticks later for nothing seen.
+        var count = Math.Max(1, (int)Math.Ceiling((size.Height - 1) / height));
+        for (var i = 0; i < count; i++)
+        {
+            var y = i * height;
+            bands.Add(new Rect(0, y, size.Width, i == count - 1 ? size.Height - y : height));
+        }
+
 
         // Over the content where it sits in the popup, at the area's top left; the camera over the area's centre, in the
         // content's own space.
-        var area = Area();
+        var area = Area;
         var at = area.TopLeft + (_content.TranslatePoint(default, host) ?? default);
         _bands = new PhonePopupBands(picture, size, scaling, area.Center - at, bands);
         Canvas.SetLeft(_bands, at.X);
@@ -405,15 +511,6 @@ internal sealed class PhonePopupHost : IDisposable
 
     private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => Resize();
 
-    /// <summary>The window's area for a popup: its client area inside the safe area.</summary>
-    private Rect Area()
-    {
-        if (_top is null)
-            return default;
-        var area = new Rect(_top.ClientSize);
-        return area.Deflate(_insets?.SafeAreaPadding ?? default);
-    }
-
     /// <summary>Anchors the popup to its window: down and right from a point, with no adjustment. Once an opening.</summary>
     private void Anchor()
     {
@@ -431,7 +528,7 @@ internal sealed class PhonePopupHost : IDisposable
     {
         if (_top is null)
             return;
-        var area = Area();
+        var area = Area;
         _popup.Width = area.Width;
         _popup.Height = _placement == PhonePopupPlacement.Full ? area.Height : double.NaN;
         _popup.MaxHeight = area.Height;
@@ -441,6 +538,7 @@ internal sealed class PhonePopupHost : IDisposable
         // Mid-motion, the picture is of the old size: taken again on the next frame.
         if (_bands is not null)
             DropBands();
+        Resized?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>The dim rectangle over the area, just below the popup in its overlay layer; none without a brush.</summary>
@@ -472,19 +570,47 @@ internal sealed class PhonePopupHost : IDisposable
     }
 
     /// <summary>
-    /// Back dismisses the window's topmost open popup (taken and doing nothing while it closes), ahead of every handler an element
-    /// adds. With none, the request is left for the page.
+    /// Back, ahead of every handler an element adds: a focused element that takes it first (<see cref="TakeBackFirst"/>);
+    /// else the window's topmost open popup is dismissed (taken and doing nothing while it closes), or its owner given
+    /// Back. With neither, the request is left for the page.
     /// </summary>
     private static void OnBackRequested(TopLevel top, RoutedEventArgs e)
     {
-        if (e.Handled || !PhonePopupDismissal.BackCloses)
+        if (e.Handled)
             return;
         var window = WindowOf(top);
-        var host = Open.LastOrDefault(h => h._top is { } t && WindowOf(t) == window);
-        if (host is null)
+        var host = PhonePopupDismissal.BackCloses ? Open.LastOrDefault(h => h._top is { } t && WindowOf(t) == window) : null;
+        var focusFirst = PhonePopupDismissal.BackTakesFocusFirst;
+        if (focusFirst && FocusTakes(top, host))
+        {
+            e.Handled = true;
             return;
-        e.Handled = true;
-        host.Dismiss();
+        }
+
+        if (host is not null)
+        {
+            e.Handled = true;
+            if (host.Back is { } back && !host.IsClosing)
+                back();
+            else
+                host.Dismiss();
+            return;
+        }
+
+        if (!focusFirst && FocusTakes(top, null))
+            e.Handled = true;
+    }
+
+    /// <summary>Whether a focused element in the window, and in its topmost popup if one is open, takes Back.</summary>
+    private static bool FocusTakes(TopLevel top, PhonePopupHost? over)
+    {
+        foreach (var takesBack in FocusTakers)
+        {
+            if (takesBack(top, over))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>The window a top level is in: for a popup's own window, the one it was opened from.</summary>

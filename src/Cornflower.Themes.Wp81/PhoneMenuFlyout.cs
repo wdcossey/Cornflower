@@ -1,10 +1,7 @@
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -31,10 +28,9 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>Closing</b> has no motion (#150): the menu goes at once and <c>Closed</c> comes in the same frame, after an
 /// item's <c>Click</c>, a tap outside (Avalonia's light dismiss: the phone's full-window layer), <c>Hide()</c> or Back.
 /// The flyout's own closing stands; nothing is held.</para>
-/// <para><b>The host</b> is the Flyout's (<see cref="PhonePopupHost"/>), with two things worked round until it takes a
-/// popup that has a motion of its own (PR "Proposed for shared files"): its band motion is given a stand-in that is
-/// never drawn, so it turns no band of the menu, and Back, which the host turns into its top popup's closing, closes the
-/// menu at once from a handler that runs after the host's.</para>
+/// <para><b>The host</b> is the Flyout's (<see cref="PhonePopupHost"/>), with no band motion of its own
+/// (<see cref="PhonePopupHost.Moves"/> false): it opens the menu at rest for the template's storyboard, and closes it at
+/// once on Back. The menu is placed in the host's area, again each time the host sizes the popup.</para>
 /// <para><b>The items.</b> Avalonia has no <c>MenuFlyoutItem</c>: the items are <see cref="MenuItem"/>s and
 /// <see cref="Separator"/>s. The presenter's theme names their themes (<see cref="ItemThemeProperty"/>,
 /// <see cref="SeparatorThemeProperty"/>), and they are given to the presenter's own containers at style priority, so a
@@ -61,45 +57,16 @@ internal static class PhoneMenuFlyout
     public static readonly AttachedProperty<ControlTheme?> SeparatorThemeProperty =
         AvaloniaProperty.RegisterAttached<MenuFlyoutPresenter, ControlTheme?>("SeparatorTheme", typeof(PhoneMenuFlyout));
 
-    private static readonly ConditionalWeakTable<MenuFlyoutPresenter, Binder> Binders = new();
-
-    /// <summary>The binders let go of, until they have given their popups back.</summary>
-    private static readonly ConditionalWeakTable<MenuFlyoutPresenter, Binder> Leaving = new();
+    /// <summary>One binder a presenter, made and let go of as <see cref="PhoneFlyout"/>'s are.</summary>
+    private static readonly PhonePopupBinders<MenuFlyoutPresenter, MenuFlyout, Binder> Binders =
+        new(IsEnabledProperty, (presenter, popup) => new Binder(presenter, popup));
 
     static PhoneMenuFlyout()
     {
-        IsEnabledProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, change) =>
-        {
-            if (Binders.TryGetValue(presenter, out var old))
-            {
-                // From the dispatcher, as PhoneFlyout does: a theme going unsets this first (CLAUDE.md, the Avalonia facts).
-                // Turned on again meanwhile, the new binder comes after the old has given the popup back what its host
-                // set, so the new host doesn't take those values for the popup's own.
-                Binders.Remove(presenter);
-                Leaving.Add(presenter, old);
-                Dispatcher.UIThread.Post(() =>
-                {
-                    old.Dispose();
-                    Leaving.Remove(presenter);
-                    if (GetIsEnabled(presenter) && !Binders.TryGetValue(presenter, out _) && presenter.Parent is Popup again)
-                        Binders.Add(presenter, new Binder(presenter, again));
-                });
-                return;
-            }
-
-            if (change.GetNewValue<bool>() && !Leaving.TryGetValue(presenter, out _) && presenter.Parent is Popup popup)
-                Binders.Add(presenter, new Binder(presenter, popup));
-        });
-        // From the dispatcher too: a theme going unsets these, and re-styling the items in the middle of that would be
-        // the same trouble.
+        // From the dispatcher: a theme going unsets these, and re-styling the items in the middle of that would stop the
+        // rest being unset (CLAUDE.md, the Avalonia facts).
         ItemThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Dispatcher.UIThread.Post(() => Retheme(presenter)));
         SeparatorThemeProperty.Changed.AddClassHandler<MenuFlyoutPresenter>((presenter, _) => Dispatcher.UIThread.Post(() => Retheme(presenter)));
-        FlyoutBase.IsOpenProperty.Changed.AddClassHandler<MenuFlyout>((flyout, change) =>
-        {
-            if (change.GetNewValue<bool>() && flyout.Popup.Child is MenuFlyoutPresenter presenter
-                && Binders.TryGetValue(presenter, out var binder))
-                binder.Bind(flyout);
-        });
     }
 
     public static bool GetIsEnabled(MenuFlyoutPresenter presenter) => presenter.GetValue(IsEnabledProperty);
@@ -116,20 +83,14 @@ internal static class PhoneMenuFlyout
         presenter.SetValue(SeparatorThemeProperty, value);
 
     /// <summary>The host of one presenter's popup, if the theme has turned this on for it.</summary>
-    internal static PhonePopupHost? HostOf(MenuFlyoutPresenter presenter) =>
-        Binders.TryGetValue(presenter, out var binder) ? binder.Host : null;
+    internal static PhonePopupHost? HostOf(MenuFlyoutPresenter presenter) => Binders.Of(presenter)?.Host;
 
     /// <summary>Whether the menu's opening motion is running.</summary>
-    internal static bool IsOpening(MenuFlyoutPresenter presenter) =>
-        Binders.TryGetValue(presenter, out var binder) && binder.IsOpening;
+    internal static bool IsOpening(MenuFlyoutPresenter presenter) => Binders.Of(presenter)?.IsOpening == true;
 
-    private static void Retheme(MenuFlyoutPresenter presenter)
-    {
-        if (Binders.TryGetValue(presenter, out var binder))
-            binder.GiveThemes();
-    }
+    private static void Retheme(MenuFlyoutPresenter presenter) => Binders.Of(presenter)?.GiveThemes();
 
-    private sealed class Binder : IDisposable
+    private sealed class Binder : IPhonePopupBinder<MenuFlyout>
     {
         private readonly MenuFlyoutPresenter _presenter;
         private readonly Popup _popup;
@@ -140,7 +101,6 @@ internal static class PhoneMenuFlyout
         private readonly List<IDisposable> _moving = [];
         private MenuFlyout? _flyout;
         private TopLevel? _top;
-        private IInsetsManager? _insets;
         private Border? _outer;
         private Border? _center;
         private Control? _inner;
@@ -152,9 +112,9 @@ internal static class PhoneMenuFlyout
         {
             _presenter = presenter;
             _popup = popup;
-            // The host's band motion runs on a stand-in that is never drawn, so it turns no band of the menu: the menu's
-            // motion is its template's own (PR "Proposed for shared files": a host option for that).
-            Host = new PhonePopupHost(popup, new Control(), Close);
+            // The menu's motion is its template's own: the host opens it at rest and closes it at once.
+            Host = new PhonePopupHost(popup, presenter, Close, host => host.Moves = false);
+            Host.Resized += OnResized;
             _popup.Opened += OnOpened;
             _popup.Closed += OnClosed;
             _presenter.ContainerPrepared += OnContainerPrepared;
@@ -170,6 +130,8 @@ internal static class PhoneMenuFlyout
 
         public bool IsOpening => _frame is not null;
 
+        public MenuFlyout? Flyout => _flyout;
+
         /// <summary>
         /// Lets go of the menu: the host given back, the motion stopped, the item themes taken off. One the host was
         /// closing closes now.
@@ -182,6 +144,7 @@ internal static class PhoneMenuFlyout
             _presenter.ContainerPrepared -= OnContainerPrepared;
             _presenter.ContainerClearing -= OnContainerClearing;
             _presenter.SizeChanged -= OnSizeChanged;
+            Host.Resized -= OnResized;
             OnClosed(null, EventArgs.Empty);
             Host.Dispose();
             _parts.Dispose();
@@ -275,14 +238,9 @@ internal static class PhoneMenuFlyout
                 return;
             // The host has placed the popup at the window's top left, the window's width, as tall as the menu (its
             // handler is first: it was added first); the menu is moved down to its target from there.
-            _top = TopLevel.GetTopLevel(_popup.PlacementTarget ?? _presenter);
+            _top = Host.Window;
             if (_top is null)
                 return;
-            _top.PropertyChanged += OnTopPropertyChanged;
-            _top.AddHandler(TopLevel.BackRequestedEvent, OnBackRequested, handledEventsToo: true);
-            _insets = _top.InsetsManager;
-            if (_insets is not null)
-                _insets.SafeAreaChanged += OnSafeAreaChanged;
             Place();
             _start = null;
             // The start at once, so no frame shows the menu at rest first; time 0 is still the first frame.
@@ -294,33 +252,12 @@ internal static class PhoneMenuFlyout
         {
             if (_top is null)
                 return;
-            _top.PropertyChanged -= OnTopPropertyChanged;
-            _top.RemoveHandler(TopLevel.BackRequestedEvent, OnBackRequested);
-            if (_insets is not null)
-                _insets.SafeAreaChanged -= OnSafeAreaChanged;
             _top = null;
-            _insets = null;
             StopMoving();
         }
 
-        /// <summary>
-        /// Back, after the host's own handler has taken it and begun its top popup's closing: the menu, which has no
-        /// closing motion, closes now.
-        /// </summary>
-        private void OnBackRequested(object? sender, RoutedEventArgs e)
-        {
-            if (Host.IsClosing)
-                Close();
-        }
-
-        private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            // After the host's, which sizes the popup to the window again.
-            if (e.Property == TopLevel.ClientSizeProperty)
-                Place();
-        }
-
-        private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => Place();
+        /// <summary>The host has sized the popup to the window again: the menu is placed again in it.</summary>
+        private void OnResized(object? sender, EventArgs e) => Place();
 
         private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
         {
@@ -337,7 +274,7 @@ internal static class PhoneMenuFlyout
         {
             if (_top is null || _flyout?.Target is not { } target)
                 return;
-            var area = new Rect(_top.ClientSize).Deflate(_insets?.SafeAreaPadding ?? default);
+            var area = Host.Area;
             // Laid out at the size the host has just given the popup.
             if (layout)
                 _presenter.UpdateLayout();

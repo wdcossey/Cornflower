@@ -49,9 +49,8 @@ keyed themes for those, given only to a `MenuFlyoutPresenter`'s own items (rung 
   and the item themes given to the presenter's own containers at style priority.
 - **`PhoneMenuFlyoutRoot`**, the template's root: the menu as tall as its items and padding, the borders taking from the
   bottom padding, up to the window's height.
-- **The host's two gaps**, worked round in `PhoneMenuFlyout` until the host takes a popup with a motion of its own
-  ("Proposed for shared files" in the PR): the host's band motion is given a stand-in, so it turns no band of the menu;
-  Back, which the host turns into a top popup's 110 ms closing, closes the menu at once from a handler after the host's.
+- **The host's motion is off** (`PhonePopupHost.Moves` false, since the shared host change): it turns no band of the
+  menu, and Back closes the menu at once. (Until then, a stand-in and a second Back handler worked round it.)
 
 ## Avalonia's MenuFlyout against the phone's
 

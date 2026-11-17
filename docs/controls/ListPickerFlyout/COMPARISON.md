@@ -43,12 +43,14 @@ view pixels.
 
 The PickerFlyout's bands are the full Flyout's, as #149 read them: 100 px bands from 80° at 12.61, 9.57 and 7.58° a
 tick, below 400 px revealed at rest, and closed band by band at 10.95° a tick, `Closed` at 22 ticks. Ours are the
-host's, the same (`A_Picker_Opens_And_Closes_As_The_Full_Flyout_Does`; the Flyout's tests hold the curves).
+host's, the same (`A_Picker_Flyout_Opens_And_Closes_As_The_Full_Flyout_Does`; the Flyout's tests hold the curves).
+The ListPickerFlyout's are its rows (`PhonePopupMotion.ListPickerRows`): `The_List_Picker_Opens_In_Its_Rows_The_Top_Five_Turning_Slower_Down_The_List`
+and `The_List_Picker_Closes_In_Twelve_Bands_Closed_At_30_Ticks`.
 
 | What | Phone | Ours | |
 |---|---|---|---|
 | PickerFlyout: bands, rates, close | as the full Flyout | as the full Flyout | **match** |
 | PickerFlyout: `Closed` after accept | 323 ms (318 after Back) | 343.8 ms (22 ticks) | one to two ticks later, as the Flyout's (#161's known gap) |
-| ListPickerFlyout: bands | rows of 66.7 px, from 80°: rows 0 to 4 at about 12.5, 9.6, 7.8, 6.6 and 5.7° a tick, then the rest drawn downwards | the full Flyout's: 100 px, 12.61, 9.57, 7.58 and 6.32° a tick, below 400 px drawn downwards | **gap**: the host has one band motion for a full popup (README, "Known gaps") |
-| ListPickerFlyout: `Closed` | 30 ticks (468.8 ms) after `Hide()`; 447 ms after a pick, 483 after accept, 427 to 453 after Back | 22 ticks (343.8 ms) | **gap**, as above |
+| ListPickerFlyout: bands | rows of 66.7 px, from 80°: rows 0 to 4 at about 12.5, 9.6, 7.8, 6.6 and 5.7° a tick, then the rest drawn downwards | the same rows and rates; below 333 px drawn downwards by the Flyout's steps, scaled, all of it at 269 ms | **match** for the rows; the fill below them isn't read finer (README, "Known gaps") |
+| ListPickerFlyout: `Closed` | 30 ticks (468.8 ms) after `Hide()`; 447 ms after a pick, 483 after accept, 427 to 453 after Back | 30 ticks (468.8 ms) after `Hide()`, a pick, accept or Back, at the reference's 800 px | **match** after `Hide()`; within 21 ms of the others. A shorter picker (a safe area, landscape) has fewer rows and closes sooner, by the same rule; not read on the phone |
 | The bar | a popup of its own (the date picker's comes in last, by 400 ms) | in the presenter, moving with its bands | **deliberate difference**: one popup; not read for the list pickers |
