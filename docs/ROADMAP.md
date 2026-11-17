@@ -357,9 +357,9 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutPresenter (and `MenuItem` inside it) | Done 2026-11-17 (#175) |
 | [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | Done 2026-11-17 (#176) |
 | [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem | Done 2026-11-17 (#178) |
-| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | Done 2026-11-17 (#177) |
 | [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | Done 2026-11-17 (#182) |
 | [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, and their presenters | Done 2026-11-17 (#183) |
+| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | Done 2026-11-17 (#177) |
 | [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | Done 2026-11-17 (#174) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Tier 3 is complete but

@@ -39,7 +39,7 @@ their own style key, so none of them takes it.
 - **Dark and light**, and **the app's accent**: every brush follows the variant and `SystemColorControlAccentColor`.
 - **Data's line** is the phone's 1.33 em, as Button's.
 - **Other controls' templates**: a plain ToggleButton in a template written for the theme under Wp81 (Simple's
-  ComboBox, DrawerPage) keeps that theme's ToggleButton, not its Button.
+  DrawerPage) keeps that theme's ToggleButton, not its Button.
 
 ## Resource keys
 

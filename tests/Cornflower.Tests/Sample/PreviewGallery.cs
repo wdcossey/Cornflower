@@ -52,7 +52,7 @@ public class PreviewGallery
 
     /// <summary>
     /// The pages drawn again with a popup open: the page's title, the popup's name in the file, and how it is opened
-    /// (a page's control touched by its name, or text typed in a named box), as a page at rest shows only their buttons;
+    /// (a page's control touched by its name, or text typed in a named box), as a page at rest shows them closed;
     /// the LoopingSelector's page with a wheel tapped, the active wheel showing its items; and the ComboBox's page with
     /// its five items open inline, the box grown in place (its only popup Avalonia's empty <c>PART_Popup</c>).
     /// </summary>
@@ -105,10 +105,11 @@ public class PreviewGallery
             throw new InvalidOperationException($"CORNFLOWER_PREVIEW must be a new or empty folder; '{folder}' isn't.");
 
         Directory.CreateDirectory(folder);
-        // The phone's culture, en-US, whatever the machine's: the dates, times and wheels read as the phone's do.
+        // The phone's culture, en-US, whatever the machine's (without its user overrides): the dates, times and wheels
+        // read as the phone's do.
         var culture = CultureInfo.CurrentCulture;
         var uiCulture = CultureInfo.CurrentUICulture;
-        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
         try
         {
             foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })

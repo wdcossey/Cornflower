@@ -67,7 +67,7 @@ None.
 On the phone every ContentControl has this style, and so it is here, since the Tier 2 roll-up, #139 (the user's decision of
 2026-11-15). Keyed by type it also reaches three things outside this control's files, changed with it:
 
-1. **The holes.** Simple's templates for ComboBox, DataValidationErrors, MenuItem and the managed file dialog hold plain
+1. **The holes.** Simple's templates for DataValidationErrors, MenuItem and the managed file dialog hold plain
    ContentControls. `HoleParts` keeps them as Simple lays them out: the type-keyed theme sets `HoleParts.FallBack` and
    `HoleParts.FallBackToOwn`, so a part in a template written for the theme under Wp81 takes that theme's
    ContentControl theme, or, as Simple has none, an empty `ControlTheme` for its type, which gives it Avalonia's own
