@@ -234,9 +234,13 @@ public class Pivot : SelectingItemsControl, ISidewaysSwipeTarget
 
         var gone = _shown;
         _shown = shown;
+        // Together, in the phone's order; a handler that shows another item meanwhile ends the four, as they are stale.
         RaiseFor(PivotItemUnloading, gone);
+        if (!ReferenceEquals(_shown, shown)) return;
         RaiseFor(PivotItemUnloaded, gone);
+        if (!ReferenceEquals(_shown, shown)) return;
         RaiseFor(PivotItemLoading, shown);
+        if (!ReferenceEquals(_shown, shown)) return;
         RaiseFor(PivotItemLoaded, shown);
     }
 

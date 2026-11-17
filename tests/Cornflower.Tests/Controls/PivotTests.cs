@@ -63,6 +63,12 @@ public class PivotTests
 
         public bool Shown(int index) => Pivot.ContainerFromIndex(index)!.IsVisible;
 
+        /// <summary>How far the motion is from item 0, forward, in view pixels (a page an item, without the wrap).</summary>
+        public double Travel => Pivot.Motion.Lead * Pivot.PageWidth + Pivot.Motion.Offset;
+
+        /// <summary>How far the item shown is ahead of the offset, sliding.</summary>
+        public double Ahead => -(Pivot.Motion.ItemX + Pivot.Motion.Offset);
+
         public void Layout() => Window.UpdateLayout();
 
         public void Dispose() => _scene.Dispose();
@@ -563,15 +569,14 @@ public class PivotTests
         using var clock = PhoneClock();
         using var stage = new Stage();
         var motion = stage.Pivot.Motion;
-        var page = stage.Pivot.PageWidth;
-        double Travel() => motion.Lead * page + motion.Offset;
-        double Ahead() => -(motion.ItemX + motion.Offset);                  // how far the item shown is ahead of the offset
+        double Travel() => stage.Travel;
+        double Ahead() => stage.Ahead;
 
         Swipe(stage, clock, 1000);                                           // let go at 1150
         var at = 1150 + after;
         clock.At(at);
         var (pressed, ahead) = (Travel(), Ahead());
-        Assert.InRange(pressed, 200, page);                                  // the phone's presses: 245 to 443 px in
+        Assert.InRange(pressed, 200, StageWidth);                                // the phone's presses: 245 to 443 px in
         var touch = stage.Window.TouchBegin(new Point(200, 450), RawInputModifiers.None);
         Assert.True(motion.IsDragging);
         clock.At(at + hold);
@@ -599,9 +604,8 @@ public class PivotTests
         using var clock = PhoneClock();
         using var stage = new Stage();
         var motion = stage.Pivot.Motion;
-        var page = stage.Pivot.PageWidth;
-        double Travel() => motion.Lead * page + motion.Offset;
-        double Ahead() => -(motion.ItemX + motion.Offset);                  // how far the item shown is ahead of the offset
+        double Travel() => stage.Travel;
+        double Ahead() => stage.Ahead;
 
         Swipe(stage, clock, 1000);
         clock.At(1150 + 100);
@@ -616,6 +620,21 @@ public class PivotTests
         clock.At(3000);
         Assert.Equal(0, stage.Pivot.SelectedIndex);
         Assert.Equal(0, stage.ItemX(0), 0.001);
+    }
+
+    // Not read on the phone: a held swipe whose selection hadn't come makes it when the Pivot leaves the window.
+    [AvaloniaFact]
+    public void A_Held_Swipe_Leaving_The_Window_Makes_Its_Selection()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        Swipe(stage, clock, 1000);
+        clock.At(1150 + 30);
+        stage.Window.TouchBegin(new Point(200, 450), RawInputModifiers.None);
+        Assert.Equal(0, stage.Pivot.SelectedIndex);
+        stage.Window.Content = null;
+        Assert.Equal(1, stage.Pivot.SelectedIndex);
+        Assert.False(stage.Pivot.Motion.IsDragging);
     }
 
     // Not read on the phone: a press during a header tap's move doesn't hold it (a drag would end it at its item).
@@ -634,9 +653,9 @@ public class PivotTests
         stage.Window.TouchEnd(touch, new Point(200, 450), RawInputModifiers.None);
     }
 
-    // A slow drag let go past half a page goes on (not read on the phone: PLAN.md, "The motion, as modelled").
+    // A slow drag let go past its reach goes on (#162: 240 px, past 234).
     [AvaloniaFact]
-    public void A_Slow_Drag_Past_Half_A_Page_Goes_On()
+    public void A_Slow_Drag_Past_Its_Reach_Goes_On()
     {
         using var clock = PhoneClock();
         using var stage = new Stage();
@@ -1118,6 +1137,29 @@ public class PivotTests
         clock.At(3000);
         Assert.Equal(3, stage.Pivot.SelectedIndex);
         Assert.True(stage.Shown(3));
+    }
+
+    // A handler that shows another item while the four come ends them: none comes for the item no longer shown.
+    [AvaloniaFact]
+    public void A_Handler_That_Moves_On_Ends_The_Item_Events_Under_Way()
+    {
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        var log = LogEvents(stage.Pivot);
+        var once = true;
+        stage.Pivot.PivotItemUnloading += (_, _) =>
+        {
+            if (!once) return;
+            once = false;
+            stage.Pivot.Items.RemoveAt(1);                                   // the item coming in
+        };
+        Swipe(stage, clock, 1000);
+        clock.At(3000);
+        var shown = (string)((PivotItem)stage.Pivot.Items[stage.Pivot.SelectedIndex]!).Header!;
+        Assert.Equal($"loaded {shown}", log[^1]);
+        Assert.Equal(["unloading one"], log.Take(1));
+        Assert.DoesNotContain("loading two", log);
+        Assert.DoesNotContain("loaded two", log);
     }
 
     [AvaloniaFact]

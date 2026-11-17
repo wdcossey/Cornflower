@@ -240,10 +240,23 @@ internal sealed class PivotMotion
         Start(steps, TapCurve, TapDuration, gesture: false, selectAfter: null);
     }
 
-    /// <summary>Ends the move under way at once, at its target, as if it had run its course.</summary>
+    /// <summary>
+    /// Ends the move under way at once, at its target, as if it had run its course; or, for one held and not dragged,
+    /// makes the selection it still had to make.
+    /// </summary>
     public void Finish()
     {
-        if (!IsMoving) return;
+        if (!IsMoving)
+        {
+            if (IsDragging && _resume is not null && _selectAt is not null)
+            {
+                _selectAt = null;
+                _pivot.SelectFromMotion(_target);
+            }
+
+            return;
+        }
+
         var target = _target;
         var select = _selectAt is not null;
         StopFrames();
