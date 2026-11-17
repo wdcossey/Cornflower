@@ -878,6 +878,29 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
+    public void Turned_Off_And_On_While_Open_The_New_Binder_Takes_The_Open_Flyout()
+    {
+        // No opening will tell the new binder which flyout it is: the old one's, still open, is given to it.
+        using var stage = new Stage(full: true);
+        stage.OpenAtRest();
+
+        PhoneFlyout.SetIsEnabled(stage.Presenter, false);
+        PhoneFlyout.SetIsEnabled(stage.Presenter, true);
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        var host = PhoneFlyout.HostOf(stage.Presenter)!;
+        Assert.Equal(PhonePopupPlacement.Full, host.Placement);
+
+        // Its closing is held for the motion.
+        stage.Flyout.Hide();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(stage.Flyout.IsOpen);
+        Assert.True(host.IsClosing);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        Assert.False(stage.Flyout.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void A_Disposed_Host_Gives_The_Popup_Back_What_It_Set()
     {
         using var clock = new TestClock();

@@ -164,9 +164,24 @@ public class PhonePopupHostTests
         Assert.Equal(8, stage.Host.Bands!.Bands.Count);
 
         stage.Host.Rows = PhonePopupMotion.ListPickerRows;
+        // Before the first frame, cut again at once: no frame shows the popup hidden with no bands.
+        Assert.Equal(12, stage.Host.Bands!.Bands.Count);
         stage.At(stage.FirstFrameAfter(0));
         Assert.Equal(12, stage.Host.Bands!.Bands.Count);
         Assert.All(stage.Host.Bands.Angles.Take(5), a => Assert.Equal(80, a, 1e-9));
+    }
+
+    [AvaloniaFact]
+    public void Rows_That_Dont_Turn_And_Reveal_Nothing_Open_At_Once()
+    {
+        using var stage = new Stage(height: null);
+        stage.Host.Placement = PhonePopupPlacement.Full;
+        stage.Host.Rows = new PhonePopupRows(200, [], []);
+        stage.Open();
+
+        Assert.Equal([0, 0, 0, 0], stage.Host.Bands!.Angles);
+        stage.At(stage.FirstFrameAfter(0));
+        Assert.Null(stage.Host.Bands);
     }
 
     [AvaloniaFact]
@@ -270,6 +285,27 @@ public class PhonePopupHostTests
         var next = new RoutedEventArgs(TopLevel.BackRequestedEvent);
         stage.Scene.Window.RaiseEvent(next);
         Assert.True(next.Handled);
+        Assert.True(host.IsClosing);
+    }
+
+    // A box on the page under an open popup isn't the popup's: Back closes the popup first.
+    [AvaloniaFact]
+    public void Back_Closes_A_Flyout_Over_A_Focused_Box_First()
+    {
+        var box = new AutoCompleteBox { Width = 200 };
+        using var stage = new FlyoutTests.Stage(root: new StackPanel { Children = { box } });
+        var text = box.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "PART_TextBox");
+        Assert.True(text.Focus());
+        Dispatcher.UIThread.RunJobs();
+        stage.Flyout.ShowAt(box);
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        Assert.True(box.IsKeyboardFocusWithin, "the flyout took the focus: nothing to show");
+        var host = PhoneFlyout.HostOf(stage.Presenter)!;
+
+        var back = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+        stage.Scene.Window.RaiseEvent(back);
+        Assert.True(back.Handled);
         Assert.True(host.IsClosing);
     }
 }

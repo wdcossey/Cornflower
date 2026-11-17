@@ -967,6 +967,38 @@ public class ListPickerFlyoutTests
     }
 
     [AvaloniaFact]
+    public void Resized_Mid_Close_It_Still_Closes_At_30_Ticks()
+    {
+        using var stage = new Stage(ListPicker());
+        stage.OpenAtRest();
+        var hidden = stage.Now;
+        stage.Picker.Hide();
+        var first = stage.FirstFrameAfter(hidden);
+        stage.At(first + 10 * Tick);
+
+        // The bands are dropped and cut again; the close keeps its twelve bands' length.
+        stage.Scene.Window.Width = 400;
+        Dispatcher.UIThread.RunJobs();
+        stage.At(first + 11 * Tick);
+        stage.At(first + (ListPickerClosedTicks - 1) * Tick);
+        Assert.True(stage.Picker.Popup.IsOpen);
+        stage.At(first + ListPickerClosedTicks * Tick);
+        Assert.False(stage.Picker.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_Height_Just_Over_Twelve_Rows_Makes_No_Sliver_Row()
+    {
+        // A height rounded to the device's pixels, a fraction over: the last row takes it.
+        using var stage = new Stage(ListPicker(), height: 800.5);
+        stage.Open();
+        stage.At(stage.FirstFrameAfter(0));
+        var bands = stage.Bands!.Bands;
+        Assert.Equal(12, bands.Count);
+        Assert.Equal(stage.Presenter.Bounds.Height, bands[^1].Bottom, 1e-9);
+    }
+
+    [AvaloniaFact]
     public void Turned_Off_And_On_Again_It_Keeps_The_Picker_Hosted()
     {
         // As the Flyout's: the new binder is made after the old has given the popup back what its host set.

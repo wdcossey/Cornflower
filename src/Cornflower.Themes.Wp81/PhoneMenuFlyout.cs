@@ -130,6 +130,8 @@ internal static class PhoneMenuFlyout
 
         public bool IsOpening => _frame is not null;
 
+        public MenuFlyout? Flyout => _flyout;
+
         /// <summary>
         /// Lets go of the menu: the host given back, the motion stopped, the item themes taken off. One the host was
         /// closing closes now.

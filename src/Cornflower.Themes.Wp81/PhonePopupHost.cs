@@ -77,7 +77,7 @@ internal sealed class PhonePopupHost : IDisposable
     private static readonly List<PhonePopupHost> Open = [];
 
     /// <summary>What takes Back before the popups: a focused element's (<see cref="TakeBackFirst"/>).</summary>
-    private static readonly List<Func<TopLevel, bool>> FocusTakers = [];
+    private static readonly List<Func<TopLevel, PhonePopupHost?, bool>> FocusTakers = [];
 
     /// <summary>What the host sets on the popup, given back as it was when the host is disposed.</summary>
     private static readonly AvaloniaProperty[] Taken =
@@ -102,6 +102,7 @@ internal sealed class PhonePopupHost : IDisposable
     private IDisposable? _hidden;
     private IDisposable? _untouchable;
     private int _uncut;
+    private int _bandCount;
     private TimeSpan? _start;
     private double[] _closeFrom = [];
     private double _closeRevealedTo = double.PositiveInfinity;
@@ -169,8 +170,12 @@ internal sealed class PhonePopupHost : IDisposable
             if (_rows == value)
                 return;
             _rows = value;
-            if (_bands is not null && _placement == PhonePopupPlacement.Full)
-                DropBands();
+            if (_bands is null || _placement != PhonePopupPlacement.Full)
+                return;
+            DropBands();
+            // Before the first frame, cut again now, so no frame shows the popup hidden with no bands over it.
+            if (_phase == Phase.Opening && _start is null)
+                Turn(TimeSpan.Zero);
         }
     }
 
@@ -216,9 +221,15 @@ internal sealed class PhonePopupHost : IDisposable
 
     /// <summary>
     /// Adds what takes Back before the popups (after them, were <see cref="PhonePopupDismissal.BackTakesFocusFirst"/>
-    /// false): given the window Back came to, it takes Back and says so, or leaves it. Once for each type that does.
+    /// false): given the window Back came to and its topmost open popup (none if there is none, or once the popups have
+    /// had it), it takes Back and says so, or leaves it. A focused element under that popup, not in it, leaves it. Once
+    /// for each type that does.
     /// </summary>
-    internal static void TakeBackFirst(Func<TopLevel, bool> takesBack) => FocusTakers.Add(takesBack);
+    internal static void TakeBackFirst(Func<TopLevel, PhonePopupHost?, bool> takesBack) => FocusTakers.Add(takesBack);
+
+    /// <summary>Whether <paramref name="visual"/> is in the popup: its child or inside it.</summary>
+    public bool Holds(Visual visual) =>
+        _popup.Child is { } child && (child == visual || child.IsVisualAncestorOf(visual));
 
     /// <summary>
     /// Stops, and gives the popup back what the host set. The owner's close isn't called: an owner disposing a host
@@ -336,7 +347,8 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        if (_phase == Phase.Closing && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
+        // Its bands as last cut: dropped by a resize mid-close, they are cut again on this frame, after this.
+        if (_phase == Phase.Closing && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? _bandCount))
         {
             Finish();
             return;
@@ -431,10 +443,16 @@ internal sealed class PhonePopupHost : IDisposable
 
         var bands = new List<Rect>();
         var height = _placement == PhonePopupPlacement.Top ? size.Height : Rows.Height;
-        // Whole rows by count, so rows that don't add up exactly (800 / 12) leave no sliver of a row at the foot.
-        var count = Math.Max(1, (int)Math.Ceiling(size.Height / height - 1e-9));
+        // Whole rows: a remainder under a view pixel (800 / 12's rounding, or a height rounded to the device's pixels) is
+        // the last row's, not a sliver of a row of its own, which would close two ticks later for nothing seen.
+        var count = Math.Max(1, (int)Math.Ceiling((size.Height - 1) / height));
         for (var i = 0; i < count; i++)
-            bands.Add(new Rect(0, i * height, size.Width, Math.Min(height, size.Height - i * height)));
+        {
+            var y = i * height;
+            bands.Add(new Rect(0, y, size.Width, i == count - 1 ? size.Height - y : height));
+        }
+
+        _bandCount = count;
 
         // Over the content where it sits in the popup, at the area's top left; the camera over the area's centre, in the
         // content's own space.
@@ -556,15 +574,16 @@ internal sealed class PhonePopupHost : IDisposable
     {
         if (e.Handled)
             return;
+        var window = WindowOf(top);
+        var host = PhonePopupDismissal.BackCloses ? Open.LastOrDefault(h => h._top is { } t && WindowOf(t) == window) : null;
         var focusFirst = PhonePopupDismissal.BackTakesFocusFirst;
-        if (focusFirst && FocusTakes(top))
+        if (focusFirst && FocusTakes(top, host))
         {
             e.Handled = true;
             return;
         }
 
-        var window = WindowOf(top);
-        if (PhonePopupDismissal.BackCloses && Open.LastOrDefault(h => h._top is { } t && WindowOf(t) == window) is { } host)
+        if (host is not null)
         {
             e.Handled = true;
             if (host.Back is { } back && !host.IsClosing)
@@ -574,16 +593,16 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        if (!focusFirst && FocusTakes(top))
+        if (!focusFirst && FocusTakes(top, null))
             e.Handled = true;
     }
 
-    /// <summary>Whether a focused element in the window takes Back (<see cref="TakeBackFirst"/>).</summary>
-    private static bool FocusTakes(TopLevel top)
+    /// <summary>Whether a focused element in the window, and in its topmost popup if one is open, takes Back.</summary>
+    private static bool FocusTakes(TopLevel top, PhonePopupHost? over)
     {
         foreach (var takesBack in FocusTakers)
         {
-            if (takesBack(top))
+            if (takesBack(top, over))
                 return true;
         }
 

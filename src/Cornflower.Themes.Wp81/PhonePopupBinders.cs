@@ -8,9 +8,12 @@ using Avalonia.Threading;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>One presenter's hold on its popup for the phone: its <see cref="PhonePopupHost"/>, told which flyout opens it.</summary>
-internal interface IPhonePopupBinder<in TFlyout> : IDisposable where TFlyout : PopupFlyoutBase
+internal interface IPhonePopupBinder<TFlyout> : IDisposable where TFlyout : PopupFlyoutBase
 {
     PhonePopupHost Host { get; }
+
+    /// <summary>The flyout it was last told of, if any.</summary>
+    TFlyout? Flyout { get; }
 
     /// <summary>The flyout opening this popup, each time it opens.</summary>
     void Bind(TFlyout flyout);
@@ -27,7 +30,8 @@ internal interface IPhonePopupBinder<in TFlyout> : IDisposable where TFlyout : P
 /// facts).</para>
 /// <para>Turned off and on again before the dispatcher has run, the new binder is made only after the old one has given
 /// the popup back what its host set, from the same job; else the new host would take those values for the popup's own,
-/// and the old one's going would then clear them under it (<c>ShouldUseOverlayLayer</c> among them).</para>
+/// and the old one's going would then clear them under it (<c>ShouldUseOverlayLayer</c> among them). A flyout still
+/// open then is given to the new binder, as no opening will.</para>
 /// </remarks>
 internal sealed class PhonePopupBinders<TPresenter, TFlyout, TBinder>
     where TPresenter : Control
@@ -66,10 +70,15 @@ internal sealed class PhonePopupBinders<TPresenter, TFlyout, TBinder>
             _leaving.Add(presenter, old);
             Dispatcher.UIThread.Post(() =>
             {
+                var flyout = old.Flyout;
                 old.Dispose();
                 _leaving.Remove(presenter);
-                if (presenter.GetValue(_isEnabled) && !_binders.TryGetValue(presenter, out _) && presenter.Parent is Popup again)
-                    _binders.Add(presenter, _make(presenter, again));
+                if (!presenter.GetValue(_isEnabled) || _binders.TryGetValue(presenter, out _) || presenter.Parent is not Popup again)
+                    return;
+                var binder = _make(presenter, again);
+                _binders.Add(presenter, binder);
+                if (flyout is { IsOpen: true } && flyout.Popup == again)
+                    binder.Bind(flyout);
             });
             return;
         }
@@ -107,6 +116,8 @@ internal sealed class PhoneHeldFlyout<TFlyout> : IPhonePopupBinder<TFlyout> wher
     public PhonePopupHost Host { get; }
 
     public Popup Popup => _popup;
+
+    public TFlyout? Flyout => _flyout;
 
     /// <summary>
     /// Lets go of the flyout, giving its popup back its light dismiss; one asked to close and still in its closing

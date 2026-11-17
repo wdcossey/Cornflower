@@ -147,7 +147,8 @@ internal static class PhonePopupMotion
 
     /// <summary>How long a full popup of these rows takes to open: until its slowest row is at rest and its last piece revealed.</summary>
     internal static TimeSpan OpenLength(PhonePopupRows rows) => TimeSpan.FromTicks(Math.Max(
-        (Tick * (OpenFrom / rows.Rates.Min())).Ticks, rows.Reveal.Length > 0 ? rows.Reveal[^1].At.Ticks : 0));
+        rows.Rates.Length > 0 ? (Tick * (OpenFrom / rows.Rates.Min())).Ticks : 0,
+        rows.Reveal.Length > 0 ? rows.Reveal[^1].At.Ticks : 0));
 
     /// <summary>A full popup's row <paramref name="band"/>'s angle <paramref name="time"/> into the opening, in degrees: 0 at rest.</summary>
     internal static double OpeningAngle(PhonePopupRows rows, int band, TimeSpan time) =>

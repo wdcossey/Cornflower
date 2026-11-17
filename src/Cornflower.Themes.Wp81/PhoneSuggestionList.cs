@@ -75,10 +75,13 @@ internal static class PhoneSuggestionList
 
     public static void SetIsEnabled(AutoCompleteBox box, bool value) => box.SetValue(IsEnabledProperty, value);
 
-    /// <summary>Back while a box of ours has the focus: close its list and take its focus; Back is taken.</summary>
-    private static bool TakesBack(TopLevel top)
+    /// <summary>
+    /// Back while a box of ours has the focus, in the topmost popup if one is open: close its list and take its focus;
+    /// Back is taken. A box under an open popup leaves Back to the popup.
+    /// </summary>
+    private static bool TakesBack(TopLevel top, PhonePopupHost? over)
     {
-        if (BoxWithFocus(top) is not { } box)
+        if (BoxWithFocus(top) is not { } box || (over is not null && !over.Holds(box)))
             return false;
         LetGo(box);
         return true;
