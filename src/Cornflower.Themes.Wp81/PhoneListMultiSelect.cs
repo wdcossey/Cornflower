@@ -19,7 +19,8 @@ namespace Cornflower.Themes.Wp81;
 /// </summary>
 /// <remarks>
 /// <para>With <see cref="SelectionMode.Multiple"/> and <see cref="SelectionMode.Toggle"/>, a tap checks or unchecks:
-/// WinRT's <c>Multiple</c>. <see cref="SelectionMode.Multiple"/> alone is WinRT's <c>Extended</c>, which the phone shows
+/// WinRT's <c>Multiple</c>; unless the list has item click on, where a tap clicks and checks nothing, as on the phone
+/// (<c>ListBoxOptions</c>, #169). <see cref="SelectionMode.Multiple"/> alone is WinRT's <c>Extended</c>, which the phone shows
 /// with no check boxes, a tap selecting one item as in <c>Single</c> (run <c>20261116-0040-dev11</c>, #136): so it isn't
 /// the check mode. <see cref="SelectionMode.Toggle"/> alone toggles one item, with no boxes.</para>
 /// <para>Inherited, so every container the list holds has it, whether it makes it, reuses it, keeps it out of view or

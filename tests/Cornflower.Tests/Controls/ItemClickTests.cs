@@ -247,7 +247,8 @@ public class ItemClickTests
 
     // In the check mode, Multiple and Toggle (WinRT's Multiple), a tap clicks and checks nothing (#169, read in #148:
     // with item click on, every tap clicks and nothing selects, in every mode), on the box or off it, and no
-    // SelectionChanged comes. A press on the box still tilts the box alone.
+    // SelectionChanged comes; Space on the focused item clicks it too. A press on the box still presses the box alone,
+    // and its press ends with the release.
     [AvaloniaTheory]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle)]
     [InlineData(SelectionMode.Multiple | SelectionMode.Toggle | SelectionMode.AlwaysSelected)]
@@ -268,9 +269,15 @@ public class ItemClickTests
         Assert.True(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
         page.Window.TouchEnd(touch, onBox);
         Dispatcher.UIThread.RunJobs();
+        Assert.False(item.GetValue(PhoneListMultiSelect.IsBoxPressedProperty));
+        Assert.Equal(TiltState.Rest, PhoneListMultiSelect.BoxTilt(item));
         page.Tap(page.On(2));
+        Assert.True(page.Item(3).Focus());
+        page.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        page.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        Dispatcher.UIThread.RunJobs();
 
-        Assert.Equal(["item 1", "item 2"], page.Clicked);
+        Assert.Equal(["item 1", "item 2", "item 3"], page.Clicked);
         Assert.Empty(page.List.SelectedItems!);
         Assert.Equal(changes, page.SelectionChanges);
     }
