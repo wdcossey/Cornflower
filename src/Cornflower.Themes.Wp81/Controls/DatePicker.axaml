@@ -59,7 +59,7 @@
             <TextBlock x:Name="PART_YearTextBlock" />
           </Panel>
           <Popup x:Name="PART_Popup" wp81:PhoneDateTimePicker.ShownIn="{Binding #PickerPopup}" />
-          <Popup x:Name="PickerPopup" IsLightDismissEnabled="False">
+          <Popup x:Name="PickerPopup">
             <DatePickerPresenter x:Name="PART_PickerPresenter" />
           </Popup>
         </StackPanel>

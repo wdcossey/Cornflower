@@ -485,6 +485,22 @@ public class DateTimePickerTests
     }
 
     [AvaloniaFact]
+    public void Its_Popup_Let_Go_Gives_The_Stand_In_Back_And_Closes_It()
+    {
+        using var stage = new Stage(Date());
+        stage.OpenAtRest();
+        var popup = stage.Popup;
+        Assert.NotNull(stage.StandIn.PlacementTarget);
+
+        PhoneDateTimePicker.SetShownIn(stage.StandIn, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Null(stage.Host);
+        Assert.False(popup.IsOpen);
+        Assert.False(stage.StandIn.IsSet(Popup.PlacementTargetProperty));
+        Assert.False(popup.ShouldUseOverlayLayer);
+    }
+
+    [AvaloniaFact]
     public void Simple_Alone_Keeps_Avalonias_Own_Picker()
     {
         using var stage = new Stage(Date(), themes: [new Avalonia.Themes.Simple.SimpleTheme()]);

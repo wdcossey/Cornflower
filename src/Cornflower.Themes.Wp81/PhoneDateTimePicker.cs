@@ -103,7 +103,6 @@ internal static class PhoneDateTimePicker
             _target = standIn.PlacementTarget;
             // In no window: Avalonia's popup asked to open can't, and stays asked (IsOpen true) until it is closed.
             standIn.PlacementTarget = new Control();
-            popup.IsLightDismissEnabled = false;
             standIn.PropertyChanged += OnStandInChanged;
             popup.Closed += OnClosed;
             if (standIn.IsOpen)

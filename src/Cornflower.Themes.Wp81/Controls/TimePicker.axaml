@@ -47,7 +47,7 @@
             </Button.Content>
           </Button>
           <Popup x:Name="PART_Popup" wp81:PhoneDateTimePicker.ShownIn="{Binding #PickerPopup}" />
-          <Popup x:Name="PickerPopup" IsLightDismissEnabled="False">
+          <Popup x:Name="PickerPopup">
             <TimePickerPresenter x:Name="PART_PickerPresenter" />
           </Popup>
         </StackPanel>
