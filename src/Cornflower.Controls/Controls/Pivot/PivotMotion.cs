@@ -312,7 +312,7 @@ internal sealed class PivotMotion
         StopFrames();
         var count = _pivot.ItemCount;
         _start = CornflowerClock.Now;
-        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _steps = steps;
         _origin = Lead;

@@ -1135,9 +1135,16 @@ public class ToggleSwitchTests
             Assert.Equal(TimeSpan.Zero, transition.Duration);
         }
 
-        // Back at the defaults, the next switch's are the phone's again.
+        // Back at the defaults, a switch's are the phone's again, and a change reaches one already placed.
         CornflowerConfig.Reset();
         using (var stage = new Stage())
-            Assert.Equal(SlideDuration, ((TransitionBase)Assert.Single(stage.Toggle.KnobTransitions)).Duration);
+        {
+            var transition = (TransitionBase)Assert.Single(stage.Toggle.KnobTransitions);
+            Assert.Equal(SlideDuration, transition.Duration);
+            CornflowerConfig.ControlSpeed = 4;
+            Assert.Equal(SlideDuration / 4, transition.Duration);
+            CornflowerConfig.Reset();
+            Assert.Equal(SlideDuration, transition.Duration);
+        }
     }
 }

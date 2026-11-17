@@ -139,7 +139,7 @@ internal static class PhoneIndicatorFade
             if (_frame is null && _track.Opacity != target)
             {
                 _last = CornflowerClock.Now;
-                _speed = CornflowerClock.SpeedOf(MotionArea.Control);
+                _speed = CornflowerConfig.SpeedOf(MotionArea.Control);
                 _frame = CornflowerClock.RequestFrame(_track, Step);
             }
         }

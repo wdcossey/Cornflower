@@ -90,7 +90,7 @@ internal sealed class HubEntrance
         if (root is null || !CornflowerConfig.Animated) return;
         _root = root;
         _start = CornflowerClock.Now;
-        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.PivotAndHub);
         IsRunning = true;
         _origin = root.SetValue(Visual.RenderTransformOriginProperty, RelativePoint.TopLeft, BindingPriority.Animation);
         _shown = root.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);

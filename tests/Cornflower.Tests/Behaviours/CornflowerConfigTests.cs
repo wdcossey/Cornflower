@@ -25,7 +25,7 @@ public class CornflowerConfigTests
         Assert.Null(CornflowerConfig.PivotAndHubSpeed);
         Assert.Null(CornflowerConfig.ControlSpeed);
         Assert.False(CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen);
-        Assert.All(Areas, area => Assert.Equal(1, CornflowerClock.SpeedOf(area)));
+        Assert.All(Areas, area => Assert.Equal(1, CornflowerConfig.SpeedOf(area)));
     }
 
     [AvaloniaFact]
@@ -33,21 +33,21 @@ public class CornflowerConfigTests
     {
         using var config = new ConfigScope();
         CornflowerConfig.MotionSpeed = 2;
-        Assert.All(Areas, area => Assert.Equal(2, CornflowerClock.SpeedOf(area)));
+        Assert.All(Areas, area => Assert.Equal(2, CornflowerConfig.SpeedOf(area)));
 
         CornflowerConfig.PopupSpeed = 0.5;
         CornflowerConfig.PageSpeed = 3;
         CornflowerConfig.TiltSpeed = 4;
         CornflowerConfig.PivotAndHubSpeed = 5;
         CornflowerConfig.ControlSpeed = 6;
-        Assert.Equal(0.5, CornflowerClock.SpeedOf(MotionArea.Popup));
-        Assert.Equal(3, CornflowerClock.SpeedOf(MotionArea.Page));
-        Assert.Equal(4, CornflowerClock.SpeedOf(MotionArea.Tilt));
-        Assert.Equal(5, CornflowerClock.SpeedOf(MotionArea.PivotAndHub));
-        Assert.Equal(6, CornflowerClock.SpeedOf(MotionArea.Control));
+        Assert.Equal(0.5, CornflowerConfig.SpeedOf(MotionArea.Popup));
+        Assert.Equal(3, CornflowerConfig.SpeedOf(MotionArea.Page));
+        Assert.Equal(4, CornflowerConfig.SpeedOf(MotionArea.Tilt));
+        Assert.Equal(5, CornflowerConfig.SpeedOf(MotionArea.PivotAndHub));
+        Assert.Equal(6, CornflowerConfig.SpeedOf(MotionArea.Control));
 
         CornflowerConfig.Animated = false;
-        Assert.All(Areas, area => Assert.Equal(CornflowerConfig.NoMotion, CornflowerClock.SpeedOf(area)));
+        Assert.All(Areas, area => Assert.Equal(CornflowerConfig.NoMotion, CornflowerConfig.SpeedOf(area)));
     }
 
     [AvaloniaTheory]
@@ -75,8 +75,11 @@ public class CornflowerConfigTests
         Assert.Equal(real, CornflowerClock.AtSpeed(real, 1));
         Assert.Equal(TimeSpan.FromTicks(2_469_134), CornflowerClock.AtSpeed(real, 2));
         Assert.Equal(TimeSpan.FromTicks(617_284), CornflowerClock.AtSpeed(real, 0.5));
-        // No motion is so long that its time overflows a sum.
+        // No motion is so long that its time overflows a sum, however fast or slow.
         Assert.Equal(TimeSpan.FromDays(36_500), CornflowerClock.AtSpeed(TimeSpan.FromDays(400), CornflowerConfig.NoMotion));
+        Assert.Equal(TimeSpan.FromDays(36_500), CornflowerClock.RealTime(TimeSpan.FromMilliseconds(78), 1e-16));
+        Assert.Equal(TimeSpan.FromMilliseconds(39), CornflowerClock.RealTime(TimeSpan.FromMilliseconds(78), 2));
+        Assert.Equal(real, CornflowerClock.RealTime(real, 1));
 
         using var clock = new TestClock();
         clock.At(100);

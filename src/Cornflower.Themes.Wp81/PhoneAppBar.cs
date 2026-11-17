@@ -182,7 +182,8 @@ internal static class PhoneAppBar
             Count();
             // A bar whose app sets its Height has the app's heights, not the theme's steps: it moves not, as it doesn't
             // out of a window or before it is laid out.
-            if (_root is null || _bar.Bounds.Height <= 0 || !_bar.IsAttachedToVisualTree() || TopLevel.GetTopLevel(_bar) is null
+            // With CornflowerConfig.Animated off, there at once too.
+            if (!CornflowerConfig.Animated || _root is null || _bar.Bounds.Height <= 0 || !_bar.IsAttachedToVisualTree() || TopLevel.GetTopLevel(_bar) is null
                 || _bar.GetDiagnostic(Layoutable.HeightProperty).Priority == BindingPriority.LocalValue)
             {
                 Rest();
@@ -195,7 +196,7 @@ internal static class PhoneAppBar
             _from = _bar.Bounds.Height - Lag();
             _opening = open;
             _start = null;
-            _speed = CornflowerClock.SpeedOf(MotionArea.Control);
+            _speed = CornflowerConfig.SpeedOf(MotionArea.Control);
             _moving = true;
             _bar.SetValue(ShowsOpenProperty, true);
             Apply();

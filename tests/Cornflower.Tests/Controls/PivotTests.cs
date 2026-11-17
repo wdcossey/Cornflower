@@ -1221,6 +1221,13 @@ public class PivotTests
         {
             var presenter = stage.Header(1).GetTemplateDescendants().OfType<ContentPresenter>().Single();
             Assert.All(presenter.Transitions!, t => Assert.Equal(TimeSpan.Zero, ((TransitionBase)t).Duration));
+
+            // A change at runtime reaches the headers already placed.
+            CornflowerConfig.Animated = true;
+            CornflowerConfig.PivotAndHubSpeed = 3;
+            Assert.All(presenter.Transitions!, t => Assert.Equal(TimeSpan.FromSeconds(0.11), ((TransitionBase)t).Duration));
+            CornflowerConfig.Reset();
+            Assert.All(presenter.Transitions!, t => Assert.Equal(TimeSpan.FromSeconds(0.33), ((TransitionBase)t).Duration));
         }
     }
 

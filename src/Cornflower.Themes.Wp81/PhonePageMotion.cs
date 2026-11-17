@@ -80,7 +80,7 @@ internal sealed class PhonePageRun
     private IDisposable? _pending;
     private TimeSpan? _start;
     // Read from CornflowerConfig as the transition starts.
-    private readonly double _speed = CornflowerClock.SpeedOf(MotionArea.Page);
+    private readonly double _speed = CornflowerConfig.SpeedOf(MotionArea.Page);
     private bool _over;
 
     private PhonePageRun(IPhonePageMotion motion, Visual? from, Visual? to, bool forward, CancellationToken cancellationToken)

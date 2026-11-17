@@ -264,6 +264,12 @@ public static class Tilt
         {
             if (_phase is not (Phase.Pressed or Phase.Paused) || e.Pointer != _pointer || _target?.GetVisualParent() is not { } parent)
                 return;
+            // CornflowerConfig.Animated turned off mid-press: nothing tilts from here.
+            if (!CornflowerConfig.Animated)
+            {
+                ToRest();
+                return;
+            }
 
             var press = e.GetPosition(parent);
             // On the control: its own bounds, untilted, edges included. A control drawn tilted
@@ -352,7 +358,7 @@ public static class Tilt
         {
             _phase = phase;
             _held = State;
-            _speed = CornflowerClock.SpeedOf(MotionArea.Tilt);
+            _speed = CornflowerConfig.SpeedOf(MotionArea.Tilt);
             Cancel();
             _pending = CornflowerClock.RequestFrame(_control, BeginReturn);
         }
@@ -365,7 +371,7 @@ public static class Tilt
         private void BeginReturn()
         {
             _released = CornflowerClock.Now;
-            var wait = TiltModel.Hold / _speed - CornflowerClock.FrameInterval;
+            var wait = CornflowerClock.RealTime(TiltModel.Hold, _speed) - CornflowerClock.FrameInterval;
             _pending = CornflowerClock.Schedule(() => _pending = CornflowerClock.RequestFrame(_control, Return),
                 wait > TimeSpan.Zero ? wait : TimeSpan.Zero);
         }

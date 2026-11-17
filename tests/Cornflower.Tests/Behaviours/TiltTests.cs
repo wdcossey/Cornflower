@@ -1137,5 +1137,17 @@ public class TiltTests
         Assert.Null(CfTilt.TargetOf(button).RenderTransform);
         page.Window.TouchEnd(touch, corner);
         Assert.Equal(0, clock.Pending);
+
+        // Turned off mid-press, the tilt goes at the next move and doesn't come back.
+        CornflowerConfig.Animated = true;
+        touch = page.Window.TouchBegin(corner);
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.NotEqual(TiltState.Rest, CfTilt.Current(button));
+        CornflowerConfig.Animated = false;
+        page.Window.TouchMove(touch, corner + new Vector(1, 1));
+        clock.At(clock.Now.TotalMilliseconds + SettleMs);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(button));
+        Assert.Null(CfTilt.TargetOf(button).RenderTransform);
+        page.Window.TouchEnd(touch, corner);
     }
 }

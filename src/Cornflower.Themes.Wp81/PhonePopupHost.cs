@@ -280,7 +280,7 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.Popup);
         if (_placement == PhonePopupPlacement.Top)
         {
             // No turn: at rest, mid-opening too, until it goes in one frame.
@@ -319,7 +319,7 @@ internal sealed class PhonePopupHost : IDisposable
             return;
         }
 
-        _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.Popup);
         _start = null;
         _uncut = 0;
         // The start angles at once, so no frame shows the popup at rest first; time 0 is still the first frame.

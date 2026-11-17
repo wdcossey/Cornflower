@@ -74,6 +74,12 @@ public class MotionSettingsTests
         Assert.Null(CornflowerConfig.TiltSpeed);
         Assert.True(CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen);
 
+        // A speed the page doesn't offer shows as none chosen (shown again as the page is placed again).
+        CornflowerConfig.PopupSpeed = 3;
+        scene.Window.Content = null;
+        scene.Window.Content = page;
+        Assert.Equal(-1, popups.SelectedIndex);
+
         page.GetControl<Button>("PhoneMotionButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Assert.True(CornflowerConfig.Animated);
         Assert.Equal(1, CornflowerConfig.MotionSpeed);

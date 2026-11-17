@@ -24,11 +24,12 @@ namespace Cornflower.Controls;
 public static class CornflowerConfig
 {
     /// <summary>
-    /// The speed <see cref="Animated"/> off gives every motion that reads one: so fast that a motion ends on its next
-    /// frame or the one after. A motion that would show its start for a frame first doesn't start at all.
+    /// The speed <see cref="Animated"/> off gives every motion that reads one: so fast that a motion ends within a few
+    /// frames, one for each of its phases. A motion that would show its start for a frame first doesn't start at all.
     /// </summary>
     internal const double NoMotion = 1_000_000;
 
+    private static bool _animated = true;
     private static double _motionSpeed = 1;
     private static double? _popupSpeed;
     private static double? _pageSpeed;
@@ -48,7 +49,15 @@ public static class CornflowerConfig
     /// theme's Avalonia transitions (the ToggleSwitch's knob, the ListView's check boxes, the Pivot's headers) go to
     /// their end at once. With it off the tilt doesn't tilt at all, as a press shows no motion.
     /// </remarks>
-    public static bool Animated { get; set; } = true;
+    public static bool Animated
+    {
+        get => _animated;
+        set
+        {
+            _animated = value;
+            Changed?.Invoke();
+        }
+    }
 
     /// <summary>
     /// How fast Cornflower's motions run, as a multiplier of the phone's time: 1, the default, is the phone; 2 is
@@ -59,7 +68,11 @@ public static class CornflowerConfig
     public static double MotionSpeed
     {
         get => _motionSpeed;
-        set => _motionSpeed = Checked(value);
+        set
+        {
+            _motionSpeed = Checked(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -72,7 +85,11 @@ public static class CornflowerConfig
     public static double? PopupSpeed
     {
         get => _popupSpeed;
-        set => _popupSpeed = CheckedOrNull(value);
+        set
+        {
+            _popupSpeed = CheckedOrNull(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -84,7 +101,11 @@ public static class CornflowerConfig
     public static double? PageSpeed
     {
         get => _pageSpeed;
-        set => _pageSpeed = CheckedOrNull(value);
+        set
+        {
+            _pageSpeed = CheckedOrNull(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -96,7 +117,11 @@ public static class CornflowerConfig
     public static double? TiltSpeed
     {
         get => _tiltSpeed;
-        set => _tiltSpeed = CheckedOrNull(value);
+        set
+        {
+            _tiltSpeed = CheckedOrNull(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -104,12 +129,19 @@ public static class CornflowerConfig
     /// item and its headers' fade and slide; the Hub's move to a section, its loop, its entrance turn and its
     /// background's fade in.
     /// </summary>
-    /// <remarks>Read when a move, the turn or the fade starts; the Pivot's header transitions when the header is placed.</remarks>
+    /// <remarks>
+    /// Read when a move, the turn or the fade starts; the Pivot's header transitions, Avalonia's, take it when the
+    /// header is placed and whenever it is set.
+    /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">Not null or a finite number above 0.</exception>
     public static double? PivotAndHubSpeed
     {
         get => _pivotAndHubSpeed;
-        set => _pivotAndHubSpeed = CheckedOrNull(value);
+        set
+        {
+            _pivotAndHubSpeed = CheckedOrNull(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -118,14 +150,18 @@ public static class CornflowerConfig
     /// ListView's check boxes sliding in, the inline ComboBox's open, and the scroll indicators' fade.
     /// </summary>
     /// <remarks>
-    /// Read when each motion starts; the ToggleSwitch's knob when the switch is placed and at the end of each tap or
-    /// drag; the ListView's check boxes when the item is placed.
+    /// Read when each motion starts; the ToggleSwitch's knob and the ListView's check boxes, Avalonia's transitions, take
+    /// it when they are placed and whenever it is set.
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">Not null or a finite number above 0.</exception>
     public static double? ControlSpeed
     {
         get => _controlSpeed;
-        set => _controlSpeed = CheckedOrNull(value);
+        set
+        {
+            _controlSpeed = CheckedOrNull(value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -149,7 +185,7 @@ public static class CornflowerConfig
     /// </summary>
     internal static double SpeedOf(MotionArea area)
     {
-        if (!Animated)
+        if (!_animated)
             return NoMotion;
         var own = area switch
         {
@@ -163,14 +199,21 @@ public static class CornflowerConfig
         return own ?? _motionSpeed;
     }
 
-    /// <summary>Every setting back to the phone's: for a test, and the sample's "the phone's" button.</summary>
-    internal static void Reset()
+    /// <summary>Every setting back to the phone's: the defaults, the deviations off.</summary>
+    public static void Reset()
     {
-        Animated = true;
+        _animated = true;
         _motionSpeed = 1;
         _popupSpeed = _pageSpeed = _tiltSpeed = _pivotAndHubSpeed = _controlSpeed = null;
         Deviations.MenuFlyoutSingleStepOpen = false;
+        Changed?.Invoke();
     }
+
+    /// <summary>
+    /// Raised when <see cref="Animated"/> or a speed is set, on the thread that set it: for what can't read the speed
+    /// as its motion starts, the theme's Avalonia transitions, whose durations are set again then.
+    /// </summary>
+    internal static event Action? Changed;
 
     private static double Checked(double speed, string name = "value") =>
         double.IsFinite(speed) && speed > 0

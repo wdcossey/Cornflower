@@ -252,7 +252,7 @@ internal static class PhoneMenuFlyout
             if (!CornflowerConfig.Animated)
                 return;
             _start = null;
-            _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
+            _speed = CornflowerConfig.SpeedOf(MotionArea.Popup);
             _singleStep = CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen;
             // The start at once, so no frame shows the menu at rest first; time 0 is still the first frame.
             Move();

@@ -108,7 +108,8 @@ public partial class MainView : UserControl
         this.GetControl<ToggleSwitch>("AnimatedSwitch").IsChecked = CornflowerConfig.Animated;
         this.GetControl<ComboBox>("MotionSpeedBox").SelectedIndex = Array.IndexOf(Speeds, CornflowerConfig.MotionSpeed);
         for (var i = 0; i < Areas.Length; i++)
-            _areaBoxes[i].SelectedIndex = Areas[i].Get() is { } own ? Array.IndexOf(Speeds, own) + 1 : 0;
+            // A speed the page doesn't offer (an app's own) shows as none chosen, so any choice changes it.
+            _areaBoxes[i].SelectedIndex = Areas[i].Get() is { } own ? Array.IndexOf(Speeds, own) is >= 0 and var at ? at + 1 : -1 : 0;
         this.GetControl<ToggleSwitch>("SingleStepSwitch").IsChecked = CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen;
         _showing = false;
     }
@@ -134,11 +135,7 @@ public partial class MainView : UserControl
     /// <summary>Every setting back to the phone's: <see cref="CornflowerConfig"/>'s defaults.</summary>
     private void OnPhoneMotion(object? sender, RoutedEventArgs e)
     {
-        CornflowerConfig.Animated = true;
-        CornflowerConfig.MotionSpeed = 1;
-        foreach (var (_, _, set) in Areas)
-            set(null);
-        CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen = false;
+        CornflowerConfig.Reset();
         ShowMotion();
     }
 

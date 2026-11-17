@@ -601,7 +601,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
                 _fadingInTimer = null;
                 _fadingIn = false;
                 UpdateBackgroundState();
-            }, FadingInTime, CornflowerClock.SpeedOf(MotionArea.PivotAndHub));
+            }, FadingInTime, CornflowerConfig.SpeedOf(MotionArea.PivotAndHub));
         }
 
         UpdateBackgroundState();

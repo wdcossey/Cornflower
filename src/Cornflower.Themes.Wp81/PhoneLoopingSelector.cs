@@ -347,7 +347,7 @@ internal static class PhoneLoopingSelector
 
             _motion = motion;
             _motionStart = CornflowerClock.Now;
-            _motionSpeed = CornflowerClock.SpeedOf(MotionArea.Control);
+            _motionSpeed = CornflowerConfig.SpeedOf(MotionArea.Control);
             _lastSet = Offset;
             _panel.SetValue(IsMovingProperty, true);
             var generation = _generation;
@@ -473,7 +473,7 @@ internal static class PhoneLoopingSelector
             if (_expansionFrame is null)
             {
                 _expansionLast = CornflowerClock.Now;
-                _expansionSpeed = CornflowerClock.SpeedOf(MotionArea.Control);
+                _expansionSpeed = CornflowerConfig.SpeedOf(MotionArea.Control);
                 _expansionFrame = CornflowerClock.RequestFrame(_panel, StepExpansion);
             }
         }

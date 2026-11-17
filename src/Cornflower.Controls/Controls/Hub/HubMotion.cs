@@ -331,7 +331,7 @@ internal sealed class HubMotion
     {
         StopFrames();
         _start = CornflowerClock.Now;
-        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _to = to;
         _curve = curve;
@@ -346,7 +346,7 @@ internal sealed class HubMotion
     {
         StopFrames();
         _start = CornflowerClock.Now;
-        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
+        _speed = CornflowerConfig.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _to = to;
         _moving = true;

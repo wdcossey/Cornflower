@@ -1148,5 +1148,15 @@ public class CommandBarTests
             page.At(from + 100 + 32);
             Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
         }
+
+        // With Animated off, the bar is there at once.
+        CornflowerConfig.Animated = false;
+        using (var page = new AppBarPage())
+        {
+            page.Bar.IsOpen = true;
+            page.Window.UpdateLayout();
+            Assert.Equal(OpenTop / Scale, page.DrawnTop, 0.001);
+            Assert.Equal(0, page.Clock.Pending);
+        }
     }
 }

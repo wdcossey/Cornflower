@@ -112,6 +112,7 @@ internal static class PhoneToggleSwitch
                 PutBack();
             if (_knob is not null)
                 _knob.PropertyChanged -= OnKnobChanged;
+            PhoneTransitions.Unfollow(toggle);
         }
 
         /// <summary>
@@ -136,13 +137,14 @@ internal static class PhoneToggleSwitch
             _root.AddHandler(InputElement.PointerReleasedEvent, OnReleased);
             _thumb.AddHandler(InputElement.PointerCaptureLostEvent, OnCaptureLost);
             _knob.PropertyChanged += OnKnobChanged;
-            KnobTransitions();
+            // At CornflowerConfig.ControlSpeed while the switch is in a window, so Avalonia's own moves (a key, a change
+            // from code) have the config's speed of the moment too.
+            PhoneTransitions.Follow(toggle, () => toggle.KnobTransitions, MotionArea.Control);
         }
 
         /// <summary>
         /// The switch's <c>KnobTransitions</c>, at <see cref="CornflowerConfig.ControlSpeed"/> read now
-        /// (<see cref="PhoneTransitions"/>): when the template is applied, so Avalonia's own moves (a key, a change from
-        /// code) have it, and at the end of each tap or drag.
+        /// (<see cref="PhoneTransitions"/>), for the end of a tap or drag: an app may have given it new ones since.
         /// </summary>
         private Transitions? KnobTransitions()
         {

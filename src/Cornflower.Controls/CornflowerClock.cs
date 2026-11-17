@@ -25,8 +25,9 @@ namespace Cornflower.Controls;
 /// read and set on the UI thread.
 /// </para>
 /// <para>
-/// A motion reads its speed from <see cref="CornflowerConfig"/> when it starts (<see cref="SpeedOf"/>), and scales its
-/// time with it here (<see cref="Since"/>, <see cref="AtSpeed"/>, <see cref="Schedule(Action, TimeSpan, double)"/>):
+/// A motion reads its speed from <see cref="CornflowerConfig"/> when it starts (<c>CornflowerConfig.SpeedOf</c>), and
+/// scales its time with it here (<see cref="Since"/>, <see cref="AtSpeed"/>, <see cref="RealTime"/>,
+/// <see cref="Schedule(Action, TimeSpan, double)"/>):
 /// the clock itself stays real time, so a test's time is still the real time a motion takes.
 /// </para>
 /// </remarks>
@@ -51,13 +52,6 @@ internal static class CornflowerClock
     public static IDisposable RequestFrame(Visual visual, Action callback) => Source.RequestFrame(visual, callback);
 
     /// <summary>
-    /// The speed a motion of <paramref name="area"/> starts at: <see cref="CornflowerConfig"/>'s for it, read now. A
-    /// motion keeps it to its end, and measures its time with <see cref="Since"/> and its delays with
-    /// <see cref="Schedule(Action, TimeSpan, double)"/>.
-    /// </summary>
-    public static double SpeedOf(MotionArea area) => CornflowerConfig.SpeedOf(area);
-
-    /// <summary>
     /// A motion's own time for <paramref name="real"/> of real time at <paramref name="speed"/>: the one place a speed
     /// scales a motion. At 1, the phone's, the real time exactly; never more than a century, so no sum overflows.
     /// </summary>
@@ -77,7 +71,13 @@ internal static class CornflowerClock
     /// <paramref name="speed"/>: at 2, after half of it in real time.
     /// </summary>
     public static IDisposable Schedule(Action callback, TimeSpan delay, double speed) =>
-        Schedule(callback, speed == 1 ? delay : delay / speed);
+        Schedule(callback, RealTime(delay, speed));
+
+    /// <summary>
+    /// The real time <paramref name="motion"/> of a motion's own time takes at <paramref name="speed"/>: at 2, half of
+    /// it. At 1 exactly it; never more than a century, however slow.
+    /// </summary>
+    public static TimeSpan RealTime(TimeSpan motion, double speed) => speed == 1 ? motion : AtSpeed(motion, 1 / speed);
 
     private static readonly TimeSpan MaxMotionTime = TimeSpan.FromDays(36_500);
 }
