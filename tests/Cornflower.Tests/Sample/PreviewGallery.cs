@@ -1,9 +1,13 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
 using Cornflower.Sample;
@@ -13,7 +17,8 @@ namespace Cornflower.Tests.Sample;
 /// <summary>
 /// The pictures for <c>PREVIEW.md</c>: every page of the sample, in the sample's shell at the reference view (450 ×
 /// 800, without the desktop's Back rail, as on a phone), dark and light, and the pages that show the accent in two
-/// more of the phone's accents; <c>PREVIEW.md</c> and <c>README.md</c> show a chosen set of them, committed under
+/// more of the phone's accents, and the pages that open a popup again with it open (<see cref="PopupShots"/>), at rest
+/// after its motion; <c>PREVIEW.md</c> and <c>README.md</c> show a chosen set of them, committed under
 /// <c>docs/preview/</c>. Drawn headless with Skia, as the comparison frames are, so they are the theme's own pixels
 /// on any OS; at a render scaling of 2, not the reference profile's 2.4, so a picture may differ from a comparison
 /// frame by a pixel of rounding. By hand, as the <c>*Frames</c> savers are: it does nothing unless
@@ -21,7 +26,7 @@ namespace Cornflower.Tests.Sample;
 /// <code>
 /// CORNFLOWER_PREVIEW=/absolute/folder dotnet test tests/Cornflower.Tests --filter FullyQualifiedName~PreviewGallery
 /// </code>
-/// Each picture is <c>&lt;variant&gt;__&lt;page&gt;[__&lt;accent&gt;].png</c>, 900 × 1600.
+/// Each picture is <c>&lt;variant&gt;__&lt;page&gt;[__&lt;accent&gt;|__&lt;popup&gt;].png</c>, 900 × 1600.
 /// </summary>
 public class PreviewGallery
 {
@@ -41,7 +46,30 @@ public class PreviewGallery
     private const string LightSwitchHeader = "light theme";
 
     /// <summary>The pages known to have that switch: the gallery stops if one has lost it, rather than draw it Off.</summary>
-    private static readonly string[] LightSwitchPages = ["commandbar", "pivot", "hub"];
+    private static readonly string[] LightSwitchPages =
+        ["commandbar", "pivot", "hub", "flyout", "menu flyout", "listpicker", "contentdialog", "loopingselector"];
+
+    /// <summary>
+    /// The pages drawn again with a popup open: the page's title, the popup's name in the file, and how it is opened
+    /// (a page's button clicked by its name, or text typed in a named box), as a page at rest shows only their buttons;
+    /// and the LoopingSelector's page with a wheel tapped, the active wheel showing its items.
+    /// </summary>
+    private static readonly PopupShot[] PopupShots =
+    [
+        new("flyout", "top", Click("OpenTop")),
+        new("flyout", "full", Click("OpenFull")),
+        new("menu flyout", "menu", Click("OpenMenu")),
+        new("listpicker", "single", Click("OpenSingle")),
+        new("listpicker", "multiple", Click("OpenMultiple")),
+        new("listpicker", "picker", Click("OpenPicker")),
+        new("contentdialog", "dialog", Click("ShowTwo")),
+        new("contentdialog", "full", Click("ShowFull")),
+        new("autosuggestbox", "list", Type("Fruit", "a")),
+        new("loopingselector", "active", Tap("Month"), Popup: false),
+    ];
+
+    /// <summary>Clock time a popup's motion is given to end: past the longest, the full popups' swing (about 0.5 s).</summary>
+    private const double PopupMotion = 1500;
 
     /// <summary>
     /// Real time to let pass before each picture: past the longest Avalonia transition in the theme, the ToggleSwitch
@@ -57,10 +85,10 @@ public class PreviewGallery
         if (!Path.IsPathFullyQualified(folder))
             throw new ArgumentException($"CORNFLOWER_PREVIEW must be an absolute folder; it is '{folder}'.");
 
-        var missing = AccentPages.Where(title =>
+        var missing = AccentPages.Concat(LightSwitchPages).Concat(PopupShots.Select(shot => shot.Page)).Distinct().Where(title =>
             !SampleShell.Pages.Any(page => string.Equals(page.Title, title, StringComparison.OrdinalIgnoreCase))).ToList();
         if (missing.Count > 0)
-            throw new InvalidOperationException($"No sample page is titled {string.Join(", ", missing)}: update AccentPages.");
+            throw new InvalidOperationException($"No sample page is titled {string.Join(", ", missing)}: update AccentPages, LightSwitchPages or PopupShots.");
 
         // A fresh folder, so a picture of a page since renamed or removed can't sit beside the new ones.
         if (Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Any())
@@ -74,6 +102,8 @@ public class PreviewGallery
             foreach (var page in SampleShell.Pages)
             {
                 Shoot(folder, $"{name}__{FileName(page.Title)}", variant, accent: null, page);
+                foreach (var shot in PopupShots.Where(shot => string.Equals(shot.Page, page.Title, StringComparison.OrdinalIgnoreCase)))
+                    Shoot(folder, $"{name}__{FileName(page.Title)}__{shot.Name}", variant, accent: null, page, shot);
                 if (!AccentPages.Contains(page.Title, StringComparer.OrdinalIgnoreCase))
                     continue;
                 foreach (var accent in OtherAccents)
@@ -82,8 +112,11 @@ public class PreviewGallery
         }
     }
 
-    /// <summary>The shell, showing <paramref name="open"/> (the catalogue if null), at rest, saved as <paramref name="file"/>.</summary>
-    private static void Shoot(string folder, string file, ThemeVariant variant, string? accent, SamplePageEntry? open)
+    /// <summary>
+    /// The shell, showing <paramref name="open"/> (the catalogue if null) with <paramref name="popup"/> open if one is
+    /// given, at rest, saved as <paramref name="file"/>.
+    /// </summary>
+    private static void Shoot(string folder, string file, ThemeVariant variant, string? accent, SamplePageEntry? open, PopupShot? popup = null)
     {
         using var clock = new TestClock();
         var shell = new SampleShell { HasBackRail = false, Report = _ => { } };
@@ -111,19 +144,121 @@ public class PreviewGallery
                 toggle.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
         }
 
-        // Avalonia's own transitions (the ToggleSwitch knob's 370 ms, the ListView check box's) run on the render
-        // loop's clock, which is real time, not the TestClock's: draw frames over RealTimeSettle of it, on every
-        // picture, so each is at rest.
+        SettleRealTime();
+        if (popup is not null)
+            OpenAtRest(file, scene.Window, shell, clock, popup);
+
+        using var frame = scene.Capture();
+        if (popup is not null)
+        {
+            // At rest: half a second more, of the clock and of real time, draws the same pixels.
+            clock.At(clock.Now.TotalMilliseconds + 500);
+            SettleRealTime();
+            using var later = scene.Capture();
+            if (!Frames.SameAs(frame, later))
+                throw new InvalidOperationException($"{file}: the page still moves with the popup open.");
+        }
+
+        frame.Save(Path.Combine(folder, file + ".png"), PngBitmapEncoderOptions.Default);
+    }
+
+    /// <summary>
+    /// Opens <paramref name="popup"/> and runs its motion to its end; the gallery stops if it isn't the one popup
+    /// shown then (or one is, for a shot with none), or a timeline still runs on the clock.
+    /// </summary>
+    private static void OpenAtRest(string file, Window window, Control shell, TestClock clock, PopupShot popup)
+    {
+        if (OpenPopups(window) != 0)
+            throw new InvalidOperationException($"{file}: a popup is shown before the gallery opens one.");
+        popup.Act(window, shell);
+        // The popup's motion on the TestClock, a frame at a time, then Avalonia's own transitions in it.
+        var end = clock.Now.TotalMilliseconds + PopupMotion;
+        while (clock.Now.TotalMilliseconds < end)
+        {
+            clock.At(clock.Now.TotalMilliseconds + 100);
+            ShellTurns.Draw();
+        }
+
+        SettleRealTime();
+        if (OpenPopups(window) is var shown && shown != (popup.Popup ? 1 : 0))
+            throw new InvalidOperationException($"{file}: {shown} popups are shown, not {(popup.Popup ? "the one asked for" : "none")}.");
+        if (clock.Pending != 0)
+            throw new InvalidOperationException($"{file}: {clock.Pending} timelines still run on the clock: the popup isn't at rest.");
+    }
+
+    /// <summary>
+    /// Avalonia's own transitions (the ToggleSwitch knob's 370 ms, the ListView check box's) run on the render loop's
+    /// clock, which is real time, not the TestClock's: draw frames over <see cref="RealTimeSettle"/> of it, on every
+    /// picture, so each is at rest.
+    /// </summary>
+    private static void SettleRealTime()
+    {
         var settled = DateTime.UtcNow + RealTimeSettle;
         while (DateTime.UtcNow < settled)
         {
             Thread.Sleep(50);
             ShellTurns.Draw();
         }
-
-        using var frame = scene.Capture();
-        frame.Save(Path.Combine(folder, file + ".png"), PngBitmapEncoderOptions.Default);
     }
+
+    /// <summary>The popups shown in the window, in its overlay layer, where every Wp81 popup is drawn.</summary>
+    private static int OpenPopups(Window window) =>
+        window.GetVisualDescendants().OfType<OverlayPopupHost>().Count(host => host.IsEffectivelyVisible);
+
+    /// <summary>The page's one control named <paramref name="name"/>, shown and enabled; the gallery stops if there isn't one.</summary>
+    private static T Named<T>(Control shell, string name) where T : Control
+    {
+        var found = shell.GetVisualDescendants().OfType<T>().Where(control => control.Name == name).ToList();
+        if (found is not [{ IsEffectivelyVisible: true, IsEffectivelyEnabled: true } one])
+            throw new InvalidOperationException($"The gallery found {found.Count} {typeof(T).Name} named {name}, not one shown and enabled: update PopupShots.");
+        return one;
+    }
+
+    /// <summary>A click on the page's button named <paramref name="name"/>, with the mouse, at its middle.</summary>
+    private static Action<Window, Control> Click(string name) => (window, shell) =>
+    {
+        var button = Named<Button>(shell, name);
+        var at = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)
+            ?? throw new InvalidOperationException($"The button {name} isn't in the window.");
+        window.MouseDown(at, MouseButton.Left);
+        window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+    };
+
+    /// <summary>A touch tap on the page's control named <paramref name="name"/>, at its middle.</summary>
+    private static Action<Window, Control> Tap(string name) => (window, shell) =>
+    {
+        var control = Named<Control>(shell, name);
+        var at = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)
+            ?? throw new InvalidOperationException($"The control {name} isn't in the window.");
+        var touch = window.TouchBegin(at, RawInputModifiers.None);
+        window.TouchEnd(touch, at, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+    };
+
+    /// <summary>
+    /// <paramref name="text"/> typed in the page's AutoCompleteBox named <paramref name="name"/>, its suggestions given at
+    /// once (its populate delay is a real-time timer) and its caret not drawn (it blinks in real time).
+    /// </summary>
+    private static Action<Window, Control> Type(string name, string text) => (window, shell) =>
+    {
+        var box = Named<AutoCompleteBox>(shell, name);
+        box.MinimumPopulateDelay = TimeSpan.Zero;
+        var input = box.GetVisualDescendants().OfType<TextBox>().SingleOrDefault(t => t.Name == "PART_TextBox")
+            ?? throw new InvalidOperationException($"The box {name} has no PART_TextBox.");
+        input.CaretBrush = Brushes.Transparent;
+        if (!input.Focus())
+            throw new InvalidOperationException($"The box {name} takes no focus.");
+        window.KeyTextInput(text);
+        Dispatcher.UIThread.RunJobs();
+        if (!box.IsDropDownOpen)
+            throw new InvalidOperationException($"The box {name} shows no suggestions for '{text}'.");
+    };
+
+    /// <summary>
+    /// A page drawn again after <see cref="Act"/> in it: with a popup open, unless <see cref="Popup"/> is false.
+    /// </summary>
+    private sealed record PopupShot(string Page, string Name, Action<Window, Control> Act, bool Popup = true);
 
     /// <summary>A page's title as a file name: lower case, a hyphen for anything but a letter or digit.</summary>
     private static string FileName(string title) =>

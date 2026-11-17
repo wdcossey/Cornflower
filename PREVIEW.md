@@ -1,7 +1,7 @@
 # Preview
 
 What Cornflower looks like today: the pages of the sample app, drawn by the Windows Phone 8.1 theme at the phone's
-own size (450 × 800 view pixels), dark and light. Each control is measured against the Windows Phone 8.1 emulator;
+own size (450 × 800 view pixels), dark and light, the popups open and at rest. Each control is measured against the Windows Phone 8.1 emulator;
 its comparison is in [`docs/controls/`](docs/controls/).
 
 The pictures are drawn headless, with Skia, by
@@ -54,6 +54,41 @@ themed, with the phone's tilt on a press and its check mode.
 <img src="docs/preview/light__listview.png" width="270" alt="ListView, light">
 </p>
 
+## Flyouts and menus
+
+A Button's Flyout, across the top of the window or filling it (`FlyoutOptions.IsFullScreen`, WinRT's
+`Placement="Full"`); each swings in, and a tap below it or Back closes it. A Button's MenuFlyout, under its Button,
+the full width of the window.
+
+<p>
+<img src="docs/preview/dark__flyout__top.png" width="270" alt="The top Flyout, dark">
+<img src="docs/preview/light__flyout__top.png" width="270" alt="The top Flyout, light">
+<img src="docs/preview/dark__flyout__full.png" width="270" alt="The full Flyout, dark">
+</p>
+<p>
+<img src="docs/preview/dark__menu-flyout__menu.png" width="270" alt="MenuFlyout, dark">
+<img src="docs/preview/light__menu-flyout__menu.png" width="270" alt="MenuFlyout, light">
+</p>
+
+## Pickers and dialogs
+
+ListPickerFlyout fills the window: in Multiple with check boxes and the pickers' bar, accept and cancel; in Single a
+tap picks. ContentDialog swings in at the top of the window over the dimmed page. LoopingSelector, the date and time
+pickers' wheel, here with the month wheel active (the picture is of the day it was drawn).
+
+<p>
+<img src="docs/preview/dark__listpicker__multiple.png" width="270" alt="ListPickerFlyout in Multiple, dark">
+<img src="docs/preview/light__listpicker__single.png" width="270" alt="ListPickerFlyout in Single, light">
+</p>
+<p>
+<img src="docs/preview/dark__contentdialog__dialog.png" width="270" alt="ContentDialog, dark">
+<img src="docs/preview/light__contentdialog__dialog.png" width="270" alt="ContentDialog, light">
+</p>
+<p>
+<img src="docs/preview/dark__loopingselector__active.png" width="270" alt="LoopingSelector, the month wheel active, dark">
+<img src="docs/preview/light__loopingselector__active.png" width="270" alt="LoopingSelector, the month wheel active, light">
+</p>
+
 ## Toggles, sliders and progress, in three accents
 
 <p>
@@ -71,9 +106,15 @@ themed, with the phone's tilt on a press and its check mode.
 
 ## Text and buttons
 
+TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions hanging from the box.
+
 <p>
 <img src="docs/preview/dark__textbox.png" width="270" alt="TextBox, dark">
 <img src="docs/preview/light__textbox.png" width="270" alt="TextBox, light">
+</p>
+<p>
+<img src="docs/preview/dark__autosuggestbox__list.png" width="270" alt="AutoSuggestBox with its suggestions, dark">
+<img src="docs/preview/light__autosuggestbox__list.png" width="270" alt="AutoSuggestBox with its suggestions, light">
 </p>
 <p>
 <img src="docs/preview/dark__button.png" width="270" alt="Button, dark">
@@ -86,6 +127,6 @@ themed, with the phone's tilt on a press and its check mode.
 
 ## Not shown
 
-Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide and the Hub's pan run on the phone's
-own measured curves, which still pictures can't show. The pickers, flyouts and dialogs are in progress (Tier 3 of
-the [roadmap](docs/ROADMAP.md)).
+Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan, the popups' swing
+and the wheel's coast run on the phone's own measured curves, which still pictures can't show. ComboBox and the date
+and time pickers are next (Tier 3 of the [roadmap](docs/ROADMAP.md)).
