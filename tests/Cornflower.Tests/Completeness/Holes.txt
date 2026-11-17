@@ -12,8 +12,6 @@ CalendarDayButton
 CalendarItem
 Carousel
 CarouselPage
-ComboBox
-ComboBoxItem
 ContextMenu
 DataValidationErrors
 DatePicker

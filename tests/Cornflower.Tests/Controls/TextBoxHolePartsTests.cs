@@ -15,15 +15,16 @@ namespace Cornflower.Tests.Controls;
 /// <summary>
 /// A plain TextBox in the template of a control Wp81 doesn't theme yet (a hole) keeps the theme under Wp81 for TextBox,
 /// through <c>HoleParts</c>, as <c>CheckBoxHolePartsTests</c> shows for the file dialog's CheckBox. In Avalonia 12.1.4,
-/// Simple's templates for CalendarDatePicker, ComboBox (its editable box), the managed file dialog and
+/// Simple's templates for CalendarDatePicker, the managed file dialog and
 /// NumericUpDown hold one or more, and pass them Simple's brushes, or none: with the phone's theme they would draw the
 /// phone's black text and white box in chrome laid out for Simple's (CalendarDatePicker's and NumericUpDown's text
-/// black on Simple's dark background, ComboBox's editable box white when focused).
+/// black on Simple's dark background). ComboBox's editable box was one until Wp81 themed ComboBox (#155); a hole's
+/// ComboBox is Wp81's, so its parts aren't counted.
 /// </summary>
 public class TextBoxHolePartsTests
 {
     private static List<TextBox> Plain(Control control) =>
-        control.GetVisualDescendants().OfType<TextBox>().Where(c => c.GetType() == typeof(TextBox)).ToList();
+        control.GetVisualDescendants().OfType<TextBox>().Where(c => c.GetType() == typeof(TextBox) && !Completeness.HoleTogglePartsTests.InComboBox(c)).ToList();
 
     private static ControlTheme ThemeOf(IResourceNode theme, Type type) =>
         theme.TryGetResource(type, ThemeVariant.Dark, out var found) ? (ControlTheme)found! : throw new InvalidOperationException($"No {type.Name} theme.");
@@ -60,7 +61,7 @@ public class TextBoxHolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Equal(
-            [nameof(CalendarDatePicker), nameof(ComboBox), nameof(ManagedFileChooser), nameof(NumericUpDown)],
+            [nameof(CalendarDatePicker), nameof(ManagedFileChooser), nameof(NumericUpDown)],
             found);
     }
 
