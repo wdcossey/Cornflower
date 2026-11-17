@@ -357,4 +357,4 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | Done 2026-11-17 (#174) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Each row's device run on
-the Pixel 8 is in the Tier 1 and Tier 2 tables above.
+the Pixel 8 is in the tier tables above, Tier 3's owed runs included.

@@ -56,26 +56,31 @@ public class PreviewGallery
     /// </summary>
     private static readonly PopupShot[] PopupShots =
     [
-        new("flyout", "top", Click("OpenTop")),
-        new("flyout", "full", Click("OpenFull")),
-        new("menu flyout", "menu", Click("OpenMenu")),
-        new("listpicker", "single", Click("OpenSingle")),
-        new("listpicker", "multiple", Click("OpenMultiple")),
-        new("listpicker", "picker", Click("OpenPicker")),
-        new("contentdialog", "dialog", Click("ShowTwo")),
-        new("contentdialog", "full", Click("ShowFull")),
+        new("flyout", "top", Tap<Button>("OpenTop")),
+        new("flyout", "full", Tap<Button>("OpenFull")),
+        new("menu flyout", "menu", Tap<Button>("OpenMenu")),
+        new("listpicker", "single", Tap<Button>("OpenSingle")),
+        new("listpicker", "multiple", Tap<Button>("OpenMultiple")),
+        new("listpicker", "picker", Tap<Button>("OpenPicker")),
+        new("contentdialog", "dialog", Tap<Button>("ShowTwo")),
+        new("contentdialog", "full", Tap<Button>("ShowFull")),
         new("autosuggestbox", "list", Type("Fruit", "a")),
-        new("loopingselector", "active", Tap("Month"), Popup: false),
+        new("loopingselector", "active", Tap<Control>("Month"), Popup: false),
     ];
 
-    /// <summary>Clock time a popup's motion is given to end: past the longest, the full popups' swing (about 0.5 s).</summary>
+    /// <summary>
+    /// Clock time a popup's motion is given to end, in ms: three times the longest, the MenuFlyout's 500 ms opening
+    /// (#149's full popups are at rest by 250 ms, the ContentDialog by 141 ms, a full popup's close by 469 ms).
+    /// </summary>
     private const double PopupMotion = 1500;
 
     /// <summary>
-    /// Real time to let pass before each picture: past the longest Avalonia transition in the theme, the ToggleSwitch
-    /// knob's 370 ms (<c>KnobTransitions</c>). A longer one needs this raised.
+    /// Forced render ticks drawn before each picture, so Avalonia's own transitions are at rest: the longest in the theme,
+    /// the ToggleSwitch knob's 370 ms (<c>KnobTransitions</c>), was at rest after 49 to 60 of them in this
+    /// gallery, not the 23 frames of 1/60 s its length gives (measured: 48 left the knob short), so twice that.
+    /// A longer transition needs this raised.
     /// </summary>
-    private static readonly TimeSpan RealTimeSettle = TimeSpan.FromMilliseconds(600);
+    private const int TransitionTicks = 120;
 
     [AvaloniaFact]
     public void Save()
@@ -85,7 +90,7 @@ public class PreviewGallery
         if (!Path.IsPathFullyQualified(folder))
             throw new ArgumentException($"CORNFLOWER_PREVIEW must be an absolute folder; it is '{folder}'.");
 
-        var missing = AccentPages.Concat(LightSwitchPages).Concat(PopupShots.Select(shot => shot.Page)).Distinct().Where(title =>
+        var missing = AccentPages.Concat(LightSwitchPages).Concat(PopupShots.Select(shot => shot.Page)).Distinct(StringComparer.OrdinalIgnoreCase).Where(title =>
             !SampleShell.Pages.Any(page => string.Equals(page.Title, title, StringComparison.OrdinalIgnoreCase))).ToList();
         if (missing.Count > 0)
             throw new InvalidOperationException($"No sample page is titled {string.Join(", ", missing)}: update AccentPages, LightSwitchPages or PopupShots.");
@@ -144,16 +149,16 @@ public class PreviewGallery
                 toggle.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
         }
 
-        SettleRealTime();
+        SettleTransitions();
         if (popup is not null)
             OpenAtRest(file, scene.Window, shell, clock, popup);
 
         using var frame = scene.Capture();
         if (popup is not null)
         {
-            // At rest: half a second more, of the clock and of real time, draws the same pixels.
-            clock.At(clock.Now.TotalMilliseconds + 500);
-            SettleRealTime();
+            // At rest: with nothing left on the clock (OpenAtRest), 600 ms more of Avalonia's transitions draw the
+            // same pixels.
+            SettleTransitions();
             using var later = scene.Capture();
             if (!Frames.SameAs(frame, later))
                 throw new InvalidOperationException($"{file}: the page still moves with the popup open.");
@@ -179,7 +184,7 @@ public class PreviewGallery
             ShellTurns.Draw();
         }
 
-        SettleRealTime();
+        SettleTransitions();
         if (OpenPopups(window) is var shown && shown != (popup.Popup ? 1 : 0))
             throw new InvalidOperationException($"{file}: {shown} popups are shown, not {(popup.Popup ? "the one asked for" : "none")}.");
         if (clock.Pending != 0)
@@ -188,16 +193,15 @@ public class PreviewGallery
 
     /// <summary>
     /// Avalonia's own transitions (the ToggleSwitch knob's 370 ms, the ListView check box's) run on the render loop's
-    /// clock, which is real time, not the TestClock's: draw frames over <see cref="RealTimeSettle"/> of it, on every
-    /// picture, so each is at rest.
+    /// clock, not the TestClock's, and move only on a forced render tick, whatever the wall clock says
+    /// (<c>ManualRenderTimer</c>): draw <see cref="TransitionTicks"/> of them, on every picture, so each is at rest.
     /// </summary>
-    private static void SettleRealTime()
+    private static void SettleTransitions()
     {
-        var settled = DateTime.UtcNow + RealTimeSettle;
-        while (DateTime.UtcNow < settled)
+        for (var tick = 0; tick < TransitionTicks; tick++)
         {
-            Thread.Sleep(50);
-            ShellTurns.Draw();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
         }
     }
 
@@ -214,23 +218,15 @@ public class PreviewGallery
         return one;
     }
 
-    /// <summary>A click on the page's button named <paramref name="name"/>, with the mouse, at its middle.</summary>
-    private static Action<Window, Control> Click(string name) => (window, shell) =>
+    /// <summary>
+    /// A touch tap on the page's <typeparamref name="T"/> named <paramref name="name"/>, at its middle: a touch, as on
+    /// the phone, so no pointer is left over the popup it opens to show a pointer-over look.
+    /// </summary>
+    private static Action<Window, Control> Tap<T>(string name) where T : Control => (window, shell) =>
     {
-        var button = Named<Button>(shell, name);
-        var at = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)
-            ?? throw new InvalidOperationException($"The button {name} isn't in the window.");
-        window.MouseDown(at, MouseButton.Left);
-        window.MouseUp(at, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
-    };
-
-    /// <summary>A touch tap on the page's control named <paramref name="name"/>, at its middle.</summary>
-    private static Action<Window, Control> Tap(string name) => (window, shell) =>
-    {
-        var control = Named<Control>(shell, name);
+        var control = Named<T>(shell, name);
         var at = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)
-            ?? throw new InvalidOperationException($"The control {name} isn't in the window.");
+            ?? throw new InvalidOperationException($"The {typeof(T).Name} {name} isn't in the window.");
         var touch = window.TouchBegin(at, RawInputModifiers.None);
         window.TouchEnd(touch, at, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
