@@ -19,8 +19,8 @@ internal interface ISidewaysSwipeTarget
     /// <summary>
     /// Whether a finger coming down now holds what is moving where it is, as the phone's DirectManipulation catches a
     /// moving Hub. If it does, the recogniser begins the drag at the press (<see cref="BeginDrag"/>) and doesn't capture
-    /// the finger, so that something in the content can still take it. The Pivot ends its move when the drag begins
-    /// instead, and never holds.
+    /// the finger, so that something in the content can still take it. The Pivot holds a swipe's move (#163); a header
+    /// tap's or a code change's move it ends when the drag begins.
     /// </summary>
     bool HoldsAPress { get; }
 

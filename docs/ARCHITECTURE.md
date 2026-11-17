@@ -154,12 +154,13 @@ behaviour, and record the rung in the control's plan.
    that era's theme instead, internal to `Cornflower.Themes.Wp81` (rule 5): `PhoneTextLine`, the 8.1
    line rules; the scroll indicators, `PhoneScrollIndicators` and `PhoneIndicatorFade` (#116); the
    list check mode, `PhoneListMultiSelect` (#119, and its box's own press, #142); the app bar's
-   stepped height and motion, `PhoneAppBar` (#141).
+   stepped height and motion, `PhoneAppBar` (#141); the ComboBox's two forms, `PhoneComboBox` (#182); the date and
+   time pickers opened full screen on the phone's popup host, `PhoneDateTimePicker` (#183).
 3. **Part class**: our own control placed inside Avalonia's template, where the behaviour lives in
    a part. A `ScrollContentPresenter` subclass with our gesture recogniser for scroll physics (not
    built: #116 recorded the physics as a deviation, and
-   [#129](https://github.com/wdcossey/CornflowerUI/issues/129) is the part); a presenter for a
-   full-screen picker. The app-facing type doesn't change. Avonic's
+   [#129](https://github.com/wdcossey/CornflowerUI/issues/129) is the part). A presenter for a full-screen picker was planned here; the date and time
+   pickers didn't need one (#183). The app-facing type doesn't change. Avonic's
    `ButtonInner` is this.
 4. **Subclass** in `Cornflower.Controls`, with the WinRT name, when the control's own input or
    selection path must change. `StyleKeyOverride` stays at its own type, and its theme is
@@ -170,12 +171,14 @@ behaviour, and record the rung in the control's plan.
      behaviour, not a hole;
    - the control's README lists it as a type substitution.
 
-   Expected: `ComboBox`, for its full-screen mode. Keep the set short and listed.
+   None so far. `ComboBox` was expected here, for its full-screen mode, and became an attached
+   behaviour instead (rung 2, #182). Keep the set short and listed.
 5. **New control** with the WinRT name, when Avalonia has no type of that shape. Built: ProgressRing
    (#28), Pivot (#121) and Hub (#122), each running its own motion (`PivotMotion`, `HubMotion`), the
-   Pivot's swipe and the Hub's pan one recogniser (`SidewaysSwipeGestureRecognizer`). Expected:
-   ContentDialog, the picker flyouts and their presenters, SemanticZoom, LoopingSelector, and later
-   Windows Phone 8.0's Panorama, LongListSelector and HubTile.
+   Pivot's swipe and the Hub's pan one recogniser (`SidewaysSwipeGestureRecognizer`); ContentDialog
+   (#157), ListPickerFlyout and PickerFlyout and their presenters (#153). LoopingSelector is Avalonia's
+   panel, themed and driven by a behaviour (#154). Expected: DatePickerFlyout and TimePickerFlyout
+   (#184), SemanticZoom, and later Windows Phone 8.0's Panorama, LongListSelector and HubTile.
 6. **Recorded deviation**, with its measurement and reason.
 
 Behaviour in a subclass or part class is set at style priority, so it survives a replaced theme.
@@ -205,7 +208,7 @@ theme unless it overrides `StyleKeyOverride` to its base or ships a theme keyed 
 that theme may be `BasedOn` the base's.
 
 The real class-level differences between the phone and Avalonia are few: ComboBox's full-screen
-mode, list multi-select and reorder, scroll physics, and the new controls. The planned rung of
+mode (in the end a behaviour, #182), list multi-select and reorder, scroll physics, and the new controls. The planned rung of
 every control is in [the roadmap](ROADMAP.md#controls).
 
 ## Applying the theme
@@ -224,6 +227,9 @@ and `TextBlock`'s 16 keyed text styles.
 
 The theme sets no `ThemeVariant`: it follows the app's. The samples request Dark, the phone's
 default ([ADR 0003](decisions/0003-decisions-on-the-tier-0-infrastructure.md#tokens-45)).
+
+The motion is the phone's unless the app sets `CornflowerConfig`, process-wide: `Animated`,
+`MotionSpeed` and a speed per area ([ADR 0006](decisions/0006-faithful-defaults-and-cornflowerconfig.md)).
 
 Still proposed: an `Accent` property on the theme, as a shortcut for the resource below.
 
@@ -345,8 +351,8 @@ proposals are unproven.
 | ContentDialog | none | A new control |
 | ProgressRing | none | A new control. ProgressBar's indeterminate dots are a template |
 | App bar | `CommandBar`, `CommandBarButton` (new in 12.0) | Theme Avalonia's, and measure what it lacks: the minimised state, the ellipsis menu. Done ([#118](https://github.com/wdcossey/CornflowerUI/issues/118)): the shell's drawing, `ClosedDisplayMode` as `CommandBarOptions`, the page keeping the closed bar's height free; the shell's press, stepped open height and motion ([#141](https://github.com/wdcossey/CornflowerUI/issues/141)) |
-| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Full-screen presentation to be measured; if Avalonia's presenter can't be placed full screen, the presenter becomes a part class, not the picker a subclass |
-| ComboBox's full-screen list | `ComboBox` opens its `PART_Popup` from the class | Theme for the inline form; a `ComboBox` subclass (rung 4) opens `ListPickerFlyout` for the full form. The flip is class behaviour, read from the emulator: 5 items open inline and 6 full screen, by count, not by screen ([#25](https://github.com/wdcossey/CornflowerUI/issues/25)) |
+| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Done ([#156](https://github.com/wdcossey/CornflowerUI/issues/156)) with no part class: the theme's own `PickerPopup` opens full screen on `PhonePopupHost` in place of Avalonia's `PART_Popup` (`PhoneDateTimePicker`, #183). DatePickerFlyout and TimePickerFlyout as types are [#184](https://github.com/wdcossey/CornflowerUI/issues/184) |
+| ComboBox's full-screen list | `ComboBox` opens its `PART_Popup` from the class | Theme for the inline form; the full form opens `ListPickerFlyout`. Done ([#155](https://github.com/wdcossey/CornflowerUI/issues/155)) as an attached behaviour on Avalonia's own `ComboBox` (`PhoneComboBox`, rung 2, #182), not the subclass first planned, so every ComboBox has both forms. The flip is class behaviour, read from the emulator: 5 items open inline and 6 full screen, by count, not by screen ([#25](https://github.com/wdcossey/CornflowerUI/issues/25)) |
 | Hardware back button | `BackRequested` | The app's job, documented in [the Page README](controls/Page/README.md) (#120): a `NavigationPage` in a `PageNavigationHost` pops on the request, or the app handles it, as the sample does |
 | Status bar and safe areas | `InsetsManager`, `SafeAreaPadding`, `DisplayEdgeToEdge` | The app's job, with an example. Avonic reached the same decision. Avalonia 12's `TopLevel.AutoSafeAreaPadding` is on by default, and the Android sample relies on it |
 | Orientation states | none | A pseudoclass the control sets from the top level's size |
@@ -549,6 +555,11 @@ A dash means the animation isn't in that file's count. A motion we must match fr
 reads `CornflowerClock`, which `TestClock` replaces, so a test asserts its timeline to the
 millisecond. A theme transition built on Avalonia's `Transitions` is tested at its end value.
 
+Every motion also reads `CornflowerConfig` as it starts: whether to animate, and how fast, overall
+or by area. Its defaults are the phone's, and a departure from the phone is a named setting that its
+control's README records ([ADR 0006](decisions/0006-faithful-defaults-and-cornflowerconfig.md)). The
+theme's Avalonia transitions take the speed as they are placed and whenever it is set.
+
 ### Text
 
 | WinRT XAML | Avalonia | Note |
@@ -578,7 +589,7 @@ millisecond. A theme transition built on Avalonia's `Transitions` is tested at i
 | WinRT | Ours | Example |
 |---|---|---|
 | Class `Pivot` | The same name, in our namespace | Unless Avalonia has a type of that name; then Avalonia's is themed. If its own input or selection path must change, ours is a **subclass** of Avalonia's with the same name, under rung 4, never an unrelated class of that name |
-| Class `ComboBox`, whose full-screen mode Avalonia's class can't reach | `Cornflower.Controls.ComboBox : Avalonia.Controls.ComboBox`; `StyleKeyOverride` unchanged; its `ControlTheme` `BasedOn` the base's | The one expected subclass. Every base member keeps its meaning; its README lists it as a type substitution |
+| Class `ComboBox`, whose full-screen mode Avalonia's class doesn't have | Avalonia's `ComboBox`, with an attached behaviour the theme turns on (`PhoneComboBox`) | Planned as the one subclass; none was needed (#182). A subclass, if one is ever needed, keeps every base member's meaning, its `StyleKeyOverride` and a `ControlTheme` `BasedOn` the base's, and its README lists it as a type substitution |
 | Dependency property `Title` | `StyledProperty` `Title`, same name and type | |
 | Event `SelectionChanged` | A routed event, same name | |
 | Method | The same name; an async WinRT method that only awaits an animation stays async | `ContentDialog.ShowAsync` |

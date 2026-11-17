@@ -1,6 +1,6 @@
 # ComboBox and ComboBoxItem
 
-Status: done but for the device and real-window runs · [#155](https://github.com/wdcossey/CornflowerUI/issues/155) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done but for the real-window run · [#155](https://github.com/wdcossey/CornflowerUI/issues/155) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page combobox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 355 ms; the box opened by a tap inline and full screen, each drawn right) · owed: the real-window run
 
 The Windows Phone 8.1 ComboBox on Avalonia's own `ComboBox` and `ComboBoxItem`, themed by `Wp81Theme` in
 `src/Cornflower.Themes.Wp81/Controls/ComboBox.axaml`. Five items or fewer open inline, the box growing in place; six or

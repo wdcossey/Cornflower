@@ -140,6 +140,8 @@ TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions h
 
 ## Not shown
 
-Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan, the popups' swing
-and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Nor does the page
+Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan and entrance, the
+popups' swing and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Each
+Hub picture is taken after the entrance's turn. An app can slow the motion, speed it up or turn it off
+(`CornflowerConfig`); the phone's is the default. Nor does the page
 moving up for the keyboard, which is still to come (#179, in the [roadmap](docs/ROADMAP.md)).
