@@ -112,7 +112,6 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private HubSection? _restSection;
     private HubSection? _pending;
     private bool _placed;
-    private bool _entrancePending;
     private bool _fadingIn;
     private IDisposable? _fadingInTimer;
 
@@ -341,17 +340,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         var result = base.ArrangeOverride(finalSize);
         ApplyBackground(_motion.Offset);                  // a brush that isn't an image follows the Hub's size
 
-        // Placed, the Hub turns in from its first arrange, when its root has a size; the turn follows a new size.
-        if (_entrancePending && _hubRoot is not null)
-        {
-            _entrancePending = false;
-            _entrance.Begin(_hubRoot);
-        }
-        else
-        {
-            _entrance.Apply();
-        }
-
+        _entrance.Apply();                                // the turn follows a new size
         return result;
     }
 
@@ -395,8 +384,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         LayoutUpdated += OnLayoutUpdated;
         if (_imageBrush is not null)
             _imageBrush.PropertyChanged += OnImageBrushPropertyChanged;
-        _entrancePending = true;
-        StartFadingIn();
+        UpdateBackgroundState();
         InvalidateMeasure();
     }
 
@@ -411,9 +399,29 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         if (_imageBrush is not null)
             _imageBrush.PropertyChanged -= OnImageBrushPropertyChanged;
         _motion.Stop();
-        _entrancePending = false;
         _entrance.Finish();
         StopFadingIn();
+        UpdateBackgroundState();
+    }
+
+    /// <summary>
+    /// Placed (WinRT's and Avalonia's <c>Loaded</c>, after the first layout in a window), the Hub turns in and, with a
+    /// brush that shows, fades its background in (#148).
+    /// </summary>
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        _entrance.Begin(_hubRoot);
+        StartFadingIn();
+    }
+
+    /// <inheritdoc />
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        _entrance.Finish();
+        StopFadingIn();
+        UpdateBackgroundState();
     }
 
     /// <inheritdoc />
@@ -429,6 +437,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
             _imageBrush = change.GetNewValue<IBrush?>() as ImageBrush;
             if (_imageBrush is not null && attached)
                 _imageBrush.PropertyChanged += OnImageBrushPropertyChanged;
+            if (!BrushShows) StopFadingIn();
             UpdateBackgroundState();
             ApplyBackground(_motion.Offset);
         }
@@ -437,6 +446,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void OnImageBrushPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property != ImageBrush.SourceProperty) return;
+        if (!BrushShows) StopFadingIn();                  // an image that comes later goes straight to showing (#137)
         UpdateBackgroundState();
         ApplyBackground(_motion.Offset);
     }
@@ -569,17 +579,20 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void UpdateBackgroundState()
     {
         var hidden = Background is IImageBrush { Source: null };
-        var fadingIn = !hidden && _fadingIn && Background is not null;
+        var fadingIn = !hidden && _fadingIn;
         PseudoClasses.Set(BackgroundHiddenPseudoClass, hidden);
         PseudoClasses.Set(BackgroundImageFadingInPseudoClass, fadingIn);
         PseudoClasses.Set(BackgroundShowingPseudoClass, !hidden && !fadingIn);
     }
 
+    /// <summary>Whether there is a brush and it has what it draws: not an image brush still without its image.</summary>
+    private bool BrushShows => Background is not null and not IImageBrush { Source: null };
+
     /// <summary>Placed with a brush that shows, the Hub fades its background in for <see cref="FadingInTime"/>, as the phone's.</summary>
     private void StartFadingIn()
     {
         StopFadingIn();
-        if (Background is not null && Background is not IImageBrush { Source: null })
+        if (BrushShows)
         {
             _fadingIn = true;
             _fadingInTimer = CornflowerClock.Schedule(() =>

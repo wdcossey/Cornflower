@@ -202,7 +202,7 @@ internal sealed class HubMotion
             var pulled = -Offset;
             var span = _hub.SectionsLength - end;
             if (forward <= -FlickVelocity || (forward < FlickVelocity && pulled >= span / 2))
-                StartLoopBack(end);
+                StartLoop(end, back: true);
             else
                 Start(0, BackReturnCurve, BackReturnDuration);
             return;
@@ -339,23 +339,18 @@ internal sealed class HubMotion
         _frame = CornflowerClock.RequestFrame(_hub, () => Step(generation));
     }
 
-    private void StartLoop()
+    /// <summary>Starts the loop forward, to 0, or with <paramref name="back"/> the loop backwards, to <paramref name="to"/>, the end.</summary>
+    private void StartLoop(double to = 0, bool back = false)
     {
         StopFrames();
         _start = CornflowerClock.Now;
         _from = Offset;
-        _to = 0;
+        _to = to;
         _moving = true;
         IsLooping = true;
+        IsLoopingBack = back;
         var generation = _generation;
         _frame = CornflowerClock.RequestFrame(_hub, () => Step(generation));
-    }
-
-    private void StartLoopBack(double end)
-    {
-        StartLoop();
-        _to = end;
-        IsLoopingBack = true;
     }
 
     private void Step(int generation)

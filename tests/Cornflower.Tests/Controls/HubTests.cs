@@ -42,14 +42,22 @@ public class HubTests
             Grid.SetRow(Hub, 1);
             grid.Children.Add(Hub);
             _scene = new Scene(grid, variant, width: width);
+            Place();
             if (!entrance)
-                EndEntrance();
+                Hub.Entrance.Finish();
         }
 
-        /// <summary>Lays the window out and ends the Hub's entrance, if it has begun, so that it is drawn at rest.</summary>
-        public void EndEntrance()
+        /// <summary>Lays the window out and lets the Hub's <c>Loaded</c> come, which starts its entrance.</summary>
+        public void Place()
         {
             Window.UpdateLayout();
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        /// <summary>Places the Hub and ends its entrance, so that it is drawn at rest.</summary>
+        public void EndEntrance()
+        {
+            Place();
             Hub.Entrance.Finish();
         }
 
@@ -1138,7 +1146,9 @@ public class HubTests
         brush.Source = Image(900, 400);
         Assert.Contains(":backgroundhidden", hub.Classes);                   // not listening out of the window
         grid.Children.Add(hub);
-        Assert.Contains(":backgroundimagefadingin", hub.Classes);           // and up to date when back: placed again
+        Assert.Contains(":backgroundshowing", hub.Classes);                  // up to date when back
+        stage.Place();
+        Assert.Contains(":backgroundimagefadingin", hub.Classes);           // and placed again, fading in
         brush.Source = null;
         Assert.Contains(":backgroundhidden", hub.Classes);
         Assert.DoesNotContain(":backgroundimagefadingin", hub.Classes);
@@ -1283,9 +1293,33 @@ public class HubTests
         Assert.False(stage.Hub.Entrance.IsRunning);
         Assert.Null(root.RenderTransform);
         grid.Children.Add(stage.Hub);
-        stage.Window.UpdateLayout();
+        stage.Place();
         Assert.True(stage.Hub.Entrance.IsRunning);
         Assert.Equal(HubEntrance.From, stage.Hub.Entrance.Angle, 0.001);
+
+        // The turn is drawn over the root's own transform, which shows again after it.
+        var own = new ScaleTransform(0.5, 0.5);
+        root.RenderTransform = own;
+        Assert.IsType<MatrixTransform>(root.RenderTransform);
+        clock.At(clock.Now.TotalMilliseconds + 1000);
+        Assert.False(stage.Hub.Entrance.IsRunning);
+        Assert.Same(own, root.RenderTransform);
+    }
+
+    [AvaloniaFact]
+    public void An_Image_Gone_And_Back_While_Fading_In_Goes_Straight_To_Showing()
+    {
+        using var clock = PhoneClock();
+        var brush = new ImageBrush(Image(1600, 800));
+        var hub = Stage.Make(2);
+        hub.Background = brush;
+        using var stage = new Stage(hub: hub);
+        Assert.Contains(":backgroundimagefadingin", hub.Classes);
+        brush.Source = null;
+        Assert.Contains(":backgroundhidden", hub.Classes);
+        brush.Source = Image(900, 400);                                       // on the screen now: straight there (#137)
+        Assert.Contains(":backgroundshowing", hub.Classes);
+        Assert.DoesNotContain(":backgroundimagefadingin", hub.Classes);
     }
 
     // ---- In view ----

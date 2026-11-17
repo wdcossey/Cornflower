@@ -120,8 +120,9 @@ as the phone's is its code's and DirectManipulation's, not its template's; Pivot
   (its width was 0 with none); not read with a colour (owed).
 - **The background's clip** is the Hub's edge; the phone's is a rectangle its code sets, dumped as the window's size.
 - **The entrance's look**: the angles are the phone's; how they are drawn is PlaneProjection's camera as #24 read it
-  (999 px over the root's centre), not checked against a recording of the Hub turning (owed). Ours starts on the first
-  arrange after the Hub is placed, the phone's at `Loaded`. The phone's input during the turn isn't read; ours takes it.
+  (999 px over the root's centre; further for a Hub wider than the phone's 450, as the turnstile's), not checked
+  against a recording of the Hub turning (owed). Both start at `Loaded`, as the phone's. The phone's input during the
+  turn isn't read; ours takes it, hit through the turned root.
 - **`BackgroundImageFadingIn`'s fade** can't be read in the app (its `Background` reads 1 throughout), so none is drawn;
   an image given to a Hub on the screen goes straight to showing (#137), where #148's stretch runs stayed fading in.
 - **Landscape and other sizes**: the section's 0.9 is read on three portrait profiles; the header's 1/18 and the curves

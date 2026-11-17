@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Data;
 using Avalonia.Media;
 
 namespace Cornflower.Controls;
@@ -14,8 +15,10 @@ namespace Cornflower.Controls;
 /// <c>RotationY</c> −120° on the first frame, 0 on the 64th tick after (1,000 ms of animation time), an
 /// <c>ExponentialEase</c> out of exponent 4.61 as <c>entrance.py</c> prints it (ln 100, 4.605, fits the logged angles to
 /// their last place, 0.0005°); <c>CenterOfRotationX</c> −0.5,
-/// nothing else, and no fade. Ours draws it with a <see cref="MatrixTransform"/> on the root, seen through
-/// <c>PlaneProjection</c>'s camera (<see cref="EyeDistance"/>, over the root's centre), which #24 read.
+/// nothing else, and no fade. Ours draws it with a <see cref="MatrixTransform"/> on the root, at animation priority over
+/// the root's own, seen through <c>PlaneProjection</c>'s camera (<see cref="TiltModel.EyeDistance"/>, over the root's
+/// centre), which #24 read. A root wider than the phone's 450 px is seen from further away, as the turnstile's page is,
+/// so a desktop window's turn looks as the phone's does.
 /// </remarks>
 internal sealed class HubEntrance
 {
@@ -31,12 +34,14 @@ internal sealed class HubEntrance
     /// <summary>The axis, as a fraction of the root's width from its left edge: <c>CenterOfRotationX</c>.</summary>
     public const double CenterOfRotationX = -0.5;
 
-    /// <summary>PlaneProjection's camera, in view pixels in front of the screen (#24, <c>tools/motion/camera.py</c>).</summary>
-    public const double EyeDistance = 999;
+    /// <summary>The phone's width, in view px: wider, the camera's distance grows with the width, as the turnstile's.</summary>
+    public const double ReferenceWidth = 450;
 
     private readonly Visual _owner;
     private readonly MatrixTransform _transform = new();
     private Visual? _root;
+    private IDisposable? _shown;
+    private IDisposable? _origin;
     private IDisposable? _frame;
     private TimeSpan _start;
     private int _generation;
@@ -62,7 +67,7 @@ internal sealed class HubEntrance
     {
         var r = degrees * Math.PI / 180;
         double cos = Math.Cos(r), sin = Math.Sin(r);
-        double ax = CenterOfRotationX * size.Width, d = EyeDistance;
+        double ax = CenterOfRotationX * size.Width, d = TiltModel.EyeDistance * Math.Max(1, size.Width / ReferenceWidth);
         double ex = size.Width / 2, ey = size.Height / 2;
 
         // A point (x, y) on the screen's plane is u = x − ax from the axis. Turned, it is at X = ax + u cos, Z = u sin, and
@@ -84,8 +89,8 @@ internal sealed class HubEntrance
         _root = root;
         _start = CornflowerClock.Now;
         IsRunning = true;
-        root.RenderTransformOrigin = RelativePoint.TopLeft;
-        root.RenderTransform = _transform;
+        _origin = root.SetValue(Visual.RenderTransformOriginProperty, RelativePoint.TopLeft, BindingPriority.Animation);
+        _shown = root.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
         Apply();
         var generation = _generation;
         _frame = CornflowerClock.RequestFrame(_owner, () => Step(generation));
@@ -105,11 +110,10 @@ internal sealed class HubEntrance
         _frame?.Dispose();
         _frame = null;
         _generation++;
-        if (_root is { } root && ReferenceEquals(root.RenderTransform, _transform))
-        {
-            root.ClearValue(Visual.RenderTransformProperty);
-            root.ClearValue(Visual.RenderTransformOriginProperty);
-        }
+        _shown?.Dispose();                                // the root's own transform and origin show again
+        _origin?.Dispose();
+        _shown = null;
+        _origin = null;
 
         _root = null;
         IsRunning = false;
