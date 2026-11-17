@@ -101,9 +101,10 @@ and the shell draws over the page; ours grows to the shell's height for its line
 | Icon and label | `CommandBarForegroundThemeBrush` (`PhoneTextHighColor`): white dark, `#DE000000` light | the screenshots: 255, and 29 over 221 |
 | Label | 11.67, SemiBold, `PhoneFontFamilyNormal`, centred, baseline 71.25 below the bar's top | the labels' ink |
 | In the list | `PhoneFontFamilySemiLight` 27.92, a line 59.1666 tall, the text 20.8333 from the left | the list's ink |
-| Pressed | the whole circle the accent (`PhoneAccentBrush`), the icon white (`PhoneButtonBasePressedForegroundBrush`), the circle 0.9376 the size and, with the icon, 2.0833 higher | the recording's stills (#141, below) |
-| Checked | the circle filled (`AppBarToggleButtonChecked*`), the icon in the bar's colour | the screenshots: the star is the bar's colour, 31 dark and 221 light |
-| Checked and pressed | the same as pressed | the shell's press (#141); the template's `CheckedPressed` isn't read on the bar |
+| Pressed, dark | the whole circle the accent, the icon white (`PhoneTextOverAccentColor`), the circle 0.9376 the size and, with the icon, 2.0833 higher | the recording's stills (#141, below) |
+| Pressed, light | the checked look: the circle black, its ring white, the icon the bar's colour, at its own size, 2.0833 higher | the light recording's stills (#168, below) |
+| Checked | the circle filled (`AppBarToggleButtonCheckedBackgroundThemeBrush`), the icon in the bar's colour; the ring `PhoneForegroundColor` in dark, white in light | the screenshots: the star is the bar's colour, 31 dark and 221 light; the light ring 255, x 489..495 on row 1843 (#168) |
+| Checked and pressed | the same as pressed | dark: the shell's press (#141), the template's `CheckedPressed` isn't read on the bar; light: read, the checked look risen (#168) |
 | Pressed in the list | the line tilts (`cf:Tilt` on `PART_Ink`) and keeps its colours | the recording's still (#141) |
 | Disabled | the whole command at 0.451, drawn as one layer | the screenshots: 132 over 31 in dark, 121 and 134 over 221 in light |
 
@@ -130,7 +131,7 @@ px where the template's is 45): Lucide's shapes and sizes are its own (ADR 0001,
 | A pressed menu line tilts and keeps its colours | the recording's still (#141) | `A_Pressed_Menu_Line_Tilts_And_Keeps_Its_Colours` |
 | The closed heights are keys a page can read | for #120 | `The_Closed_Heights_Are_Keys_A_Page_Can_Read` |
 | The phone's keys, dark and light | the template, the screenshots | `The_Bar_Takes_The_Phones_Keys` |
-| Pressed, checked, checked and pressed | the recording's stills (#141), the shell's checked icon | `Pressed_Fills_The_Circle_With_The_Accent_And_Sinks_It` (dark, light, and the disc's ink in the frame), `Checked_Fills_The_Circle_And_Pressed_Shows_The_Accent` |
+| Pressed, checked, checked and pressed | the recording's stills (#141; light #168), the shell's checked icon, the light checked ring (#168) | `Pressed_Fills_The_Circle_With_The_Accent_And_Sinks_It` (dark, and the disc's ink in the frame), `In_Light_Pressed_Is_The_Checked_Look_Risen` (and its disc's ink and ring in the frame), `Checked_Fills_The_Circle_And_Pressed_Shows_The_Shells_Press` (dark, light), the checked ring in `The_Compact_Bar_Is_The_Shells` and `The_Open_Bar_Is_The_Shells` |
 | Disabled at 0.451, as one layer | the screenshots | `Disabled_Dims_The_Whole_Command_As_One_Layer`, and the ring's pixels in `The_Compact_Bar_Is_The_Shells` |
 | An app's `DefaultLabelPosition` shows the labels closed too, the bar as tall as its commands | Avalonia's API | `The_Labels_Follow_DefaultLabelPosition_When_An_App_Sets_It` |
 | Dynamic overflow keeps the centred row clear of the ellipsis: four commands on the 450 view | the phone's most is four | `Dynamic_Overflow_Keeps_The_Row_Clear_Of_The_Ellipsis` |
@@ -212,6 +213,30 @@ for a bar whose app sets its `Height` (its heights are the app's), the bar goes 
 ellipsis opens it. Ours closed the bar on a command (`PhoneAppBarClose`) and on a tap outside it (Avalonia's light
 dismiss) already; the minimal bar's tap is `PhoneAppBar`'s. Ours raises `Click` before the bar closes, as #118 chose
 (a bound `Command` runs with the bar still open); the order isn't changed.
+
+## #168: the press and the checked ring in light
+
+#148 recorded the same touches with the bar light (run `20261116-1724-dev11`, `-Probe appbarlight -Record`;
+`tools/refapp/README.md`, "The app bar: a long list of secondary commands, and a press in the light theme"). #141 had
+taken light to press as dark does. It doesn't. From the stills (`ref/wp81/CommandBar/light__recording__*`):
+
+| | At rest | Pressed, closed bar | Ours |
+|---|---|---|---|
+| The circle | a ring, black, on the bar's `#DDDDDD` | filled black, a white ring round it, no accent | `PhoneForegroundColor` fill, `PhoneBackgroundColor` stroke (white in light) |
+| The icon | `#1D1D1D` | the bar's `#DDDDDD` | `PhoneChromeColor` |
+| The disc, recording px | 49.9 across from its area | 49.1 across; box x 157..204, y 895..943 (raw 314..409, 1790..1887) | no scale: 49.2 |
+| Its centre | | 2.5 recording px higher (0.99 on the open bar), as dark's | `translate(0px, -2.0833px)`, as dark's |
+| A checked favorite | black, white ring, the icon the bar's colour | the same, risen (frame 1864 against 1823) | the same |
+
+The white ring is the circle's own ring: in the 2026-11-09 light screenshots, the checked circle is 98 raw px across
+(489..587 on row 1843), white from 489 to 495, 6 raw px, as wide as the ring (6.44), black inside. #118 read only its
+fill, so ours drew the ring black.
+
+The shell draws these differently in dark and light, which a style can't select on. So the theme takes them from five
+resources of its own, one for each theme, in `CommandBar.axaml`'s `ThemeDictionaries`: the pressed fill, ring and icon,
+the pressed circle's scale (0.9376 dark, 1 light) and the checked ring. Each brush takes a phone colour by
+`DynamicResource`, as the tokens' brushes do, so an app's `SystemColorControlAccentColor` still colours the dark
+press. A pressed menu line tilts and keeps its colours in light, as in dark: no change.
 
 ## Visual states and the keys that drive them
 
@@ -478,7 +503,7 @@ _none_
 | [x] | `ApplicationViewStates` | `FullSize` | nothing | `^:fullsize` | `IsCompact` false: the label shows |
 | [x] | `ApplicationViewStates` | `Compact` | `TextLabel.Visibility = Collapsed`<br>`LayoutRoot.Width = 48` | `^:compact` | `^[IsCompact=True]` hides the label. The width stays 73.75: the shell's slot is the same open and closed |
 | [x] | `CommonStates` | `Normal` | nothing | the theme's plain setters | The plain setters |
-| [x] | `CommonStates` | `Pressed` | `Ellipse.Stroke = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemPressedForegroundThemeBrush}` | `^:pressed` | `^:pressed`: the shell's press (#141): the circle the accent and sunk, the icon white; in the list, the line tilts |
+| [x] | `CommonStates` | `Pressed` | `Ellipse.Stroke = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemPressedForegroundThemeBrush}` | `^:pressed` | `^:pressed`: the shell's press (#141): in dark the circle the accent and sunk, the icon white; in light the checked look, risen (#168); in the list, the line tilts |
 | [x] | `CommonStates` | `Disabled` | `Ellipse.Stroke = {ThemeResource AppBarItemDisabledForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemDisabledForegroundThemeBrush}`<br>`TextLabel.Foreground = {ThemeResource AppBarItemDisabledForegroundThemeBrush}` | `^:disabled` | `^:disabled`: `PART_Ink` at 0.451, the shell's 0x73 (ring #FF848484 dark, #FF797979 light), not the template's 0x66 |
 
 #### Transitions (0)
@@ -612,7 +637,7 @@ _none_
 | [x] | `ApplicationViewStates` | `FullSize` | nothing | `^:fullsize` | `IsCompact` false: the label shows |
 | [x] | `ApplicationViewStates` | `Compact` | `TextLabel.Visibility = Collapsed`<br>`LayoutRoot.Width = 48` | `^:compact` | `^[IsCompact=True]` hides the label. The width stays 73.75: the shell's slot is the same open and closed |
 | [x] | `CommonStates` | `Normal` | nothing | the theme's plain setters | The plain setters |
-| [x] | `CommonStates` | `Pressed` | `Ellipse.Stroke = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemPressedForegroundThemeBrush}` | `^:pressed` | `^:pressed`: the shell's press (#141): the circle the accent and sunk, the icon white; in the list, the line tilts |
+| [x] | `CommonStates` | `Pressed` | `Ellipse.Stroke = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarItemForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemPressedForegroundThemeBrush}` | `^:pressed` | `^:pressed`: the shell's press (#141): in dark the circle the accent and sunk, the icon white; in light the checked look, risen (#168); in the list, the line tilts |
 | [x] | `CommonStates` | `Disabled` | `Ellipse.Stroke = {ThemeResource AppBarItemDisabledForegroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarItemDisabledForegroundThemeBrush}`<br>`TextLabel.Foreground = {ThemeResource AppBarItemDisabledForegroundThemeBrush}` | `^:disabled` | `^:disabled`: `PART_Ink` at 0.451, the shell's 0x73 (ring #FF848484 dark, #FF797979 light), not the template's 0x66 |
 | [x] | `CommonStates` | `Checked` | `Ellipse.Stroke = {ThemeResource AppBarToggleButtonCheckedBorderThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarToggleButtonCheckedBackgroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarToggleButtonCheckedForegroundThemeBrush}` | `^:checked` | `^:checked`: the circle filled (`AppBarToggleButtonCheckedBorderThemeBrush`, `...CheckedBackgroundThemeBrush`), the icon in the bar's colour, as the shell draws it |
 | [x] | `CommonStates` | `CheckedPressed` | `Ellipse.Stroke = {ThemeResource AppBarToggleButtonCheckedPressedBorderThemeBrush}`<br>`Ellipse.Fill = {ThemeResource AppBarToggleButtonCheckedPressedBackgroundThemeBrush}`<br>`Content.Foreground = {ThemeResource AppBarToggleButtonCheckedPressedForegroundThemeBrush}` | `^:checked:pressed` | `^:pressed`, after `^:checked`: the shell's press, as unchecked (#141). The template's ring alone isn't read on the shell's bar |

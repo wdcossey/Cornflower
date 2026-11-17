@@ -221,7 +221,7 @@ public class CommandBarTests
         for (var i = 0; i < CircleCentres.Length; i++)
         {
             var x = CircleCentres[i];
-            var ring = i == 2 ? DisabledRing(dark) : Ring(dark);
+            var ring = i switch { 1 => CheckedRing(dark), 2 => DisabledRing(dark), _ => Ring(dark) };
             var inside = i == 1 ? Ring(dark) : Bar(dark);
             var tolerance = i == 2 ? 3 : 0;
             Expect(misses, frame, x - CircleRadius + 3, centreY, ring, tolerance, $"circle {i}'s ring, left");
@@ -485,9 +485,9 @@ public class CommandBarTests
         Assert.True(page.Bar.IsOpen);
     }
 
+    // Dark's press. Light's is the checked look (#168), below.
     [AvaloniaTheory]
     [InlineData("Dark")]
-    [InlineData("Light")]
     public void Pressed_Fills_The_Circle_With_The_Accent_And_Sinks_It(string variant)
     {
         using var page = new AppBarPage(VariantOf(variant));
@@ -502,7 +502,7 @@ public class CommandBarTests
         page.Window.MouseDown(page.CentreOf(page.Add), MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
 
-        // The shell's press (the recording): the circle, ring and all, the accent; the icon white, in both themes.
+        // The shell's press (the recording): the circle, ring and all, the accent; the icon white.
         Assert.True(page.Add.IsPressed);
         Assert.Equal(Accent, ColourOf(ellipse.Fill));
         Assert.Equal(Accent, ColourOf(ellipse.Stroke));
@@ -546,10 +546,64 @@ public class CommandBarTests
         Assert.Null(circle.RenderTransform);
     }
 
+    // In light a pressed command is the checked look, not the accent (#168, run 20261116-1724-dev11): the circle black,
+    // its ring white, the icon the bar's colour, at its own size, risen as in dark.
+    [AvaloniaFact]
+    public void In_Light_Pressed_Is_The_Checked_Look_Risen()
+    {
+        using var page = new AppBarPage(ThemeVariant.Light);
+        var ellipse = Part<Ellipse>(page.Add, "PART_Ellipse");
+        var content = Part<ContentPresenter>(page.Add, "PART_Content");
+        var circle = Part<Panel>(page.Add, "PART_ContentRoot");
+
+        page.Window.MouseDown(page.CentreOf(page.Add), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(page.Add.IsPressed);
+        Assert.Equal(Ring(dark: false), ColourOf(ellipse.Fill));
+        Assert.Equal(CheckedRing(dark: false), ColourOf(ellipse.Stroke));
+        Assert.Equal(Bar(dark: false), ColourOf(content.Foreground));
+        Assert.Equal(1, ellipse.RenderTransform!.Value.M11, 0.0001);
+        Assert.Equal(-PressedRise / Scale, circle.RenderTransform!.Value.M32, 0.0001);
+        Assert.Equal(default, Cornflower.Controls.Tilt.Current(page.Add));
+
+        // In the frame, the disc's ink where the recording's is, within a recording pixel (2 raw px) each way: the ring
+        // white, the circle black beside the icon.
+        using var frame = page.Capture();
+        var x = CircleCentres[0];
+        var centreY = CompactTop + CircleTopBelowBar + CircleRadius - PressedRise;
+        var bar = Bar(dark: false);
+        bool Ink(int px, int py)
+        {
+            var c = Frames.PixelAt(frame, px, py);
+            return Math.Max(Math.Abs(c.R - bar.R), Math.Max(Math.Abs(c.G - bar.G), Math.Abs(c.B - bar.B))) > 12;
+        }
+
+        var misses = new List<string>();
+        var rows = Enumerable.Range(CompactTop, 151).Where(y => Enumerable.Range(x - 70, 140).Any(c => Ink(c, y))).ToList();
+        var columns = Enumerable.Range(x - 70, 140).Where(c => Enumerable.Range(CompactTop, 151).Any(y => Ink(c, y))).ToList();
+        if (Math.Abs(rows.First() - (CompactTop + LightPressedDiscTopBelowBar)) > 2 || Math.Abs(rows.Last() - (CompactTop + LightPressedDiscBottomBelowBar)) > 2)
+            misses.Add($"the disc's rows: {rows.First()}..{rows.Last()}, the recording's {CompactTop + LightPressedDiscTopBelowBar}..{CompactTop + LightPressedDiscBottomBelowBar}");
+        if (Math.Abs(columns.First() - LightPressedDiscColumns.Left) > 2 || Math.Abs(columns.Last() - LightPressedDiscColumns.Right) > 2)
+            misses.Add($"the disc's columns: {columns.First()}..{columns.Last()}, the recording's {LightPressedDiscColumns.Left}..{LightPressedDiscColumns.Right}");
+        Expect(misses, frame, x - CircleRadius + 3, centreY, Colors.White, 0, "the ring, left");
+        Expect(misses, frame, x + CircleRadius - 3, centreY, Colors.White, 0, "the ring, right");
+        Expect(misses, frame, x - 32, centreY, Colors.Black, 0, "the disc, beside the icon");
+        Expect(misses, frame, x + 32, centreY, Colors.Black, 0, "the disc, beside the icon");
+        Assert.True(misses.Count == 0, string.Join("\n", misses));
+        page.Window.MouseUp(page.CentreOf(page.Add), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(Colors.Transparent, ColourOf(ellipse.Fill));
+        Assert.Equal(Ring(dark: false), ColourOf(ellipse.Stroke));
+        Assert.Null(ellipse.RenderTransform);
+        Assert.Null(circle.RenderTransform);
+    }
+
     [AvaloniaTheory]
     [InlineData("Dark")]
     [InlineData("Light")]
-    public void Checked_Fills_The_Circle_And_Pressed_Shows_The_Accent(string variant)
+    public void Checked_Fills_The_Circle_And_Pressed_Shows_The_Shells_Press(string variant)
     {
         using var page = new AppBarPage(VariantOf(variant));
         var dark = Dark(variant);
@@ -557,17 +611,18 @@ public class CommandBarTests
         var content = Part<ContentPresenter>(page.Favorite, "PART_Content");
 
         Assert.Equal(Ring(dark), ColourOf(ellipse.Fill));
+        Assert.Equal(CheckedRing(dark), ColourOf(ellipse.Stroke));
         Assert.Equal(Bar(dark), ColourOf(content.Foreground));
 
-        // Pressed, checked or not, the shell's press.
+        // Pressed, checked or not, the shell's press: the accent in dark; in light the checked look (#168).
         foreach (var check in new[] { false, true })
         {
             page.Window.MouseDown(page.CentreOf(page.Favorite), MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(Accent, ColourOf(ellipse.Fill));
-            Assert.Equal(Accent, ColourOf(ellipse.Stroke));
-            Assert.Equal(Colors.White, ColourOf(content.Foreground));
-            Assert.Equal(PressedCircleScale, ellipse.RenderTransform!.Value.M11, 0.0001);
+            Assert.Equal(dark ? Accent : Ring(dark), ColourOf(ellipse.Fill));
+            Assert.Equal(dark ? Accent : CheckedRing(dark), ColourOf(ellipse.Stroke));
+            Assert.Equal(dark ? Colors.White : Bar(dark), ColourOf(content.Foreground));
+            Assert.Equal(dark ? PressedCircleScale : 1, ellipse.RenderTransform!.Value.M11, 0.0001);
 
             page.Window.MouseUp(page.CentreOf(page.Favorite), MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
