@@ -92,11 +92,11 @@ step, and a control that climbs a rung says so in its PR.
 |---|---|---|---|---|
 | [#116](https://github.com/wdcossey/CornflowerUI/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme; ScrollBar is the phone's thin indicator; the indicators by `PhoneScrollIndicators` and `PhoneIndicatorFade`; the scroll physics a recorded deviation, measured by [#113](https://github.com/wdcossey/CornflowerUI/issues/113) (a part class is [#129](https://github.com/wdcossey/CornflowerUI/issues/129), an enhancement carried past Tier 2). The worked example for Tier 2: ListView, Page, Pivot and Hub hold one; done 2026-11-15 (#126), device run passed 2026-11-15 | 1, 2, 6 |
 | [#117](https://github.com/wdcossey/CornflowerUI/issues/117) | ContentControl, ContentPresenter | both exist | Theme, by type since the Tier 2 roll-up, #139 (keyed until then); ContentPresenter keeps Avalonia's own, as the phone's style reaches no template's presenter; done 2026-11-15 (#125), device run passed 2026-11-15 | 1, 2 |
-| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). The shell's press, the open bar's stepped height and its motion (`PhoneAppBar`): [#141](https://github.com/wdcossey/CornflowerUI/issues/141), done 2026-11-16 (#144), device run owed. AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
-| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/CornflowerUI/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/CornflowerUI/issues/132), done 2026-11-15, #138; `Multiple` alone clicks, as Single, #145); the check box's own press, and `Extended` with no boxes ([#142](https://github.com/wdcossey/CornflowerUI/issues/142), done 2026-11-16, #143, device run owed); reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
-| [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame: `NavigationPage` (Avalonia has no `Frame`) | Theme, plus our own page transitions (`TurnstileTransition`, `SlideTransition`, `ContinuumTransition`). `NavigationPage` is the navigation host; done 2026-11-15 (#134), device run owed | 1 |
-| [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls: the swipe, strip and slides are the control's own (`PivotMotion`, on `CornflowerClock`, read by #128 and #136), its ScrollViewer held, not scrolled; done 2026-11-16 (#140), device run owed | 5 |
-| [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | none | New control, on Pivot's pieces: the pan, the snap to sections, the loop and the header's and background's parallax are the control's own (`HubMotion`, read by #128 and #136); the swipe recogniser shared with Pivot since the Tier 2 roll-up; done 2026-11-16 (#146), device run owed | 5 |
+| [#118](https://github.com/wdcossey/CornflowerUI/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). The shell's press, the open bar's stepped height and its motion (`PhoneAppBar`): [#141](https://github.com/wdcossey/CornflowerUI/issues/141), done 2026-11-16 (#144), device run passed 2026-11-16. Light's pressed look is [#168](https://github.com/wdcossey/CornflowerUI/issues/168). AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
+| [#119](https://github.com/wdcossey/CornflowerUI/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/CornflowerUI/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/CornflowerUI/issues/132), done 2026-11-15, #138; `Multiple` alone clicks, as Single, #145); the check box's own press, and `Extended` with no boxes ([#142](https://github.com/wdcossey/CornflowerUI/issues/142), done 2026-11-16, #143, device run passed 2026-11-16); item click in the check mode as the phone's, [#169](https://github.com/wdcossey/CornflowerUI/issues/169); reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
+| [#120](https://github.com/wdcossey/CornflowerUI/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame: `NavigationPage` (Avalonia has no `Frame`) | Theme, plus our own page transitions (`TurnstileTransition`, `SlideTransition`, `ContinuumTransition`). `NavigationPage` is the navigation host; done 2026-11-15 (#134), device run passed 2026-11-16 | 1 |
+| [#121](https://github.com/wdcossey/CornflowerUI/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls: the swipe, strip and slides are the control's own (`PivotMotion`, on `CornflowerClock`, read by #128 and #136), its ScrollViewer held, not scrolled; done 2026-11-16 (#140), device run passed 2026-11-16. #148's reads: [#162](https://github.com/wdcossey/CornflowerUI/issues/162) where a release goes, [#163](https://github.com/wdcossey/CornflowerUI/issues/163) a press while it moves, [#164](https://github.com/wdcossey/CornflowerUI/issues/164) the item events | 5 |
+| [#122](https://github.com/wdcossey/CornflowerUI/issues/122) | Hub, HubSection | none | New control, on Pivot's pieces: the pan, the snap to sections, the loop and the header's and background's parallax are the control's own (`HubMotion`, read by #128 and #136); the swipe recogniser shared with Pivot since the Tier 2 roll-up; done 2026-11-16 (#146), device run passed 2026-11-16. #148's reads: [#165](https://github.com/wdcossey/CornflowerUI/issues/165) the loop backwards, [#166](https://github.com/wdcossey/CornflowerUI/issues/166) the entrance, [#167](https://github.com/wdcossey/CornflowerUI/issues/167) an image narrower than the screen | 5 |
 
 The reads and tools Tier 2 needs: [#113](https://github.com/wdcossey/CornflowerUI/issues/113)
 ScrollViewer physics and ListView press feedback; [#114](https://github.com/wdcossey/CornflowerUI/issues/114)
@@ -111,20 +111,34 @@ they are the record, not this list.
 **Tier 2 is complete** (2026-11-16, rolled up in the Tier 2 roll-up), but for
 [#129](https://github.com/wdcossey/CornflowerUI/issues/129), the scroll physics as a part class: an enhancement of #116's
 recorded deviation, carried forward, not a gap in the shell. Grouped lists
-([#131](https://github.com/wdcossey/CornflowerUI/issues/131)) are Tier 4's. Owed for the record: the Pixel 8 runs of
-#120, #121, #122, #141 and #142, and the real-window runs of #120, #121, #122 and #141, with the sample shell on
-`NavigationPage` since the roll-up.
+([#131](https://github.com/wdcossey/CornflowerUI/issues/131)) are Tier 4's. The runs owed at the roll-up are done, on
+the sample shell on `NavigationPage`:
+- **The Pixel 8** (Android 17, wireless adb, Release, `main` at `ae652d3`, 2026-11-16 22:48 to 22:50): every page ready,
+  `page=411.43x840`, cold starts 716 to 826 ms. `page` opened in 308 ms, `pivot` 352, `hub` 339, `commandbar` 379 (the
+  bar opens with its labels and its two menu items), `listview` 382 and `itemclick` 406. So #120's, #121's, #122's,
+  #141's and #142's device runs passed.
+- **The real window** (`drive.ps1`, Debug, on #161's head `d0a9ef6`, 2026-11-16): 160 of 160 checks, every page opened
+  from the list, ready, and left by Back.
+
+Tier 2's reads owed after the roll-up, [#148](https://github.com/wdcossey/CornflowerUI/issues/148), were done on
+2026-11-16 (#170). Where the phone differs from what was built, each is an issue of its own, Tier 2's, not yet started:
+[#162](https://github.com/wdcossey/CornflowerUI/issues/162), [#163](https://github.com/wdcossey/CornflowerUI/issues/163) and
+[#164](https://github.com/wdcossey/CornflowerUI/issues/164) (Pivot), [#165](https://github.com/wdcossey/CornflowerUI/issues/165),
+[#166](https://github.com/wdcossey/CornflowerUI/issues/166) and [#167](https://github.com/wdcossey/CornflowerUI/issues/167) (Hub),
+[#168](https://github.com/wdcossey/CornflowerUI/issues/168) (CommandBar, light's press) and
+[#169](https://github.com/wdcossey/CornflowerUI/issues/169) (ItemClick in the check mode).
 
 ### Tier 3
 
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
-| [#151](https://github.com/wdcossey/CornflowerUI/issues/151) | Flyout, FlyoutPresenter | both exist | Theme. The worked example for Tier 3: how a popup over the page is hosted, placed, dimmed, opened, closed and dismissed | 1, 2 |
-| [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutItem, ToggleMenuFlyoutItem, MenuFlyoutSeparator, MenuFlyoutPresenter | MenuFlyout, MenuFlyoutPresenter; no MenuFlyoutItem or ToggleMenuFlyoutItem: a MenuFlyout holds `MenuItem`s, and `MenuItem.ToggleType` is the toggle item (checked 2026-11-16) | Theme, with the phone's item as a theme for `MenuItem` inside the presenter. MenuFlyoutSeparator has no default style on the phone; the presenter draws it | 1, 2 |
-| [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | none | New controls. The full-screen presenters are where the phone look lives. The pickers' bar, with our accept and cancel glyphs, is built here | 5 |
-| [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem (primitives) | `Primitives.DateTimePickerPanel` is the nearest: a panel, not a control with items (checked 2026-11-16) | Part of the pickers. Decide whether Avalonia's panel can be themed and driven to match or a new control is needed. Perhaps the moment for [#129](https://github.com/wdcossey/CornflowerUI/issues/129) | 5 |
-| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | none | New control | 5 |
-| [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | AutoCompleteBox | Theme. A different API | 1, 2 |
+| [#151](https://github.com/wdcossey/CornflowerUI/issues/151) | Flyout, FlyoutPresenter | both exist | Theme. The worked example for Tier 3: how a popup over the page is hosted, placed, dimmed, opened, closed and dismissed (`PhonePopupHost`, shared by every popup below); done 2026-11-16 (#161), device run passed 2026-11-16 (the top flyout below the status bar at full width, the full one filling the window, Back closing each), real-window run passed 2026-11-16 (the page; drive.ps1 opens no flyout) | 1, 2 |
+| [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutItem, ToggleMenuFlyoutItem, MenuFlyoutSeparator, MenuFlyoutPresenter | MenuFlyout, MenuFlyoutPresenter; no MenuFlyoutItem or ToggleMenuFlyoutItem: a MenuFlyout holds `MenuItem`s, and `MenuItem.ToggleType` is the toggle item (checked 2026-11-16) | Theme, with the phone's item as a theme for `MenuItem` inside the presenter (`PhoneMenuFlyout`). MenuFlyoutSeparator has no default style on the phone; the presenter draws it; done 2026-11-17 (#175), device and real-window runs owed | 1, 2 |
+| [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | none | New controls. The full-screen presenters are where the phone look lives. The pickers' bar, with our accept and cancel glyphs, is built here; done 2026-11-17 (#176), but for the list picker's own rows motion (it takes the full Flyout's until the host takes a popup's own rows), device and real-window runs owed | 5 |
+| [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem (primitives) | `Primitives.DateTimePickerPanel` is the nearest: a panel, not a control with items (checked 2026-11-16) | Part of the pickers. Avalonia's panel, themed by key and driven by `PhoneLoopingSelector` out of a ScrollViewer, with the wheel's own coast (#149's fit of #113's law); not [#129](https://github.com/wdcossey/CornflowerUI/issues/129); done 2026-11-17 (#178), device and real-window runs owed | 5 |
+| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | none | New control, on the Flyout's popup host; done 2026-11-17 (#177), device and real-window runs owed | 5 |
+| [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | AutoCompleteBox | Theme. A different API (the plan's table); the page moving up for the keyboard is [#179](https://github.com/wdcossey/CornflowerUI/issues/179); done 2026-11-17 (#174), device and real-window runs owed | 1, 2 |
+| [#179](https://github.com/wdcossey/CornflowerUI/issues/179) | The shell's pan: the page moves up so the focused text box is at the window's top while the keyboard is up | none: `InputPane.OccludedRect` reports the keyboard, and nothing moves a page that doesn't scroll | A shared behaviour for every text box (TextBox, PasswordBox, AutoSuggestBox), decided by the user on 2026-11-16 (#174 left it out); run on the Pixel 8, as only a soft keyboard shows it | 2 |
 | [#155](https://github.com/wdcossey/CornflowerUI/issues/155) | ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. A subclass, `Cornflower.Controls.ComboBox`, opens `ListPickerFlyout` for the full-screen form a long list gets (6 items or more, #58) | 1, 4 |
 | [#156](https://github.com/wdcossey/CornflowerUI/issues/156) | DatePicker, TimePicker, DatePickerFlyout, TimePickerFlyout, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. The columns are [#154](https://github.com/wdcossey/CornflowerUI/issues/154)'s wheel and the bar is [#153](https://github.com/wdcossey/CornflowerUI/issues/153)'s. Full-screen presentation to be measured; if Avalonia's presenter can't be placed full screen, the presenter becomes a part class. Whether the two flyouts are added as types is decided against the checklist | 1, 3 |
 
@@ -136,6 +150,11 @@ wait for [#148](https://github.com/wdcossey/CornflowerUI/issues/148), Tier 2's r
 #149, #150 and #151 first (#151 as a draft until #149's curves and #150's dismissal are in); then
 #152, #153, #154, #157 and #158; then #155 and #156. Each issue names its own blockers and the
 full list of what each read covers; they are the record, not this list.
+
+**Done so far** (rolled up in the first Tier 3 roll-up): #148, #149 and #150 on 2026-11-16 (#170, #171, #172); #151
+on 2026-11-16 (#161); #152, #153, #154, #157 and #158 on 2026-11-17 (#175, #176, #178, #177, #174). Next: #155
+(ComboBox) and #156 (DatePicker, TimePicker), and #179. Owed: the Pixel 8 and real-window runs of #152, #153, #154,
+#157 and #158 (every page's ready line, and its popup opened on the phone), and the reads each control's README lists.
 
 ### Tier 4
 
@@ -199,9 +218,9 @@ Tier 1.
       ([#24](https://github.com/wdcossey/CornflowerUI/issues/24)), on 2026-11-10 (#66): template
       storyboards read every frame, theme transitions from video (`run.ps1 -Record`). The numbers
       are in [`tools/refapp`](../tools/refapp/README.md) "Motion" and
-      [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-motion). Not yet: the pickers'
-      and the full Flyout's per-row swivel curves
-      ([#149](https://github.com/wdcossey/CornflowerUI/issues/149)). The turnstile's forward start was read on 2026-11-15
+      [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-motion). The pickers'
+      and the full Flyout's per-row swivel curves were read on 2026-11-16
+      ([#149](https://github.com/wdcossey/CornflowerUI/issues/149), #171). The turnstile's forward start was read on 2026-11-15
       ([#114](https://github.com/wdcossey/CornflowerUI/issues/114), #128).
 - [x] Read from the emulator: the item count at which ComboBox goes full screen, and the
       ToggleSwitch drag threshold ([#25](https://github.com/wdcossey/CornflowerUI/issues/25)), on 2026-11-09 (#58):
@@ -327,6 +346,15 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#136](https://github.com/wdcossey/CornflowerUI/issues/136) | Read: Pivot's wide headers and two items, the Hub's background and loop, the check mode's press, the app bar's press, heights and motion | Done 2026-11-16 (#137) |
 | [#141](https://github.com/wdcossey/CornflowerUI/issues/141) | CommandBar: the shell's press, the open bar's stepped height, its motion | Done 2026-11-16 (#144) |
 | [#142](https://github.com/wdcossey/CornflowerUI/issues/142) | ListView: the check box's own press, `Extended` without boxes | Done 2026-11-16 (#143) |
+| [#148](https://github.com/wdcossey/CornflowerUI/issues/148) | Read: Tier 2's remaining reads (Pivot's and Hub's release, the item events, the Hub's entrance and background, the light and long app bar, item click in each mode) | Done 2026-11-16 (#170) |
+| [#149](https://github.com/wdcossey/CornflowerUI/issues/149) | Read: LoopingSelector's physics, the pickers' row swing, the popups' open and close curves, the inline ComboBox's motion | Done 2026-11-16 (#171) |
+| [#150](https://github.com/wdcossey/CornflowerUI/issues/150) | Read: AutoSuggestBox, how each popup is dismissed, ContentDialog's layout, the pickers' bar, MenuFlyout's items and placement | Done 2026-11-16 (#172) |
+| [#151](https://github.com/wdcossey/CornflowerUI/issues/151) | Flyout, FlyoutPresenter | Done 2026-11-16 (#161) |
+| [#152](https://github.com/wdcossey/CornflowerUI/issues/152) | MenuFlyout, MenuFlyoutPresenter (and `MenuItem` inside it) | Done 2026-11-17 (#175) |
+| [#153](https://github.com/wdcossey/CornflowerUI/issues/153) | ListPickerFlyout, PickerFlyout, and their presenters | Done 2026-11-17 (#176) |
+| [#154](https://github.com/wdcossey/CornflowerUI/issues/154) | LoopingSelector, LoopingSelectorItem | Done 2026-11-17 (#178) |
+| [#157](https://github.com/wdcossey/CornflowerUI/issues/157) | ContentDialog | Done 2026-11-17 (#177) |
+| [#158](https://github.com/wdcossey/CornflowerUI/issues/158) | AutoSuggestBox | Done 2026-11-17 (#174) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above). Each row's device run on
-the Pixel 8 is in the Tier 1 and Tier 2 tables above.
+the Pixel 8 is in the tier tables above, Tier 3's owed runs included.
