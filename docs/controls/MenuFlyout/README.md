@@ -58,6 +58,15 @@ and `PhoneMenuFlyout` gives them to the presenter's own containers, at style pri
 
 None.
 
+## Departures
+
+Off by default, so the menu is the phone's unless an app asks ([ADR 0006](../../decisions/0006-faithful-defaults-and-cornflowerconfig.md)):
+
+- **`CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen`** (#189): the menu opens in one step, its width and height
+  growing together over 380 ms, the phone's width's time, in place of the phone's two (the width over 380 ms, then the
+  height until 500 ms), which can feel slow. Read as the menu starts to open. Like the phone's opening, it runs at
+  `CornflowerConfig.PopupSpeed` (else `MotionSpeed`), and with `Animated` off the menu opens at rest.
+
 ## Resource keys
 
 `MenuFlyoutBackgroundThemeBrush`, `MenuFlyoutBorderThemeBrush`, `MenuFlyoutPortraitBorderThemeThickness`,

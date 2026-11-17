@@ -592,7 +592,8 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void StartFadingIn()
     {
         StopFadingIn();
-        if (BrushShows)
+        // With CornflowerConfig.Animated off the background shows at once.
+        if (BrushShows && CornflowerConfig.Animated)
         {
             _fadingIn = true;
             _fadingInTimer = CornflowerClock.Schedule(() =>
@@ -600,7 +601,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
                 _fadingInTimer = null;
                 _fadingIn = false;
                 UpdateBackgroundState();
-            }, FadingInTime);
+            }, FadingInTime, CornflowerClock.SpeedOf(MotionArea.PivotAndHub));
         }
 
         UpdateBackgroundState();

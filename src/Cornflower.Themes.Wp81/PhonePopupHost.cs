@@ -104,6 +104,8 @@ internal sealed class PhonePopupHost : IDisposable
     private IDisposable? _untouchable;
     private int _uncut;
     private TimeSpan? _start;
+    // The motion's speed, read from CornflowerConfig as it starts to open, and again as it starts to close.
+    private double _speed = 1;
     private double[] _closeFrom = [];
     private double _closeRevealedTo = double.PositiveInfinity;
     private Phase _phase;
@@ -271,17 +273,19 @@ internal sealed class PhonePopupHost : IDisposable
         _frame?.Dispose();
         _frame = null;
         _start = null;
-        if (!Moves)
+        // With CornflowerConfig.Animated off it goes at once, as one with a motion of its own does.
+        if (!Moves || !CornflowerConfig.Animated)
         {
             Finish();
             return;
         }
 
+        _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
         if (_placement == PhonePopupPlacement.Top)
         {
             // No turn: at rest, mid-opening too, until it goes in one frame.
             Rest();
-            _frame = CornflowerClock.Schedule(Vanish, Swing.GoneAfter);
+            _frame = CornflowerClock.Schedule(Vanish, Swing.GoneAfter, _speed);
             return;
         }
 
@@ -308,12 +312,14 @@ internal sealed class PhonePopupHost : IDisposable
             _insets.SafeAreaChanged += OnSafeAreaChanged;
         Anchor();
         Resize();
-        if (!Moves)
+        // With CornflowerConfig.Animated off it opens at rest, as one with a motion of its own does.
+        if (!Moves || !CornflowerConfig.Animated)
         {
             _phase = Phase.Shown;
             return;
         }
 
+        _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
         _start = null;
         _uncut = 0;
         // The start angles at once, so no frame shows the popup at rest first; time 0 is still the first frame.
@@ -347,7 +353,7 @@ internal sealed class PhonePopupHost : IDisposable
         if (_phase is not (Phase.Opening or Phase.Closing))
             return;
         var start = _start ??= CornflowerClock.Now;
-        var time = CornflowerClock.Now - start;
+        var time = CornflowerClock.Since(start, _speed);
         var length = _placement == PhonePopupPlacement.Full ? PhonePopupMotion.OpenLength(Rows) : Swing.OpenLength;
         if (_phase == Phase.Opening && time >= length)
         {
@@ -378,7 +384,7 @@ internal sealed class PhonePopupHost : IDisposable
         if (_phase != Phase.Closing)
             return;
         Hide();
-        _frame = CornflowerClock.Schedule(Finish, Swing.ClosedAfter - Swing.GoneAfter);
+        _frame = CornflowerClock.Schedule(Finish, Swing.ClosedAfter - Swing.GoneAfter, _speed);
     }
 
     /// <summary>The closing motion is over: the owner closes the popup.</summary>

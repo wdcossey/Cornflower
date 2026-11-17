@@ -24,6 +24,11 @@ namespace Cornflower.Controls;
 /// It has no visual opinion and no public surface. It is process-wide and not thread-safe: it is
 /// read and set on the UI thread.
 /// </para>
+/// <para>
+/// A motion reads its speed from <see cref="CornflowerConfig"/> when it starts (<see cref="SpeedOf"/>), and scales its
+/// time with it here (<see cref="Since"/>, <see cref="AtSpeed"/>, <see cref="Schedule(Action, TimeSpan, double)"/>):
+/// the clock itself stays real time, so a test's time is still the real time a motion takes.
+/// </para>
 /// </remarks>
 internal static class CornflowerClock
 {
@@ -44,6 +49,37 @@ internal static class CornflowerClock
     /// Outside a window there is no frame, so it runs after <see cref="FrameInterval"/>. Dispose to cancel.
     /// </summary>
     public static IDisposable RequestFrame(Visual visual, Action callback) => Source.RequestFrame(visual, callback);
+
+    /// <summary>
+    /// The speed a motion of <paramref name="area"/> starts at: <see cref="CornflowerConfig"/>'s for it, read now. A
+    /// motion keeps it to its end, and measures its time with <see cref="Since"/> and its delays with
+    /// <see cref="Schedule(Action, TimeSpan, double)"/>.
+    /// </summary>
+    public static double SpeedOf(MotionArea area) => CornflowerConfig.SpeedOf(area);
+
+    /// <summary>
+    /// A motion's own time for <paramref name="real"/> of real time at <paramref name="speed"/>: the one place a speed
+    /// scales a motion. At 1, the phone's, the real time exactly; never more than a century, so no sum overflows.
+    /// </summary>
+    public static TimeSpan AtSpeed(TimeSpan real, double speed)
+    {
+        if (speed == 1)
+            return real;
+        var ticks = real.Ticks * speed;
+        return ticks >= MaxMotionTime.Ticks ? MaxMotionTime : TimeSpan.FromTicks((long)Math.Round(ticks));
+    }
+
+    /// <summary>The motion's time since <paramref name="start"/> (a <see cref="Now"/>) at <paramref name="speed"/>.</summary>
+    public static TimeSpan Since(TimeSpan start, double speed) => AtSpeed(Now - start, speed);
+
+    /// <summary>
+    /// <see cref="Schedule(Action, TimeSpan)"/> after <paramref name="delay"/> of a motion's own time at
+    /// <paramref name="speed"/>: at 2, after half of it in real time.
+    /// </summary>
+    public static IDisposable Schedule(Action callback, TimeSpan delay, double speed) =>
+        Schedule(callback, speed == 1 ? delay : delay / speed);
+
+    private static readonly TimeSpan MaxMotionTime = TimeSpan.FromDays(36_500);
 }
 
 /// <summary>A source of time for <see cref="CornflowerClock"/>.</summary>

@@ -1202,4 +1202,51 @@ public class PivotTests
         using var stage = new Stage(pivot: pivot);
         Assert.Equal(["loading one", "loaded one"], log);
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void The_Headers_Transitions_Run_At_PivotAndHubSpeed_And_End_At_Once_With_Animated_Off()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.PivotAndHubSpeed = 2;
+        using (var stage = new Stage())
+        {
+            var presenter = stage.Header(1).GetTemplateDescendants().OfType<ContentPresenter>().Single();
+            Assert.All(presenter.Transitions!, t => Assert.Equal(TimeSpan.FromSeconds(0.165), ((TransitionBase)t).Duration));
+        }
+
+        CornflowerConfig.Animated = false;
+        using (var stage = new Stage())
+        {
+            var presenter = stage.Header(1).GetTemplateDescendants().OfType<ContentPresenter>().Single();
+            Assert.All(presenter.Transitions!, t => Assert.Equal(TimeSpan.Zero, ((TransitionBase)t).Duration));
+        }
+    }
+
+    [AvaloniaFact]
+    public void At_PivotAndHubSpeed_2_A_Move_From_Code_Settles_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        var phone = SettleTime();
+        CornflowerConfig.PivotAndHubSpeed = 2;
+        var twice = SettleTime();
+        Assert.InRange(twice, phone / 2 - 32, phone / 2 + 32);
+
+        static double SettleTime()
+        {
+            using var clock = new TestClock();
+            using var stage = new Stage();
+            stage.Pivot.SelectedIndex = 1;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(stage.Pivot.Motion.IsMoving);
+            while (stage.Pivot.Motion.IsMoving && clock.Now.TotalMilliseconds < 5000)
+            {
+                clock.At(clock.Now.TotalMilliseconds + 16);
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            return clock.Now.TotalMilliseconds;
+        }
+    }
 }

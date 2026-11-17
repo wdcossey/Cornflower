@@ -24,7 +24,10 @@ namespace Cornflower.Themes.Wp81;
 /// template's <c>TopPortrait</c> (the menu above its target) or <c>BottomPortrait</c> (below) storyboard, as written:
 /// <c>OuterBorder</c>'s <c>ScaleX</c> 0 to 1 linearly over <see cref="OuterOpenLength"/>, about its top centre, then
 /// <c>InnerBorder</c>'s <c>ScaleY</c> 0 to 1 linearly until <see cref="OpenLength"/>, from the edge by the target; until
-/// then both borders show only that edge's line. Time 0 is the first frame, which shows the start.</para>
+/// then both borders show only that edge's line. Time 0 is the first frame, which shows the start. It runs at
+/// <see cref="CornflowerConfig.PopupSpeed"/>, read as it starts; <see cref="CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen"/>
+/// opens it in one step, both scales over <see cref="OuterOpenLength"/>; with <see cref="CornflowerConfig.Animated"/> off it
+/// opens at rest.</para>
 /// <para><b>Closing</b> has no motion (#150): the menu goes at once and <c>Closed</c> comes in the same frame, after an
 /// item's <c>Click</c>, a tap outside (Avalonia's light dismiss: the phone's full-window layer), <c>Hide()</c> or Back.
 /// The flyout's own closing stands; nothing is held.</para>
@@ -106,6 +109,9 @@ internal static class PhoneMenuFlyout
         private Control? _inner;
         private IDisposable? _frame;
         private TimeSpan? _start;
+        // The opening's speed and steps, read from CornflowerConfig as it starts.
+        private double _speed = 1;
+        private bool _singleStep;
         private bool _above;
 
         public Binder(MenuFlyoutPresenter presenter, Popup popup)
@@ -242,7 +248,12 @@ internal static class PhoneMenuFlyout
             if (_top is null)
                 return;
             Place();
+            // With CornflowerConfig.Animated off the menu opens at rest.
+            if (!CornflowerConfig.Animated)
+                return;
             _start = null;
+            _speed = CornflowerClock.SpeedOf(MotionArea.Popup);
+            _singleStep = CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen;
             // The start at once, so no frame shows the menu at rest first; time 0 is still the first frame.
             Move();
             _frame = CornflowerClock.RequestFrame(_presenter, Step);
@@ -316,7 +327,7 @@ internal static class PhoneMenuFlyout
             if (_top is null)
                 return;
             var start = _start ??= CornflowerClock.Now;
-            if (CornflowerClock.Now - start >= OpenLength)
+            if (CornflowerClock.Since(start, _speed) >= (_singleStep ? OuterOpenLength : OpenLength))
             {
                 StopMoving();
                 return;
@@ -331,9 +342,12 @@ internal static class PhoneMenuFlyout
         {
             if (_outer is null || _center is null || _inner is null)
                 return;
-            var time = _start is { } start ? CornflowerClock.Now - start : TimeSpan.Zero;
+            var time = _start is { } start ? CornflowerClock.Since(start, _speed) : TimeSpan.Zero;
             _outerScale.ScaleX = Math.Clamp(time / OuterOpenLength, 0, 1);
-            _innerScale.ScaleY = Math.Clamp((time - OuterOpenLength) / (OpenLength - OuterOpenLength), 0, 1);
+            // The deviation's one step: the height with the width (CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen).
+            _innerScale.ScaleY = _singleStep
+                ? _outerScale.ScaleX
+                : Math.Clamp((time - OuterOpenLength) / (OpenLength - OuterOpenLength), 0, 1);
             if (_moving.Count > 0)
                 return;
             // Only the edge by the target shows a line until the end: the rest's thickness on that side alone.

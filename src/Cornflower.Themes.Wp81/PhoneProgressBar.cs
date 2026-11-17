@@ -13,7 +13,8 @@ using static Cornflower.Themes.Wp81.PhoneKeyframeTrack;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// The 8.1 ProgressBar's <c>Indeterminate</c> storyboard, run frame by frame on <see cref="CornflowerClock"/> while the
+/// The 8.1 ProgressBar's <c>Indeterminate</c> storyboard, run frame by frame on <see cref="CornflowerClock"/> (at the phone's speed whatever
+/// <see cref="CornflowerConfig"/> says: the user's only sign that something is happening) while the
 /// bar is indeterminate: the dots' grid, each dot's two slides and each dot's opacity, as the template's keyframes and
 /// the phone's <c>TemplateSettings</c> give them. Internal to the theme, which turns it on with its own setter.
 /// </summary>

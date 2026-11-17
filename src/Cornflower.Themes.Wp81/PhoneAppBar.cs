@@ -110,6 +110,7 @@ internal static class PhoneAppBar
         private bool _moving;
         private bool _opening;
         private TimeSpan? _start;
+        private double _speed = 1;                        // read from CornflowerConfig as the motion starts
         private double _from;
 
         public Mover(CommandBar bar)
@@ -170,7 +171,7 @@ internal static class PhoneAppBar
         {
             if (!_moving)
                 return 0;
-            var time = _start is { } start ? CornflowerClock.Now - start : TimeSpan.Zero;
+            var time = _start is { } start ? CornflowerClock.Since(start, _speed) : TimeSpan.Zero;
             return _opening
                 ? PhoneEase.Remaining(_bar.Bounds.Height - _from, OpenExponent, time, OpenLength)
                 : PhoneEase.Remaining(_bar.Bounds.Height - _from, CloseExponent, time, CloseLength);
@@ -194,6 +195,7 @@ internal static class PhoneAppBar
             _from = _bar.Bounds.Height - Lag();
             _opening = open;
             _start = null;
+            _speed = CornflowerClock.SpeedOf(MotionArea.Control);
             _moving = true;
             _bar.SetValue(ShowsOpenProperty, true);
             Apply();
@@ -206,7 +208,7 @@ internal static class PhoneAppBar
             if (!_moving)
                 return;
             var start = _start ??= CornflowerClock.Now;
-            if (CornflowerClock.Now - start >= (_opening ? OpenLength : CloseLength))
+            if (CornflowerClock.Since(start, _speed) >= (_opening ? OpenLength : CloseLength))
             {
                 var opening = _opening;
                 Rest();

@@ -231,7 +231,7 @@ internal static class PhoneComboBox
                 _pending = null;
                 if (combo.IsDropDownOpen)
                     combo.SetValue(IsShownOpenProperty, true);
-            }, InlineOpenDelay);
+            }, InlineOpenDelay, CornflowerClock.SpeedOf(MotionArea.Control));
         }
 
         private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)

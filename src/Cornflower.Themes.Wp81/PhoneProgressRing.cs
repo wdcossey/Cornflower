@@ -12,7 +12,8 @@ using static Cornflower.Themes.Wp81.PhoneKeyframeTrack;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// The 8.1 ProgressRing's <c>Active</c> storyboard, run frame by frame on <see cref="CornflowerClock"/> while the
+/// The 8.1 ProgressRing's <c>Active</c> storyboard, run frame by frame on <see cref="CornflowerClock"/> (at the phone's speed whatever
+/// <see cref="CornflowerConfig"/> says: the user's only sign that something is happening) while the
 /// ring is active: each dot's rotation and opacity, as the template's keyframes give them. Internal to the theme,
 /// which turns it on with its own setter.
 /// </summary>

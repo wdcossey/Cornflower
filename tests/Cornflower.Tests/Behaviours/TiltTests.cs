@@ -1088,4 +1088,51 @@ public class TiltTests
         Assert.Null(root.RenderTransform);
         Assert.Equal(0, clock.Pending);
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_TiltSpeed_2_A_Release_Holds_And_Returns_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.TiltSpeed = 2;
+        using var clock = new TestClock();
+        using var page = new Page(GridButtons);
+        var button = page.Buttons["A"];
+        var corner = page.At("A", new Point(5.848, 3.344));
+
+        var touch = page.Window.TouchBegin(corner);
+        clock.At(SettleMs);
+        var held = CfTilt.Current(button);
+        Assert.NotEqual(TiltState.Rest, held);
+
+        page.Window.TouchEnd(touch, corner);
+        var first = clock.Now.TotalMilliseconds + 16;                         // time 0
+        var back = (TiltModel.Hold + TiltModel.Return).TotalMilliseconds / 2;
+        clock.At(first + TiltModel.Hold.TotalMilliseconds / 2 - 16);
+        Assert.Equal(held, CfTilt.Current(button));                          // still held
+        clock.At(first + back - 16);
+        Assert.NotEqual(TiltState.Rest, CfTilt.Current(button));
+        clock.At(first + back + 16);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(button));
+        Assert.Null(CfTilt.TargetOf(button).RenderTransform);
+    }
+
+    [AvaloniaFact]
+    public void With_Animated_Off_Nothing_Tilts()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        using var clock = new TestClock();
+        using var page = new Page(GridButtons);
+        var button = page.Buttons["A"];
+        var corner = page.At("A", new Point(5.848, 3.344));
+
+        var touch = page.Window.TouchBegin(corner);
+        clock.At(SettleMs);
+        Assert.Equal(TiltState.Rest, CfTilt.Current(button));
+        Assert.Null(CfTilt.TargetOf(button).RenderTransform);
+        page.Window.TouchEnd(touch, corner);
+        Assert.Equal(0, clock.Pending);
+    }
 }

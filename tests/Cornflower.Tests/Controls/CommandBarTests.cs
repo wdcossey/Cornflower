@@ -1115,4 +1115,26 @@ public class CommandBarTests
 
         public void Execute(object? parameter) => run();
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_ControlSpeed_2_The_Bar_Opens_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        double Rests(AppBarPage page)
+        {
+            page.Bar.IsOpen = true;
+            page.Window.UpdateLayout();
+            var from = page.Clock.Now.TotalMilliseconds;
+            return Frames16(page, from).First(f => Math.Abs(f.Top - OpenTop / Scale) < 0.001).Ms;
+        }
+
+        double phone;
+        using (var page = new AppBarPage())
+            phone = Rests(page);
+        CornflowerConfig.ControlSpeed = 2;
+        using (var page = new AppBarPage())
+            Assert.InRange(Rests(page), phone / 2 - 16, phone / 2 + 16);
+    }
 }

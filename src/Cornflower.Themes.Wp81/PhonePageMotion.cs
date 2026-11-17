@@ -79,6 +79,8 @@ internal sealed class PhonePageRun
     private readonly CancellationTokenRegistration _cancel;
     private IDisposable? _pending;
     private TimeSpan? _start;
+    // Read from CornflowerConfig as the transition starts.
+    private readonly double _speed = CornflowerClock.SpeedOf(MotionArea.Page);
     private bool _over;
 
     private PhonePageRun(IPhonePageMotion motion, Visual? from, Visual? to, bool forward, CancellationToken cancellationToken)
@@ -122,6 +124,16 @@ internal sealed class PhonePageRun
             motion = cameWith;
         }
 
+        // With CornflowerConfig.Animated off, the end at once: the page coming in shown, the one going out hidden.
+        if (!CornflowerConfig.Animated)
+        {
+            if (to is not null)
+                to.IsVisible = true;
+            if (from is not null)
+                from.IsVisible = false;
+            return Task.CompletedTask;
+        }
+
         return new PhonePageRun(motion, from, to, forward, cancellationToken)._done.Task;
     }
 
@@ -156,7 +168,7 @@ internal sealed class PhonePageRun
 
         var now = CornflowerClock.Now;
         _start ??= now;
-        var time = now - _start.Value;
+        var time = CornflowerClock.AtSpeed(now - _start.Value, _speed);
         if (time >= _motion.Length(_forward))
         {
             Finish();

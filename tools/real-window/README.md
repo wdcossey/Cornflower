@@ -43,6 +43,9 @@ error leaves held, the mouse button or a touch, it lets go of.
 
 ## What it does
 
+It starts the sample with `--phone-motion`, at the phone's motion (`CornflowerConfig`'s defaults), so its waits are
+the phone's; started by hand, the sample runs its motion twice as fast (`App.SampleMotionSpeed`, #189).
+
 - **Every page on the list,** with nothing to add for a new control: opens it with a real click,
   checks that the shell writes the page's ready line under its title, saves a frame, fails on a
   button with no size and, in a Debug build, on a missing performance line, then clicks Back (in the

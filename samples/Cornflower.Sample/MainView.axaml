@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:Cornflower.Sample"
+             xmlns:cf="using:Cornflower.Controls"
              x:Class="Cornflower.Sample.MainView"
              Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
              Foreground="{DynamicResource PhoneForegroundBrush}"
@@ -8,8 +9,7 @@
              FontSize="{DynamicResource TextStyleLargeFontSize}">
   <!--
     What the theme has today: its tokens and fonts, read through their WinRT keys, and the text
-    styles. No other control is themed yet, so this page uses only panels, borders and text. Pages per
-    control come with them.
+    styles; then CornflowerConfig's motion settings, which change the whole sample at once.
     The view's padding follows the device's safe area (TopLevel.AutoSafeAreaPadding, on by default).
     SampleShell times the page and writes its ready line; in a Debug build it also shows what the page cost to open.
   -->
@@ -69,6 +69,17 @@
       <TextBlock x:Name="DeviceFactsText" TextWrapping="Wrap"
                  Foreground="{DynamicResource PhoneMidBrush}"
                  FontSize="{DynamicResource TextStyleMediumFontSize}" />
+
+      <TextBlock Text="motion" Classes="section" />
+      <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource PhoneMidBrush}"
+                 FontSize="{DynamicResource TextStyleMediumFontSize}"
+                 Text="CornflowerConfig. Its defaults are the phone's; the sample starts at speed 2 (--phone-motion, or the 'motion' extra 'phone', starts it at 1). A change reaches the next motion." />
+      <ToggleSwitch x:Name="AnimatedSwitch" cf:ControlHeader.Header="animated" IsCheckedChanged="OnAnimatedChanged" />
+      <ComboBox x:Name="MotionSpeedBox" cf:ControlHeader.Header="motion speed" SelectionChanged="OnSpeedChanged" />
+      <StackPanel x:Name="AreaSpeeds" Spacing="6" />
+      <ToggleSwitch x:Name="SingleStepSwitch" cf:ControlHeader.Header="menu flyout opens in one step (a deviation)"
+                    IsCheckedChanged="OnSingleStepChanged" />
+      <Button x:Name="PhoneMotionButton" Content="the phone's" Click="OnPhoneMotion" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

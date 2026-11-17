@@ -114,6 +114,7 @@ internal sealed class HubMotion
 
     // The move under way: from _from to _to by _curve over _duration from _start; or the loop.
     private TimeSpan _start;
+    private double _speed = 1;                            // read from CornflowerConfig as the motion starts
     private double _from;
     private double _to;
     private KeySplineCurve _curve = SwipeCurve;
@@ -134,7 +135,7 @@ internal sealed class HubMotion
     public bool IsLoopingBack { get; private set; }
 
     /// <summary>Whether the sections themselves are moving: not in the loop's last part, where only the header is.</summary>
-    public bool AreSectionsMoving => _moving && !(IsLooping && CornflowerClock.Now - _start >= LoopDuration);
+    public bool AreSectionsMoving => _moving && !(IsLooping && CornflowerClock.Since(_start, _speed) >= LoopDuration);
 
     /// <summary>How far the sections have moved left, in view pixels.</summary>
     public double Offset { get; private set; }
@@ -330,6 +331,7 @@ internal sealed class HubMotion
     {
         StopFrames();
         _start = CornflowerClock.Now;
+        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _to = to;
         _curve = curve;
@@ -344,6 +346,7 @@ internal sealed class HubMotion
     {
         StopFrames();
         _start = CornflowerClock.Now;
+        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _to = to;
         _moving = true;
@@ -356,7 +359,7 @@ internal sealed class HubMotion
     private void Step(int generation)
     {
         if (generation != _generation) return;
-        var t = CornflowerClock.Now - _start;
+        var t = CornflowerClock.Since(_start, _speed);
         if (IsLoopingBack)
         {
             if (t >= HeaderBackJump + HeaderBackFlyInDuration)

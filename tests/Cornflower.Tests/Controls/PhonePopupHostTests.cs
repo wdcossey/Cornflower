@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 using Cornflower.Themes.Wp81;
 
 namespace Cornflower.Tests.Controls;
@@ -318,5 +319,52 @@ public class PhonePopupHostTests
         stage.Scene.Window.RaiseEvent(back);
         Assert.True(back.Handled);
         Assert.True(host.IsClosing);
+    }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_PopupSpeed_2_A_Popup_Swings_And_Closes_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.PopupSpeed = 2;
+        using var stage = new Stage();
+        var length = TimeSpan.FromMilliseconds(4 * Tick);
+        stage.Host.Swing = new PhonePopupSwing(t => 30 * Math.Max(0, 1 - t / length), length,
+            TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+        stage.Open();
+        var first = stage.FirstFrameAfter(0);
+
+        stage.At(first + Tick);
+        Assert.Equal(15, stage.Host.Bands!.Angles[0], 1e-9);
+        stage.At(first + 2 * Tick);
+        Assert.Null(stage.Host.Bands);
+
+        // Read again as it starts to close: gone 50 ms on, closed at once with it.
+        CornflowerConfig.PopupSpeed = 4;
+        var hidden = stage.Now;
+        stage.Host.Dismiss();
+        stage.At(hidden + 24);
+        Assert.Equal(0, stage.Closes);
+        stage.At(hidden + 25);
+        Assert.Equal(1, stage.Closes);
+    }
+
+    [AvaloniaFact]
+    public void With_Animated_Off_A_Popup_Opens_At_Rest_And_Closes_At_Once()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        using var stage = new Stage();
+        stage.Open();
+
+        Assert.True(stage.Host.IsOpen);
+        Assert.Null(stage.Host.Bands);
+        Assert.Equal(1, stage.Content.Opacity);
+        Assert.Equal(450, stage.Popup.Width);
+
+        stage.Host.Dismiss();
+        Assert.Equal(1, stage.Closes);
+        Assert.False(stage.Popup.IsOpen);
     }
 }

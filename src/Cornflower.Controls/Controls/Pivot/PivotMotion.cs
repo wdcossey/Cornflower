@@ -97,6 +97,7 @@ internal sealed class PivotMotion
 
     // The move under way: from the item at _origin, _steps pages (forward positive) to _target.
     private TimeSpan _start;
+    private double _speed = 1;                            // read from CornflowerConfig as the motion starts
     private double _from;
     private int _steps;
     private int _origin;
@@ -311,6 +312,7 @@ internal sealed class PivotMotion
         StopFrames();
         var count = _pivot.ItemCount;
         _start = CornflowerClock.Now;
+        _speed = CornflowerClock.SpeedOf(MotionArea.PivotAndHub);
         _from = Offset;
         _steps = steps;
         _origin = Lead;
@@ -330,7 +332,7 @@ internal sealed class PivotMotion
     {
         if (generation != _generation) return;
         var page = _pivot.PageWidth;
-        var t = CornflowerClock.Now - _start;
+        var t = CornflowerClock.Since(_start, _speed);
         var offset = _from + (_steps * page - _from) * _curve.Ease(t / _duration);
 
         if (_selectAt is { } selectAt && t >= selectAt)

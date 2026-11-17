@@ -136,6 +136,18 @@ internal static class PhoneToggleSwitch
             _root.AddHandler(InputElement.PointerReleasedEvent, OnReleased);
             _thumb.AddHandler(InputElement.PointerCaptureLostEvent, OnCaptureLost);
             _knob.PropertyChanged += OnKnobChanged;
+            KnobTransitions();
+        }
+
+        /// <summary>
+        /// The switch's <c>KnobTransitions</c>, at <see cref="CornflowerConfig.ControlSpeed"/> read now
+        /// (<see cref="PhoneTransitions"/>): when the template is applied, so Avalonia's own moves (a key, a change from
+        /// code) have it, and at the end of each tap or drag.
+        /// </summary>
+        private Transitions? KnobTransitions()
+        {
+            PhoneTransitions.Rescale(toggle.KnobTransitions, MotionArea.Control);
+            return toggle.KnobTransitions;
         }
 
         /// <summary>The knob's travel: <c>PART_SwitchKnob</c>'s width, the phone's <c>KnobOnToOffOffset</c>.</summary>
@@ -195,7 +207,7 @@ internal static class PhoneToggleSwitch
             {
                 // The phone puts the knob back at once (Dragging to Off or On), then slides it from there as it toggles.
                 Canvas.SetLeft(_knob!, RestOf(toggle.IsChecked == true));
-                _knob!.Transitions = toggle.KnobTransitions;
+                _knob!.Transitions = KnobTransitions();
                 if (!toggle.IsEffectivelyEnabled)
                     return;
                 // Avalonia's click, through the switch's toggle pattern; a subclass whose peer has none toggles plainly.
@@ -206,7 +218,7 @@ internal static class PhoneToggleSwitch
                 return;
             }
 
-            _knob!.Transitions = toggle.KnobTransitions;
+            _knob!.Transitions = KnobTransitions();
             var half = Travel / 2;
             var at = press.StartLeft + press.Moved;           // where the finger has the knob, past the ends too
             var toggled = press.WasOn ? at <= half : at >= half;
@@ -266,7 +278,7 @@ internal static class PhoneToggleSwitch
         private void PutBack()
         {
             _press = null;
-            _knob!.Transitions = toggle.KnobTransitions;
+            _knob!.Transitions = KnobTransitions();
             Canvas.SetLeft(_knob, RestOf(toggle.IsChecked == true));
         }
     }

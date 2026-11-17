@@ -122,6 +122,7 @@ internal static class PhoneLoopingSelector
 
         private PhoneLoopingSelectorMotion? _motion;
         private TimeSpan _motionStart;
+        private double _motionSpeed = 1;                  // read from CornflowerConfig as the move starts
         private IDisposable? _frame;
         private int _generation;
 
@@ -139,6 +140,7 @@ internal static class PhoneLoopingSelector
         private bool _expandedBefore;
         private double _expansionTarget;
         private TimeSpan _expansionLast;
+        private double _expansionSpeed = 1;               // read from CornflowerConfig as the expansion starts
         private IDisposable? _expansionFrame;
 
         public Wheel(DateTimePickerPanel panel)
@@ -345,6 +347,7 @@ internal static class PhoneLoopingSelector
 
             _motion = motion;
             _motionStart = CornflowerClock.Now;
+            _motionSpeed = CornflowerClock.SpeedOf(MotionArea.Control);
             _lastSet = Offset;
             _panel.SetValue(IsMovingProperty, true);
             var generation = _generation;
@@ -363,7 +366,7 @@ internal static class PhoneLoopingSelector
                 return;
             }
 
-            var elapsed = CornflowerClock.Now - _motionStart;
+            var elapsed = CornflowerClock.Since(_motionStart, _motionSpeed);
             if (elapsed >= motion.Duration)
             {
                 StopMotion();
@@ -470,6 +473,7 @@ internal static class PhoneLoopingSelector
             if (_expansionFrame is null)
             {
                 _expansionLast = CornflowerClock.Now;
+                _expansionSpeed = CornflowerClock.SpeedOf(MotionArea.Control);
                 _expansionFrame = CornflowerClock.RequestFrame(_panel, StepExpansion);
             }
         }
@@ -478,7 +482,7 @@ internal static class PhoneLoopingSelector
         {
             _expansionFrame = null;
             var now = CornflowerClock.Now;
-            var step = (now - _expansionLast) / ExpansionTime;
+            var step = CornflowerClock.AtSpeed(now - _expansionLast, _expansionSpeed) / ExpansionTime;
             _expansionLast = now;
             var value = GetExpansion(_panel);
             value = value < _expansionTarget ? Math.Min(_expansionTarget, value + step) : Math.Max(_expansionTarget, value - step);

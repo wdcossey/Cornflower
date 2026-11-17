@@ -20,6 +20,8 @@ public class MainActivity : AvaloniaMainActivity
         // Before Avalonia makes the view, which opens this page: `run.ps1 -Page <title>` starts the activity with
         // `--es page <title>`; with no extra, as from the launcher, the first page.
         App.StartPage = Intent?.GetStringExtra(App.PageExtra);
+        // Twice the phone's motion, so trying the sample feels quick; `--es motion phone`, the phone's (run.ps1 passes it).
+        App.StartMotion(phone: Intent?.GetStringExtra(App.MotionExtra) == App.PhoneMotionValue);
         base.OnCreate(savedInstanceState);
     }
 }

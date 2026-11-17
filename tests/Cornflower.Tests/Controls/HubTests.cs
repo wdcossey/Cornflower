@@ -1418,4 +1418,60 @@ public class HubTests
         Assert.Equal(0, stage.SectionX(0), 0.0001);
         Assert.False(stage.Hub.CanPan);
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    [AvaloniaFact]
+    public void At_PivotAndHubSpeed_2_The_Turn_And_The_Fade_In_Take_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.PivotAndHubSpeed = 2;
+        using var clock = PhoneClock();
+        var hub = Stage.Make(2);
+        hub.Background = Brushes.Purple;
+        using var stage = new Stage(hub: hub, entrance: true);
+        var entrance = stage.Hub.Entrance;
+        var start = clock.Now.TotalMilliseconds;
+
+        clock.At(start + 2 * Frame);
+        Assert.Equal(EntranceAngles[4], entrance.Angle, 0.001);
+        clock.At(start + FadingInMax / 2);
+        Assert.Contains(":backgroundshowing", hub.Classes);
+        clock.At(start + (EntranceTicks / 2 + 1) * Frame);
+        Assert.False(entrance.IsRunning);
+        Assert.Null(stage.Part("PART_HubRoot").RenderTransform);
+    }
+
+    [AvaloniaFact]
+    public void With_Animated_Off_The_Hub_Doesnt_Turn_And_Its_Background_Shows_At_Once()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        using var clock = PhoneClock();
+        var hub = Stage.Make(2);
+        hub.Background = Brushes.Purple;
+        using var stage = new Stage(hub: hub, entrance: true);
+
+        Assert.False(stage.Hub.Entrance.IsRunning);
+        Assert.Null(stage.Part("PART_HubRoot").RenderTransform);
+        Assert.Contains(":backgroundshowing", hub.Classes);
+        Assert.DoesNotContain(":backgroundimagefadingin", hub.Classes);
+    }
+
+    [AvaloniaFact]
+    public void At_PivotAndHubSpeed_2_A_Swipe_Goes_On_In_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.PivotAndHubSpeed = 2;
+        using var clock = PhoneClock();
+        using var stage = new Stage();
+        const double release = 250;
+        Swipe(stage, clock, release);
+        var from = stage.Offset;
+        clock.At(release + Frame);
+        Assert.True(Math.Abs((stage.Offset - from) / (SectionWidth - from) - SwipeFractions[1]) < 0.005);
+        clock.At(release + (SwipeFractions.Length / 2 + 1) * Frame);
+        Assert.False(stage.Hub.Motion.IsMoving);
+        Assert.Equal(SectionWidth, stage.Offset, 0.0001);
+    }
 }

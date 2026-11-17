@@ -678,4 +678,88 @@ public class MenuFlyoutTests
         stage.At(stage.Clock.Now.TotalMilliseconds + 600);
         Near(Placements[0].MenuTop, stage.Bounds().Y);
     }
+
+    // ---- CornflowerConfig (#189) ----
+
+    /// <summary>The menu's ScaleX and ScaleY now.</summary>
+    private static (double X, double Y) Scales(Stage stage) =>
+        (((ScaleTransform)stage.Part<Border>("OuterBorder").RenderTransform!).ScaleX,
+            ((ScaleTransform)stage.Part<StackPanel>("InnerBorder").RenderTransform!).ScaleY);
+
+    [AvaloniaFact]
+    public void At_MotionSpeed_2_The_Opening_Takes_Half_The_Time()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.MotionSpeed = 2;
+        using var stage = new Stage();
+        stage.Open();
+        var first = stage.Clock.Now.TotalMilliseconds + Tick;
+
+        foreach (var ms in new[] { 0, 5 * Tick, 12 * Tick, 15 * Tick })
+        {
+            stage.At(first + ms);
+            Assert.Equal(Math.Min(1, 2 * ms / OuterOpenMs), Scales(stage).X, 6);
+            Assert.Equal(Math.Clamp((2 * ms - OuterOpenMs) / (OpenMs - OuterOpenMs), 0, 1), Scales(stage).Y, 6);
+        }
+
+        stage.At(first + OpenMs / 2);
+        Assert.False(PhoneMenuFlyout.IsOpening(stage.Presenter));
+        Assert.Null(stage.Part<Border>("OuterBorder").RenderTransform);
+    }
+
+    [AvaloniaFact]
+    public void PopupSpeed_Wins_Over_MotionSpeed_And_Is_Read_As_The_Menu_Starts_To_Open()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.MotionSpeed = 4;
+        CornflowerConfig.PopupSpeed = 2;
+        using var stage = new Stage();
+        stage.Open();
+        var first = stage.Clock.Now.TotalMilliseconds + Tick;
+        // A change mid-way reaches the next opening, not this one.
+        CornflowerConfig.PopupSpeed = null;
+        CornflowerConfig.MotionSpeed = 1;
+
+        stage.At(first + 5 * Tick);
+        Assert.Equal(2 * 5 * Tick / OuterOpenMs, Scales(stage).X, 6);
+        stage.At(first + OpenMs / 2);
+        Assert.False(PhoneMenuFlyout.IsOpening(stage.Presenter));
+    }
+
+    [AvaloniaFact]
+    public void The_Single_Step_Deviation_Grows_The_Width_And_Height_Together_Over_380_ms()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen = true;
+        using var stage = new Stage();
+        stage.Open();
+        Assert.Equal((0, 0), Scales(stage));
+        var first = stage.Clock.Now.TotalMilliseconds + Tick;
+
+        foreach (var ms in new[] { 0, 5 * Tick, 12 * Tick, 24 * Tick })
+        {
+            stage.At(first + ms);
+            Assert.Equal(ms / OuterOpenMs, Scales(stage).X, 6);
+            Assert.Equal(ms / OuterOpenMs, Scales(stage).Y, 6);
+        }
+
+        stage.At(first + 25 * Tick);                                        // the first frame past 380 ms
+        Assert.False(PhoneMenuFlyout.IsOpening(stage.Presenter));
+        Assert.Null(stage.Part<Border>("OuterBorder").RenderTransform);
+        Assert.Null(stage.Part<StackPanel>("InnerBorder").RenderTransform);
+    }
+
+    [AvaloniaFact]
+    public void With_Animated_Off_The_Menu_Opens_At_Rest()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        using var stage = new Stage();
+        stage.Open();
+
+        Assert.False(PhoneMenuFlyout.IsOpening(stage.Presenter));
+        Assert.Null(stage.Part<Border>("OuterBorder").RenderTransform);
+        Assert.Null(stage.Part<StackPanel>("InnerBorder").RenderTransform);
+        Assert.Equal(0, stage.Clock.Pending);
+    }
 }

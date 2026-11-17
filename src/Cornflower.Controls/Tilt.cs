@@ -24,7 +24,9 @@ namespace Cornflower.Controls;
 /// leaving the control holds the tilt for 182.6 ms, then eases it back over 167 ms. A finger that
 /// comes back onto the control before it lets go tilts it again, as the toolkit's TiltEffect does.
 /// The tilt runs frame by frame on <see cref="CornflowerClock"/>, not on Avalonia's transitions, so
-/// a test can step it. One pointer at a time: the first down is the one that tilts.
+/// a test can step it. One pointer at a time: the first down is the one that tilts. The hold and
+/// return run at <see cref="CornflowerConfig.TiltSpeed"/>, read at the release; with
+/// <see cref="CornflowerConfig.Animated"/> off nothing tilts.
 /// </para>
 /// <para>
 /// The tilt is drawn on the template's root, where the phone puts it, or on the control itself if
@@ -177,6 +179,7 @@ public static class Tilt
         private Point _eye;            // the point under the eye, in the target's space, as of the last frame
         private int _steps;            // steps taken for this point of the finger
         private TimeSpan _released;    // the release's time 0: the first frame after it
+        private double _speed = 1;     // the return's, read from CornflowerConfig at the release
         private TiltState _held;
         private IDisposable? _pending; // in Pressed, a step; in Paused or Returning, the return
         private Visual? _target;
@@ -234,8 +237,9 @@ public static class Tilt
 
         private void OnPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (!e.GetCurrentPoint(_control).Properties.IsLeftButtonPressed || NearerTiltBelow(_control, e.Source) ||
-                !Takes(e.Source, out var target))
+            // With CornflowerConfig.Animated off there is no tilt.
+            if (!CornflowerConfig.Animated || !e.GetCurrentPoint(_control).Properties.IsLeftButtonPressed ||
+                NearerTiltBelow(_control, e.Source) || !Takes(e.Source, out var target))
                 return;
 
             if (!ReferenceEquals(target, _target))
@@ -348,6 +352,7 @@ public static class Tilt
         {
             _phase = phase;
             _held = State;
+            _speed = CornflowerClock.SpeedOf(MotionArea.Tilt);
             Cancel();
             _pending = CornflowerClock.RequestFrame(_control, BeginReturn);
         }
@@ -360,7 +365,7 @@ public static class Tilt
         private void BeginReturn()
         {
             _released = CornflowerClock.Now;
-            var wait = TiltModel.Hold - CornflowerClock.FrameInterval;
+            var wait = TiltModel.Hold / _speed - CornflowerClock.FrameInterval;
             _pending = CornflowerClock.Schedule(() => _pending = CornflowerClock.RequestFrame(_control, Return),
                 wait > TimeSpan.Zero ? wait : TimeSpan.Zero);
         }
@@ -369,7 +374,7 @@ public static class Tilt
         private void Return()
         {
             _pending = null;
-            var factor = TiltModel.ReturnFactor(CornflowerClock.Now - _released);
+            var factor = TiltModel.ReturnFactor(CornflowerClock.Since(_released, _speed));
             if (factor <= 0 || !TargetStands())
             {
                 if (_phase == Phase.Paused) Clear();
