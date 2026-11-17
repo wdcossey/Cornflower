@@ -9,7 +9,9 @@
 
     The Hub's template is the phone's, part for part (our names PART_):
     - PART_HubRoot, a Grid of two rows; the Hub clips to its bounds (ClipToBounds, set here though Avalonia's own
-      default), where the phone clips the background and the header with two rectangles its code sets;
+      default), where the phone clips the background and the header with two rectangles its code sets. The phone's
+      EntranceAnimationProjection, on its HubRoot, is drawn by the Hub (Cornflower.Controls' HubEntrance), which turns
+      PART_HubRoot in with a render transform each time it is placed;
     - over both rows a Canvas holding PART_Background, a Grid the Hub sizes and moves (the phone's
       BackgroundParallaxTransform), with PART_WrapBackground, the image's copy for the loop, and PART_MainBackground,
       both drawing the Background, BorderBrush and BorderThickness;
@@ -20,10 +22,10 @@
       HubHeaderFontSize, PhoneFontFamilyNormal, Light, HubHeaderCharacterSpacing), in Wp81's ContentControl theme. The
       Hub moves it (the phone's HeaderParallaxTransform and HeaderFlyinFlyoutTransform). A Canvas asks for no room, so
       the first row is 0 tall and the header is drawn over the sections; each section's placeholder makes room for it.
-    The phone's EntranceAnimationProjection, the Hub's own entrance, isn't here (README, "Known gaps").
     BackgroundImageLoadStates: :backgroundhidden draws the background at 0, as the phone's FadeOutThemeAnimation leaves
-    it; :backgroundshowing at 1. The phone goes straight from one to the other (#137), so BackgroundImageFadingIn isn't
-    here. Foreground is PhoneForegroundBrush, which the phone's Hub inherits from the page, as Wp81 themes no Window.
+    it; :backgroundimagefadingin (a Hub placed with a brush, for 90 ms) and :backgroundshowing at 1. The phone's
+    FadeInThemeAnimation runs where the emulator's app can't read it, and its Background reads 1 throughout (#148), so
+    no fade is drawn. Foreground is PhoneForegroundBrush, which the phone's Hub inherits from the page, as Wp81 themes no Window.
   -->
   <ControlTheme x:Key="{x:Type cf:Hub}" TargetType="cf:Hub">
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />

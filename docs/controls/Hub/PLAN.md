@@ -23,6 +23,12 @@ Pivot's pieces (#121, [Pivot's README](../Pivot/README.md), "What Hub can take")
   header's left edge and transforms, each section's left edge and the background's parts.
   [`tools/refapp/README.md`](../../../tools/refapp/README.md), "Hub's header" and "Hub: a background image, and the end
   of the sections"; `tools/motion/pivot.py`.
+- **#148's reads** ([#165](https://github.com/wdcossey/CornflowerUI/issues/165), [#166](https://github.com/wdcossey/CornflowerUI/issues/166),
+  [#167](https://github.com/wdcossey/CornflowerUI/issues/167)): `-Probe hubrelease` (runs `20261116-1714-dev11` and
+  `-1751-`, the loop backwards, every frame's section edges and header), `-Probe hubentrance` (`-1721-`, `-1811-`, the
+  entrance's `EntranceAnimationProjection` every frame, the states after `Loaded`), `-Probe hubstretch` (`-1720-`,
+  `-1754-`, an image narrower than the screen). `tools/refapp/README.md`, "Pivot and Hub: where a release goes" and
+  "Hub: the entrance"; `tools/motion/release.py` and `entrance.py`.
 - **The curves** are fitted here from those logs (the fits' scripts are in the PR's scratch, not the repo; the medians
   they fit are written out in `HubReadings`).
 
@@ -84,7 +90,7 @@ themes no `Window` (CheckBox's precedent).
 | ✓ | Part | Element | Avalonia | Action |
 |---|---|---|---|---|
 | [x] | `HubRoot` | `Grid` | `PART_HubRoot` | Two rows; clipped to the Hub |
-| [-] | `EntranceAnimationProjection` | `PlaneProjection` | `PART_EntranceAnimationProjection` | The Hub's own entrance isn't read frame by frame (owed); a page's turnstile (#120) brings a page in |
+| [x] | `EntranceAnimationProjection` | `PlaneProjection` | `PART_EntranceAnimationProjection` | No part: the Hub turns `PART_HubRoot` in with a `MatrixTransform` of its own (`HubEntrance`), the projection's `RotationY` about `CenterOfRotationX` −0.5 seen through PlaneProjection's camera, each time it is placed (#166) |
 | [x] | `BackgroundClipRect` | `RectangleGeometry` | `PART_BackgroundClipRect` | The root's `ClipToBounds`: the phone's code sets the rectangle (dumped 450 × 800 from the Hub's top left); ours clips at the Hub's edge (decided) |
 | [x] | `Background` | `Grid` | `PART_Background` | In a `Canvas`; the Hub sizes it and moves it |
 | [x] | `BackgroundParallaxTransform` | `CompositeTransform` | `PART_BackgroundParallaxTransform` | The Hub sets `PART_Background`'s `RenderTransform` to its own `TranslateTransform` |
@@ -103,7 +109,7 @@ themes no `Window` (CheckBox's precedent).
 | ✓ | Group | State | What it changes | Avalonia | Action |
 |---|---|---|---|---|---|
 | [x] | `BackgroundImageLoadStates` | `BackgroundHidden` | `FadeOutThemeAnimation on Background` | `^:backgroundhidden` | While the `Background` is an `ImageBrush` with no image: `PART_Background` at 0 |
-| [-] | `BackgroundImageLoadStates` | `BackgroundImageFadingIn` | `FadeInThemeAnimation on Background` | `^:backgroundimagefadingin` | The phone goes from `BackgroundHidden` straight to `BackgroundShowing` when the image opens (#137, run `20261116-0025-dev11`); never raised, so not declared |
+| [x] | `BackgroundImageLoadStates` | `BackgroundImageFadingIn` | `FadeInThemeAnimation on Background` | `^:backgroundimagefadingin` | For 90 ms after the Hub is placed with a brush, an image or a colour (#148: 88 to 92 ms after `Loaded`); `PART_Background` at 1, as the phone's reads (its fade runs where the app can't read it, so none is drawn). An image that comes while the Hub is on the screen goes straight to showing (#137; decided, see below) |
 | [x] | `BackgroundImageLoadStates` | `BackgroundShowing` | `Background.Opacity: DoubleAnimation To=1` | `^:backgroundshowing` | Otherwise: at 1 |
 
 #### Transitions (0)
@@ -185,7 +191,16 @@ Each is a test in `tests/Cornflower.Tests/Controls/HubTests.cs` (named in bracke
 10. **A slow drag let go** goes back within 0.01 of the five drags' median
     (`A_Slow_Drag_Let_Go_Goes_Back_On_The_Phones_Curve`); past half a section, on (decided)
     (`A_Slow_Drag_Past_Half_A_Section_Goes_On`).
-11. **At the first section** a drag right holds (decided) (`A_Drag_Right_At_The_Start_Holds_The_Sections`).
+11. **The loop backwards** (#165): at the first section a drag right pulls the sections right with the finger, the
+    header at 1/18 and the image at its rate, nothing drawn left of the first, no further than where the end shows it
+    (`A_Drag_Right_At_The_First_Section_Pulls_It_Right_With_Nothing_Left_Of_It`); held and let go, back within 0.008 of
+    the phone's frames (`Held_And_Let_Go_Right_Of_The_First_Section_It_Comes_Back_On_The_Phones_Curve`); a swipe right
+    carries on within 0.009 of the phone's frames to the end on frame 19, the header held two frames, 15.996 px a frame
+    out, and on frame 30 33.8 px left of its place, easing in within 0.1 px
+    (`A_Swipe_Right_At_The_First_Section_Loops_Backwards_To_The_Last`); a slow release past half, or 60 px right at
+    1 px/ms, loops; one moving back left goes back (decided) (`A_Release_Right_Of_The_First_Section_Goes_As_The_Loop_Forward_Does`);
+    a press during it ends it at the end (`A_Press_During_The_Loop_Backwards_Ends_It_At_The_End`); a drag cut short
+    near its end rests on the last section (`A_Drag_Cut_Short_Near_The_Loop_Backwards_End_Rests_On_The_Last_Section`).
 12. **A press while it moves** catches the sections where they are (decided)
     (`A_Press_While_They_Move_Catches_The_Sections`).
 13. **The end**: the first section past the last, tappable there, in view
@@ -204,12 +219,21 @@ Each is a test in `tests/Cornflower.Tests/Controls/HubTests.cs` (named in bracke
     (`The_Background_Is_Hidden_Until_The_Image_Is_There`); a brush that isn't an image fills the Hub and stays
     (decided) (`A_Brush_That_Isnt_An_Image_Fills_The_Hub_And_Stays`); any `IImageBrush` is an image
     (`Any_Image_Brush_Is_Drawn_As_The_Phones_Image`); the Hub listens to its brush only in a window
-    (`The_Hub_Hears_Its_Brush_Only_In_A_Window`).
+    (`The_Hub_Hears_Its_Brush_Only_In_A_Window`); placed with an image or a colour, fading in until 90 ms, then showing
+    (#167) (`Placed_With_A_Brush_The_Background_Fades_In_Then_Shows`); an image narrower than the view in a box the
+    view's width by the window's, at 0 at every offset, no copy (#167)
+    (`An_Image_Narrower_Than_The_View_Fills_It_And_Stays`).
 17. **`SectionsInView`** and its event (`SectionsInView_Follows_The_Sections_And_Says_When_It_Changes`).
 18. **Who takes the finger**: not a mouse; a section's ScrollViewer keeps a drag up and a swipe across it pans; one
     section doesn't pan; a drag more up than across isn't the Hub's (`A_Mouse_Drag_Doesnt_Pan`,
     `A_Drag_Up_A_Sections_ScrollViewer_Scrolls_It_And_A_Swipe_Across_It_Pans`, `One_Section_Doesnt_Pan`,
     `A_Drag_More_Up_Than_Across_Doesnt_Pan`).
+19. **The entrance** (#166): placed, the root turns in from −120° to 0, the phone's angle on each of the first 12 ticks
+    within 0.001°, at rest on tick 64 with nothing left behind (`Placed_The_Hub_Turns_In_On_The_Phones_Curve`); the
+    matrix is PlaneProjection's, about an axis half the width to the left, the Hub off the screen on the first frame
+    (`The_Turn_Is_PlaneProjections_About_An_Axis_Half_The_Width_To_The_Left`); taken away mid-turn it rests, placed again
+    it turns in again (`Placed_Again_It_Turns_In_Again_And_Taken_Away_It_Rests`). The other tests read the Hub after its
+    entrance, as the probes did.
 
 ## The motion, as modelled
 
@@ -227,7 +251,13 @@ the emulator's 15.625 ms frames, frame 1 the first after the release.
 | Back after a slow release | 69 to 71 frames | `KeySpline` 0.18,1 0.54,0.97 over 687.5 ms: 1.05 px rms of 5 (worst 5.3), within 0.008 of the median |
 | The loop: the sections | On from where the finger left them to 1.42 px short of L, the first section after the last; the offset 0 on frame 19 | `KeySpline` 0.17,1 0.376,0.983 over 296.875 ms to L, then 0: 0.93 px rms of 4 (worst 3.9) |
 | The loop: the header | Held frames 0 to 2, then 16.04 px a frame left (1.0267 px/ms); on frame 6 (one run: 7) a jump to 433 to 459, then `ExponentialEase` 7 over 420 ms to 15 | Held 31.25 ms, 1.0267 px/ms out, at 93.75 ms a view's width right of its place (465), then the same ease |
-| The background | −offset × (W − V) / (L − V) to L − V, then (V − 1) / V of the rest, within 0.001 px; its copy W − 1 left, then right past (L − V) / 2 | The same formulas, through L |
+| The background | −offset × (W − V) / (L − V) to L − V, then (V − 1) / V of the rest, within 0.001 px; its copy W − 1 left, then right past (L − V) / 2 | The same formulas, through L, and right of 0 (not read) |
+| An image narrower than the view (#148) | In a box the view's width by the window's (450 × 800), at 0 at every offset; the copy never on the screen | The same; the copy hidden |
+| A drag right at the first section (#148) | The sections with the finger (144 px for 150), the header at 1/18; the ScrollViewer's offset stays 0; section 2 (only) moved L left once section 1 is 35 to 50 px in, never on the screen | The offset below 0, one for one, down to the end less L (−405); nothing drawn left of the first |
+| Back from there, held | Section 1 at its place 50 frames after the release frame, no inertia | `KeySpline` 0.195,0.859 0.306,1 over 781.25 ms: 0.25 px rms of the one read (worst 1.03), the release on the frame before the first logged move (frame 1 isn't in the log) |
+| The loop backwards: the sections | A swipe right carries on to 1 px short of where the end shows the first section, then the offset is the end (1,215.4) on frame 19 | The loop's own curve mirrored, `LoopCurve` over 296.875 ms to the end less L, then the end: 0.68 px rms (worst 1.9) |
+| The loop backwards: the header | Held frames 0 to 2, then 15.996 px a frame right; on frame 30 33.836 px left of its place at the end, then 6.509, 1.221, 0.198, 0 | Held 31.25 ms, 1.02374 px/ms out, at 468.75 ms 33.836 left, then `ExponentialEase` 7 over 66 ms (0.04 px rms of the four frames) |
+| The entrance (#148) | `RotationY` −120° on the first frame to 0 on tick 64 (1,000 ms), about `CenterOfRotationX` −0.5; nothing else, no fade; the same in every placement | `PhoneEase` exponent ln 100 (4.605) over 1,000 ms from `Loaded`: the first 12 ticks to 0.0005° (the log's last place). Seen through PlaneProjection's camera, 999 px over the root's centre (#24), further for a root wider than 450 px, as the turnstile's; drawn at animation priority over the root's own transform |
 
 ## The ScrollViewer
 

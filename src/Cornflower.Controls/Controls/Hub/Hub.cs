@@ -17,13 +17,14 @@ namespace Cornflower.Controls;
 
 /// <summary>
 /// WinRT's <c>Hub</c>: a large <see cref="Header"/> over a row of <see cref="HubSection"/>s that pans sideways, the
-/// header moving at 1/18 of the sections' speed and a background image between the two, and that loops from the last
-/// section round to the first.
+/// header moving at 1/18 of the sections' speed and a background image between the two, that loops from the last
+/// section round to the first and from the first back round to the last, and that turns in when it is placed.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Behaviour only: the sections, the pan and its motion, the parallax of the header and the background, and the loop. A
-/// theme's template draws it, with these parts: <c>PART_ScrollViewer</c>, the area a pan starts in (the whole Hub
+/// theme's template draws it, with these parts: <c>PART_HubRoot</c>, the template's root, which the Hub turns in when
+/// it is placed (<see cref="HubEntrance"/>); <c>PART_ScrollViewer</c>, the area a pan starts in (the whole Hub
 /// without it); <c>PART_Panel</c>, a <see cref="Panel"/> the Hub puts its sections in, side by side; <c>PART_HeaderHost</c>,
 /// the header, which the Hub moves; and <c>PART_Background</c>, holding <c>PART_MainBackground</c> and
 /// <c>PART_WrapBackground</c>, which draw the <see cref="TemplatedControl.Background"/>. The motion, the phone's, read
@@ -33,14 +34,16 @@ namespace Cornflower.Controls;
 /// <para>
 /// Each section is 0.9 of the Hub's width unless it has a width of its own, so the next one's edge shows. A swipe goes
 /// on to the next section or back to the one before, a slow drag to the nearer; past the last section the Hub loops to
-/// the first, which shows past the last at the end.
+/// the first, which shows past the last at the end; right of the first, it loops backwards to the last.
 /// </para>
 /// <para>
 /// A <see cref="TemplatedControl.Background"/> that is an <see cref="ImageBrush"/> is drawn as the phone draws it: at the
 /// image's own pixel width and the window's height, moving slower than the sections so that its right edge reaches the
-/// view's as the last section's does, and repeated past its end for the loop. The states are WinRT's
-/// <c>BackgroundImageLoadStates</c>: <c>:backgroundhidden</c> while an image brush has no image, <c>:backgroundshowing</c>
-/// otherwise (the phone goes straight from one to the other, #137).
+/// view's as the last section's does, and repeated past its end for the loop; an image narrower than the view fills a box
+/// the view's width, still. The states are WinRT's <c>BackgroundImageLoadStates</c>: <c>:backgroundhidden</c> while an
+/// image brush has no image; <c>:backgroundimagefadingin</c> for <see cref="FadingInTime"/> after the Hub is placed with
+/// a brush, as on the phone (#148); <c>:backgroundshowing</c> otherwise (an image that comes while the Hub is on the
+/// screen goes straight there, #137).
 /// </para>
 /// </remarks>
 /// <example>
@@ -51,12 +54,13 @@ namespace Cornflower.Controls;
 /// &lt;/cf:Hub&gt;
 /// </code>
 /// </example>
+[TemplatePart("PART_HubRoot", typeof(Control))]
 [TemplatePart("PART_ScrollViewer", typeof(Control))]
 [TemplatePart("PART_Panel", typeof(Panel))]
 [TemplatePart("PART_HeaderHost", typeof(Control))]
 [TemplatePart("PART_Background", typeof(Control))]
 [TemplatePart("PART_WrapBackground", typeof(Control))]
-[PseudoClasses(BackgroundHiddenPseudoClass, BackgroundShowingPseudoClass)]
+[PseudoClasses(BackgroundHiddenPseudoClass, BackgroundImageFadingInPseudoClass, BackgroundShowingPseudoClass)]
 public class Hub : TemplatedControl, ISidewaysSwipeTarget
 {
     /// <summary>Defines <see cref="Header"/>.</summary>
@@ -74,17 +78,26 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     /// <summary>A section's width, as a fraction of the Hub's: 405 of 450, 360 of 400, 441.82 of 490.91 (#137's dumps).</summary>
     internal const double SectionWidthRatio = 0.9;
 
+    /// <summary>
+    /// How long a Hub placed with a brush is in <c>:backgroundimagefadingin</c> before <c>:backgroundshowing</c>: the
+    /// phone's 88 to 92 ms after <c>Loaded</c> (#148, the stopwatch's), with an image and with a colour.
+    /// </summary>
+    internal static readonly TimeSpan FadingInTime = TimeSpan.FromMilliseconds(90);
+
     private const string BackgroundHiddenPseudoClass = ":backgroundhidden";
+    private const string BackgroundImageFadingInPseudoClass = ":backgroundimagefadingin";
     private const string BackgroundShowingPseudoClass = ":backgroundshowing";
 
     private readonly AvaloniaList<HubSection> _sections = [];
     private readonly HubMotion _motion;
+    private readonly HubEntrance _entrance;
     private readonly TranslateTransform _panelTranslation = new();
     private readonly TranslateTransform _headerTranslation = new();
     private readonly TranslateTransform _backgroundTranslation = new();
     private readonly TranslateTransform _wrapTranslation = new();
     private readonly SectionHeaderList _sectionHeaders;
     private List<HubSection> _inView = [];
+    private Control? _hubRoot;
     private Control? _scrollViewer;
     private Panel? _panel;
     private Control? _headerHost;
@@ -99,11 +112,14 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private HubSection? _restSection;
     private HubSection? _pending;
     private bool _placed;
+    private bool _fadingIn;
+    private IDisposable? _fadingInTimer;
 
     /// <summary>Initialises an empty Hub.</summary>
     public Hub()
     {
         _motion = new HubMotion(this);
+        _entrance = new HubEntrance(this);
         _sectionHeaders = new SectionHeaderList(_sections);
         GestureRecognizers.Add(SidewaysSwipeGestureRecognizer.For(this));
         _sections.Validate = ValidateSection;
@@ -154,6 +170,8 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     public IReadOnlyList<HubSection> SectionsInView => _inView;
 
     internal HubMotion Motion => _motion;
+
+    internal HubEntrance Entrance => _entrance;
 
     /// <summary>Each section's left edge at an offset of 0, in view pixels from the first's.</summary>
     internal IReadOnlyList<double> SectionStarts => _starts;
@@ -269,10 +287,12 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
                 oldPanel.RenderTransform = null;
         }
 
+        _entrance.Finish();
         ClearTransform(_headerHost, _headerTranslation);
         ClearTransform(_background, _backgroundTranslation);
         ClearTransform(_wrapBackground, _wrapTranslation);
 
+        _hubRoot = e.NameScope.Find<Control>("PART_HubRoot");
         _scrollViewer = e.NameScope.Find<Control>("PART_ScrollViewer");
         _panel = e.NameScope.Find<Panel>("PART_Panel");
         _headerHost = e.NameScope.Find<Control>("PART_HeaderHost");
@@ -319,6 +339,8 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         _size = finalSize;
         var result = base.ArrangeOverride(finalSize);
         ApplyBackground(_motion.Offset);                  // a brush that isn't an image follows the Hub's size
+
+        _entrance.Apply();                                // the turn follows a new size
         return result;
     }
 
@@ -377,6 +399,29 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         if (_imageBrush is not null)
             _imageBrush.PropertyChanged -= OnImageBrushPropertyChanged;
         _motion.Stop();
+        _entrance.Finish();
+        StopFadingIn();
+        UpdateBackgroundState();
+    }
+
+    /// <summary>
+    /// Placed (WinRT's and Avalonia's <c>Loaded</c>, after the first layout in a window), the Hub turns in and, with a
+    /// brush that shows, fades its background in (#148).
+    /// </summary>
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        _entrance.Begin(_hubRoot);
+        StartFadingIn();
+    }
+
+    /// <inheritdoc />
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        _entrance.Finish();
+        StopFadingIn();
+        UpdateBackgroundState();
     }
 
     /// <inheritdoc />
@@ -392,6 +437,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
             _imageBrush = change.GetNewValue<IBrush?>() as ImageBrush;
             if (_imageBrush is not null && attached)
                 _imageBrush.PropertyChanged += OnImageBrushPropertyChanged;
+            if (!BrushShows) StopFadingIn();
             UpdateBackgroundState();
             ApplyBackground(_motion.Offset);
         }
@@ -400,6 +446,7 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void OnImageBrushPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property != ImageBrush.SourceProperty) return;
+        if (!BrushShows) StopFadingIn();                  // an image that comes later goes straight to showing (#137)
         UpdateBackgroundState();
         ApplyBackground(_motion.Offset);
     }
@@ -532,14 +579,45 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
     private void UpdateBackgroundState()
     {
         var hidden = Background is IImageBrush { Source: null };
+        var fadingIn = !hidden && _fadingIn;
         PseudoClasses.Set(BackgroundHiddenPseudoClass, hidden);
-        PseudoClasses.Set(BackgroundShowingPseudoClass, !hidden);
+        PseudoClasses.Set(BackgroundImageFadingInPseudoClass, fadingIn);
+        PseudoClasses.Set(BackgroundShowingPseudoClass, !hidden && !fadingIn);
+    }
+
+    /// <summary>Whether there is a brush and it has what it draws: not an image brush still without its image.</summary>
+    private bool BrushShows => Background is not null and not IImageBrush { Source: null };
+
+    /// <summary>Placed with a brush that shows, the Hub fades its background in for <see cref="FadingInTime"/>, as the phone's.</summary>
+    private void StartFadingIn()
+    {
+        StopFadingIn();
+        if (BrushShows)
+        {
+            _fadingIn = true;
+            _fadingInTimer = CornflowerClock.Schedule(() =>
+            {
+                _fadingInTimer = null;
+                _fadingIn = false;
+                UpdateBackgroundState();
+            }, FadingInTime);
+        }
+
+        UpdateBackgroundState();
+    }
+
+    private void StopFadingIn()
+    {
+        _fadingInTimer?.Dispose();
+        _fadingInTimer = null;
+        _fadingIn = false;
     }
 
     /// <summary>
     /// Sizes and places the background: an image at its own pixel width by the window's height, moved by
     /// <see cref="BackgroundX"/>, with its copy W − 1 to the left until the offset is half the sections' width less the
-    /// view's, and to the right from there (#137); any other brush over the whole Hub, still.
+    /// view's, and to the right from there (#137); an image narrower than the view in a box the view's width, still, with
+    /// no copy (#148); any other brush over the whole Hub, still.
     /// </summary>
     private void ApplyBackground(double offset)
     {
@@ -548,6 +626,16 @@ public class Hub : TemplatedControl, ISidewaysSwipeTarget
         {
             var width = (double)bitmap.PixelSize.Width;
             var height = _topLevel?.ClientSize.Height ?? _size.Height;
+            if (width < _view)
+            {
+                // The phone draws it in a box the view's width, the brush's stretch in it, and doesn't move it (#148).
+                SetSize(background, _view, height);
+                _backgroundTranslation.X = 0;
+                _wrapTranslation.X = 0;
+                if (_wrapBackground is not null) _wrapBackground.IsVisible = false;
+                return;
+            }
+
             SetSize(background, width, height);
             _backgroundTranslation.X = BackgroundX(offset, width, _length, _view);
             _wrapTranslation.X = offset >= (_length - _view) / 2 ? width - 1 : -(width - 1);
