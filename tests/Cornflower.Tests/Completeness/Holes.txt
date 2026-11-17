@@ -16,8 +16,6 @@ ComboBox
 ComboBoxItem
 ContextMenu
 DataValidationErrors
-DatePicker
-DatePickerPresenter
 DrawerPage
 DropDownButton
 EmbeddableControlRoot
@@ -52,8 +50,6 @@ TableViewCell
 TableViewColumnHeader
 TableViewRow
 TextSelectionHandle
-TimePicker
-TimePickerPresenter
 ToolTip
 TransitioningContentControl
 TreeView

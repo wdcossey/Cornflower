@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 DatePicker and its full-screen picker: Avalonia's DatePicker and DatePickerPresenter in the
+    default styles of the 8.1 Update 1 runtime (datepicker.json and datepickerflyoutpresenter.json, which equal the SDK's
+    generic.xaml), re-expressed as Avalonia ControlThemes. docs/controls/DatePicker/PLAN.md has the values and their
+    sources.
+
+    DatePicker: the phone's LayoutRoot, a StackPanel of the header (cf:ControlHeader.Header and HeaderTemplate, WinRT's
+    Header, in Wp81HeaderContentPresenterTheme, 3 over the button) and FlyoutButton, Wp81's Button with the picker's
+    Foreground as its text and border, a 2.5 border and Padding 6.5,0,0,3, stretched; its text the date in the culture's
+    short pattern, as the phone's ("7/15/2014"). Its states are the Button's (#150, B19). Avalonia's control also needs
+    its three text blocks (one for each part of the date, which the phone doesn't show apart), kept here unseen.
+    The month, day and year formats are the wheels' (two lines: 07 over July, 15 over Tuesday), which Avalonia's picker
+    gives its presenter.
+
+    PART_Popup is a stand-in that never shows: the presenter is in PickerPopup, which wp81:PhoneDateTimePicker hosts on
+    the phone's popup host, filling the window and moving in the date and time pickers' 160 px rows, and dismisses the
+    phone's way when Avalonia's picker closes its stand-in (PhoneDateTimePicker has why).
+
+    DatePickerPresenter: the phone's Border, Background, in FlyoutBackgroundThemeBrush, round ContentPanel, 37 down
+    (DateTimeFlyoutContentPanelPortraitThemeMargin; the landscape one in landscape), the wheels side by side and centred,
+    each 138.333 wide and as tall as the panel (700 above the bar), in the LoopingSelector's theme (#154), no ScrollViewer.
+    The phone's title is collapsed when empty, as the DatePicker leaves it; Avalonia's presenter has none. Avalonia's
+    presenter sets star columns on PART_PickerContainer, where the phone's are the wheels' own widths: so it is kept
+    empty, and the hosts are in Columns, a Grid of Auto columns, where the presenter's Grid.Column values put them in
+    the culture's order. The pickers' bar (#153) is laid over the foot, always shown.
+  -->
+  <ControlTheme x:Key="{x:Type DatePicker}" TargetType="DatePicker">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ContentControlFontSize}" />
+    <Setter Property="Foreground" Value="{DynamicResource DatePickerForegroundThemeBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="MonthFormat" Value="MM&#10;MMMM" />
+    <Setter Property="DayFormat" Value="dd&#10;dddd" />
+    <Setter Property="YearFormat" Value="yyyy" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel x:Name="LayoutRoot" Margin="{TemplateBinding Padding}">
+          <ContentPresenter x:Name="HeaderContentPresenter"
+                            Theme="{DynamicResource Wp81HeaderContentPresenterTheme}"
+                            Margin="0,0,0,-3"
+                            Content="{TemplateBinding (cf:ControlHeader.Header)}"
+                            ContentTemplate="{TemplateBinding (cf:ControlHeader.HeaderTemplate)}" />
+          <Button x:Name="PART_FlyoutButton"
+                  Foreground="{TemplateBinding Foreground}"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding Foreground}"
+                  BorderThickness="2.5"
+                  Padding="6.5,0,0,3"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Left"
+                  Content="{TemplateBinding SelectedDate, Converter={x:Static wp81:PhoneDateTimePicker.DateText}}" />
+          <Panel IsVisible="False">
+            <TextBlock x:Name="PART_MonthTextBlock" />
+            <TextBlock x:Name="PART_DayTextBlock" />
+            <TextBlock x:Name="PART_YearTextBlock" />
+          </Panel>
+          <Popup x:Name="PART_Popup" wp81:PhoneDateTimePicker.ShownIn="{Binding #PickerPopup}" />
+          <Popup x:Name="PickerPopup" IsLightDismissEnabled="False">
+            <DatePickerPresenter x:Name="PART_PickerPresenter" />
+          </Popup>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DatePickerPresenter}" TargetType="DatePickerPresenter">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Background"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid RowDefinitions="*,Auto">
+            <Panel x:Name="ContentPanel" Margin="{DynamicResource DateTimeFlyoutContentPanelPortraitThemeMargin}">
+              <Grid x:Name="PART_PickerContainer" IsVisible="False" />
+              <Grid x:Name="Columns" HorizontalAlignment="Center" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto">
+                <Panel x:Name="PART_MonthHost">
+                  <DateTimePickerPanel x:Name="PART_MonthSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Month" ShouldLoop="True" />
+                </Panel>
+                <Panel x:Name="PART_DayHost">
+                  <DateTimePickerPanel x:Name="PART_DaySelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Day" ShouldLoop="True" />
+                </Panel>
+                <Panel x:Name="PART_YearHost">
+                  <DateTimePickerPanel x:Name="PART_YearSelector" Theme="{DynamicResource Wp81LoopingSelectorTheme}"
+                                       Width="138.333" PanelType="Year" ShouldLoop="False" />
+                </Panel>
+                <Panel x:Name="PART_FirstSpacer" />
+                <Panel x:Name="PART_SecondSpacer" />
+              </Grid>
+            </Panel>
+            <Panel x:Name="PickerBarSpace" Grid.Row="1" Height="{DynamicResource Wp81CommandBarCompactHeight}" />
+            <CommandBar x:Name="PickerBar" Grid.RowSpan="2" VerticalAlignment="Bottom">
+              <CommandBarButton x:Name="PART_AcceptButton" Label="done">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerAcceptGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+              <CommandBarButton x:Name="PART_DismissButton" Label="cancel">
+                <CommandBarButton.Icon>
+                  <TemplatedControl Theme="{DynamicResource Wp81PickerCancelGlyphTheme}" />
+                </CommandBarButton.Icon>
+              </CommandBarButton>
+            </CommandBar>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^[(wp81|PhonePopupHost.IsLandscape)=True] /template/ Panel#ContentPanel">
+      <Setter Property="Margin" Value="{DynamicResource DateTimeFlyoutContentPanelLandscapeThemeMargin}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

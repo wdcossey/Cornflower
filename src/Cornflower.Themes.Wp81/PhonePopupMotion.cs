@@ -104,6 +104,15 @@ internal static class PhonePopupMotion
     internal static readonly PhonePopupRows ListPickerRows = new(800.0 / 12, ListPickerOpenRates, Reveal);
 
     /// <summary>
+    /// The date and time pickers' rows (#149): 160 px, all five on the reference's 800 turning from
+    /// <see cref="OpenFrom"/> at once, at 12.5, 9.6, 7.84, 6.6 and 5.67° a tick from the top, so nothing is left to
+    /// reveal. They close as five bands, the last gone at 16.2 ticks: the popup closes at <see cref="ClosedAfter"/>(5),
+    /// 16 ticks. (The DatePickerFlyout's own <c>Closed</c> event comes at 17, a tick after its last band has gone, where
+    /// the Flyout's comes as its last band goes; the bands move as the Flyout's. docs/controls/DatePicker/PLAN.md.)
+    /// </summary>
+    internal static readonly PhonePopupRows DateTimeRows = new(160, [12.5, 9.6, 7.84, 6.6, 5.67], []);
+
+    /// <summary>
     /// Where a full popup of <paramref name="height"/> is drawn down to below its turning rows, <paramref name="time"/>
     /// into the opening: the reading's rows on the reference's 800, below the Flyout's turning 400 px, scaled to the
     /// popup's own still part. With no reveal, all of it.
