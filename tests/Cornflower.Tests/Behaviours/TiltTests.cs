@@ -1111,6 +1111,9 @@ public class TiltTests
         var back = (TiltModel.Hold + TiltModel.Return).TotalMilliseconds / 2;
         clock.At(first + TiltModel.Hold.TotalMilliseconds / 2 - 16);
         Assert.Equal(held, CfTilt.Current(button));                          // still held
+        // Half the hold and a quarter of the return in: about half way back, at twice the phone's speed.
+        clock.At(first + TiltModel.Hold.TotalMilliseconds / 2 + TiltModel.Return.TotalMilliseconds / 4);
+        Assert.InRange(CfTilt.Current(button).RotationX / held.RotationX, 0.2, 0.8);
         clock.At(first + back - 16);
         Assert.NotEqual(TiltState.Rest, CfTilt.Current(button));
         clock.At(first + back + 16);

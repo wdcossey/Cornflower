@@ -1135,6 +1135,18 @@ public class CommandBarTests
             phone = Rests(page);
         CornflowerConfig.ControlSpeed = 2;
         using (var page = new AppBarPage())
+        {
             Assert.InRange(Rests(page), phone / 2 - 16, phone / 2 + 16);
+
+            // The close ends, and the bar stops showing open, at half the phone's 200 ms.
+            page.Settle();
+            page.Bar.IsOpen = false;
+            page.Window.UpdateLayout();
+            var from = page.Clock.Now.TotalMilliseconds;
+            page.At(from + 64);
+            Assert.True(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+            page.At(from + 100 + 32);
+            Assert.False(Cornflower.Themes.Wp81.PhoneAppBar.GetShowsOpen(page.Bar));
+        }
     }
 }
