@@ -606,7 +606,7 @@ public class ComboBoxTests
         Assert.False(PhoneComboBox.GetIsShownOpen(inner));
     }
 
-    // Taken out of the window while open, it closes.
+    // Taken out of the window while open, it closes (Avalonia's own popup closes it; the box shows closed).
     [AvaloniaFact]
     public void Taken_Out_Of_The_Window_Open_It_Closes()
     {

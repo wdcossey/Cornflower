@@ -216,8 +216,6 @@ internal static class PhoneComboBox
                 return;
             }
 
-            // Taken out of the window open, it closes.
-            combo.DetachedFromVisualTree += OnDetached;
             if (combo.GetValue(IsFullProperty))
             {
                 OpenPicker();
@@ -243,13 +241,9 @@ internal static class PhoneComboBox
                 Open();
         }
 
-        private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) =>
-            combo.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
-
         private void Close()
         {
             combo.AttachedToVisualTree -= OnAttached;
-            combo.DetachedFromVisualTree -= OnDetached;
             combo.ItemsView.CollectionChanged -= OnItemsChanged;
             _reopen = false;
             _outside = null;
