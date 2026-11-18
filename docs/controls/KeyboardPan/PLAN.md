@@ -40,8 +40,7 @@ From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan
 - **The caret is its line.** The phone's caret is 27.08 tall from 3.33 inside the border; here the caret's line (the
   text presenter's, 1.33 em), from where the presenter's layout puts it, ends 30.28 inside the border against the
   phone's 30.41. The page stops with that line's bottom at the keyboard's top, no gap: the phone stopped 0.41 and 0.83
-  short (one and two raw pixels), so within a view pixel. For a box of many lines, the caret's line, never below the
-  box's own bottom.
+  short (one and two raw pixels), so within a view pixel. For a box of many lines, the caret's line.
 - **The box's top stays in the window.** A box taller than the room above the keyboard goes up no further than puts
   its top (its header's) at the safe area's top, as before.
 - **A covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false** moves as a TextBox: its TextBox part's caret,

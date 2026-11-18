@@ -214,17 +214,14 @@ internal static class PhoneKeyboardPan
     }
 
     /// <summary>
-    /// The bottom of the caret's line in the window, as the box is placed now: for a box of many lines, the line the
-    /// caret is on. No lower than the box's own bottom, as a line scrolled out of the box isn't shown; the box's bottom
-    /// where its template has no text presenter.
+    /// The bottom of the caret's line in <paramref name="to"/>, as the box is placed now: for a box of many lines, the
+    /// line the caret is on. The box's bottom where its template has no text presenter.
     /// </summary>
     internal static double? CaretBottomOf(TextBox box, Visual to)
     {
-        if (box.TranslatePoint(new Point(0, box.Bounds.Height), to) is not { } boxBottom)
-            return null;
         if (box.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault(p => p.TemplatedParent == box) is not { } presenter)
-            return boxBottom.Y;
+            return box.TranslatePoint(new Point(0, box.Bounds.Height), to)?.Y;
         var line = presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex);
-        return presenter.TranslatePoint(line.BottomLeft, to) is { } caret ? Math.Min(caret.Y, boxBottom.Y) : boxBottom.Y;
+        return presenter.TranslatePoint(line.BottomLeft, to)?.Y;
     }
 }
