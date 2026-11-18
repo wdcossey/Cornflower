@@ -82,7 +82,7 @@ Each has its test in `tests/Cornflower.Tests/Controls/ContentDialogTests.cs`, ag
 | The shell draws the full dialog's buttons in a bar of its own (a CommandBar in the tree) | 2 | `PhoneContentDialogPanel`, the template's `ContentPanel`, places the dialog's own hosts in the bar's slots: the same Buttons, larger outlines |
 | WinRT's `ShowAsync()` takes no window | 5 | `ShowAsync()` uses the app's lifetime (the active or main window, or the single view); `ShowAsync(TopLevel)` names one (an extension) |
 | WinRT's handlers are `TypedEventHandler<ContentDialog, …>` | 5 | `EventHandler<…>`, the sender the dialog |
-| The keyboard takes the first Back | — | the platform's: Android's input method takes it (owed: the device run) |
+| The keyboard takes the first Back | — | the platform's: Android's input method takes it; the keyboard going down takes the box's focus (#197). Device run passed 2026-11-18 (#204): the first Back took the focus and the dialog stayed, the second closed it |
 
 ## Extensions
 
