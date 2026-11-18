@@ -71,7 +71,19 @@ public class DateTimePickerPageTests
         accept.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         Assert.EndsWith(", 07:45", page.FindControl<TextBlock>("State")!.Text);
-        Assert.NotNull(page.FindControl<Button>("ShowDate"));
+        clock.At(1500);
+
+        page.FindControl<Button>("ShowDate")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        clock.At(2000);
+        var dates = scene.Window.GetVisualDescendants().OfType<Cornflower.Controls.DatePickerFlyoutPresenter>().Single();
+        var year = dates.GetVisualDescendants().OfType<DateTimePickerPanel>().First(p => p.Name == "PART_YearSelector");
+        var next = year.SelectedValue + 1;
+        year.SelectedValue = next;
+        dates.GetVisualDescendants().OfType<Button>().First(b => b.Name == "PART_AcceptButton")
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains($"flyouts {next}-", page.FindControl<TextBlock>("State")!.Text);
     }
 
     [AvaloniaFact]

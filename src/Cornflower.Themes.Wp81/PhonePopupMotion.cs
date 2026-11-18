@@ -9,10 +9,10 @@ namespace Cornflower.Themes.Wp81;
 /// <paramref name="Reveal"/> has it (none: all of it at once). The reveal's steps are on the reading of the full
 /// Flyout's (to y on the reference's 800, below its 400 still px), scaled to the rows' own still part
 /// (<see cref="PhonePopupMotion.RevealedTo"/>); a reveal read on another basis is given on that one. The Flyout's are
-/// <see cref="PhonePopupMotion.FlyoutRows"/>. Closing, it is closed at <paramref name="ClosedAfter"/>, if given; else
-/// as its last band goes (<see cref="PhonePopupMotion.ClosedAfter"/>).
+/// <see cref="PhonePopupMotion.FlyoutRows"/>. Closing, it is closed as its last band goes
+/// (<see cref="PhonePopupMotion.ClosedAfter"/>), and <paramref name="ClosedLater"/> after that, if given.
 /// </summary>
-internal sealed record PhonePopupRows(double Height, double[] Rates, (TimeSpan At, double To)[] Reveal, TimeSpan? ClosedAfter = null);
+internal sealed record PhonePopupRows(double Height, double[] Rates, (TimeSpan At, double To)[] Reveal, TimeSpan ClosedLater = default);
 
 /// <summary>
 /// A top popup's motion, its one band's: <paramref name="Angle"/>, the band's angle a time into the opening, at rest
@@ -117,10 +117,10 @@ internal static class PhonePopupMotion
 
     /// <summary>
     /// The DatePickerFlyout's and TimePickerFlyout's rows: the date and time pickers' (<see cref="DateTimeRows"/>), but
-    /// closed (<c>Closed</c>) at 17 ticks, a tick after the last band has gone, as #149 read it in all eight calls of
-    /// each (docs/controls/DatePicker/PLAN.md, "Closing: 16 ticks, not 17").
+    /// closed (<c>Closed</c>) a tick later, a tick after the last band has gone: 17 ticks for five, as #149 read it in
+    /// all eight calls of each (docs/controls/DatePicker/PLAN.md, "Closing: 16 ticks, not 17").
     /// </summary>
-    internal static readonly PhonePopupRows DateTimeFlyoutRows = DateTimeRows with { ClosedAfter = Tick * 17 };
+    internal static readonly PhonePopupRows DateTimeFlyoutRows = DateTimeRows with { ClosedLater = Tick };
 
     /// <summary>
     /// Where a full popup of <paramref name="height"/> is drawn down to below its turning rows, <paramref name="time"/>

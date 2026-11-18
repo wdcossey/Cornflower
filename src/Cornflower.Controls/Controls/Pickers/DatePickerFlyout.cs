@@ -43,13 +43,11 @@ public class DatePickerFlyout : PickerFlyoutBase
 
     /// <summary>Defines <see cref="MinYear"/>.</summary>
     public static readonly StyledProperty<DateTimeOffset> MinYearProperty =
-        AvaloniaProperty.Register<DatePickerFlyout, DateTimeOffset>(nameof(MinYear),
-            DatePickerPresenter.MinYearProperty.GetDefaultValue(typeof(DatePickerPresenter)));
+        AvaloniaProperty.Register<DatePickerFlyout, DateTimeOffset>(nameof(MinYear));
 
     /// <summary>Defines <see cref="MaxYear"/>.</summary>
     public static readonly StyledProperty<DateTimeOffset> MaxYearProperty =
-        AvaloniaProperty.Register<DatePickerFlyout, DateTimeOffset>(nameof(MaxYear),
-            DatePickerPresenter.MaxYearProperty.GetDefaultValue(typeof(DatePickerPresenter)));
+        AvaloniaProperty.Register<DatePickerFlyout, DateTimeOffset>(nameof(MaxYear));
 
     /// <summary>Defines <see cref="DayVisible"/>.</summary>
     public static readonly StyledProperty<bool> DayVisibleProperty =
@@ -65,10 +63,13 @@ public class DatePickerFlyout : PickerFlyoutBase
 
     private TaskCompletionSource<DateTimeOffset?>? _result;
 
-    /// <summary>Today, as WinRT's.</summary>
+    /// <summary>Today, and the years from 100 before it to 100 after, as WinRT's and Avalonia's presenter's.</summary>
     public DatePickerFlyout()
     {
-        SetCurrentValue(DateProperty, DateTimeOffset.Now);
+        var now = DateTimeOffset.Now;
+        SetCurrentValue(DateProperty, now);
+        SetCurrentValue(MinYearProperty, new DateTimeOffset(now.Year - 100, 1, 1, 0, 0, 0, now.Offset));
+        SetCurrentValue(MaxYearProperty, new DateTimeOffset(now.Year + 100, 12, 31, 0, 0, 0, now.Offset));
     }
 
     /// <summary>The date the wheels start at, and the one picked: today by default.</summary>
@@ -78,14 +79,14 @@ public class DatePickerFlyout : PickerFlyoutBase
         set => SetValue(DateProperty, value);
     }
 
-    /// <summary>The first year the year wheel shows. Avalonia's presenter's default.</summary>
+    /// <summary>The first year the year wheel shows: 100 years ago by default.</summary>
     public DateTimeOffset MinYear
     {
         get => GetValue(MinYearProperty);
         set => SetValue(MinYearProperty, value);
     }
 
-    /// <summary>The last year the year wheel shows. Avalonia's presenter's default.</summary>
+    /// <summary>The last year the year wheel shows: 100 years on by default.</summary>
     public DateTimeOffset MaxYear
     {
         get => GetValue(MaxYearProperty);
@@ -144,15 +145,25 @@ public class DatePickerFlyout : PickerFlyoutBase
         base.PreparePresenter(presenter);
         if (presenter is not DatePickerPresenter picker)
             return;
-        picker.MinYear = MinYear;
-        picker.MaxYear = MaxYear;
+        // In the order that never has the presenter's MinYear past its MaxYear, which it refuses.
+        if (MinYear > picker.MaxYear)
+        {
+            picker.MaxYear = MaxYear;
+            picker.MinYear = MinYear;
+        }
+        else
+        {
+            picker.MinYear = MinYear;
+            picker.MaxYear = MaxYear;
+        }
+
         picker.DayVisible = DayVisible;
         picker.MonthVisible = MonthVisible;
         picker.YearVisible = YearVisible;
         // Avalonia's presenter turns its wheels only when its date changes: one cancelled after they were turned would
-        // open, and accept, where they were left.
+        // open, and accept, where they were left. Away to an end of the range first: a date outside it is taken to an end.
         var date = Date;
-        picker.Date = date.AddTicks(date >= picker.MaxYear ? -1 : 1);
+        picker.Date = date > picker.MinYear ? picker.MinYear : picker.MaxYear;
         picker.Date = date;
         // Measured in its window: Avalonia measures a flyout's presenter unbounded the first time, to place it, and the
         // presenter's wheels can't be.

@@ -164,19 +164,79 @@ public class DatePickerFlyoutTests
     }
 
     [AvaloniaFact]
-    public void By_Default_It_Is_Today_And_Now_On_The_Cultures_Clock()
+    public void By_Default_It_Is_Today_100_Years_Either_Way_And_Now_On_The_Cultures_Clock()
     {
         using (new EnUs())
         {
-            Assert.Equal(DateTimeOffset.Now.Date, new DatePickerFlyout().Date.Date);
-            Assert.True(new DatePickerFlyout().DayVisible);
-            Assert.Equal("12HourClock", new TimePickerFlyout().ClockIdentifier);
-            Assert.Equal(1, new TimePickerFlyout().MinuteIncrement);
-            Assert.True(Math.Abs((DateTime.Now.TimeOfDay - new TimePickerFlyout().Time).TotalMinutes) < 1);
+            var now = DateTimeOffset.Now;
+            var date = new DatePickerFlyout();
+            Assert.True(Math.Abs((date.Date - now).TotalMinutes) < 1);
+            Assert.Equal((now.Year - 100, 1, 1), (date.MinYear.Year, date.MinYear.Month, date.MinYear.Day));
+            Assert.Equal((now.Year + 100, 12, 31), (date.MaxYear.Year, date.MaxYear.Month, date.MaxYear.Day));
+            Assert.True(date.DayVisible);
+            var time = new TimePickerFlyout();
+            Assert.Equal("12HourClock", time.ClockIdentifier);
+            Assert.Equal(1, time.MinuteIncrement);
+            // Round midnight too.
+            var apart = Math.Abs((DateTime.Now.TimeOfDay - time.Time).TotalMinutes);
+            Assert.True(Math.Min(apart, 24 * 60 - apart) < 1);
         }
 
         using (new EnUs("de-DE"))
             Assert.Equal("24HourClock", new TimePickerFlyout().ClockIdentifier);
+        // An "h" in quotes is text, not the 12-hour clock: "HH 'h' mm".
+        using (new EnUs("fr-CA"))
+            Assert.Equal("24HourClock", new TimePickerFlyout().ClockIdentifier);
+    }
+
+    [AvaloniaFact]
+    public void A_Clock_Or_Minute_Step_The_Wheels_Cant_Take_Is_Refused()
+    {
+        var time = new TimePickerFlyout();
+        Assert.ThrowsAny<ArgumentException>(() => time.ClockIdentifier = "24h");
+        Assert.ThrowsAny<ArgumentException>(() => time.MinuteIncrement = 0);
+        Assert.ThrowsAny<ArgumentException>(() => time.MinuteIncrement = 60);
+    }
+
+    [AvaloniaFact]
+    public void Its_Year_Range_Can_Move_Past_The_Last_One()
+    {
+        using var culture = new EnUs();
+        var flyout = new DatePickerFlyout
+        {
+            Date = July15, MinYear = new DateTimeOffset(2010, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            MaxYear = new DateTimeOffset(2020, 12, 31, 0, 0, 0, TimeSpan.Zero),
+        };
+        using var stage = new Stage(flyout);
+        stage.OpenAtRest();
+        stage.Back();
+        stage.At(stage.Now + 500);
+
+        flyout.MaxYear = new DateTimeOffset(2040, 12, 31, 0, 0, 0, TimeSpan.Zero);
+        flyout.MinYear = new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        stage.OpenAtRest();
+        var year = stage.Part<DateTimePickerPanel>("PART_YearSelector");
+        Assert.Equal((2030, 2040), (year.MinimumValue, year.MaximumValue));
+    }
+
+    [AvaloniaFact]
+    public void A_Date_Past_Its_Range_Opens_Again_At_The_End_Of_It()
+    {
+        using var culture = new EnUs();
+        using var stage = new Stage(new DatePickerFlyout
+        {
+            Date = new DateTimeOffset(2030, 7, 15, 0, 0, 0, TimeSpan.Zero),
+            MinYear = new DateTimeOffset(2010, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            MaxYear = new DateTimeOffset(2020, 12, 31, 0, 0, 0, TimeSpan.Zero),
+        });
+        stage.OpenAtRest();
+        Assert.Equal(2020, stage.Part<DateTimePickerPanel>("PART_YearSelector").SelectedValue);
+        stage.Part<DateTimePickerPanel>("PART_MonthSelector").SelectedValue = 8;
+        stage.Back();
+        stage.At(stage.Now + 500);
+
+        stage.OpenAtRest();
+        Assert.Equal(12, stage.Part<DateTimePickerPanel>("PART_MonthSelector").SelectedValue);
     }
 
     [AvaloniaTheory]

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -43,11 +44,12 @@ public class TimePickerFlyout : PickerFlyoutBase
 
     /// <summary>Defines <see cref="ClockIdentifier"/>.</summary>
     public static readonly StyledProperty<string> ClockIdentifierProperty =
-        AvaloniaProperty.Register<TimePickerFlyout, string>(nameof(ClockIdentifier), "12HourClock");
+        AvaloniaProperty.Register<TimePickerFlyout, string>(nameof(ClockIdentifier), "12HourClock",
+            validate: value => value is "12HourClock" or "24HourClock");
 
     /// <summary>Defines <see cref="MinuteIncrement"/>.</summary>
     public static readonly StyledProperty<int> MinuteIncrementProperty =
-        AvaloniaProperty.Register<TimePickerFlyout, int>(nameof(MinuteIncrement), 1);
+        AvaloniaProperty.Register<TimePickerFlyout, int>(nameof(MinuteIncrement), 1, validate: value => value is >= 1 and <= 59);
 
     private TaskCompletionSource<TimeSpan?>? _result;
 
@@ -55,7 +57,8 @@ public class TimePickerFlyout : PickerFlyoutBase
     public TimePickerFlyout()
     {
         SetCurrentValue(TimeProperty, DateTime.Now.TimeOfDay);
-        if (!CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('h'))
+        // The pattern's letters, not its quoted text: fr-CA's "HH 'h' mm" is a 24-hour clock.
+        if (!Regex.Replace(CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern, @"'[^']*'|""[^""]*""|\\.", "").Contains('h'))
             SetCurrentValue(ClockIdentifierProperty, "24HourClock");
     }
 
@@ -67,7 +70,8 @@ public class TimePickerFlyout : PickerFlyoutBase
     }
 
     /// <summary>
-    /// The clock: <c>12HourClock</c> (an AM/PM wheel) or <c>24HourClock</c>. The culture's by default, as WinRT's.
+    /// The clock: <c>12HourClock</c> (an AM/PM wheel) or <c>24HourClock</c>; any other is refused. The culture's by
+    /// default, as WinRT's.
     /// </summary>
     public string ClockIdentifier
     {
@@ -75,7 +79,7 @@ public class TimePickerFlyout : PickerFlyoutBase
         set => SetValue(ClockIdentifierProperty, value);
     }
 
-    /// <summary>The minute wheel's step, in minutes. 1 by default.</summary>
+    /// <summary>The minute wheel's step, in minutes, 1 to 59. 1 by default.</summary>
     public int MinuteIncrement
     {
         get => GetValue(MinuteIncrementProperty);

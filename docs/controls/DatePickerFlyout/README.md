@@ -29,7 +29,7 @@ flyout.ShowAt(button);
   and `ShowAtAsync` returns null.
 - **Motion:** in five rows, each a fifth of the window, from 80°, the lower slower; closing, the rows turn away two ticks
   apart and `Closed` comes 17 ticks (265.6 ms) after the tap, a tick after the last row has gone, as the phone's.
-- **Defaults:** today, now, the culture's clock, a minute step of 1, the year range of Avalonia's presenter.
+- **Defaults:** today, 100 years either side of it, now, the culture's clock, a minute step of 1.
 
 ## Extensions
 
@@ -46,13 +46,11 @@ The DatePicker's and TimePicker's presenters' (docs/controls/DatePicker/README.m
 ## The ladder
 
 Rung 5: two types of Cornflower's own, with the WinRT names. Rung 2 for the popup: `PhonePickerFlyout`, on
-`PhonePopupHost`, whose `PhonePopupRows` now takes a `ClosedAfter` of its own (PLAN.md).
+`PhonePopupHost`, whose `PhonePopupRows` now takes a `ClosedLater` of its own (PLAN.md).
 
 ## Known gaps
 
 - **No `CalendarIdentifier`:** Avalonia's presenter is Gregorian only.
-- **`MinYear` and `MaxYear` default to Avalonia's presenter's range**, not the phone's 100 years either side of now, as
-  Cornflower's DatePicker.
 - **Members set while it is open** are read at the next opening, not at once.
 - The DatePicker's gaps hold here too: the bar turns with the bottom row; a window of another height is cut in five rows,
   not read on the phone; AM and PM last (docs/controls/DatePicker/README.md, "Known gaps").

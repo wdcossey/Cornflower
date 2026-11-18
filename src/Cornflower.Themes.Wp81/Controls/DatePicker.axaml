@@ -77,6 +77,10 @@
   </ControlTheme>
 
   <ControlTheme x:Key="{x:Type DatePickerPresenter}" TargetType="DatePickerPresenter">
+    <!-- The wheels' formats, for a presenter no DatePicker gives its own (the DatePickerFlyout's). -->
+    <Setter Property="MonthFormat" Value="MM&#10;MMMM" />
+    <Setter Property="DayFormat" Value="dd&#10;dddd" />
+    <Setter Property="YearFormat" Value="yyyy" />
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
     <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
     <Setter Property="FontWeight" Value="SemiBold" />
@@ -131,15 +135,12 @@
   </ControlTheme>
 
   <!--
-    The DatePickerFlyout's presenter (#184): the DatePicker's picker above, the wheels' formats the DatePicker's (which
-    a DatePicker gives its presenter, and a flyout doesn't), on the phone's popup host by wp81:PhonePickerFlyout, as
-    the list pickers' are: full screen, in the date and time pickers' rows, closed 17 ticks after accept or cancel.
+    The DatePickerFlyout's presenter (#184): the DatePicker's picker above, on the phone's popup host by
+    wp81:PhonePickerFlyout, as the list pickers' are: full screen, in the date and time pickers' rows, closed 17 ticks
+    after accept or cancel.
   -->
   <ControlTheme x:Key="{x:Type cf:DatePickerFlyoutPresenter}" TargetType="cf:DatePickerFlyoutPresenter"
                 BasedOn="{StaticResource {x:Type DatePickerPresenter}}">
     <Setter Property="wp81:PhonePickerFlyout.IsEnabled" Value="True" />
-    <Setter Property="MonthFormat" Value="MM&#10;MMMM" />
-    <Setter Property="DayFormat" Value="dd&#10;dddd" />
-    <Setter Property="YearFormat" Value="yyyy" />
   </ControlTheme>
 </ResourceDictionary>

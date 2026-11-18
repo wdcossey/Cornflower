@@ -23,8 +23,9 @@ and TimePickerFlyout: not added").
 
 The DatePicker's popup closes with its bands, at `PhonePopupMotion.ClosedAfter(5)`, 16 ticks, as nothing waits on it.
 The flyouts raise `Closed`, and the phone's comes a tick later than the bands. So `PhonePopupRows` takes an optional
-`ClosedAfter`, and `PhonePopupHost` closes a full popup then when it is given, else as before.
-`PhonePopupMotion.DateTimeFlyoutRows` is `DateTimeRows` closed at 17 ticks. Every other popup gives none and is
+`ClosedLater`, and `PhonePopupHost` closes a full popup that much after its last band goes (`ClosedAfter(bands)`, as
+before). `PhonePopupMotion.DateTimeFlyoutRows` is `DateTimeRows` a tick later: 17 ticks for five bands, and still after
+the last band in a window resized to more. Every other popup gives none and is
 unchanged; their tests weren't touched.
 
 ## The behaviours
@@ -39,8 +40,11 @@ unchanged; their tests weren't touched.
   ticks later.
 - **The members:** `MinYear`, `MaxYear`, `DayVisible`, `MonthVisible`, `YearVisible`; `ClockIdentifier` and
   `MinuteIncrement` reach the presenter at each opening. The date's wheels show the DatePicker's two-line formats.
-- **Defaults**, as WinRT's: today; now; the culture's clock (`24HourClock` where its short time has no `h`); a minute
-  step of 1.
+- **Defaults**, as WinRT's: today, and the years from 100 before it to 100 after (Avalonia's presenter's too); now; the
+  culture's clock (`24HourClock` where its short time has no `h` outside quotes); a minute step of 1. A clock other than
+  `12HourClock` or `24HourClock`, or a minute step outside 1 to 59, is refused as it is set.
+- **A year range moved** past the last one opens; **a date outside the range** opens at the range's end, again each
+  opening.
 - **The first measure:** Avalonia measures a flyout's presenter unbounded to place it the first time, and the presenter's
   wheels throw on that; so the flyout measures it in its window first.
 
@@ -50,7 +54,7 @@ unchanged; their tests weren't touched.
 |---|---|
 | `ShowAtAsync` → `IAsyncOperation<DateTimeOffset?>` (`TimeSpan?`) | `Task<DateTimeOffset?>` (`Task<TimeSpan?>`): the value, or null |
 | `DatePicked`, `TimePicked`: `TypedEventHandler<flyout, args>` | `EventHandler<DatePickedEventArgs>` (`TimePickedEventArgs`), `OldDate`/`NewDate`, `OldTime`/`NewTime`, as `ItemsPicked` (#153) |
-| `MinYear`, `MaxYear`: 100 years either side of now | Avalonia's presenter's defaults, as Cornflower's DatePicker has them (decided, below) |
+| `MinYear`, `MaxYear`: 100 years either side of now | the same |
 | `CalendarIdentifier` | left out: Avalonia's presenter is Gregorian only (decided, below) |
 | The title (`PickerFlyoutBase.Title`) | set on the presenter as the other pickers' are; the Wp81 presenter has no title, as #156's (empty under a picker on the phone) |
 
@@ -66,7 +70,7 @@ reason.
 | ✓ | WinRT | Here |
 |---|---|---|
 | [x] | `Date` (`DateTimeOffset`) | the same, styled; today by default |
-| [x] | `MinYear`, `MaxYear` (`DateTimeOffset`) | the same; Avalonia's presenter's defaults |
+| [x] | `MinYear`, `MaxYear` (`DateTimeOffset`) | the same; 100 years either side of today by default |
 | [x] | `DayVisible`, `MonthVisible`, `YearVisible` | the same, true by default |
 | [-] | `CalendarIdentifier` | Avalonia's presenter is Gregorian only: a property that could take one value would do nothing |
 | [x] | `DatePicked` (`DatePickedEventArgs`: `OldDate`, `NewDate`) | the same, an `EventHandler<DatePickedEventArgs>` |
@@ -78,7 +82,7 @@ reason.
 |---|---|---|
 | [x] | `Time` (`TimeSpan`) | the same, styled; now by default |
 | [x] | `ClockIdentifier` | the same; the culture's by default |
-| [x] | `MinuteIncrement` | the same, 1 by default |
+| [x] | `MinuteIncrement` | the same, 1 by default, 1 to 59 |
 | [x] | `TimePicked` (`TimePickedEventArgs`: `OldTime`, `NewTime`) | the same, an `EventHandler<TimePickedEventArgs>` |
 | [x] | `ShowAtAsync(target)` → `TimeSpan?` | `Task<TimeSpan?>` |
 
