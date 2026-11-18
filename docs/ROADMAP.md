@@ -223,10 +223,12 @@ The runs of 2026-11-18:
   exceptions. No real-window run.
 
 Owed: the sample at speed 2 on the phone (#189), and the reads each control's README lists. The four pan reads that
-were in progress on the VM are done (#205). Of the pan, only two reads stay owed: the slide's exact curve (the
-recording's 30 frames a second are too few to fit one) and why a covered AutoSuggestBox with
-`AutoMaximizeSuggestionArea` false goes 10.42 further once its list opens. Nothing of the keyboard's pan is left open.
-Next: Tier 4.
+were in progress on the VM are done (#205). No issue of the keyboard's pan is open; its plans keep what is still owed
+or known: the slide's exact curve (the recording's 30 frames a second are too few to fit one), why a covered
+AutoSuggestBox with `AutoMaximizeSuggestionArea` false goes 10.42 further once its list opens, where an uncovered one's
+list opens, a keyboard that grows while up, and the known gap of a TextBox inside a Simple template (NumericUpDown,
+CalendarDatePicker), which doesn't move the page. #205's odd first focus after the app starts is taken as the
+emulator's, not copied. Next: Tier 4.
 
 ### Tier 4
 

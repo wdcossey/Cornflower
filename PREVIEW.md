@@ -120,9 +120,9 @@ pickers, so they have no pictures of their own.
 
 ## Text and buttons
 
-TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions hanging from the box; below it the light
-section and, last, so a phone's keyboard covers it, the box with `AutoMaximizeSuggestionArea` false ("not maximized",
-#201, #206).
+TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions hanging from the box; below it the disabled
+box (under the list), the light section and, last, so a phone's keyboard covers it, the box with
+`AutoMaximizeSuggestionArea` false ("not maximized", #201, #206).
 
 <p>
 <img src="docs/preview/dark__textbox.png" width="270" alt="TextBox, dark">
