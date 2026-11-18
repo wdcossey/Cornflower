@@ -1,6 +1,6 @@
 # ADR 0004 — Larger screens as an extension pack
 
-**Date:** 2026-11-10 · **Status:** Proposed in [#61](https://github.com/wdcossey/CornflowerUI/pull/61). The first
+**Date:** 2026-11-10 · **Status:** Proposed in [#61](https://github.com/wdcossey/Cornflower/pull/61). The first
 table is the maintainer's decision of 2026-11-09, in the words of the option they chose. The second table is what
 this ADR proposes on top of it, and is accepted when the maintainer merges #61.
 
@@ -18,7 +18,7 @@ breakpoints from Windows 10's three size classes (the exact widths to be checked
 (cumulative `:breakpoint-*` pseudo-classes set from the window's width, by `GridViewport`), the pack overriding the
 type ramp and the shell controls at the wider classes, and a core that promises only hooks (overridable resources,
 no phone widths baked into templates), with the desktop sample moved up. They also chose `D-tier1-start:
-type-ramp`: the type ramp ([#26](https://github.com/wdcossey/CornflowerUI/issues/26)) names its resources so that
+type-ramp`: the type ramp ([#26](https://github.com/wdcossey/Cornflower/issues/26)) names its resources so that
 the pack can override them.
 
 Whatever Cornflower does with a wide window is its own design, not a reproduction. [ADR 0001](0001-what-faithful-means.md)
@@ -37,7 +37,7 @@ the same for screen sizes.
 | How does a window learn its size class? | **Avonic's mechanism:** `GridViewport`, with cumulative `:breakpoint-*` pseudo-classes set from the window's width |
 | What does the pack override? | The type ramp and the shell controls (page, app bar, Pivot, Hub, dialogs, flyouts) at the wider classes |
 | What does the core promise? | **Only hooks:** overridable resources, and no phone widths baked into templates |
-| The desktop sample ([#9](https://github.com/wdcossey/CornflowerUI/issues/9)) | **Moves up**, so the pack has a window to be seen in |
+| The desktop sample ([#9](https://github.com/wdcossey/Cornflower/issues/9)) | **Moves up**, so the pack has a window to be seen in |
 
 ### Proposed with this ADR (accepted on merge)
 

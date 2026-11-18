@@ -1,13 +1,13 @@
 # Flyout and FlyoutPresenter: plan
 
-[#151](https://github.com/wdcossey/CornflowerUI/issues/151). The 8.1 Flyout, and the worked example for Tier 3's popups:
+[#151](https://github.com/wdcossey/Cornflower/issues/151). The 8.1 Flyout, and the worked example for Tier 3's popups:
 how a popup is hosted over the page, placed, dimmed, opened and closed on `CornflowerClock`, and how it takes Back from
 the page. WinRT's `Flyout` and `FlyoutPresenter` are Avalonia's. `FlyoutPresenter` is themed (rung 1); the popup round it
 is a behaviour the theme turns on (rung 2); WinRT's `Placement="Full"` is one attached property Avalonia lacks,
 `FlyoutOptions.IsFullScreen` (rung 2). No type is substituted.
 
-The motion is [#149](https://github.com/wdcossey/CornflowerUI/issues/149)'s reading (PR #171), and the dismissal and
-the full flyout's reveal [#150](https://github.com/wdcossey/CornflowerUI/issues/150)'s (PR #172): each in one place,
+The motion is [#149](https://github.com/wdcossey/Cornflower/issues/149)'s reading (PR #171), and the dismissal and
+the full flyout's reveal [#150](https://github.com/wdcossey/Cornflower/issues/150)'s (PR #172): each in one place,
 `PhonePopupMotion` and `PhonePopupDismissal`.
 
 ## Where the values come from

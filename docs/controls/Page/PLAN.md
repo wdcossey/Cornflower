@@ -3,7 +3,7 @@
 The Windows Phone 8.1 page and its navigation host, the Frame, on Avalonia 12's own pages: `ContentPage` for the
 phone's `Page` and `NavigationPage` for its `Frame`, themed by `Wp81Theme`, and the phone's three page transitions,
 the turnstile, the slide and the continuum, as our own `IPageTransition`s, frame by frame on `CornflowerClock`
-([#120](https://github.com/wdcossey/CornflowerUI/issues/120)). Rung 1 for the pages; the transitions are Avalonia's own
+([#120](https://github.com/wdcossey/Cornflower/issues/120)). Rung 1 for the pages; the transitions are Avalonia's own
 extension point, `IPageTransition`, filled in (rung 1: Avalonia asks for one).
 
 ## Where the values come from

@@ -1,6 +1,6 @@
 # ComboBox and ComboBoxItem: plan
 
-Issue [#155](https://github.com/wdcossey/CornflowerUI/issues/155). The 8.1 ComboBox on Avalonia's own `ComboBox` and
+Issue [#155](https://github.com/wdcossey/Cornflower/issues/155). The 8.1 ComboBox on Avalonia's own `ComboBox` and
 `ComboBoxItem`: five items or fewer open inline, the box growing in place; six or more open the full-screen
 `ListPickerFlyout` (#153, #176).
 

@@ -1,6 +1,6 @@
 # Button: plan
 
-[#27](https://github.com/wdcossey/CornflowerUI/issues/27). The 8.1 Button, Avalonia's `Button` themed as the
+[#27](https://github.com/wdcossey/Cornflower/issues/27). The 8.1 Button, Avalonia's `Button` themed as the
 phone's: its default style and template as an Avalonia `ControlTheme`, the tilt on the part the phone tilts, and
 the phone's colours in each state, dark and light. The first full control, and the dry run of the loop.
 
@@ -184,8 +184,8 @@ Each has a test in `tests/Cornflower.Tests/Controls/ButtonTests.cs` unless named
 
 ## Dependencies and captures
 
-- `Tilt` ([#22](https://github.com/wdcossey/CornflowerUI/issues/22), #65), tokens
-  ([#19](https://github.com/wdcossey/CornflowerUI/issues/19)), `PhoneTextLine` (#26), the desktop sample (#9):
+- `Tilt` ([#22](https://github.com/wdcossey/Cornflower/issues/22), #65), tokens
+  ([#19](https://github.com/wdcossey/Cornflower/issues/19)), `PhoneTextLine` (#26), the desktop sample (#9):
   merged. All 14 resources the style reads are in `Tokens/`.
 - Captures used: `base`, `CommonStates.Normal`, `CommonStates.PointerOver`, `CommonStates.Pressed`,
   `CommonStates.Disabled`, dark and light, run `20261108-1443-dev11`; the tilt probes `20261109-2307-dev11`

@@ -1,6 +1,6 @@
 # Hub: plan
 
-[#122](https://github.com/wdcossey/CornflowerUI/issues/122). The 8.1 Hub and HubSection: controls Avalonia doesn't have,
+[#122](https://github.com/wdcossey/Cornflower/issues/122). The 8.1 Hub and HubSection: controls Avalonia doesn't have,
 so Cornflower's own (`Cornflower.Controls.Hub`, `HubSection`, `HubSectionHeaderClickEventArgs`,
 `SectionsInViewChangedEventArgs`, rung 5), with the phone's default styles and templates as the Wp81 theme's
 `ControlTheme`s, and the phone's motion, read frame by frame from the emulator, run on `CornflowerClock`. It takes
@@ -23,8 +23,8 @@ Pivot's pieces (#121, [Pivot's README](../Pivot/README.md), "What Hub can take")
   header's left edge and transforms, each section's left edge and the background's parts.
   [`tools/refapp/README.md`](../../../tools/refapp/README.md), "Hub's header" and "Hub: a background image, and the end
   of the sections"; `tools/motion/pivot.py`.
-- **#148's reads** ([#165](https://github.com/wdcossey/CornflowerUI/issues/165), [#166](https://github.com/wdcossey/CornflowerUI/issues/166),
-  [#167](https://github.com/wdcossey/CornflowerUI/issues/167)): `-Probe hubrelease` (runs `20261116-1714-dev11` and
+- **#148's reads** ([#165](https://github.com/wdcossey/Cornflower/issues/165), [#166](https://github.com/wdcossey/Cornflower/issues/166),
+  [#167](https://github.com/wdcossey/Cornflower/issues/167)): `-Probe hubrelease` (runs `20261116-1714-dev11` and
   `-1751-`, the loop backwards, every frame's section edges and header), `-Probe hubentrance` (`-1721-`, `-1811-`, the
   entrance's `EntranceAnimationProjection` every frame, the states after `Loaded`), `-Probe hubstretch` (`-1720-`,
   `-1754-`, an image narrower than the screen). `tools/refapp/README.md`, "Pivot and Hub: where a release goes" and

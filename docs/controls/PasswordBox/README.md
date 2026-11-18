@@ -1,6 +1,6 @@
 # PasswordBox
 
-Status: done · [#37](https://github.com/wdcossey/CornflowerUI/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
+Status: done · [#37](https://github.com/wdcossey/Cornflower/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
 
 The Windows Phone 8.1 PasswordBox: Avalonia's `TextBox` with the `ControlTheme` keyed `PasswordBox`, WinRT's name, the
 phone's default style and template, in `src/Cornflower.Themes.Wp81/Controls/PasswordBox.axaml`. Avalonia has no

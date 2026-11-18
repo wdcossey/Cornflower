@@ -1,6 +1,6 @@
 # CommandBar, AppBarButton, AppBarToggleButton and AppBarSeparator: plan
 
-[#118](https://github.com/wdcossey/CornflowerUI/issues/118), and [#141](https://github.com/wdcossey/CornflowerUI/issues/141)
+[#118](https://github.com/wdcossey/Cornflower/issues/118), and [#141](https://github.com/wdcossey/Cornflower/issues/141)
 for the press, the open bar's height and the motion (["#141"](#141-the-press-the-open-bars-height-and-the-motion)).
 The 8.1 page's app bar. WinRT's `CommandBar`,
 `AppBarButton`, `AppBarToggleButton` and `AppBarSeparator` are Avalonia 12's `CommandBar`, `CommandBarButton`,

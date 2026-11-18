@@ -1,13 +1,13 @@
 # ScrollViewer, ScrollBar and Thumb: plan
 
-[#116](https://github.com/wdcossey/CornflowerUI/issues/116). The 8.1 ScrollViewer and its thin scroll indicators:
+[#116](https://github.com/wdcossey/Cornflower/issues/116). The 8.1 ScrollViewer and its thin scroll indicators:
 Avalonia's `ScrollViewer`, `ScrollBar` and `Thumb` themed as the phone's, the indicators shown and hidden by a
 behaviour that follows the scroll and the pointer type, as WinRT's ScrollViewer does. The worked example for Tier 2:
 every later Tier 2 control (ListView, Pivot, Hub, Page) holds this ScrollViewer. It fixes the first half of
-[#99](https://github.com/wdcossey/CornflowerUI/issues/99): Simple's wide grey bar on the sample's tall pages.
+[#99](https://github.com/wdcossey/Cornflower/issues/99): Simple's wide grey bar on the sample's tall pages.
 
 **The scroll physics** (deceleration, the compression at the end of the content), measured by
-[#113](https://github.com/wdcossey/CornflowerUI/issues/113), stay Avalonia's: **a recorded deviation**, decided below
+[#113](https://github.com/wdcossey/Cornflower/issues/113), stay Avalonia's: **a recorded deviation**, decided below
 ([Scroll physics](#scroll-physics)).
 
 ## Where the values come from
@@ -406,7 +406,7 @@ Each has a test in `tests/Cornflower.Tests/Controls/ScrollViewerTests.cs` unless
 
 ## Dependencies and captures
 
-- Tokens ([#19](https://github.com/wdcossey/CornflowerUI/issues/19)): all nine resources the three styles read are in
+- Tokens ([#19](https://github.com/wdcossey/Cornflower/issues/19)): all nine resources the three styles read are in
   `Tokens/`. `CornflowerClock`, `HoleParts` and the sample: merged.
 - #113's captures, probes and recording (above): merged (PR #127).
 - **Owed**: the device run on the Pixel 8 (the coordinator's) and the real-window run.

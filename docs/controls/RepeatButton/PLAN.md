@@ -1,6 +1,6 @@
 # RepeatButton: plan
 
-[#30](https://github.com/wdcossey/CornflowerUI/issues/30), with [ToggleButton](../ToggleButton/PLAN.md). The 8.1
+[#30](https://github.com/wdcossey/Cornflower/issues/30), with [ToggleButton](../ToggleButton/PLAN.md). The 8.1
 RepeatButton, Avalonia's `RepeatButton` themed as the phone's: its default style and template as an Avalonia
 `ControlTheme`, its look in each state, dark and light, and its timing: when it clicks, how soon it repeats, and that it
 stops while the finger is off it.

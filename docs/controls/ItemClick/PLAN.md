@@ -1,6 +1,6 @@
 # ItemClick and IsItemClickEnabled: plan
 
-[#132](https://github.com/wdcossey/CornflowerUI/issues/132). WinRT's ListView raises `ItemClick` when
+[#132](https://github.com/wdcossey/Cornflower/issues/132). WinRT's ListView raises `ItemClick` when
 `IsItemClickEnabled` is on. Avalonia's `ListBox` has neither. Both come as an attached behaviour on `ListBox`, with
 WinRT's names, in `Cornflower.Controls`: `ListBoxOptions.IsItemClickEnabled` and `ListBoxOptions.ItemClick`, with
 `ItemClickEventArgs.ClickedItem`. The ListView's look is #119's ([ListView](../ListView/README.md)); this adds only

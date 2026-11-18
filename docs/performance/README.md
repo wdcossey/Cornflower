@@ -2,7 +2,7 @@
 
 What the theme costs an app, and what stops that creeping up unnoticed. Carried over from Avonic's
 [`docs/infra/performance/README.md`](https://github.com/wdcossey/Avonic/blob/v2/docs/infra/performance/README.md)
-([#12](https://github.com/wdcossey/CornflowerUI/issues/12)); what changed is at the end.
+([#12](https://github.com/wdcossey/Cornflower/issues/12)); what changed is at the end.
 
 ## What it costs
 
@@ -187,7 +187,7 @@ Copied from Avonic's `v2` branch. What changed:
   list.
 - `tools/breakage/run.js` finds the test project itself, so another library can copy it unchanged.
 - `tools/real-window/drive.ps1`, which drives the desktop sample's real window, came with the
-  desktop sample ([#9](https://github.com/wdcossey/CornflowerUI/issues/9), #68). It opens every
+  desktop sample ([#9](https://github.com/wdcossey/Cornflower/issues/9), #68). It opens every
   page with a real click and saves a frame, and checks buttons with no size, the Debug line, the
   page's 450 × 800 from the ready line, Back, Alt+Left and resizing; its per-control sections come
   back with controls.

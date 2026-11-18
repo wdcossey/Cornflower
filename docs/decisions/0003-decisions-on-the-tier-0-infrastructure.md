@@ -5,18 +5,18 @@
 ## Context
 
 Four Tier 0 PRs each ended with questions for the maintainer:
-[#44](https://github.com/wdcossey/CornflowerUI/pull/44), the test harness
-([#11](https://github.com/wdcossey/CornflowerUI/issues/11));
-[#45](https://github.com/wdcossey/CornflowerUI/pull/45), the tokens
-([#19](https://github.com/wdcossey/CornflowerUI/issues/19));
-[#46](https://github.com/wdcossey/CornflowerUI/pull/46), the fonts
-([#18](https://github.com/wdcossey/CornflowerUI/issues/18)); and
-[#47](https://github.com/wdcossey/CornflowerUI/pull/47), the reference app's popups
-([#23](https://github.com/wdcossey/CornflowerUI/issues/23)). The maintainer answered all twelve on
+[#44](https://github.com/wdcossey/Cornflower/pull/44), the test harness
+([#11](https://github.com/wdcossey/Cornflower/issues/11));
+[#45](https://github.com/wdcossey/Cornflower/pull/45), the tokens
+([#19](https://github.com/wdcossey/Cornflower/issues/19));
+[#46](https://github.com/wdcossey/Cornflower/pull/46), the fonts
+([#18](https://github.com/wdcossey/Cornflower/issues/18)); and
+[#47](https://github.com/wdcossey/Cornflower/pull/47), the reference app's popups
+([#23](https://github.com/wdcossey/Cornflower/issues/23)). The maintainer answered all twelve on
 2026-11-08 and took the recommendation each time. This records those answers and the measurements
 behind them, so later work can rely on them. Two were carried out the same day:
-[#48](https://github.com/wdcossey/CornflowerUI/pull/48) added the token scripts and
-[#49](https://github.com/wdcossey/CornflowerUI/pull/49) added the popup screenshots. The docs PR
+[#48](https://github.com/wdcossey/Cornflower/pull/48) added the token scripts and
+[#49](https://github.com/wdcossey/Cornflower/pull/49) added the popup screenshots. The docs PR
 that adds this ADR also changes the licence expression.
 
 ## Decision
@@ -36,7 +36,7 @@ that adds this ADR also changes the licence expression.
 |---|---|---|
 | Keys for the 20 named accents | **`CornflowerAccent<Name>Color`**, such as `CornflowerAccentCobaltColor` | WinRT has no keys for them. The prefix marks them as Cornflower's own, so they never shadow a WinRT name |
 | `Transparent` under rule 5 (no literal colours outside `Tokens/`) | **Allowed.** `LiteralColourGuardTests` lets it through | The 8.1 templates use it to make an area hit-testable. It carries no colour, so a token for it, such as `PhoneTransparentBrush`, would be a key WinRT never had |
-| The token generator and cross-check scripts | **Committed** to `tools/tokens/` ([#48](https://github.com/wdcossey/CornflowerUI/pull/48)) | So a new capture run can be checked against the tokens again. Like the other tools, they read Microsoft's files from outside the repo when they run, and write only Cornflower's |
+| The token generator and cross-check scripts | **Committed** to `tools/tokens/` ([#48](https://github.com/wdcossey/Cornflower/pull/48)) | So a new capture run can be checked against the tokens again. Like the other tools, they read Microsoft's files from outside the repo when they run, and write only Cornflower's |
 | Should the theme force Dark? | **No. The sample apps request Dark, and the theme follows the app's `ThemeVariant`** | An app chooses its own variant, as with any Avalonia theme. The phone's default is dark, so the samples start there |
 
 ### Fonts (#46)
@@ -51,7 +51,7 @@ that adds this ADR also changes the licence expression.
 
 | Question | Decision | Why |
 |---|---|---|
-| How to get a popup's pixels | **The emulator's own Screenshot tool, driven in the VM session** (`run.ps1 -Grab`, [#49](https://github.com/wdcossey/CornflowerUI/pull/49)). The app bar uses the same method | On the phone, `RenderTargetBitmap` can't render a popup, and rendering the window leaves popups out. The emulator's tool saves the phone's own display at full resolution, 1080 × 1920 on the reference profile. Capturing the emulator window with `ffmpeg` would give scaled pixels |
+| How to get a popup's pixels | **The emulator's own Screenshot tool, driven in the VM session** (`run.ps1 -Grab`, [#49](https://github.com/wdcossey/Cornflower/pull/49)). The app bar uses the same method | On the phone, `RenderTargetBitmap` can't render a popup, and rendering the window leaves popups out. The emulator's tool saves the phone's own display at full resolution, 1080 × 1920 on the reference profile. Capturing the emulator window with `ffmpeg` would give scaled pixels |
 
 ## Consequences
 
@@ -66,8 +66,8 @@ that adds this ADR also changes the licence expression.
   to Dark.
 - Every WinRT text style without a `LineHeight` gets 1.33 × its `FontSize` in its Cornflower
   style. Styles that set their own `LineHeight` with `BaselineToBaseline` are measured with the
-  type ramp ([#26](https://github.com/wdcossey/CornflowerUI/issues/26)).
+  type ramp ([#26](https://github.com/wdcossey/Cornflower/issues/26)).
 - `ProgressRingActiveBackgroundOpacity` keeps the SDK file's 0.8, unconfirmed: the capture run
   didn't apply the `Active` storyboard. The ring has to be captured again while it is running
-  before the ProgressRing theme ([#28](https://github.com/wdcossey/CornflowerUI/issues/28)) relies
+  before the ProgressRing theme ([#28](https://github.com/wdcossey/Cornflower/issues/28)) relies
   on that value.

@@ -1,9 +1,9 @@
 # ItemClick and IsItemClickEnabled
 
-Status: done · [#132](https://github.com/wdcossey/CornflowerUI/issues/132) · compared against
-[#113](https://github.com/wdcossey/CornflowerUI/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · item click in
-each mode read in [#148](https://github.com/wdcossey/CornflowerUI/issues/148) (`listclick`, `20261116-1717-dev11`, #170):
-every mode matches, the check mode since [#169](https://github.com/wdcossey/CornflowerUI/issues/169) · owed for #169: the
+Status: done · [#132](https://github.com/wdcossey/Cornflower/issues/132) · compared against
+[#113](https://github.com/wdcossey/Cornflower/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · item click in
+each mode read in [#148](https://github.com/wdcossey/Cornflower/issues/148) (`listclick`, `20261116-1717-dev11`, #170):
+every mode matches, the check mode since [#169](https://github.com/wdcossey/Cornflower/issues/169) · owed for #169: the
 device run on the Pixel 8 and the real-window run · device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page itemclick` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 406 ms) · real-window run passed 2026-11-16 (`tools/real-window/drive.ps1`, Debug, on #161's head `d0a9ef6`: 160 of 160, every page opened from the list, ready, and left by Back)
 
 WinRT's `IsItemClickEnabled` and `ItemClick` on the 8.1 ListView, for Avalonia's `ListBox`, which lacks them: an

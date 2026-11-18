@@ -1,6 +1,6 @@
 # DatePicker and TimePicker, and their full-screen pickers
 
-Status: done but for the real-window run · [#156](https://github.com/wdcossey/CornflowerUI/issues/156) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page datetimepicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 369 ms; the date and time pickers opened by a tap and drawn right) · owed: the real-window run
+Status: done but for the real-window run · [#156](https://github.com/wdcossey/Cornflower/issues/156) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page datetimepicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 369 ms; the date and time pickers opened by a tap and drawn right) · owed: the real-window run
 
 The Windows Phone 8.1 date and time pickers: Avalonia's `DatePicker`, `TimePicker`, `DatePickerPresenter` and
 `TimePickerPresenter`, themed by `Wp81Theme` in `src/Cornflower.Themes.Wp81/Controls/DatePicker.axaml` and
