@@ -1761,6 +1761,43 @@ the text as `ItemsSource`):
 6. A tap on the page off the box and list: the box loses the focus, the keyboard and list go, no `TextChanged`.
 7. Back: as above.
 
+## The keyboard's pan: a box halfway down and a box under the keyboard (2026-11-18, device 11, #179)
+
+`20261118-1229-dev11` (`-Popups only -Grab -Only '^(AutoSuggestBox|TextBox)/(mid|low|scroll)'`) and
+`20261118-1231-dev11` (`-Only '^PasswordBox/(mid|low)'`), dark and light, which measure the same. Each box sits 300 or
+560 view px below a "page top" line at the stage's top (`Popups.cs`, `Panned`), so its control's top is 312.08 or
+572.08 down the window, and is focused from code; the move is read from the grabs (the header's ink and the box's
+border, at rest against focused). View pixels, positions in the window, which here starts at the screen's top. The PNGs
+are in [`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).
+
+| Box | At rest (the box's border) | Focused | The page moved | The keyboard's top |
+|---|---|---|---|---|
+| AutoSuggestBox, 300 down | 338.75 to 377.92 | 26.67 to 65.83: the control's top at the window's top | **312.08** | 453.33 |
+| The same, `AutoMaximizeSuggestionArea` false | 338.75 to 377.92 | the same | **0** | 453.33 |
+| TextBox, 300 down | 338.75 to 377.92 | the same | **0** | 453.33 |
+| PasswordBox, 300 down | 338.75 to 377.92 | the same | **0** | 513.75 |
+| TextBox, 560 down | 598.75 to 637.92 | 422.5 to 461.67 | **176.25** | 453.33 |
+| PasswordBox, 560 down | 598.75 to 637.92 | 482.5 to 521.67 | **116.25** | 513.75 |
+| TextBox, 560 down in a ScrollViewer | (as the TextBox above) | 422.5 to 461.67 | 176.25, with the line outside the ScrollViewer gone off the top | 453.33 |
+
+- **The AutoSuggestBox goes to the top because of `AutoMaximizeSuggestionArea`** (true by default): with it, the page
+  moves 312.08 for a box the keyboard was nowhere near, putting the control's top at the window's top, as #150's box
+  did from 48.33 down. With it false the page doesn't move at all.
+- **A TextBox or PasswordBox the keyboard doesn't cover doesn't move.**
+- **One the keyboard covers moves the least that shows its caret**, not the whole box: the caret, 27.08 tall from 3.33
+  inside the border's top, ends at 452.92 against the keyboard's 453.33 (TextBox) and at 512.92 against 513.75
+  (PasswordBox), within one raw pixel. The box's bottom border and the padding under the caret, 8.33 and 7.92, stay
+  under the keyboard. Clearing the whole box would have taken 184.58 and 124.17.
+- **The PasswordBox's keyboard has no word-suggestion strip**: its top is at 513.75 (286.25 tall), 60.42 lower than the
+  TextBox's.
+- **In a ScrollViewer** the box ends where it does on the page, and the "page top" line outside the ScrollViewer (15 to
+  24.58 at rest on the plain page; the ScrollViewer over it has a transparent background, and its own rest wasn't
+  grabbed) went off the top with it, so the page moved at least 24.58; nothing shows the ScrollViewer scrolling, but
+  the specimen logs no `VerticalOffset`, so one grab can't split the move between the two. Its dark grab is byte for
+  byte the plain page's: two frames of the grab loop, 7 s apart, came out the same.
+- Not read: whether the move slides and how long it takes (`-Record` goes with `-Probe` only), an AutoSuggestBox
+  with `AutoMaximizeSuggestionArea` false that the keyboard covers, and the ScrollViewer's `VerticalOffset`.
+
 ## Popup pixels
 
 `RenderTargetBitmap` can't see popups, so `-Grab` takes the phone's display from the emulator.

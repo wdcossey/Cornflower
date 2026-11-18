@@ -161,6 +161,24 @@ namespace RefApp
             list.Add(Suggest("list-3", "a", 3, true));
             list.Add(Suggest("list-12", "a", 12, true));
 
+            // #179. How far the page moves for a box the keyboard doesn't cover: an AutoSuggestBox and a TextBox 300 view
+            // px down the stage (clear of the keyboard's top: 453.33, a PasswordBox's 513.75), at rest and focused, the box again with
+            // AutoMaximizeSuggestionArea false; a TextBox 560 down (under the keyboard), on the page and in a ScrollViewer; a
+            // PasswordBox at both places.
+            // A "page top" line at the stage's top shows whether the page moved or only the ScrollViewer scrolled.
+            list.Add(Panned("AutoSuggestBox", "mid-rest", 300, false, false, () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit" }));
+            list.Add(Panned("AutoSuggestBox", "mid-focused", 300, true, false, () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit" }));
+            list.Add(Panned("AutoSuggestBox", "mid-nomax", 300, true, false, () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit", AutoMaximizeSuggestionArea = false }));
+            list.Add(Panned("TextBox", "mid-rest", 300, false, false, () => new TextBox { Header = "text box", Text = "Agjy" }));
+            list.Add(Panned("TextBox", "mid-focused", 300, true, false, () => new TextBox { Header = "text box", Text = "Agjy" }));
+            list.Add(Panned("TextBox", "low-rest", 560, false, false, () => new TextBox { Header = "text box", Text = "Agjy" }));
+            list.Add(Panned("TextBox", "low-focused", 560, true, false, () => new TextBox { Header = "text box", Text = "Agjy" }));
+            list.Add(Panned("TextBox", "scroll-low-focused", 560, true, true, () => new TextBox { Header = "text box", Text = "Agjy" }));
+            list.Add(Panned("PasswordBox", "mid-rest", 300, false, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
+            list.Add(Panned("PasswordBox", "mid-focused", 300, true, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
+            list.Add(Panned("PasswordBox", "low-rest", 560, false, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
+            list.Add(Panned("PasswordBox", "low-focused", 560, true, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
+
             // ContentDialog's layout (#150): no button, the primary or the secondary alone, a long title and content
             // longer than the screen, and a TextBox in the content focused from code (the keyboard).
             list.Add(Dialog("no-buttons", false, null, null));
@@ -543,6 +561,60 @@ namespace RefApp
                     return null;
                 },
                 Close = (host, h) => ((AutoSuggestBox)host).IsSuggestionListOpen = false,
+            };
+        }
+
+        /// <summary>
+        /// A box (<paramref name="make"/>: an AutoSuggestBox, a TextBox or a PasswordBox) <paramref name="top"/> view px below a "page top"
+        /// line at the stage's top, focused from code with <paramref name="focus"/> (an AutoSuggestBox's TextBox part); with
+        /// <paramref name="scroll"/> the box sits in a ScrollViewer with 800 px of content below it, the line outside it.
+        /// The page's move is read from the screen grab: the line's and the box's places at rest against focused.
+        /// </summary>
+        private static PopupSpecimen Panned(string name, string variant, double top, bool focus, bool scroll, Func<Control> make)
+        {
+            return new PopupSpecimen
+            {
+                Name = name,
+                Variant = variant,
+                Height = 800,
+                SettleMs = 1500,
+                NoPopup = true,
+                MakeHost = () =>
+                {
+                    var box = make();
+                    box.VerticalAlignment = VerticalAlignment.Top;
+                    box.Margin = new Thickness(0, top, 0, 0);
+                    var grid = new Grid { Height = 780, VerticalAlignment = VerticalAlignment.Top, Tag = box };
+                    grid.Children.Add(new TextBlock { Text = "page top", VerticalAlignment = VerticalAlignment.Top });
+                    if (scroll)
+                    {
+                        var content = new StackPanel();
+                        content.Children.Add(box);
+                        content.Children.Add(new Border { Height = 800 });
+                        grid.Children.Add(new ScrollViewer { Content = content });
+                    }
+                    else
+                    {
+                        grid.Children.Add(box);
+                    }
+
+                    return grid;
+                },
+                Open = host =>
+                {
+                    if (focus)
+                    {
+                        var box = (Control)host.Tag;
+                        var target = box is AutoSuggestBox ? FindNamed(box, "TextBox") as Control : box;
+                        if (target == null || !target.Focus(FocusState.Programmatic))
+                        {
+                            throw new InvalidOperationException("the " + name + " didn't take focus");
+                        }
+                    }
+
+                    return null;
+                },
+                Close = (host, h) => { },
             };
         }
 
