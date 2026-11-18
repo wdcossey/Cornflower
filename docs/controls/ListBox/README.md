@@ -34,8 +34,8 @@ phone's ListBox, name its theme; it gives its items theirs:
 - **Selected**: the item in the accent, its text white, in both themes.
 - **The press**: at once, the item's background in `ListBoxItemPressedBackgroundThemeBrush` (the list's pale brush) and its
   text black, with the Button's tilt on `InnerGrid` inside an untilted root, so a press at the very edge still selects;
-  on release it holds 182.6 ms and eases back over 167.0 ms. A press on a selected item draws the pale brush and keeps the
-  white text.
+  on release it holds 182.6 ms and eases back over 167.0 ms. A press on a selected item draws the pale brush and the
+  press's black text.
 - **Disabled**: the item's text dimmed (#80FFFFFF; light #80000000); a selected one #73FFFFFF on #66FFFFFF. A disabled
   list loses its background and draws its border in `ListBoxDisabledForegroundThemeBrush`.
 - **Focus and pointer-over** draw nothing.
@@ -70,8 +70,8 @@ None.
 ## Known gaps
 
 - **An item with `IsSelected` outside a list** draws selected; the phone's draws it unselected.
-- **A press or Disabled on a selected item**: which state's text colour the phone draws wasn't read; ours, the
-  selection's.
+- **A press or Disabled on a selected item**: which state's text colour the phone draws wasn't read; ours, a
+  press's black (legible on its pale brush), and SelectedDisabled's.
 - **No grouping** (Avalonia 12.1.4 has none), and no add and delete transitions.
 - **The scroll physics** are Avalonia's (the ScrollViewer's recorded deviation).
 - **One raw pixel** here and there (ADR 0003).

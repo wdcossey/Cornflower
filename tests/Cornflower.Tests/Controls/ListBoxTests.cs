@@ -378,9 +378,10 @@ public class ListBoxTests
         Assert.NotEqual(TiltState.Rest, CfTilt.Current(item));
     }
 
-    // A press on a selected item: the pale brush over the accent, the text the selection's (its styles come after).
+    // A press on a selected item: the pale brush over the accent and the press's black text, legible (its style comes
+    // after the selection's; the phone wasn't read for it).
     [AvaloniaFact]
-    public void A_Press_On_A_Selected_Item_Keeps_The_Selections_Text()
+    public void A_Press_On_A_Selected_Item_Draws_The_Presss_Text()
     {
         using var clock = new TestClock();
         using var stage = new ListStage(selected: 1);
@@ -391,7 +392,7 @@ public class ListBoxTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(1, Part<Rectangle>(two, "PressedBackground").Opacity);
-        Assert.Equal(SelectedForeground, TextOf(two));
+        Assert.Equal(PressedForeground, TextOf(two));
     }
 
     // ----- Disabled -----
@@ -451,6 +452,33 @@ public class ListBoxTests
         var item = (ListBoxItem)inner.ContainerFromIndex(0)!;
         Assert.False(PhoneListMultiSelect.GetIsOn(item));
         Assert.DoesNotContain(item.GetVisualDescendants().OfType<Control>(), c => c.Name == "CheckboxTiltContainer");
+    }
+
+    // An item of the keyed theme as a ListView's own item in the check mode isn't in it either.
+    [AvaloniaFact]
+    public void A_Keyed_Item_In_A_ListView_In_The_Check_Mode_Isnt_In_It()
+    {
+        var item = new ListBoxItem { Content = "a" };
+        item.Bind(StyledElement.ThemeProperty, item.GetResourceObservable("Wp81ListBoxItemTheme"));
+        var outer = new ListBox { SelectionMode = SelectionMode.Multiple | SelectionMode.Toggle, Items = { item } };
+        using var scene = new Scene(outer);
+
+        Assert.True(PhoneListMultiSelect.GetIsOn(outer));
+        Assert.NotNull(item.Theme);
+        Assert.False(PhoneListMultiSelect.GetIsOn(item));
+    }
+
+    // The list takes the item theme by its key, so an app's own Wp81ListBoxItemTheme reaches its items.
+    [AvaloniaFact]
+    public void An_Apps_Own_Item_Theme_By_The_Key_Reaches_The_Lists_Items()
+    {
+        using var stage = new ListStage();
+        var stock = Assert.IsType<ControlTheme>(stage.Window.FindResource("Wp81ListBoxItemTheme"));
+        var own = new ControlTheme(typeof(ListBoxItem)) { BasedOn = stock };
+        stage.Window.Resources["Wp81ListBoxItemTheme"] = own;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Same(own, stage.List.ItemContainerTheme);
     }
 
     // The template has no FocusStates and PointerOver sets nothing: focus and a mouse over an item draw nothing.

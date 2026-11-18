@@ -22,7 +22,7 @@ theme sets `ItemContainerTheme` to the item's, so an app names only the list:
 
 An item on its own takes `Theme="{DynamicResource Wp81ListBoxItemTheme}"`. The phone's ListBox has neither the check mode
 nor `IsItemClickEnabled` (both are `ListViewBase`'s): the item has no check box and doesn't read the mode, and the list
-holds `PhoneListMultiSelect.IsOn` off, so a ListBox inside a ListView item in the check mode isn't in it. `ListBoxOptions`
+and the item hold `PhoneListMultiSelect.IsOn` off, so neither is in the check mode inside a ListView in it. `ListBoxOptions`
 is a behaviour on any ListBox, so an app could still turn item click on; the README says the phone's ListBox has none.
 
 ## Behaviours
@@ -43,10 +43,12 @@ Each with its evidence, and its test in `tests/Cornflower.Tests/Controls/ListBox
 | A tap selects, at the item's edge too | LayoutRoot takes the hits (the template's Background) | `A_Tap_Selects_The_Item` |
 | SelectedPointerOver takes its own key | the template | `Selected_Under_The_Mouse_Takes_The_SelectedPointerOver_Key` |
 | Pressed: `PressedBackground` at 1, the text black, the Button's tilt on InnerGrid in an untilted root | the template; `CommonStates.Pressed` | `A_Press_Shows_The_Pressed_Brush_And_Tilts_InnerGrid` |
-| A press on a selected item keeps the selection's text | decided (below) | `A_Press_On_A_Selected_Item_Keeps_The_Selections_Text` |
+| A press on a selected item draws the press's black text on the pale brush | decided (below) | `A_Press_On_A_Selected_Item_Draws_The_Presss_Text` |
 | Disabled: LayoutRoot's background cleared, the text dimmed; SelectedDisabled's two brushes | the template; the captures | `Disabled_Dims_The_Text_And_Clears_The_Background` |
 | A disabled list: no background, the border in ListBoxDisabledForegroundThemeBrush | the template; `dark__ListBox__three-items__CommonStates.Disabled` | `A_Disabled_List_Clears_Its_Background_And_Draws_Its_Border` |
 | No check mode, inside a ListView in the check mode too | the phone's ListBox has none | `It_Has_No_Check_Mode_Even_Inside_A_ListView_In_The_Check_Mode` |
+| A keyed item as a ListView's own item in the check mode isn't in it | as above | `A_Keyed_Item_In_A_ListView_In_The_Check_Mode_Isnt_In_It` |
+| The list takes the item theme by key, so an app's own reaches its items | DynamicResource, as every value | `An_Apps_Own_Item_Theme_By_The_Key_Reaches_The_Lists_Items` |
 | Focus and the pointer over draw nothing | no FocusStates; PointerOver empty | `Keyboard_Focus_And_The_Pointer_Over_Draw_Nothing` |
 | The colours follow the variant | DynamicResource | `The_Colours_Follow_A_Change_Of_Variant` |
 
@@ -73,7 +75,7 @@ Avalonia's `ListBox` and `ListBoxItem` have every member the template needs, so 
 - **Selected outside a list.** The phone draws an item with `IsSelected` outside a list as an unselected one; Avalonia's
   sets `:selected`, so ours draws the selection. A gap: an item on its own is rare.
 - **Two groups on one property.** Pressed and Selected, and Disabled and SelectedDisabled, both set the text's colour;
-  the phone wasn't read for which wins. Ours: the selection's, its styles last.
+  the phone wasn't read for which wins. Ours: a press draws its own black text on the pale brush (legible; white on it isn't), and Disabled on a selected item SelectedDisabled's.
 - **A disabled list.** The reference app forced `Disabled` on the list alone, so its captured items stayed enabled. A
   list with `IsEnabled` false disables its items, on the phone as here, so ours draws them `Disabled` and
   `SelectedDisabled`: the comparison's disabled list differs there, by design.
@@ -189,12 +191,12 @@ _none_
 | [x] | `BorderBrush` | `{ThemeResource ListBoxBorderThemeBrush}` | `TemplatedControl.BorderBrush` | Themed: ListBoxBorderThemeBrush |
 | [x] | `BorderThickness` | `{ThemeResource ListBoxBorderThemeThickness}` | `TemplatedControl.BorderThickness` | Themed: ListBoxBorderThemeThickness |
 | [x] | `ScrollViewer.HorizontalScrollBarVisibility` | `Disabled` | `ScrollViewer.HorizontalScrollBarVisibility (attached)` | Avalonia's ListBox's default, Disabled, bound to the ScrollViewer |
-| [x] | `ScrollViewer.VerticalScrollBarVisibility` | `Auto` | `ScrollViewer.VerticalScrollBarVisibility (attached)` | Themed: Auto, bound to the ScrollViewer |
+| [x] | `ScrollViewer.VerticalScrollBarVisibility` | `Auto` | `ScrollViewer.VerticalScrollBarVisibility (attached)` | Avalonia's ListBox's default, Auto, bound to the ScrollViewer |
 | [-] | `ScrollViewer.HorizontalScrollMode` | `Disabled` | none | not applicable: Avalonia's ScrollViewer has no scroll modes (ScrollViewer README); horizontal scrolling is off by the bar's Disabled |
 | [-] | `ScrollViewer.VerticalScrollMode` | `Auto` | none | not applicable: as HorizontalScrollMode |
 | [-] | `ScrollViewer.ZoomMode` | `Disabled` | none | not applicable: no zoom |
-| [x] | `ScrollViewer.IsDeferredScrollingEnabled` | `False` | `ScrollViewer.IsDeferredScrollingEnabled (attached)` | Themed: False, bound to the ScrollViewer |
-| [x] | `ScrollViewer.BringIntoViewOnFocusChange` | `True` | `ScrollViewer.BringIntoViewOnFocusChange (attached)` | Themed: True, bound to the ScrollViewer |
+| [x] | `ScrollViewer.IsDeferredScrollingEnabled` | `False` | `ScrollViewer.IsDeferredScrollingEnabled (attached)` | Avalonia's ListBox's default, False, bound to the ScrollViewer |
+| [x] | `ScrollViewer.BringIntoViewOnFocusChange` | `True` | `ScrollViewer.BringIntoViewOnFocusChange (attached)` | Avalonia's ListBox's default, True, bound to the ScrollViewer |
 | [x] | `IsTabStop` | `False` | `InputElement.IsTabStop` | Themed: False |
 | [x] | `TabNavigation` | `Once` | none | Avalonia's ListBox's default, `KeyboardNavigation.TabNavigation` Once |
 | [x] | `FontFamily` | `{ThemeResource ContentControlThemeFontFamily}` | `TemplatedControl.FontFamily` | Themed: ContentControlThemeFontFamily |
@@ -320,11 +322,11 @@ Avalonia's control looks for: `PART_ContentPresenter`.
 | [x] | `CommonStates` | `Disabled` | `LayoutRoot.Background = Transparent`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemDisabledForegroundThemeBrush}` | `^:disabled` | Themed: `^:disabled` |
 | [x] | `CommonStates` | `Pressed` | `PointerDownThemeAnimation on InnerGrid`<br>`PressedBackground.Opacity: DoubleAnimation To=1 Duration=0`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemPressedForegroundThemeBrush}` | `^:pressed` | Themed: `^:pressed` (the brush and text); the tilt by `Tilt` on InnerGrid |
 | [x] | `SelectionStates` | `Unselected` | nothing | the theme's plain setters | Themed |
-| [x] | `SelectionStates` | `Selected` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected` | Themed: `^:selected`, after CommonStates' styles |
+| [x] | `SelectionStates` | `Selected` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected` | Themed: `^:selected`, after Disabled's style, before Pressed's |
 | [x] | `SelectionStates` | `SelectedUnfocused` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected` | Themed: `^:selected` (Avalonia doesn't tell them apart; the same values) |
 | [x] | `SelectionStates` | `SelectedDisabled` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedDisabledBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedDisabledForegroundThemeBrush}` | `^:selected:disabled` | Themed: `^:selected:disabled` |
 | [x] | `SelectionStates` | `SelectedPointerOver` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedPointerOverBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected:pointerover` | Themed: `^:selected:pointerover`, its own background key |
-| [x] | `SelectionStates` | `SelectedPressed` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected:pressed` | Themed: `^:selected` with `^:pressed` (the same values as Selected; the press's brush over it) |
+| [x] | `SelectionStates` | `SelectedPressed` | `InnerGrid.Background = {ThemeResource ListBoxItemSelectedBackgroundThemeBrush}`<br>`ContentPresenter.Foreground = {ThemeResource ListBoxItemSelectedForegroundThemeBrush}` | `^:selected:pressed` | Themed: `^:selected` with `^:pressed`: the press's brush and black text over the selection (decided) |
 
 #### Transitions (1)
 

@@ -52,6 +52,6 @@ kept):
 | | Phone | Ours | |
 |---|---|---|---|
 | A press | the pale brush, black text, the Button's tilt on InnerGrid (the template; not probed by touch) | the same: `Tilt` on InnerGrid, LayoutRoot untilted | **match** the template; the device run checks it by eye |
-| A press on a selected item | not read | the pale brush over the accent, the text white | **decided** (PLAN.md) |
+| A press on a selected item | not read | the pale brush over the accent, the press's black text | **decided** (PLAN.md) |
 | Focus, the pointer over | nothing | nothing | **match** (tested) |
 | `IsSelected` on an item outside a list | drawn unselected | drawn selected | **gap** (README) |
