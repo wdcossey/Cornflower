@@ -88,7 +88,7 @@ None public. `cf:ControlHeader.Header` and `HeaderTemplate` are the existing ext
 ## Dependencies
 
 `ListPickerFlyout` (#153, done), `ControlHeader`, `Tilt`, `PhonePopupHost.TakeBackFirst`, `TemplateParts`,
-`PhoneHeaderLine`. Owed: the device run on the Pixel 8, and the real-window run. No capture of the open full-screen
+`PhoneHeaderLine`. The device run and the real-window run passed on 2026-11-17 (the README's status line). No capture of the open full-screen
 ComboBox as a picture exists (the open-6 dump has its tree); its look is the ListPickerFlyout's.
 
 ## The checklists

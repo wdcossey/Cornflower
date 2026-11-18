@@ -19,7 +19,7 @@ More in [PREVIEW.md](PREVIEW.md).
 > TimePicker and their flyouts, ContentDialog, AutoSuggestBox, and the page moving up for the keyboard (Tier 3, each
 > run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows). Tier 2's follow-ups
 > from the emulator's last reads (#162 to #169) are done and run. Motion is configurable (`CornflowerConfig`: off, or
-> faster or slower, overall or by area), and faithful by default. Next is a choice: Back taking the focus as it hides
+> faster or slower, overall or by area), and faithful by default. Owed: the sample at speed 2 on a phone. Next is a choice: Back taking the focus as it hides
 > the keyboard (#197), or Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here

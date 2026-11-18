@@ -118,8 +118,9 @@ theme: 472 ms, 91 elements, 1 rules (1), layout 186.5, render 23.8
 
 That's a Debug build, JIT-compiled on first use, so it measures first-run cost more than the
 theme. A Release build has the time to open, the `open=` of each page's ready line, but not the
-rest of the line. Neither has been read on the phone since the shell began timing pages. In a real
-desktop window, `drive.ps1` reads both (below).
+rest of the line. On the phone, `run.ps1` reads the Release time (each control's status line has its
+page's); the Debug line hasn't been read there since the shell began timing pages. In a real desktop
+window, `drive.ps1` reads both (below).
 
 That's the time to open the page, the shell's, from navigation, before the page is made, to its
 first drawn frame, mid-turn, read once the next frame's layout is done (the same time as the `open=` of the page's ready line, which a Release build

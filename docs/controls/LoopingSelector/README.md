@@ -103,4 +103,4 @@ out of a ScrollViewer.
 - **The end of a wheel that doesn't loop**: it stops there. The phone's isn't read (an overpan, a squash): owed.
 - **No still of a wheel expanded or moving** to compare by pixel: owed (COMPARISON.md).
 - **The text** is Selawik's, 1.25 px higher than Segoe WP's at 45 (by design, ADR 0001).
-- Owed: the device run on the Pixel 8, and the real-window run.
+- The device run passed on 2026-11-17, and the real-window run (the status line).
