@@ -203,8 +203,8 @@ namespace RefApp
 
         /// <summary>
         /// The keyboard's pan, timed (#179): a white 40 px square 100 down, a button 200 down and a TextBox 560 down (under the
-        /// keyboard, as Popups.cs's TextBox/low). From the tap, five times: the TextBox focused from code, 2.5 s, the button
-        /// focused (the keyboard goes), 2.5 s. The recording shows the square move with the page; the log has each focus,
+        /// keyboard; full width, where Popups.cs's TextBox/low is 19 in from each side and 572.08 down). From the tap, five
+        /// times: the TextBox focused from code, 2.5 s, the button focused (the keyboard goes), 2.5 s. The recording shows the square move with the page; the log has each focus,
         /// the InputPane's Showing and Hiding with their OccludedRect, and the square's bounds in the window 2 s after each.
         /// </summary>
         private async Task KeyboardPan(Grid host)
@@ -214,19 +214,19 @@ namespace RefApp
             var box = new TextBox { Header = "text box", Text = "Agjy", Margin = new Thickness(0, 560, 0, 0), VerticalAlignment = VerticalAlignment.Top };
             var page = await Page(host, marker, away, box);
             var pane = Windows.UI.ViewManagement.InputPane.GetForCurrentView();
-            pane.Showing += (s, e) => Log("showing", RectText(e.OccludedRect));
-            pane.Hiding += (s, e) => Log("hiding", RectText(e.OccludedRect));
+            pane.Showing += (s, e) => Log("showing", Describe(e.OccludedRect));
+            pane.Hiding += (s, e) => Log("hiding", Describe(e.OccludedRect));
             Func<Task> sequence = async () =>
             {
                 for (var i = 0; i < 5; i++)
                 {
                     Log("focus", "box " + box.Focus(FocusState.Programmatic));
                     await Task.Delay(2000);
-                    Log("held", "marker " + RectText(Bounds(marker)) + "; occluded " + RectText(pane.OccludedRect));
+                    Log("held", "marker " + Describe(Bounds(marker)) + "; occluded " + Describe(pane.OccludedRect));
                     await Task.Delay(500);
                     Log("blur", "away " + away.Focus(FocusState.Programmatic));
                     await Task.Delay(2000);
-                    Log("held", "marker " + RectText(Bounds(marker)) + "; occluded " + RectText(pane.OccludedRect));
+                    Log("held", "marker " + Describe(Bounds(marker)) + "; occluded " + Describe(pane.OccludedRect));
                     await Task.Delay(500);
                 }
             };
@@ -280,7 +280,7 @@ namespace RefApp
                     {
                         Log("focus", b.Key + " " + (target != null && target.Focus(FocusState.Programmatic)));
                         await Task.Delay(2000);
-                        Log("held", b.Key + ": marker " + RectText(Bounds(marker)) + "; box " + RectText(Bounds(b.Value)) + "; occluded " + RectText(pane.OccludedRect));
+                        Log("held", b.Key + ": marker " + Describe(Bounds(marker)) + "; box " + Describe(Bounds(b.Value)) + "; occluded " + Describe(pane.OccludedRect));
                         away.Focus(FocusState.Programmatic);
                         await Task.Delay(1500);
                     }
@@ -290,8 +290,6 @@ namespace RefApp
             };
             await RunAfterTap(page, sequence);
         }
-
-        private static string RectText(Windows.Foundation.Rect r) => Num(r.X) + " " + Num(r.Y) + " " + Num(r.Width) + " " + Num(r.Height);
 
         /// <summary>
         /// The ProgressRing's Active animation (owed before #28: the suite's forced Active state captures no dots, as the

@@ -1807,7 +1807,7 @@ are in [`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).
 '^(TextBox/(low-focused|scroll-low)|AutoSuggestBox/low-nomax|PasswordBox/low-reveal)'`, the first without
 `TextBox/low-focused`), dark and light, which measure the same; `20261118-1443-dev11` (`-Probe keyboardpan -Record`);
 `20261118-1447-dev11` and `20261118-1450-dev11` (`-Probe keyboardpanboxes`). The view is 450 × 800. Each `Panned` box
-now writes a collapsed `readout` TextBlock 300 ms before its stage is dumped: the ScrollViewer's `VerticalOffset`, the
+now writes a collapsed `readout` TextBlock at least 550 ms before its stage is dumped: the ScrollViewer's `VerticalOffset`, the
 box's bounds in the window and `InputPane.OccludedRect`. **The pan shows in `TransformToVisual(null)`**: the box's
 bounds in the window are where the grab shows it, so the app can read the move without a grab. The PNGs are in
 [`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).

@@ -581,7 +581,7 @@ namespace RefApp
         /// <paramref name="scroll"/> the box sits in a ScrollViewer with 800 px of content below it, the line outside it.
         /// The page's move is read from the screen grab: the line's and the box's places at rest against focused.
         /// <paramref name="then"/>, if given, runs on the box 1.2 s after the focus (an AutoSuggestBox's typing). Before the
-        /// stage is dumped, a collapsed TextBlock named "readout" is given what the app can read: the ScrollViewer's
+        /// stage is dumped (from 550 ms before), a collapsed TextBlock named "readout" is given what the app can read: the ScrollViewer's
         /// VerticalOffset, the box's top and bottom in the window, and the InputPane's OccludedRect.
         /// </summary>
         private static PopupSpecimen Panned(string name, string variant, double top, bool focus, bool scroll, Func<Control> make, Action<Control> then = null)
@@ -634,7 +634,18 @@ namespace RefApp
                     }
 
                     Later(host, settle - 300, () => Readout(host));
-                    return null;
+                    return host;
+                },
+                // A fault in the delayed steps, kept in the readout, goes into the run's errors; so does a list that didn't open.
+                Fault = h =>
+                {
+                    var readout = FindNamed((FrameworkElement)h, "readout") as TextBlock;
+                    if (readout != null && readout.Text.StartsWith("fault: ", StringComparison.Ordinal))
+                    {
+                        return readout.Text;
+                    }
+
+                    return then != null && VisualTreeHelper.GetOpenPopups(Window.Current).Count == 0 ? "no popup open" : null;
                 },
                 Close = (host, h) =>
                 {
@@ -659,7 +670,7 @@ namespace RefApp
             };
         }
 
-        /// <summary>Runs <paramref name="a"/> on the UI thread after <paramref name="ms"/>; a fault goes into the host's readout.</summary>
+        /// <summary>Runs <paramref name="a"/> on the UI thread after <paramref name="ms"/>; a fault goes into the host's readout, which keeps it.</summary>
         private static async void Later(FrameworkElement host, int ms, Action a)
         {
             await Task.Delay(ms);
@@ -684,7 +695,13 @@ namespace RefApp
             var scroller = FindNamed(host, "scroller") as ScrollViewer;
             var r = box.TransformToVisual(null).TransformBounds(new Rect(0, 0, box.ActualWidth, box.ActualHeight));
             var o = Windows.UI.ViewManagement.InputPane.GetForCurrentView().OccludedRect;
-            ((TextBlock)FindNamed(host, "readout")).Text = string.Format(
+            var readout = (TextBlock)FindNamed(host, "readout");
+            if (readout.Text.StartsWith("fault: ", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            readout.Text = string.Format(
                 System.Globalization.CultureInfo.InvariantCulture,
                 "offset {0}; box {1} to {2}; occluded {3} {4} {5} {6}",
                 scroller != null ? scroller.VerticalOffset : double.NaN,
