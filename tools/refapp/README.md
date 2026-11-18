@@ -29,6 +29,7 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Probe popupcurves -Record         # 
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe dismiss                     # each popup dismissed by Back and by taps; the AutoSuggestBox's events (#150)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpan -Record         # the keyboard's pan, five times up and down (#179)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpanboxes            # the pan for six boxes, read from the app (#179)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe flipview                     # FlipView's release, snap and ends (#211; also flipvertical, gridview, grouped, semanticzoom)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'   # popups by name, or name/variant
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
@@ -439,7 +440,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)), and for #150 `dismiss` ([how each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)), and for #150 `dismiss` ([how each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events)), and for #211 `flipview`, `flipvertical`, `gridview`, `grouped`, `semanticzoom` and `semanticzoomlocked` ([Tier 4's reads](#tier-4s-reads-flipview-gridview-grouped-lists-semanticzoom-listbox-2026-11-18-device-11-211)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -858,6 +859,174 @@ byte, and the same `ItemClick`s and selections. Taps in each mode
 - **The press is the mode's.** In `Multiple` a press on the box tilts the box alone, as in #136, and a press on the text
   tilts the item. In the other modes the item tilts and returns as in #113.
 - Clocks: the stopwatch's, between input events.
+
+## Tier 4's reads: FlipView, GridView, grouped lists, SemanticZoom, ListBox (2026-11-18, device 11, #211)
+
+For #212 to #215 and #131. The default styles came first, from the SDK's `generic.xaml` and `themeresources.xaml`
+(which the Update 1 runtime matches): where a line below says **the file**, the file is the source and the emulator
+wasn't needed. The rest are the emulator's: the suite's captures of the new catalogue specimens
+(`20261118-2210-dev11`, `-Only '^(ListBoxItem|ListBox|GridViewItem|GridView|ListViewHeaderItem|GridViewHeaderItem|FlipView)$'`;
+the PNGs worth comparing are in `ref/wp81/<Control>/`), and the probes in `app\Probe.Tier4.cs`, each run on a schedule
+after a start tap on the header band, as #148's are. `flip.py` prints the FlipView numbers from a run.
+
+### FlipView
+
+`20261118-2213-dev11` (`-Probe flipview`): a FlipView of five grey panels, full width, 400 tall, 80 from the top, item 1
+selected from code before each touch. `20261118-2216-dev11` (`-Probe flipvertical`): the same with a vertical
+`VirtualizingStackPanel`.
+
+- **At rest (the file, and the captures): no buttons and no indicator.** The phone's template is a `Border` with a
+  margin of **2.5** round a `ScrollViewer` (`ScrollingHost`, snap points `MandatorySingle` both ways, scroll bars
+  hidden) round the items. It has no previous and next buttons and no visual states, though `themeresources.xaml`
+  still holds the `FlipViewButton*` brushes. `FlipViewItem` is a `Border` round a `ContentPresenter`: transparent,
+  stretched, no margin, no padding. So an item is the FlipView less 2.5 on each side (445 × 395 here), and the items
+  abut: item 0 at −442.5, item 1 at 2.5, item 2 at 447.5. Dark and light differ only in the page behind
+  (`ref/wp81/FlipView/`).
+- **The ScrollViewer counts items, not pixels.** For five items its extent is 7 and its viewport 1, and the offset is
+  `SelectedIndex` + 2 (3 for item 1). The numbers below are the items' places in the window, P: item k at rest is k
+  pages along, and a page is 445 px.
+- **Where a release goes:**
+
+  | Release | Travel at the release, px | Speed, px a ms (planned / read) | Goes |
+  |---|---|---|---|
+  | Held still | 94.8, 205.5, 214.1, 221.0 | 0 | back |
+  | Held still | 233.8, 246.4, 304.8 | 0 | on |
+  | 60 px, moving | 36.3 to 45.0 | 0.1 to 0.3 / 0.07 to 0.26 | back |
+  | 60 px, moving | 22.1 to 40.6 | 0.4 to 1.0 / 0.39, 0.53, too few events | on |
+  | 120 px, moving | 109.0 | 0.2 / 0.20 | back |
+  | 120 px, moving | 107.2 | 0.3 / 0.33 | on |
+
+  A held release goes on past half a page, between 221.0 and 233.8 px (half is 222.5). Moving, the line falls between
+  about 0.26 and 0.33 px a ms for these distances, as on the Pivot (#148): the same fit holds, the offset at the
+  release plus its speed × about 400 ms, past half.
+- **The snap.** On to the next item: rest 506 to 530 ms after the release by the stopwatch, 516 to 531 ms in
+  `RenderingTime`, 33 to 35 frames. Back: 588 to 666 ms, 40 to 45 frames. It carries the release's speed on and eases
+  out. The first swipe (200 px in 150 ms, 174.7 px along at the release), P less its start, a frame (15.625 ms) apart:
+  174.7, 197.6, 220.2, 243.4, 267.0, 290.7, 311.0, 328.7, 345.4, 359.7, 371.5, 381.5, 390.5, 398.0, 404.6, 410.7,
+  415.2, 419.5, 423.6, 426.9, 429.8, 432.6, 434.6, 436.5, 438.3, 439.7, 440.9, 442.0, 442.9, 443.6, 444.1, 444.5,
+  444.8, 445.0.
+- **`SelectionChanged` comes at the end of the snap**, 506 to 529 ms after the release, with its last frame; not while
+  it still moves, as the Pivot's does.
+- **The first and last items: a drag past the end moves the items with the finger, and doesn't loop.** From item 0, a
+  150 px drag right held, and a swipe right, pulled the items 139.7 px in; from item 4, 150 px left pulled them 98.1
+  and 100.6 px. Let go, they ease back in 533 to 612 ms. The selection doesn't change.
+- **`SelectedIndex` from code:** a change of one animates as the snap does (2 to 1: 34 frames over 516 ms, P 890 to
+  445); a change of two jumps (1 to 3, and 3 to 1: the next frame has the new place).
+- **A press while it snaps catches it.** A press 94 ms after a swipe's release, 288 px along, held 600 ms: P didn't
+  move during it. Let go, it went on to the next item (it was past half), the selection 1,191 ms after the first
+  release. A tap 94 ms after: 0.4 px during it, then on.
+- **Vertical** (a page is 395 px): the same rule and times, down instead of across. Held, 146.6 px goes back and
+  247.3 on; 60 px at 0.18 px a ms back, at 0.87 on; the snap 515 to 531 ms in `RenderingTime`, back 641 to 672 ms. A
+  horizontal drag doesn't move it: with a vertical panel `HorizontalScrollMode` is `Disabled`.
+
+### GridView
+
+The captures (`ref/wp81/GridView/`), and `20261118-2219-dev11` (`-Probe gridview`): a GridView of 20 tiles of
+120 × 120 (`Catalog.Tile`), 19 from the left and 80 from the top.
+
+- **The panel (the file, and the probe):** `ItemsWrapGrid`, `Orientation` `Horizontal`. Items fill a row left to
+  right and wrap, and the list scrolls down (`HorizontalScrollMode` `Disabled`, vertical `Auto`; a drag up of 200 px
+  scrolled it to 120, its end). `MaximumRowsOrColumns` is −1 and `ItemWidth` and `ItemHeight` unset, so every item
+  takes the first item's size: three 120 × 120 tiles a row in the 412-wide list, from its left edge, 52 px over on the
+  right.
+- **The items abut.** `GridViewItemMargin` is 0 (the file) and the item has no padding, so tile 1 is at 120 and tile 3
+  at 0, 120 down. `HorizontalContentAlignment` and `VerticalContentAlignment` are `Center`: the phone's GridViewItem
+  style sets neither, where the ListViewItem's sets `Left` and `Top`.
+- **The template is the ListViewItem's** (the file): the same parts, states and storyboards, on the ListViewItem's
+  resources, so each state draws as the ListView's does ([`ref/wp81/ListView/`](../../ref/wp81/ListView/README.md)).
+- **A press tilts the item as a ListView item's does.** `Pressed` within a few ms of the press. At the centre the
+  first frame is depth alone (`GlobalOffsetZ` −24.95), the next −23.9 with `RotationX` −0.7°; 6 px from the left edge,
+  `RotationY` +8.05° (a ListView item: +8.09° at 5% across). `Pressed` > `Normal` 350 ms after the release.
+- **Selected in `Single`, nothing shows.** The item goes `SelectedUnfocused`; its capture is the rest's, byte for byte.
+- **`Multiple`, the check mode, is the earmark, not the box.** Every item goes `MultiSelectStates` `GridMultiSelect` at
+  once, which shows `SelectedBorder`, a **2.5** accent border, on every item, selected or not. A selected one adds
+  `SelectedCheckMark`: the 34 × 34 accent earmark at its top right, with the 17 × 14.5 tick in
+  `ListViewItemCheckThemeBrush`, 1 in from the corner. A tap toggles. The ListView's `ListMultiSelect`, the box, never
+  comes. Light: the same accent, and the tick white (`probe__gridview-multiple-light.png`).
+- **`ItemClick`: unread.** The GridView shares `ListViewBase` and the item's template with the ListView, so #148's rule
+  (with item click on, a tap clicks and never selects) is assumed, not measured.
+
+### Grouped lists (for #131)
+
+`20261118-2221-dev11` (`-Probe grouped`), and `20261118-2249-dev11` (the same with `-Record`, and the offsets set from code to 131 and 85 for a snapshot): a grouped ListView over a grouped GridView, each 330 tall,
+groups a to h of five items each, b and e empty and hidden (`HidesIfEmpty`), each header a TextBlock in
+`GroupHeaderTextBlockStyle`.
+
+- **The header items (the file, and the probe).** `ListViewHeaderItem` and `GridViewHeaderItem` have one template: a
+  transparent `Border` (`TiltContainer`) round a `ContentPresenter`; no margin, no padding, the content `Left` and
+  `Top`, in `ContentControlThemeFontFamily` at `ControlContentThemeFontSize` (Segoe WP 12 for a plain string). Each is
+  the list's width (412.08) and its content's height (30 here). A group's items start straight under its header, and
+  the next header comes straight after the group's last item, with no gaps: in the list, header a at 70, its first
+  item at 100, header c at 295.8; in the grid, a group's five items in one row, the headers 69.2 apart.
+- **No GroupItem.** `ItemsStackPanel` and `ItemsWrapGrid` make header items and no `GroupItem`s (none in either tree).
+  `GroupItem`'s template (a header `ContentControl` over an `ItemsControl`, the file) is the older panels'.
+- **A press tilts the header.** `Pressed` runs `PointerDownThemeAnimation` on `TiltContainer` (pressed 20 px from its
+  left: `RotationX` −4.8°, `RotationY` +7.6°, `GlobalOffsetZ` −6.8). On release the state goes **`Pressed` >
+  `PointerOver`**, not `Normal`, and the tilt returns (the template's `Pressed` to `PointerOver` transition); then
+  `PointerOver` > `Normal`, 355 ms after the release. The grid's header does the same.
+- **The ListView's header sticks; the GridView's doesn't.** In the recording, with the list panned about 140 px and
+  held, header a stays at the list's top over its group's items, "a item 5" just below it
+  (`ref/wp81/ListView/recording__grouped-list-panned-dark.png`); with the grid panned about 100 px, its top row ("c
+  item 1" and on) shows with no header over it, and header c has gone up with its group
+  (`ref/wp81/GridView/recording__grouped-grid-panned-dark.png`). The app can't see the pinned header: a header's place
+  in the window doesn't follow the pan, and `RenderTargetBitmap` draws each header where it is laid out, not where it
+  shows, and leaves out the pinned one (`grouped-dark.png` has no header a at offset 0; `grouped-scrolled-dark.png`
+  has it cut off at the top at offset 131). So grouped lists' pictures come from the recording.
+- Clocks: the states' times are the stopwatch's, between input events.
+
+### SemanticZoom
+
+`20261118-2231-dev11-partial` (`-Probe semanticzoom -Record`; the app closed at its last tap, below, so its log was
+lost, but the recording is whole) and `20261118-2237-dev11` (the same without that tap, not recorded): a SemanticZoom
+below the header band; zoomed in, a grouped ListView (groups a to h, b and e empty and hidden); zoomed out, a GridView
+of the groups in the jump list's usual tile, a 99 × 99 `Border` with a margin of 6 in `JumpListItemBackgroundConverter`'s
+brush, the letter at 48 px in `JumpListItemForegroundConverter`'s, padded 6, bottom left (the 8.1 docs' sample). The
+motion is the recording's (#66: theme transitions don't show in the app's frames, and nothing changed in them here
+either), at its 36 frames a second, so to about 28 ms.
+
+- **The template (the file):** a `ContentPresenter` for the zoomed-in view, and a `Popup` holding the zoomed-out view
+  in a `Border` (`PopupBorder`), with a `PopupThemeTransition`. No zoom-out button: `IsZoomOutButtonEnabled` is `True`
+  and nothing draws one.
+- **Zoomed out, the popup covers the whole window,** 450 × 800 from its top left, wherever the SemanticZoom is (here
+  60 down). **No dim and no background:** `PopupBorder`'s background is null, and the zoomed-in list stays on screen,
+  as it was, seen between the tiles (`ref/wp81/SemanticZoom/`). The tiles are the app's template, so their size (here
+  111.25 a container: 99 and twice 6), layout (three a row, from the GridView's own margin) and font are the app's. The
+  brushes are the converters': **a group with items in the accent (#FF3E65FF), an empty one #FF1F1F1F, the letter
+  white on both** (the file's `JumpListDefault*` brushes, dark). With the page light and the app dark, the jump list
+  stayed dark: the popup takes the app's theme, not the page's.
+- **It opens at a tap on a group header.** `ViewChangeStarted` (source the list's first item, destination group a)
+  comes 1 to 2 ms after the release, `ViewChangeCompleted` 1 ms later. On screen, the tiles show about 50 ms after the
+  release as a 4 px band across the first row, about 50 view px down, and open to their full height over the next
+  170 ms (6 recorded frames).
+- **A tap on a tile closes it, and the list lands on the group.** `ViewChangeStarted` and `ViewChangeCompleted` (group
+  d to group d) come at the release, and in the same frame the list's offset jumps to 451.67, header d at the
+  SemanticZoom's top (window y 60). On screen the tiles go, the top row first, over about 80 ms (3 frames), from
+  about 100 ms after the release (the tap's tilt first).
+- **Back closes it** the same way, the tiles gone over about 80 ms. `ViewChangeStarted` comes with no source and no
+  destination, the list stays where it was, and the app's `HardwareButtons.BackPressed` handler isn't called.
+- **`CanChangeViews` false: a tap on a header closed the app**, in both runs that did it: the first run's last tap
+  (the recording shows the start screen 1.7 s later), and `20261118-2246-dev11-partial` (`-Probe semanticzoomlocked`,
+  that tap alone). Nothing reached the app's log, which is written at the end. Not looked into further: a control that
+  matches the phone needn't copy a crash, so #215 can take it as "no change of view".
+- **Pinch: unread.** The emulator's mouse is one finger, and `touch.ps1` doesn't drive its multi-touch mode.
+
+### ListBox and ListBoxItem
+
+The captures (`ref/wp81/ListBox/`), dark and light. All of this is in the file too; the captures confirm it.
+
+- **The ListBox is a pale box in the dark theme.** `ListBoxBackgroundThemeBrush` #CCFFFFFF (light: #BF000000, a dark
+  grey over white), the text #FF000000 in both (`ListBoxForegroundThemeBrush`), a transparent 1.5 border
+  (`ListBoxBorderThemeThickness`; laid out at 1.67), `ContentControlThemeFontFamily` at `ControlContentThemeFontSize`,
+  12. The items in a `VirtualizingStackPanel`, in a `ScrollViewer` vertical `Auto` and horizontal `Disabled`.
+  `Disabled`: the background transparent, the border #66FFFFFF.
+- **The item:** padding 6.5, 8; 32.08 tall for one 12 px line; `PointerOver` sets nothing.
+  - Selected (and `SelectedUnfocused`, `SelectedPointerOver`, `SelectedPressed`): `InnerGrid` in the accent, the text
+    #FFFFFFFF, in both themes.
+  - Pressed: `PressedBackground` at 1, #CCFFFFFF (light #BF000000), the text #FF000000, and the tilt:
+    `PointerDownThemeAnimation` on `InnerGrid` and `PointerUpThemeAnimation` on `Pressed` to `Normal`, the Button's
+    (not probed by touch).
+  - Disabled: the text #80FFFFFF; `SelectedDisabled`, #73FFFFFF on #66FFFFFF.
+- An item with `IsSelected` outside a list draws as an unselected one.
 
 ## Motion (2026-11-10, device 11, #24)
 

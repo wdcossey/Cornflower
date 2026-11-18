@@ -54,6 +54,7 @@
     <Compile Include="Probe.Reads.cs" />
     <Compile Include="Probe.Scroll.cs" />
     <Compile Include="Probe.Shell.cs" />
+    <Compile Include="Probe.Tier4.cs" />
     <Compile Include="ProbePage.xaml.cs">
       <DependentUpon>ProbePage.xaml</DependentUpon>
     </Compile>

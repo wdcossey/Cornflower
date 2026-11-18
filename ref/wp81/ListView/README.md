@@ -41,3 +41,16 @@ Not every capture is 1080 × 241: the capture takes the item's whole drawn bound
 (the content, moved 40.5 to the right, runs past the stage), `RightReorderHint` 1112, `Pressed` 267 tall (the forced
 tilt) and `BottomReorderHint` 317. `ListMultiSelect`'s left 1080 columns line up with `base`'s (its box is at
 the same raw pixels in both themes as the tests read it).
+
+## ListViewHeaderItem (#211)
+
+`dark__ListViewHeaderItem__default__base.png` and `light__`: a `ListViewHeaderItem { Content = "list view header" }` on
+its own, at rest, from refapp run `20261118-2210-dev11` (2026-11-18, device 11; the stage 450 × 100, the header 19 from
+the left and 12 from the top). Its `Normal`, `PointerOver` and `Disabled` states are byte for byte `base`, and its
+forced `Pressed` is the forced tilt above, so neither is copied. The header in a grouped list, and its press, are read
+by `-Probe grouped`: `tools/refapp/README.md`, "Grouped lists".
+
+`recording__grouped-rest-dark.png` and `recording__grouped-list-panned-dark.png` are frames of the screen recording of
+`-Probe grouped -Record`, run `20261118-2249-dev11` (540 × 960, the display window at the fitting zoom, 0.83 view px
+a pixel): the grouped ListView (top) over the grouped GridView, at rest and with the list panned about 140 px and held,
+its header a pinned at the top. `RenderTargetBitmap` leaves the pinned header out, so these come from the recording.
