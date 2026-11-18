@@ -140,8 +140,9 @@ runs passed on the evening of 2026-11-17 (Tier 3's paragraphs, below).
 | [#154](https://github.com/wdcossey/Cornflower/issues/154) | LoopingSelector, LoopingSelectorItem (primitives) | `Primitives.DateTimePickerPanel` is the nearest: a panel, not a control with items (checked 2026-11-16) | Part of the pickers. Avalonia's panel, themed by key and driven by `PhoneLoopingSelector` out of a ScrollViewer, with the wheel's own coast (#149's fit of #113's law); not [#129](https://github.com/wdcossey/Cornflower/issues/129); done 2026-11-17 (#178), device run passed 2026-11-17, real-window run passed 2026-11-17 | 5 |
 | [#157](https://github.com/wdcossey/Cornflower/issues/157) | ContentDialog | none | New control, on the Flyout's popup host; done 2026-11-17 (#177), device run passed 2026-11-17, real-window run passed 2026-11-17 | 5 |
 | [#158](https://github.com/wdcossey/Cornflower/issues/158) | AutoSuggestBox | AutoCompleteBox | Theme. A different API (the plan's table); the page moving up for the keyboard is [#179](https://github.com/wdcossey/Cornflower/issues/179); done 2026-11-17 (#174), device run passed 2026-11-17 (Back on the list on the evening's run), real-window run passed 2026-11-17 | 1, 2 |
-| [#179](https://github.com/wdcossey/Cornflower/issues/179) | The shell's pan: the page moves up so the focused text box shows while the keyboard is up: an AutoSuggestBox to the window's top, a TextBox or PasswordBox the least that clears the keyboard | none: `InputPane.OccludedRect` reports the keyboard, and nothing moves a page that doesn't scroll | A shared behaviour for every text box (TextBox, PasswordBox, AutoSuggestBox), decided by the user on 2026-11-16 (#174 left it out); run on the Pixel 8, as only a soft keyboard shows it; done 2026-11-18 (#196), device run passed 2026-11-18, no real-window run (a desktop shows no keyboard pane) | 2 |
-| [#197](https://github.com/wdcossey/Cornflower/issues/197) | Back that hides the keyboard also takes the focus from the text box | none | Seen in #179's device run: the phone's first Back hides the keyboard and takes the focus (#150); a TextBox of ours keeps it. Open | 2 |
+| [#179](https://github.com/wdcossey/Cornflower/issues/179) | The shell's pan: the page moves up so the focused text box shows while the keyboard is up: an AutoSuggestBox to the window's top, a TextBox or PasswordBox the least that shows its caret ([#201](https://github.com/wdcossey/Cornflower/issues/201)) | none: `InputPane.OccludedRect` reports the keyboard, and nothing moves a page that doesn't scroll | A shared behaviour for every text box (TextBox, PasswordBox, AutoSuggestBox), decided by the user on 2026-11-16 (#174 left it out); run on the Pixel 8, as only a soft keyboard shows it; done 2026-11-18 (#196), device run passed 2026-11-18, no real-window run (a desktop shows no keyboard pane) | 2 |
+| [#201](https://github.com/wdcossey/Cornflower/issues/201) | Keyboard pan: the caret rule and `AutoMaximizeSuggestionArea` | none | A follow-up of #179 from #200's read: a covered TextBox or PasswordBox stops with its caret's line at the keyboard's top; an AutoSuggestBox goes to the window's top, or with `cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea` false only until its list has one suggestion's room; done 2026-11-18 (#202), device run passed 2026-11-18, no real-window run (a desktop shows no keyboard pane) | 2 |
+| [#197](https://github.com/wdcossey/Cornflower/issues/197) | Back that hides the keyboard also takes the focus from the text box | none | Seen in #179's device run: the phone's first Back hides the keyboard and takes the focus (#150); a TextBox of ours keeps it. Open, being built | 2 |
 | [#155](https://github.com/wdcossey/Cornflower/issues/155) | ComboBox, ComboBoxItem | ComboBox, ComboBoxItem | Theme for the inline form. The full-screen form a long list gets (6 items or more, #58) opens `ListPickerFlyout`; planned as a subclass, done as an attached behaviour on Avalonia's own ComboBox (`PhoneComboBox`), so every ComboBox has both forms and there is no new type; done 2026-11-17 (#182), device run passed 2026-11-17, real-window run passed 2026-11-17 | 1, 2 |
 | [#156](https://github.com/wdcossey/Cornflower/issues/156) | DatePicker, TimePicker, DatePickerFlyout, TimePickerFlyout, DatePickerFlyoutPresenter, TimePickerFlyoutPresenter | DatePicker, TimePicker, DatePickerPresenter, TimePickerPresenter | Theme. The columns are [#154](https://github.com/wdcossey/Cornflower/issues/154)'s wheel and the bar is [#153](https://github.com/wdcossey/Cornflower/issues/153)'s. Avalonia's presenters placed full screen on the phone's popup host, so no part class; the flyouts as types came after, in [#184](https://github.com/wdcossey/Cornflower/issues/184); done 2026-11-17 (#183), device run passed 2026-11-17, real-window run passed 2026-11-17 | 1, 2 |
 | [#189](https://github.com/wdcossey/Cornflower/issues/189) | Motion settings | none | Cornflower's own: `CornflowerConfig`, process-wide (`Animated`, `MotionSpeed`, a speed per area, `Deviations`), the phone's by default ([ADR 0006](decisions/0006-faithful-defaults-and-cornflowerconfig.md)); every motion on `CornflowerClock` reads it as it starts; done 2026-11-17 (#190), device run passed 2026-11-17 (the theme page, with the motion settings, opened in 435 ms), real-window run passed 2026-11-17; not recorded: the sample at speed 2 on the phone | — |
@@ -161,7 +162,8 @@ full list of what each read covers; they are the record, not this list.
 #148, #149 and #150 on 2026-11-16 (#170, #171, #172); #151 on 2026-11-16 (#161); #152, #153, #154, #157 and #158 on
 2026-11-17 (#175, #176, #178, #177, #174); #155 and #156 on 2026-11-17 (#182, #183); the shared popup host's
 consolidation (#181). The page moving up for the keyboard, [#179](https://github.com/wdcossey/Cornflower/issues/179), was done on 2026-11-18 (#196), and
-the flyouts #156 left out, [#184](https://github.com/wdcossey/Cornflower/issues/184), on 2026-11-18 (#193).
+the flyouts #156 left out, [#184](https://github.com/wdcossey/Cornflower/issues/184), on 2026-11-18 (#193). #179's follow-up, the caret rule and
+`AutoMaximizeSuggestionArea` ([#201](https://github.com/wdcossey/Cornflower/issues/201)), was done on 2026-11-18 (#202).
 The motion settings, [#189](https://github.com/wdcossey/Cornflower/issues/189), were done on 2026-11-17 (#190):
 `CornflowerConfig`, the phone's by default ([ADR 0006](decisions/0006-faithful-defaults-and-cornflowerconfig.md)).
 
@@ -190,9 +192,20 @@ The runs of 2026-11-18:
 - **#179's pan** (#196). The Pixel 8 (Release): at 11:51 on `a0f1a02` it found two faults, fixed in `07a0d02`; again at
   12:02 on `07a0d02`, clean: the `textbox`, `passwordbox` and `autosuggestbox` pages, every step of #196's list passed.
   No real-window run: a desktop shows no keyboard pane.
+- **The phone's pan, read** (#200, 8.1 Update 1 1080p, device 11): how far the phone moves the page for a box halfway
+  down and for one under the keyboard, an AutoSuggestBox with `AutoMaximizeSuggestionArea` true and false, and a TextBox
+  in a ScrollViewer. The numbers are in [`tools/refapp`](../tools/refapp/README.md), "The keyboard's pan"; the grabs in
+  `ref/wp81/KeyboardPan/`. #201 came of it.
+- **#201's caret rule** (#202). The Pixel 8 (Release, over wireless adb, `6bce3d4`, 13:24): every check passed. A
+  covered TextBox (the light section's and the last) and the PasswordBox stop with the caret's bottom on the keyboard's
+  top (the PasswordBox's Show Password row stays under the keyboard; the phone's is unread); the default
+  AutoSuggestBox goes to the window's top; the one with `AutoMaximizeSuggestionArea` false moves only until one
+  suggestion fits, the list ending at the keyboard's top; the status bar stays clean. No real-window run.
 
-Owed: the sample at speed 2 on the phone (#189); [#197](https://github.com/wdcossey/Cornflower/issues/197), Back taking the focus as it hides the keyboard;
-and the reads each control's README lists. Next is the user's choice: #197, or Tier 4.
+Owed: the sample at speed 2 on the phone (#189); [#197](https://github.com/wdcossey/Cornflower/issues/197), Back taking the focus as it hides the keyboard (in
+progress); and the reads each control's README lists. In progress on the VM: a covered AutoSuggestBox with
+`AutoMaximizeSuggestionArea` false, a PasswordBox's reveal row, a box in a ScrollViewer, and the timing of the pan's slide.
+Next, after #197: Tier 4.
 
 ### Tier 4
 
@@ -404,6 +417,7 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#168](https://github.com/wdcossey/Cornflower/issues/168) | CommandBar: light's pressed look | Done 2026-11-17 (#186) |
 | [#169](https://github.com/wdcossey/Cornflower/issues/169) | ItemClick: a tap in the check mode clicks and doesn't check | Done 2026-11-17 (#186) |
 | [#179](https://github.com/wdcossey/Cornflower/issues/179) | The keyboard moves the page up so the focused text box shows | Done 2026-11-18 (#196) |
+| [#201](https://github.com/wdcossey/Cornflower/issues/201) | Keyboard pan: a covered box stops at its caret; `AutoMaximizeSuggestionArea` | Done 2026-11-18 (#202) |
 | [#184](https://github.com/wdcossey/Cornflower/issues/184) | DatePickerFlyout, TimePickerFlyout, and their presenters | Done 2026-11-18 (#193) |
 | [#189](https://github.com/wdcossey/Cornflower/issues/189) | `CornflowerConfig`: motion settings, faithful by default | Done 2026-11-17 (#190) |
 | [#194](https://github.com/wdcossey/Cornflower/issues/194) | `HoleParts`: the first check built every Wp81 template | Done 2026-11-18 (#195) |

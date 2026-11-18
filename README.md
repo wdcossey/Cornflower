@@ -17,10 +17,11 @@ More in [PREVIEW.md](PREVIEW.md).
 > ContentControl, the app bar (CommandBar), ListView, Page with its transitions, Pivot and Hub (Tier 2, each also
 > run on a phone); Flyout, MenuFlyout, ListPickerFlyout and PickerFlyout, LoopingSelector, ComboBox, DatePicker and
 > TimePicker and their flyouts, ContentDialog, AutoSuggestBox, and the page moving up for the keyboard (Tier 3, each
-> run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows). Tier 2's follow-ups
+> run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows; a covered box stops at
+> its caret, #201). Tier 2's follow-ups
 > from the emulator's last reads (#162 to #169) are done and run. Motion is configurable (`CornflowerConfig`: off, or
-> faster or slower, overall or by area), and faithful by default. Owed: the sample at speed 2 on a phone. Next is a choice: Back taking the focus as it hides
-> the keyboard (#197), or Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
+> faster or slower, overall or by area), and faithful by default. Owed: the sample at speed 2 on a phone. In progress: Back taking the focus as it hides
+> the keyboard (#197), and the emulator's last reads of the pan. Next, after #197: Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here
 

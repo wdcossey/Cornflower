@@ -7,8 +7,8 @@
 ("ap"), 3 and 12 ("a") suggestions. Segoe WP.
 **Ours:** headless frames from `tests/Cornflower.Tests/Controls/AutoSuggestBoxFrames.cs`, Avalonia 12.1.4 with Skia,
 450 × 800 at 2.4, an `AutoCompleteBox` with the same values (the header by `cf:ControlHeader.Header`), in
-[`frames/`](frames). Focused, ours is stood where the phone's page moved it (ours doesn't move: a recorded gap), its
-caret transparent; no keyboard is drawn, and twelve suggestions stop at the phone's keyboard's top, as the list does
+[`frames/`](frames). Focused, ours is stood where the phone's page moved it (headless has no keyboard, so `PhoneKeyboardPan`
+doesn't move it), its caret transparent; no keyboard is drawn, and twelve suggestions stop at the phone's keyboard's top, as the list does
 when Avalonia reports that keyboard. Selawik.
 
 Text isn't compared by pixel: the fonts differ by design ([ADR 0001](../../decisions/0001-what-faithful-means.md)).
@@ -57,7 +57,7 @@ Raw pixels, the column at x 540 and the row at y 300 (y 160 at rest), read from 
 
 | Behaviour | Phone (#150) | Ours |
 |---|---|---|
-| Focus | the keyboard comes up; the page moves up 21.67, the control's top to the window's top | the platform's keyboard (Avalonia's, on a phone); the page stays |
+| Focus | the keyboard comes up; the page moves up 21.67, the control's top to the window's top | the platform's keyboard (Avalonia's, on a phone); the page moves up until the control's top is at the window's top (`PhoneKeyboardPan`, #179); with `AutoMaximizeSuggestionArea` false, only until the list has one suggestion's room (#201) |
 | A key | `TextChanged` (`UserInput`) 150 to 177 ms after `KeyDown`; the app sets `ItemsSource`, the list opens | `TextChanged` at once; `Populating` 150 ms after, the app sets `ItemsSource`, the list opens |
 | A tap on a suggestion | `SuggestionChosen` (`Text` still typed), the focus lost and regained in one frame, `TextChanged` (`SuggestionChosen`) 162 ms later, the list closed, the keyboard stays | the text set and `TextChanged`, `SelectionChanged`, the list closed, the focus kept |
 | Enter | `KeyDown` only | with the list open, Avalonia's commit closes it |
@@ -68,8 +68,8 @@ Raw pixels, the column at x 540 and the row at y 300 (y 160 at rest), read from 
 
 ## Known gaps
 
-- **The page doesn't move up** under the keyboard (Avalonia has no such pan); the list still takes the room down to
-  the keyboard from wherever the box is.
+- **The pan is at once**: the page moves up under the keyboard as the phone's (#179, #201), but without the phone's
+  slide, which is unmeasured. A covered box with `AutoMaximizeSuggestionArea` false is unread on the phone.
 - **The right edge is one raw pixel short** (ADR 0003's rounding, as the TextBox's).
 - **At rest in light the box is 203 grey, the phone's 204**: Skia's blend, as the TextBox's.
 - **The events**: no reason on `TextChanged`, `SelectionChanged` after the text is set, Enter closes the list (the
