@@ -1,6 +1,6 @@
 # PasswordBox
 
-Status: done · [#37](https://github.com/wdcossey/Cornflower/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
+Status: done · [#37](https://github.com/wdcossey/Cornflower/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the lowest box the keyboard covers moves up to just above it, under Gboard's taller password keyboard too)
 
 The Windows Phone 8.1 PasswordBox: Avalonia's `TextBox` with the `ControlTheme` keyed `PasswordBox`, WinRT's name, the
 phone's default style and template, in `src/Cornflower.Themes.Wp81/Controls/PasswordBox.axaml`. Avalonia has no
@@ -46,7 +46,7 @@ line, the reveal button and the phone's pointer-over look.
   the keyboard's top, never its top above the window's; one it leaves clear stays; it goes back as the keyboard goes.
   The whole window's content moves, a box in a ScrollViewer with it; a box in a popup moves nothing
   (`PhoneKeyboardPan`, internal, the theme's setter, as the TextBox's; [its plan](../KeyboardPan/PLAN.md)). That a TextBox moves the
-  least, at once, is assumed: owed, a read on the phone, and the device run on the Pixel 8.
+  least, at once, is assumed: owed, a read on the phone. The device run passed on 2026-11-18.
 
 ## Resource keys
 

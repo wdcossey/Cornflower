@@ -1,6 +1,6 @@
 # ListPickerFlyout, PickerFlyout and their presenters, and the pickers' bar
 
-Status: done but for the real-window run · [#153](https://github.com/wdcossey/Cornflower/issues/153) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page listpicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 317 ms; the list picker opened by a tap, single and multiple, and the picker flyout, each drawn right) · owed: the real-window run
+Status: done · [#153](https://github.com/wdcossey/Cornflower/issues/153) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page listpicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 317 ms; the list picker opened by a tap, single and multiple, and the picker flyout, each drawn right) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195)
 
 The Windows Phone 8.1 full-screen pickers: Cornflower's `ListPickerFlyout` and `PickerFlyout` (on Avalonia's
 `PopupFlyoutBase`) and their presenters, `ListPickerFlyoutPresenter` and `PickerFlyoutPresenter` (on Avalonia's

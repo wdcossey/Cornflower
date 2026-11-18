@@ -16,11 +16,11 @@ More in [PREVIEW.md](PREVIEW.md).
 > ProgressBar, ProgressRing, TextBox and PasswordBox (Tier 1, each also run on a phone); ScrollViewer,
 > ContentControl, the app bar (CommandBar), ListView, Page with its transitions, Pivot and Hub (Tier 2, each also
 > run on a phone); Flyout, MenuFlyout, ListPickerFlyout and PickerFlyout, LoopingSelector, ComboBox, DatePicker and
-> TimePicker, ContentDialog and AutoSuggestBox (Tier 3, done but for the page moving up for the keyboard, #179; each
-> run on a phone, the desktop window runs of all but the Flyout still owed). Tier 2's follow-ups from the emulator's
-> last reads (#162 to #169) are done. Motion is configurable (`CornflowerConfig`: off, or faster or slower, overall or
-> by area), and faithful by default. Owed: both runs for the follow-ups and the motion settings. Next is a choice:
-> #179, the date and time picker flyouts (#184), or Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
+> TimePicker and their flyouts, ContentDialog, AutoSuggestBox, and the page moving up for the keyboard (Tier 3, each
+> run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows). Tier 2's follow-ups
+> from the emulator's last reads (#162 to #169) are done and run. Motion is configurable (`CornflowerConfig`: off, or
+> faster or slower, overall or by area), and faithful by default. Next is a choice: Back taking the focus as it hides
+> the keyboard (#197), or Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here
 

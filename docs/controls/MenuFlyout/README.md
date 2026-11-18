@@ -1,6 +1,6 @@
 # MenuFlyout, MenuFlyoutPresenter and the menu's items
 
-Status: done but for the real-window run · [#152](https://github.com/wdcossey/Cornflower/issues/152) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page menu` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 318 ms; the menu opened by a tap and drawn right, Back closing it) · owed: the real-window run
+Status: done · [#152](https://github.com/wdcossey/Cornflower/issues/152) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page menu` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 318 ms; the menu opened by a tap and drawn right, Back closing it) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195)
 
 The Windows Phone 8.1 MenuFlyout: Avalonia's `MenuFlyout`, its `MenuFlyoutPresenter` themed by `Wp81Theme` in
 `src/Cornflower.Themes.Wp81/Controls/MenuFlyoutPresenter.axaml`, its `MenuItem`s and `Separator`s drawn as the phone's

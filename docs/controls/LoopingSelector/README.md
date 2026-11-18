@@ -1,6 +1,6 @@
 # LoopingSelector and LoopingSelectorItem
 
-Status: done but for the real-window run · [#154](https://github.com/wdcossey/Cornflower/issues/154) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page loopingselector` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 398 ms; its wheels opened by a tap and drawn right) · owed: the real-window run · owed: a capture of a wheel expanded
+Status: done · [#154](https://github.com/wdcossey/Cornflower/issues/154) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page loopingselector` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 398 ms; its wheels opened by a tap and drawn right) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195) · owed: a capture of a wheel expanded
 
 The Windows Phone 8.1 date and time pickers' wheel: Avalonia's `DateTimePickerPanel` in `Wp81LoopingSelectorTheme`
 (`src/Cornflower.Themes.Wp81/Controls/LoopingSelector.axaml`), its items in `Wp81LoopingSelectorItemTheme`, driven by

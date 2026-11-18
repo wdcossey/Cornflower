@@ -156,9 +156,19 @@ exists, the two images sit next to each other in the comparison.*
 
 ## 4. Review
 
-- `/code-review` at high effort, **twice** for a new control or a behaviour change, the second
-  pass on the fixed diff. Once for docs and samples. Findings are fixed or waived, with reasons,
-  in the PR.
+- `/code-review`, **one** pass per PR, uncapped (`--max-findings all`), at the level that fits
+  what it checks:
+  - `high` for a new control or shared code: the popup host, the clock, the motion, the harness,
+    `HoleParts`;
+  - `medium` for a small bug fix (one area, a few lines), docs, reads, roll-ups and chores.
+
+  Always write the level in the command: left out, it reuses the level typed last. Never `max` or
+  `ultra` unless the maintainer asks. A second pass, at `medium`, only when the first found a
+  structural problem whose fix is large. Findings are fixed or waived, with reasons, in the PR.
+  The PR records the level and the review's tokens, from its usage line ("not measured" if they
+  can't be seen, never a guess). One pass is the user's rule since 2026-11-17 ("Less tokens is
+  better!"); the levels are on trial, tracked in
+  [#198](https://github.com/wdcossey/Cornflower/issues/198).
 - **Prove the tests can fail** by breaking each behaviour in a clean clone and checking a test
   goes red, with `tools/breakage/run.js` ([docs/performance](performance/README.md) has how).
 - **A screenshot** in the PR description of anything visual: the emulator's capture beside ours,

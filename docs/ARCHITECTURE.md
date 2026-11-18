@@ -155,7 +155,8 @@ behaviour, and record the rung in the control's plan.
    line rules; the scroll indicators, `PhoneScrollIndicators` and `PhoneIndicatorFade` (#116); the
    list check mode, `PhoneListMultiSelect` (#119, and its box's own press, #142); the app bar's
    stepped height and motion, `PhoneAppBar` (#141); the ComboBox's two forms, `PhoneComboBox` (#182); the date and
-   time pickers opened full screen on the phone's popup host, `PhoneDateTimePicker` (#183).
+   time pickers opened full screen on the phone's popup host, `PhoneDateTimePicker` (#183); the page moved up for the
+   keyboard, `PhoneKeyboardPan` (#179).
 3. **Part class**: our own control placed inside Avalonia's template, where the behaviour lives in
    a part. A `ScrollContentPresenter` subclass with our gesture recogniser for scroll physics (not
    built: #116 recorded the physics as a deviation, and
@@ -176,9 +177,10 @@ behaviour, and record the rung in the control's plan.
 5. **New control** with the WinRT name, when Avalonia has no type of that shape. Built: ProgressRing
    (#28), Pivot (#121) and Hub (#122), each running its own motion (`PivotMotion`, `HubMotion`), the
    Pivot's swipe and the Hub's pan one recogniser (`SidewaysSwipeGestureRecognizer`); ContentDialog
-   (#157), ListPickerFlyout and PickerFlyout and their presenters (#153). LoopingSelector is Avalonia's
-   panel, themed and driven by a behaviour (#154). Expected: DatePickerFlyout and TimePickerFlyout
-   (#184), SemanticZoom, and later Windows Phone 8.0's Panorama, LongListSelector and HubTile.
+   (#157), ListPickerFlyout and PickerFlyout and their presenters (#153), DatePickerFlyout and
+   TimePickerFlyout (#184, their presenters Avalonia's). LoopingSelector is Avalonia's panel, themed and
+   driven by a behaviour (#154). Expected: SemanticZoom, and later Windows Phone 8.0's Panorama,
+   LongListSelector and HubTile.
 6. **Recorded deviation**, with its measurement and reason.
 
 Behaviour in a subclass or part class is set at style priority, so it survives a replaced theme.
@@ -351,7 +353,7 @@ proposals are unproven.
 | ContentDialog | none | A new control |
 | ProgressRing | none | A new control. ProgressBar's indeterminate dots are a template |
 | App bar | `CommandBar`, `CommandBarButton` (new in 12.0) | Theme Avalonia's, and measure what it lacks: the minimised state, the ellipsis menu. Done ([#118](https://github.com/wdcossey/Cornflower/issues/118)): the shell's drawing, `ClosedDisplayMode` as `CommandBarOptions`, the page keeping the closed bar's height free; the shell's press, stepped open height and motion ([#141](https://github.com/wdcossey/Cornflower/issues/141)) |
-| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Done ([#156](https://github.com/wdcossey/Cornflower/issues/156)) with no part class: the theme's own `PickerPopup` opens full screen on `PhonePopupHost` in place of Avalonia's `PART_Popup` (`PhoneDateTimePicker`, #183). DatePickerFlyout and TimePickerFlyout as types are [#184](https://github.com/wdcossey/Cornflower/issues/184) |
+| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Done ([#156](https://github.com/wdcossey/Cornflower/issues/156)) with no part class: the theme's own `PickerPopup` opens full screen on `PhonePopupHost` in place of Avalonia's `PART_Popup` (`PhoneDateTimePicker`, #183). DatePickerFlyout and TimePickerFlyout as types done in [#184](https://github.com/wdcossey/Cornflower/issues/184) (#193), on `PickerFlyoutBase`, their presenters Avalonia's |
 | ComboBox's full-screen list | `ComboBox` opens its `PART_Popup` from the class | Theme for the inline form; the full form opens `ListPickerFlyout`. Done ([#155](https://github.com/wdcossey/Cornflower/issues/155)) as an attached behaviour on Avalonia's own `ComboBox` (`PhoneComboBox`, rung 2, #182), not the subclass first planned, so every ComboBox has both forms. The flip is class behaviour, read from the emulator: 5 items open inline and 6 full screen, by count, not by screen ([#25](https://github.com/wdcossey/Cornflower/issues/25)) |
 | Hardware back button | `BackRequested` | The app's job, documented in [the Page README](controls/Page/README.md) (#120): a `NavigationPage` in a `PageNavigationHost` pops on the request, or the app handles it, as the sample does |
 | Status bar and safe areas | `InsetsManager`, `SafeAreaPadding`, `DisplayEdgeToEdge` | The app's job, with an example. Avonic reached the same decision. Avalonia 12's `TopLevel.AutoSafeAreaPadding` is on by default, and the Android sample relies on it |

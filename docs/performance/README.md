@@ -118,8 +118,8 @@ theme: 472 ms, 91 elements, 1 rules (1), layout 186.5, render 23.8
 
 That's a Debug build, JIT-compiled on first use, so it measures first-run cost more than the
 theme. A Release build has the time to open, the `open=` of each page's ready line, but not the
-rest of the line. Neither has been read on the phone since the shell began timing pages, nor in a
-real desktop window.
+rest of the line. Neither has been read on the phone since the shell began timing pages. In a real
+desktop window, `drive.ps1` reads both (below).
 
 That's the time to open the page, the shell's, from navigation, before the page is made, to its
 first drawn frame, mid-turn, read once the next frame's layout is done (the same time as the `open=` of the page's ready line, which a Release build
@@ -141,6 +141,26 @@ because Avalonia has this built in, behind a switch that's off by default:
 
 Tracing activities costs far more than the checks being traced, so use its counts and not its
 times. The sample's line doesn't trace.
+
+## In a real window
+
+`tools/real-window/drive.ps1` opens each page in the desktop sample's real window and reads its time
+to open (and, in Debug, its layout). The runs so far, in ms:
+
+- **2026-11-17, Debug, `main` at `03082b3`** (195 of 195): theme 204 (layout 90.1, the motion
+  section), datetimepicker 80 (layout 60.6); the rest 12 to 36.
+- **2026-11-18, Release beside Debug, `main` at `e605659`** (`drive.ps1 -Only 'every*'`: Release 119
+  of 119, Debug 148 of 148), Release / Debug: theme, the run's first page and so a cold start, 156 /
+  179, and 34 to 50 opened again; datetimepicker 30 / 33. The slowest after theme: passwordbox 77 /
+  98 (Debug layout 80.8, the cause [#194](https://github.com/wdcossey/Cornflower/issues/194)),
+  commandbar 60 / 66, listview 54 / 66, textbox 55 / 60; the rest 9 to 48.
+- **2026-11-18, Debug, `main` at `7bb64ce`**, after #194's fix (#195; 195 of 195): theme 188 (cold),
+  commandbar 79, listview 72, textbox 58, the rest 44 or less; passwordbox 35 (layout 18.6, was 98
+  and 80.8), datetimepicker 40 (layout 11.4).
+
+The theme page's ~200 ms is the cold start, not the page. #194 was `HoleParts`' first check building
+every Wp81 template, about 90 ms once per app: the first PasswordBox layout went from 92 to 21 ms
+(Release, headless) with it fixed.
 
 ## Breakage runs
 
