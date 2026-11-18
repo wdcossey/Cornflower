@@ -24,7 +24,8 @@
     <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
     <AutoCompleteBox x:Name="Disabled" cf:ControlHeader.Header="disabled" Text="apple" IsEnabled="False" />
 
-    <!-- AutoMaximizeSuggestionArea false (#201): the keyboard moves the page only as for a TextBox, so this box stays. -->
+    <!-- AutoMaximizeSuggestionArea false (#201): the keyboard moves the page only if it leaves the list no room, and then
+         the least that gives it one suggestion's; not to the window's top. -->
     <TextBlock Text="not maximized" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
     <AutoCompleteBox x:Name="NotMaximized" cf:ControlHeader.Header="fruit" PlaceholderText="type a fruit"
                      cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea="False" Populating="OnPopulating" />

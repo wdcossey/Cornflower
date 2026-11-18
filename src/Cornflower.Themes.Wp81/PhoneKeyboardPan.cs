@@ -22,9 +22,10 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>How far.</b> An AutoSuggestBox goes up until the control's top (its header's) is at the window's top, inside
 /// its safe area, even when the keyboard didn't cover it: #150 read 21.67 up from 48.33, #200 312.08 up from 300 down
 /// (<see cref="AutoCompleteBoxOptions.AutoMaximizeSuggestionAreaProperty"/>, true by default). A TextBox or PasswordBox,
-/// and an AutoSuggestBox with that false, goes up only as far as it must for the caret's line to clear the keyboard's
-/// top, its bottom border left under the keyboard, as #200 read (452.92 against 453.33), and no further than puts the
-/// control's own top at the window's top; one whose caret the keyboard doesn't cover stays.</para>
+/// goes up only as far as it must for the caret's line to clear the keyboard's top, its bottom border left under the
+/// keyboard, as #200 read (452.92 against 453.33); an AutoSuggestBox with that false, as far as leaves its list one
+/// suggestion's room above the keyboard (unread). No further than puts the control's own top at the window's top; one
+/// the keyboard leaves room for stays.</para>
 /// <para><b>What moves.</b> The window's content, all of it, through a <see cref="TranslateTransform"/> at animation
 /// priority on the window's presenter of it, so the content's own transform (an app's, a page's motion) is left alone:
 /// a box in a <see cref="ScrollViewer"/> moves with the page, not by scrolling, as a scroll can't take a box at the end
@@ -49,7 +50,8 @@ internal static class PhoneKeyboardPan
 
     static PhoneKeyboardPan()
     {
-        InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.Update(keyboardChanged: false));
+        // The focus coming: once the press that gave it has put the caret where it was tapped.
+        InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
         // The focus leaving: once it has settled, as it may be on its way to another box.
         InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
     }
@@ -200,10 +202,12 @@ internal static class PhoneKeyboardPan
             if (target is AutoCompleteBox suggestBox && AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(suggestBox))
                 return (Math.Max(0, top - area.Top), box);
             // The least move that shows the caret above the keyboard (#200's read): its line's bottom at the keyboard's
-            // top, the box's own bottom left under it; never so far that the control's top goes past the safe area's.
-            if (CaretBottomOf(box, _top) is not { } caret)
+            // top, the box's own bottom left under it. An AutoSuggestBox not maximized, the least that leaves its list
+            // one suggestion's room above the keyboard, as its caret alone would leave the list under it. Never so far
+            // that the control's top goes past the safe area's.
+            if ((target is AutoCompleteBox ? ListLeastBottomOf(box, _top) : CaretBottomOf(box, _top)) is not { } needed)
                 return (0, null);
-            var bottom = caret + moved;
+            var bottom = needed + moved;
             var shift = keyboardChanged ? 0 : Shift;
             if (bottom - shift > covered.Top)
                 shift = bottom - covered.Top;
@@ -212,6 +216,14 @@ internal static class PhoneKeyboardPan
             return (Math.Max(0, shift), box);
         }
     }
+
+    /// <summary>
+    /// Where an AutoSuggestBox's list would end at its least, one suggestion, in <paramref name="to"/>: hung from the
+    /// TextBox part's bottom border as <see cref="PhoneSuggestionList"/> hangs it, with its gap above the keyboard.
+    /// </summary>
+    internal static double? ListLeastBottomOf(TextBox box, Visual to) =>
+        box.TranslatePoint(new Point(0, box.Bounds.Height - box.BorderThickness.Bottom), to)?.Y
+        + PhoneSuggestionList.OneSuggestion + PhoneSuggestionList.KeyboardGap;
 
     /// <summary>
     /// The bottom of the caret's line in <paramref name="to"/>, as the box is placed now: for a box of many lines, the

@@ -41,10 +41,14 @@ From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan
   text presenter's, 1.33 em), from where the presenter's layout puts it, ends 30.28 inside the border against the
   phone's 30.41. The page stops with that line's bottom at the keyboard's top, no gap: the phone stopped 0.41 and 0.83
   short (one and two raw pixels), so within a view pixel. For a box of many lines, the caret's line.
+- **What a covered PasswordBox's reveal row does** (the `revealPasswordButton` class's row under the text): it stays
+  under the keyboard with the rest of the box below the caret. #200 read a PasswordBox without it; owed.
 - **The box's top stays in the window.** A box taller than the room above the keyboard goes up no further than puts
   its top (its header's) at the safe area's top, as before.
-- **A covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false** moves as a TextBox: its TextBox part's caret,
-  the control's top (its header's) kept in the window. Unread.
+- **A covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false** moves the least that leaves its list one
+  suggestion's room above the keyboard (53.75 and the 2.5 gap under the TextBox part's border), the control's top (its
+  header's) kept in the window. Unread. The TextBox's rule, its caret just clear, would have hung the list under the
+  keyboard, where nothing shows it. A box that leaves that room already stays, as #200 read for one 300 down.
 - **The move is at once.** Whether the phone's slides, and how fast, is unmeasured.
 - **A box in a ScrollViewer moves with the page.** The whole window's content moves, as the shell's pan does; the
   ScrollViewer is not scrolled. A scroll can't take a box at the end of its content up, and the sample's pages all
@@ -119,7 +123,7 @@ numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is
 - A box whose bottom the keyboard covers but not its caret stays.
 - In a box of many lines the caret's line, not the last, ends at the keyboard's top.
 - `AutoMaximizeSuggestionArea` false: an AutoSuggestBox the keyboard doesn't cover stays; one it covers goes up until
-  its caret's line is at the keyboard's top.
+  its list, open, has one suggestion's room above the keyboard.
 
 `tests/Cornflower.Tests/Sample/TextBoxPageTests.cs`: the TextBox page's last box, scrolled to and tapped, moves up over
 the keyboard and back.

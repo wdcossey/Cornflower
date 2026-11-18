@@ -57,9 +57,10 @@ void OnPopulating(object? sender, PopulatingEventArgs e) => ((AutoCompleteBox)se
   [its plan](../KeyboardPan/PLAN.md)). The move is at once (the phone's motion unmeasured). The device run passed on
   2026-11-18.
 - **`AutoMaximizeSuggestionArea`**, WinRT's, as `cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea` (#201), true
-  by default: true, the move above. False, the page moves as for a TextBox: not at all for a box the keyboard doesn't
-  cover (#200 read it), and for one it covers until the caret's line ends at the keyboard's top (unread, owed: the
-  TextBox's rule assumed). The list takes the room down to the keyboard either way.
+  by default: true, the move above. False: the page doesn't move for a box the keyboard doesn't cover (#200 read it), and
+  for one it covers only as far as leaves the list one suggestion's room above the keyboard (unread, owed; the
+  TextBox's rule, the caret just clear, would hang the list under the keyboard). The list takes the room down to the
+  keyboard either way.
 
 ## Resource keys
 

@@ -7,8 +7,9 @@ namespace Cornflower.Controls;
 /// WinRT's <c>AutoSuggestBox.AutoMaximizeSuggestionArea</c>, for Avalonia's <see cref="AutoCompleteBox"/>, which lacks
 /// it. It holds data only; a theme reads it, as the Windows Phone 8.1 theme does: true, the keyboard coming up moves the
 /// page up until the control's top is at the window's top, to give the suggestions the room down to the keyboard, even
-/// for a box the keyboard doesn't cover; false, the page moves as for a TextBox, and only for a box the keyboard covers
-/// (#200's read, #201). A theme that doesn't read it ignores it.
+/// for a box the keyboard doesn't cover; false, the page doesn't move for a box the keyboard doesn't cover (#200's
+/// read), and for one it covers only as far as leaves the list room above the keyboard (#201). A theme that doesn't
+/// read it ignores it.
 /// </summary>
 /// <example>
 /// <code>&lt;AutoCompleteBox cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea="False" /&gt;</code>

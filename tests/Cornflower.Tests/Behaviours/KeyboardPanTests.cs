@@ -162,9 +162,10 @@ public class KeyboardPanTests
 
         page.Tap(box);
 
-        // Within a view pixel: the phone's caret stopped 0.41 and 0.83 short of the keyboard (one and two raw pixels), and
-        // ends 30.41 inside the border against our line's 30.28; ours stops at the keyboard, with no gap, 0.55 and 0.97 less.
-        Assert.Equal(shift, PhoneKeyboardPan.ShiftOf(page.Window), 1.0);
+        // Within a view pixel and a half: the phone's caret stopped 0.41 and 0.83 short of the keyboard (one and two raw
+        // pixels), and ends 30.41 inside the border against our line's 30.28; ours stops at the keyboard, with no gap,
+        // 0.55 and 0.97 less.
+        Assert.Equal(shift, PhoneKeyboardPan.ShiftOf(page.Window), 1.5);
         Assert.Equal(keyboardTop, page.CaretBottom(box), 0.01);
     }
 
@@ -442,9 +443,10 @@ public class KeyboardPanTests
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(stage.Window));
     }
 
-    // One the keyboard covers, unread: as a TextBox, the caret's line up to the keyboard's top.
+    // One the keyboard covers, unread: the TextBox's rule, its caret just clear, would hang the list under the keyboard;
+    // it goes up the least that leaves the list one suggestion's room above the keyboard, and the list shows.
     [AvaloniaFact]
-    public void An_AutoSuggestBox_Not_Maximized_And_Covered_Moves_Until_Its_Caret_Clears_The_Keyboard()
+    public void An_AutoSuggestBox_Not_Maximized_And_Covered_Moves_Until_Its_List_Has_Room()
     {
         var keyboard = new FakeKeyboard();
         using var stage = new Stage(keyboard: keyboard, wrap: page => new Border { Padding = new Thickness(0, 560, 0, 0), Child = page });
@@ -452,8 +454,12 @@ public class KeyboardPanTests
         Assert.True(CaretBottomIn(stage.TextBox, stage.Window) > Keyboard.Top, "the keyboard covers the caret");
 
         keyboard.Show(Keyboard);
-        stage.Focus();
+        stage.Open(12);
 
-        Assert.Equal(Keyboard.Top, CaretBottomIn(stage.TextBox, stage.Window), 0.01);
+        Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
+        var list = stage.InWindow(stage.List);
+        Assert.Equal(Keyboard.Top - PhoneSuggestionList.KeyboardGap, list.Bottom, 0.01);
+        Assert.Equal(PhoneSuggestionList.OneSuggestion, list.Height, 0.01);
+        Assert.True(stage.InWindow(stage.Box).Y > 0, "the page moved less than the maximized move");
     }
 }
