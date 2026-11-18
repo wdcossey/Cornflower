@@ -14,7 +14,7 @@ namespace Cornflower.Tests.Sample;
 
 /// <summary>
 /// The sample's date and time picker page: in the catalogue by #156, the pickers headed in the theme, a pick shown on the
-/// page, and the switch that makes the page light.
+/// page, the flyouts shown from its buttons (#184), and the switch that makes the page light.
 /// </summary>
 public class DateTimePickerPageTests
 {
@@ -53,6 +53,37 @@ public class DateTimePickerPageTests
         accept.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         Assert.StartsWith($"{year + 1}-", page.FindControl<TextBlock>("State")!.Text);
+    }
+
+    [AvaloniaFact]
+    public void The_Buttons_Show_The_Flyouts_And_A_Pick_Shows_On_The_Page()
+    {
+        using var clock = new TestClock();
+        var page = new DateTimePickerPage();
+        using var scene = new Scene(page);
+        var show = page.FindControl<Button>("ShowTime")!;
+        show.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        clock.At(500);
+        var presenter = scene.Window.GetVisualDescendants().OfType<Cornflower.Controls.TimePickerFlyoutPresenter>().Single();
+        presenter.GetVisualDescendants().OfType<DateTimePickerPanel>().First(p => p.Name == "PART_MinuteSelector").SelectedValue = 45;
+        var accept = presenter.GetVisualDescendants().OfType<Button>().First(b => b.Name == "PART_AcceptButton");
+        accept.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.EndsWith(", 07:45", page.FindControl<TextBlock>("State")!.Text);
+        clock.At(1500);
+
+        page.FindControl<Button>("ShowDate")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        clock.At(2000);
+        var dates = scene.Window.GetVisualDescendants().OfType<Cornflower.Controls.DatePickerFlyoutPresenter>().Single();
+        var year = dates.GetVisualDescendants().OfType<DateTimePickerPanel>().First(p => p.Name == "PART_YearSelector");
+        var next = year.SelectedValue + 1;
+        year.SelectedValue = next;
+        dates.GetVisualDescendants().OfType<Button>().First(b => b.Name == "PART_AcceptButton")
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains($"flyouts {next}-", page.FindControl<TextBlock>("State")!.Text);
     }
 
     [AvaloniaFact]

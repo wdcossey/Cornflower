@@ -18,11 +18,16 @@ namespace Cornflower.Themes.Wp81;
 /// buttons close them.</para>
 /// <para>The PickerFlyout's motion is the full Flyout's (<see cref="PhonePopupMotion.FlyoutRows"/>): #149 read it as the
 /// same. The ListPickerFlyout's bands are its rows, 66.7 px, the top five turning more slowly down the list
-/// (<see cref="PhonePopupMotion.ListPickerRows"/>): <c>Closed</c> comes at 30 ticks.</para>
+/// (<see cref="PhonePopupMotion.ListPickerRows"/>): <c>Closed</c> comes at 30 ticks. The DatePickerFlyout's and
+/// TimePickerFlyout's are the date and time pickers' five rows, a fifth of the window each, with their own
+/// <c>Closed</c> at 17 ticks (<see cref="PhonePopupMotion.DateTimeFlyoutRows"/>).</para>
 /// </remarks>
 internal static class PhonePickerFlyout
 {
-    /// <summary>Set by Wp81's ListPickerFlyoutPresenter and PickerFlyoutPresenter themes.</summary>
+    /// <summary>
+    /// Set by Wp81's ListPickerFlyoutPresenter, PickerFlyoutPresenter, DatePickerFlyoutPresenter and
+    /// TimePickerFlyoutPresenter themes.
+    /// </summary>
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<PickerPresenterBase, bool>("IsEnabled", typeof(PhonePickerFlyout));
 
@@ -40,7 +45,18 @@ internal static class PhonePickerFlyout
     /// <summary>The picker opening its popup: its rows, and no light dismiss.</summary>
     private static void Bind(PhoneHeldFlyout<PickerFlyoutBase> binder, PickerFlyoutBase flyout)
     {
-        binder.Host.Rows = flyout is ListPickerFlyout ? PhonePopupMotion.ListPickerRows : PhonePopupMotion.FlyoutRows;
+        binder.Host.Rows = flyout switch
+        {
+            ListPickerFlyout => PhonePopupMotion.ListPickerRows,
+            // Five rows, as the phone's on its 800: a fifth of the window each.
+            DatePickerFlyout or TimePickerFlyout when TopLevel.GetTopLevel(flyout.Target) is { } top =>
+                PhonePopupMotion.DateTimeFlyoutRows with
+                {
+                    Height = PhonePopupHost.AreaOf(top).Height / PhonePopupMotion.DateTimeFlyoutRows.Rates.Length,
+                },
+            DatePickerFlyout or TimePickerFlyout => PhonePopupMotion.DateTimeFlyoutRows,
+            _ => PhonePopupMotion.FlyoutRows,
+        };
         binder.Popup.IsLightDismissEnabled = false;
     }
 }

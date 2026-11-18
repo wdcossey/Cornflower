@@ -365,7 +365,7 @@ internal sealed class PhonePopupHost : IDisposable
         // Bands dropped by a resize mid-close are cut again on this frame, after this: the close waits for them, so it
         // keeps their number (none ever cut, it has none).
         if (_phase == Phase.Closing && (_bands is not null || _uncut >= 4)
-            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0))
+            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0) + Rows.ClosedLater)
         {
             Finish();
             return;

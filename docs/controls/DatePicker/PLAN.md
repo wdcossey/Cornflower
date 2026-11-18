@@ -148,8 +148,8 @@ has neither. **Decided: the controls alone are enough for #156**, which names Da
 would be two rung-5 types with their own members (`Date`, `MinYear`, `MaxYear`, the visibilities, `ClockIdentifier`,
 `MinuteIncrement`, `DatePicked`/`TimePicked`, `ShowAtAsync`), on #153's `PickerFlyoutBase` and these presenters. What
 #150 read of them is for that work: `DatePicked` and `TimePicked` come in the tap's frame even when nothing changed
-(old and new 2014-07-15), with nothing on Back or cancel, and `Closed` 17 ticks after (above). Proposed as a follow-up
-issue.
+(old and new 2014-07-15), with nothing on Back or cancel, and `Closed` 17 ticks after (above). Added by #184:
+docs/controls/DatePickerFlyout/PLAN.md.
 
 ## Dependencies
 
