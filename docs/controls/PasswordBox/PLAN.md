@@ -1,6 +1,6 @@
 # PasswordBox: plan
 
-[#37](https://github.com/wdcossey/CornflowerUI/issues/37). The 8.1 PasswordBox. Avalonia has no PasswordBox: its
+[#37](https://github.com/wdcossey/Cornflower/issues/37). The 8.1 PasswordBox. Avalonia has no PasswordBox: its
 `TextBox` masks its text with `PasswordChar` and shows it with `RevealPassword`. So the phone's PasswordBox is a
 `ControlTheme` for `TextBox`, keyed `PasswordBox`, WinRT's name: the phone's style and template, the TextBox's (#36) but
 for a third row, the "Show Password" CheckBox.

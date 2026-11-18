@@ -1,6 +1,6 @@
 # TextBlock and the text styles
 
-Status: done · [#26](https://github.com/wdcossey/CornflowerUI/issues/26)
+Status: done · [#26](https://github.com/wdcossey/Cornflower/issues/26)
 
 (The device run passed on 2026-11-11 on the Pixel 8, a Release build over wireless adb: a cold start of
 671 ms, and all 16 text styles drawn. `tools/android/run.ps1`; its frames are git-ignored.)

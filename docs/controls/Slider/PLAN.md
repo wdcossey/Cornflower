@@ -1,6 +1,6 @@
 # Slider: plan
 
-[#34](https://github.com/wdcossey/CornflowerUI/issues/34). The 8.1 Slider, Avalonia's `Slider` themed as the
+[#34](https://github.com/wdcossey/Cornflower/issues/34). The 8.1 Slider, Avalonia's `Slider` themed as the
 phone's: its default style and its horizontal and vertical templates as an Avalonia `ControlTheme`, the phone's
 colours at rest and disabled, dark and light, the header by an attached property, and the whole area below the header
 taking the finger, as the phone's does.

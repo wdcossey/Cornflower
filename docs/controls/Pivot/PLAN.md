@@ -1,6 +1,6 @@
 # Pivot: plan
 
-[#121](https://github.com/wdcossey/CornflowerUI/issues/121). The 8.1 Pivot, PivotItem and PivotHeaderItem: controls
+[#121](https://github.com/wdcossey/Cornflower/issues/121). The 8.1 Pivot, PivotItem and PivotHeaderItem: controls
 Avalonia doesn't have, so Cornflower's own (`Cornflower.Controls.Pivot`, `PivotItem`, and in
 `Cornflower.Controls.Primitives` `PivotHeaderItem` and `PivotHeaderPanel`, rung 5), with the phone's default styles and
 templates as the Wp81 theme's `ControlTheme`s, and the phone's motion, read frame by frame from the emulator, run on

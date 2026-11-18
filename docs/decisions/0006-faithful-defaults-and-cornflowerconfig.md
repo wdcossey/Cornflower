@@ -1,6 +1,6 @@
 # ADR 0006 — Faithful by default; departures through `CornflowerConfig`
 
-**Date:** 2026-11-17 · **Status:** Proposed in [#190](https://github.com/wdcossey/CornflowerUI/pull/190), for [#189](https://github.com/wdcossey/CornflowerUI/issues/189). The
+**Date:** 2026-11-17 · **Status:** Proposed in [#190](https://github.com/wdcossey/Cornflower/pull/190), for [#189](https://github.com/wdcossey/Cornflower/issues/189). The
 maintainer chose the shape on 2026-11-17 (the issue); the details below were decided on the maintainer's behalf, and
 are accepted when the PR is merged.
 

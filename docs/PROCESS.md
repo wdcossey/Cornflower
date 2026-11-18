@@ -34,7 +34,7 @@ only when its blockers are closed.
 
 A control's PR adds its own files and touches no shared file, except the holes list: it deletes
 its own lines from `tests/Cornflower.Tests/Completeness/Holes.txt`, which `HolesTests` requires
-([#13](https://github.com/wdcossey/CornflowerUI/issues/13)). If it adds global style rules past
+([#13](https://github.com/wdcossey/Cornflower/issues/13)). If it adds global style rules past
 the budget, it also raises a limit in `StyleBudgetTests`, on purpose and said in its description
 ([docs/performance](performance/README.md)). A theme file is found by
 auto-discovery (`Directory.Build.targets`), so parallel PRs merge in any order; two that delete
@@ -117,7 +117,7 @@ One PR, one control or family:
 | The era's `ControlTheme`, using resource keys | `src/Cornflower.Themes.Wp81/Controls/<Name>.axaml` |
 | Resource keys, named as the era names them; the only place for a literal colour | `src/Cornflower.Themes.Wp81/Tokens/<Name>.axaml` |
 | Tests, one per planned behaviour or measured state; each fails when its behaviour is removed | `tests/Cornflower.Tests/Controls/<Name>Tests.cs` |
-| A sample page | `samples/Cornflower.Sample/Pages/<Name>Page.axaml`. *The sample is a Tier 0 item ([#9](https://github.com/wdcossey/CornflowerUI/issues/9))* |
+| A sample page | `samples/Cornflower.Sample/Pages/<Name>Page.axaml`. *The sample is a Tier 0 item ([#9](https://github.com/wdcossey/Cornflower/issues/9))* |
 
 Not negotiable:
 
@@ -130,7 +130,7 @@ Not negotiable:
 - No Microsoft font, template or SDK file. Every template is written new.
 
 A control's tests build on the harness from
-[#11](https://github.com/wdcossey/CornflowerUI/issues/11): `Scene`, a shown headless window at
+[#11](https://github.com/wdcossey/Cornflower/issues/11): `Scene`, a shown headless window at
 the reference profile, closed when the test ends; `TestClock`, a clock the test advances by hand;
 and `Frames.PixelAt`, pixels from a captured frame. A theme transition is tested at its end
 value; only a motion that must match frame by frame is a timeline on `CornflowerClock`
@@ -156,9 +156,19 @@ exists, the two images sit next to each other in the comparison.*
 
 ## 4. Review
 
-- `/code-review` at high effort, **twice** for a new control or a behaviour change, the second
-  pass on the fixed diff. Once for docs and samples. Findings are fixed or waived, with reasons,
-  in the PR.
+- `/code-review`, **one** pass per PR, uncapped (`--max-findings all`), at the level that fits
+  what it checks:
+  - `high` for a new control or shared code: the popup host, the clock, the motion, the harness,
+    `HoleParts`;
+  - `medium` for a small bug fix (one area, a few lines), docs, reads, roll-ups and chores.
+
+  Always write the level in the command: left out, it reuses the level typed last. Never `max` or
+  `ultra` unless the maintainer asks. A second pass, at `medium`, only when the first found a
+  structural problem whose fix is large. Findings are fixed or waived, with reasons, in the PR.
+  The PR records the level and the review's tokens, from its usage line ("not measured" if they
+  can't be seen, never a guess). One pass is the user's rule since 2026-11-17 ("Less tokens is
+  better!"); the levels are on trial, tracked in
+  [#198](https://github.com/wdcossey/Cornflower/issues/198).
 - **Prove the tests can fail** by breaking each behaviour in a clean clone and checking a test
   goes red, with `tools/breakage/run.js` ([docs/performance](performance/README.md) has how).
 - **A screenshot** in the PR description of anything visual: the emulator's capture beside ours,
@@ -179,7 +189,7 @@ resource keys, the rung of the ladder and any type substitution, and known gaps.
 its heading goes the status line, written only now:
 
 ```markdown
-Status: done · [#N](https://github.com/wdcossey/CornflowerUI/issues/N)
+Status: done · [#N](https://github.com/wdcossey/Cornflower/issues/N)
 ```
 
 **Then** the next control starts. Not before.
@@ -199,11 +209,11 @@ over SSH.
   captures are `ref/wp81/TextBlock/` (#69).
 - **A capture is a forced state on a fresh instance, without the motion into it.** Motion (the
   tilt, page transitions, the ToggleSwitch drag) comes from per-frame probes and screen
-  recordings of the emulator ([#24](https://github.com/wdcossey/CornflowerUI/issues/24)), in
+  recordings of the emulator ([#24](https://github.com/wdcossey/Cornflower/issues/24)), in
   `tools/refapp/README.md` "Motion". Flyouts and dialogs live in popups outside the captured
   stage, and the page's app bar is drawn by the shell, so all three are captured with the
   emulator's Screenshot tool, and for the app bar the screenshots are the only reference
-  ([#23](https://github.com/wdcossey/CornflowerUI/issues/23)).
+  ([#23](https://github.com/wdcossey/Cornflower/issues/23)).
 - **One emulator, one driver.** An agent in a worktree doesn't get the VM: two agents driving one
   emulator would collide. So each control's capture list is written at planning time and captured
   before its batch starts. A plan that needs a state not yet captured says so under "For you to

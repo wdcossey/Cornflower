@@ -1,6 +1,6 @@
 # ContentDialog
 
-Status: done but for the real-window run · [#157](https://github.com/wdcossey/CornflowerUI/issues/157) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page contentdialog` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 368 ms; the dialog opened by a tap, normal and full size, each drawn right) · owed: the real-window run
+Status: done · [#157](https://github.com/wdcossey/Cornflower/issues/157) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page contentdialog` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 368 ms; the dialog opened by a tap, normal and full size, each drawn right) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195)
 
 The Windows Phone 8.1 ContentDialog: Cornflower's own `ContentDialog`, in `Cornflower.Controls`, with WinRT's API, themed
 by `Wp81Theme` in `src/Cornflower.Themes.Wp81/Controls/ContentDialog.axaml`: drawn from the top of the window over a dim

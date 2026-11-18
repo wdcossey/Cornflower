@@ -1,6 +1,6 @@
 # ToggleSwitch: plan
 
-[#33](https://github.com/wdcossey/CornflowerUI/issues/33). The 8.1 ToggleSwitch, Avalonia's `ToggleSwitch` themed as
+[#33](https://github.com/wdcossey/Cornflower/issues/33). The 8.1 ToggleSwitch, Avalonia's `ToggleSwitch` themed as
 the phone's: its default style and template as an Avalonia `ControlTheme`, the phone's colours at rest and disabled,
 dark and light, the header by `ControlHeader` (#96), and the phone's tap and drag as the emulator measured them, by an
 attached behaviour internal to the theme (rung 2).

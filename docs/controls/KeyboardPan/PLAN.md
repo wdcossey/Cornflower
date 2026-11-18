@@ -7,7 +7,9 @@ move the page (a known gap). It is the
 phone shell's, not a control's, so it is a shared behaviour (rung 2): `PhoneKeyboardPan`, internal to the theme,
 turned on by the TextBox and PasswordBox themes' own setter (the AutoSuggestBox's TextBox part has the TextBox theme).
 
-Status: built · tests and breakage pass · owed: the device run on the Pixel 8 · owed: a read of the phone's pan for
+Status: done · tests and breakage pass · device run passed 2026-11-18 (Pixel 8, Release: at 11:51 on `a0f1a02` it
+found two faults, fixed in `07a0d02`; again at 12:02 on `07a0d02`, every step of #196's list passed on the textbox,
+passwordbox and autosuggestbox pages) · no real-window run (a desktop shows no keyboard pane) · owed: a read of the phone's pan for
 a TextBox, its motion and a box in a ScrollViewer.
 
 ## What the phone does (read)

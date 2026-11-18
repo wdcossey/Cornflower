@@ -1,6 +1,6 @@
 # ProgressRing: plan
 
-[#28](https://github.com/wdcossey/CornflowerUI/issues/28). The 8.1 ProgressRing: a control Avalonia doesn't have, so
+[#28](https://github.com/wdcossey/Cornflower/issues/28). The 8.1 ProgressRing: a control Avalonia doesn't have, so
 Cornflower's own (`Cornflower.Controls.ProgressRing`, rung 5), with the phone's default style and template as the Wp81
 theme's `ControlTheme`, and its `Active` storyboard run frame by frame. The worked example for the controls we own.
 

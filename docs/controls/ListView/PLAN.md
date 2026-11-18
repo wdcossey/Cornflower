@@ -1,11 +1,11 @@
 # ListView, ListViewItem, ListViewHeaderItem and GroupItem: plan
 
-[#119](https://github.com/wdcossey/CornflowerUI/issues/119). The 8.1 ListView and its items: Avalonia's `ListBox` and
+[#119](https://github.com/wdcossey/Cornflower/issues/119). The 8.1 ListView and its items: Avalonia's `ListBox` and
 `ListBoxItem` themed as the phone's ListView and ListViewItem, their default styles and the item's template as
 Avalonia `ControlTheme`s; the phone's check mode (WinRT's `SelectionMode="Multiple"`) by a behaviour; the item's press
-the Button's tilt, as [#113](https://github.com/wdcossey/CornflowerUI/issues/113) measured it. ListViewHeaderItem and
+the Button's tilt, as [#113](https://github.com/wdcossey/Cornflower/issues/113) measured it. ListViewHeaderItem and
 GroupItem, a grouped list's parts, are deferred: Avalonia 12.1.4 has no grouping (below). Reorder is deferred.
-[#142](https://github.com/wdcossey/CornflowerUI/issues/142) brought the check mode to #136's probe (runs
+[#142](https://github.com/wdcossey/Cornflower/issues/142) brought the check mode to #136's probe (runs
 `20261115-2352-dev11` and `20261116-0040-dev11`, `tools/refapp/README.md`, "ListView: the check mode"): the press
 on the box and off it, Extended, and a `SelectedIndex` set from code.
 

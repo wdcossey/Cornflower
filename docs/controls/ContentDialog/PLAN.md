@@ -1,12 +1,12 @@
 # ContentDialog: plan
 
-[#157](https://github.com/wdcossey/CornflowerUI/issues/157). The 8.1 ContentDialog: a dialog drawn from the top of the
+[#157](https://github.com/wdcossey/Cornflower/issues/157). The 8.1 ContentDialog: a dialog drawn from the top of the
 window over a dim layer, with a title, content and up to two buttons, shown with `ShowAsync`. Avalonia has none, so it
 is a new control (rung 5), `ContentDialog` in `Cornflower.Controls`, with WinRT's API; Wp81 themes it and hosts its
 popup through Flyout's popup host (#151, PR #161), with its own motion and Back.
 
-The layout and dismissal are [#150](https://github.com/wdcossey/CornflowerUI/issues/150)'s reading (PR #172), the
-motion [#149](https://github.com/wdcossey/CornflowerUI/issues/149)'s (PR #171).
+The layout and dismissal are [#150](https://github.com/wdcossey/Cornflower/issues/150)'s reading (PR #172), the
+motion [#149](https://github.com/wdcossey/Cornflower/issues/149)'s (PR #171).
 
 ## Where the values come from
 

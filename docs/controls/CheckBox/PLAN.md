@@ -1,6 +1,6 @@
 # CheckBox: plan
 
-[#31](https://github.com/wdcossey/CornflowerUI/issues/31). The 8.1 CheckBox, Avalonia's `CheckBox` themed as the
+[#31](https://github.com/wdcossey/Cornflower/issues/31). The 8.1 CheckBox, Avalonia's `CheckBox` themed as the
 phone's: its default style and template as an Avalonia `ControlTheme`, the tick as Cornflower's own glyph, the tilt
 on the part the phone tilts, and the phone's colours in each state, dark and light.
 

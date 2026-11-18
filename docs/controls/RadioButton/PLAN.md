@@ -1,6 +1,6 @@
 # RadioButton: plan
 
-[#32](https://github.com/wdcossey/CornflowerUI/issues/32). The 8.1 RadioButton, Avalonia's `RadioButton` themed as
+[#32](https://github.com/wdcossey/Cornflower/issues/32). The 8.1 RadioButton, Avalonia's `RadioButton` themed as
 the phone's: its default style and template as an Avalonia `ControlTheme`, the circle and the dot as the template's
 own ellipses, the tilt on the part the phone tilts, and the phone's colours in each state, dark and light.
 
