@@ -1,6 +1,6 @@
 # AutoSuggestBox
 
-Status: done · [#158](https://github.com/wdcossey/Cornflower/issues/158) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 385 ms; the suggestion list shown with 'a' typed, above the keyboard; the page stays where it is, which is [#179](https://github.com/wdcossey/Cornflower/issues/179)) · Back on the list passed 2026-11-17 (Pixel 8, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `03082b3`, 20:42 to 20:45, cold starts 757 to 879 ms over the run's pages: the page opened in 396 ms; the first Back closes the list and the keyboard and drops the focus, the second goes back to the catalogue) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195) · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the page moves up until the header's top is at the window's top, the list hangs from the box and stops 2.5 above the keyboard, and Back takes the keyboard, the list and the move) · owed: captures of the list's motion and of landscape
+Status: done · [#158](https://github.com/wdcossey/Cornflower/issues/158) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 385 ms; the suggestion list shown with 'a' typed, above the keyboard; the page stays where it is, which is [#179](https://github.com/wdcossey/Cornflower/issues/179)) · Back on the list passed 2026-11-17 (Pixel 8, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `03082b3`, 20:42 to 20:45, cold starts 757 to 879 ms over the run's pages: the page opened in 396 ms; the first Back closes the list and the keyboard and drops the focus, the second goes back to the catalogue) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195) · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the page moves up until the header's top is at the window's top, the list hangs from the box and stops 2.5 above the keyboard, and Back takes the keyboard, the list and the move) · `AutoMaximizeSuggestionArea`, [#201](https://github.com/wdcossey/Cornflower/issues/201): tests and breakage pass, owed: the device run on the Pixel 8 · owed: captures of the list's motion and of landscape, a read of a covered box with `AutoMaximizeSuggestionArea` false
 
 The Windows Phone 8.1 AutoSuggestBox: Avalonia's `AutoCompleteBox`, themed by `Wp81Theme` with the phone's default
 style and template, in `src/Cornflower.Themes.Wp81/Controls/AutoCompleteBox.axaml`. WinRT's `Header` is
@@ -51,10 +51,16 @@ void OnPopulating(object? sender, PopulatingEventArgs e) => ((AutoCompleteBox)se
 - **Back** closes the list and takes the focus from the box, before the page's `NavigationPage` sees it; the next Back
   is the page's. The keyboard going down (Android's keyboard takes the first Back itself) does the same.
 - **The list is drawn in the window**, in its overlay layer, never as a window of its own.
-- **The keyboard moves the page up** until the control's top (its header's) is at the window's top, as #150 read
-  (21.67 up at the reference app's place), and back down as it goes; the list is hung and sized again as the page
-  moves (#179: `PhoneKeyboardPan`, the TextBox part's, [its plan](../KeyboardPan/PLAN.md)). The move is at once
-  (the phone's motion unmeasured). The device run passed on 2026-11-18.
+- **The keyboard moves the page up** until the control's top (its header's) is at the window's top, as #150 and #200
+  read (21.67 up at the reference app's place, 312.08 up from 300 down, the keyboard covering none of it), and back
+  down as it goes; the list is hung and sized again as the page moves (#179: `PhoneKeyboardPan`, the TextBox part's,
+  [its plan](../KeyboardPan/PLAN.md)). The move is at once (the phone's motion unmeasured). The device run passed on
+  2026-11-18.
+- **`AutoMaximizeSuggestionArea`**, WinRT's, as `cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea` (#201), true
+  by default: true, the move above. False: the page doesn't move for a box the keyboard doesn't cover (#200 read it), and
+  for one it covers only as far as leaves the list one suggestion's room above the keyboard (unread, owed; the
+  TextBox's rule, the caret just clear, would hang the list under the keyboard). The list takes the room down to the
+  keyboard either way.
 
 ## Resource keys
 

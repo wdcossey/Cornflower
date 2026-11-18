@@ -31,7 +31,8 @@ namespace Cornflower.Themes.Wp81;
 /// itself and Avalonia never sees it; so the keyboard going down while the box has the focus does the same.</para>
 /// <para><b>A tap on a suggestion</b> closes the list and leaves the focus in the box, so the keyboard stays, as on the
 /// phone: the template's list and its items take no focus, and the list is closed here as the release selects.</para>
-/// <para>The page moves up to put the box at the window's top while the keyboard is up, as the phone's does
+/// <para>The page moves up to put the box at the window's top while the keyboard is up, as the phone's does, or with
+/// <c>AutoMaximizeSuggestionArea</c> false only as far as leaves the list one suggestion's room above the keyboard
 /// (<see cref="PhoneKeyboardPan"/>, the TextBox part's); the list is hung and sized again as it moves.</para>
 /// </remarks>
 internal static class PhoneSuggestionList
@@ -48,6 +49,9 @@ internal static class PhoneSuggestionList
     /// room than this at all, the list closes rather than stay open as a sliver.
     /// </summary>
     internal const double OneSuggestion = 53.75;
+
+    /// <summary>Arithmetic's error: the pan leaves a list not maximized exactly one suggestion's room (#201).</summary>
+    private const double Rounding = 1e-6;
 
     /// <summary>
     /// The platform's keyboard of a top level: Avalonia's <see cref="TopLevel.InputPane"/>, or none. A test replaces it,
@@ -277,10 +281,10 @@ internal static class PhoneSuggestionList
             var top = below.Y + offset;
             var bottom = PhonePopupHost.AreaOf(_top).Bottom;
             if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0
-                && keyboard.Occluded.Top - KeyboardGap - top >= OneSuggestion)
+                && keyboard.Occluded.Top - KeyboardGap - top >= OneSuggestion - Rounding)
                 bottom = Math.Min(bottom, keyboard.Occluded.Top);
             var room = bottom - KeyboardGap - top;
-            if (room < OneSuggestion)
+            if (room < OneSuggestion - Rounding)
             {
                 _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
                 return;

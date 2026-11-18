@@ -75,7 +75,7 @@ is built: no app has asked, and each has an Avalonia way already (decided on the
 | `TextMemberPath` | `ValueMemberBinding` | a binding (`{Binding Name}`), not a path | could take a path and make the binding |
 | `UpdateTextOnSelect` (true) | none: a chosen item always sets the text | `TextSelector = (typed, _) => typed` keeps the typed text | could: an attached bool that sets `TextSelector` |
 | `TextBoxStyle` | none | an app's style for `AutoCompleteBox /template/ TextBox#PART_TextBox` | could: an attached `ControlTheme` the template binds to the part's `Theme` |
-| `AutoMaximizeSuggestionArea` (true) | none | the list always takes the room down to the keyboard; the page doesn't move up to put the box at the window's top | **can't be had** from the control: the move is the shell's (below) |
+| `AutoMaximizeSuggestionArea` (true) | none | `cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea` (#201), true by default: true, the page moves up until the control's top is at the window's top; false, the least move (#200: a box the keyboard doesn't cover doesn't move; a covered one, unread, until its list has one suggestion's room above the keyboard) | done, read by the shell's pan (`PhoneKeyboardPan`) |
 | `ItemsSource`, set by the app, not filtered | `ItemsSource`, filtered by `FilterMode` (`StartsWith`) | the theme sets `FilterMode` None. The phone opens the list when `ItemsSource` is set while focused, at any time; Avalonia opens it only after a populate, so the app sets it in `Populating` (or an `AsyncPopulator`, or `Populating`'s `Cancel` then `PopulateComplete()`) | could: open the list when `ItemsSource` changes while focused (`PopulateComplete()`) |
 | `ItemTemplate` | `ItemTemplate` | the same | |
 | `ItemContainerStyle` (the style's: the items' margin, size, colour) | none | the template's list styles its own items | |
@@ -188,7 +188,7 @@ WinRT `Windows.UI.Xaml.Controls.AutoSuggestBox`; Avalonia `Avalonia.Controls.Aut
 | [x] | `MaxSuggestionListHeight` | `Double` | `MaxDropDownHeight` | `PhoneSuggestionList` keeps the list under it |
 | [x] | `IsSuggestionListOpen` | `Boolean` | `IsDropDownOpen` | Avalonia's |
 | [x] | `Header` | `Object` | `cf:ControlHeader.Header` | attached, passed on to the TextBox part's header |
-| [-] | `AutoMaximizeSuggestionArea` | `Boolean` | none | the list takes the room to the keyboard; the page's move up can't be had |
+| [x] | `AutoMaximizeSuggestionArea` | `Boolean` | `cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea` | true by default; false moves the page only to give the list room (#201) |
 
 ### Events (2)
 

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -9,6 +10,7 @@ using Avalonia.Styling;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 using Cornflower.Tests.Controls;
 using Cornflower.Themes.Wp81;
 using static Cornflower.Tests.Controls.AutoSuggestBoxTests;
@@ -68,6 +70,9 @@ public class KeyboardPanTests
 
         public Rect InWindow(Visual part) => new(part.TranslatePoint(default, Window)!.Value, part.Bounds.Size);
 
+        /// <summary>The bottom of the caret's line in the window: the text presenter's lines down to the caret's.</summary>
+        public double CaretBottom(TextBox box) => CaretBottomIn(box, Window);
+
         /// <summary>As on the phone: the box takes the focus, then the keyboard comes up.</summary>
         public void Tap(TextBox box)
         {
@@ -85,22 +90,39 @@ public class KeyboardPanTests
         }
     }
 
-    // A box the keyboard covers goes up until its bottom is at the keyboard's top, a tap on it still reaching it; the
-    // keyboard going down brings the page back.
+    /// <summary>The bottom of the caret's line, from the presenter's lines (the caret on the line its index falls in).</summary>
+    internal static double CaretBottomIn(TextBox box, Visual window)
+    {
+        var presenter = box.GetVisualDescendants().OfType<TextPresenter>().Single(p => p.TemplatedParent == box);
+        var lines = presenter.TextLayout.TextLines;
+        var height = 0d;
+        foreach (var line in lines)
+        {
+            height += line.Height;
+            if (presenter.CaretIndex < line.FirstTextSourceIndex + line.Length || line == lines[^1])
+                break;
+        }
+        return presenter.TranslatePoint(new Point(0, height), window)!.Value.Y;
+    }
+
+    // A box the keyboard covers goes up until its caret's line ends at the keyboard's top, its bottom left under the
+    // keyboard (#200), a tap on it still reaching it; the keyboard going down brings the page back.
     [AvaloniaFact]
-    public void A_TextBox_Under_The_Keyboard_Moves_Up_Until_It_Clears_It_And_Back_When_It_Goes()
+    public void A_TextBox_Under_The_Keyboard_Moves_Up_Until_Its_Caret_Clears_It_And_Back_When_It_Goes()
     {
         using var page = new Page(tops: 600);
         var box = page.Boxes[0];
         var rest = page.InWindow(box);
+        var restCaret = page.CaretBottom(box);
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         Dispatcher.UIThread.RunJobs();
 
         page.Tap(box);
 
         var moved = page.InWindow(box);
-        Assert.Equal(Keyboard.Top, moved.Bottom, 0.01);
-        Assert.Equal(rest.Bottom - Keyboard.Top, PhoneKeyboardPan.ShiftOf(page.Window), 0.01);
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
+        Assert.True(moved.Bottom > Keyboard.Top, "the box's bottom stays under the keyboard");
+        Assert.Equal(restCaret - Keyboard.Top, PhoneKeyboardPan.ShiftOf(page.Window), 0.01);
         // The hit test is the compositor's: two frames for the move to reach it.
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         Dispatcher.UIThread.RunJobs();
@@ -120,7 +142,67 @@ public class KeyboardPanTests
     {
         using var page = new Page(theme: "PasswordBox", tops: 600);
         page.Tap(page.Boxes[0]);
-        Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
+        Assert.Equal(Keyboard.Top, page.CaretBottom(page.Boxes[0]), 0.01);
+    }
+
+    // #200's read: a box 560 down (its border 598.75 to 637.92) moved 176.25 for the TextBox's keyboard (top 453.33)
+    // and 116.25 for the PasswordBox's (513.75), the caret ending within a raw pixel of the keyboard's top and 8.33 and
+    // 7.92 of the box left under it. Clearing the whole box would have taken 184.58 and 124.17.
+    [AvaloniaTheory]
+    [InlineData(null, 453.33, 176.25)]
+    [InlineData("PasswordBox", 513.75, 116.25)]
+    public void A_Covered_Box_Moves_As_The_Phones_Did(string? theme, double keyboardTop, double shift)
+    {
+        using var page = new Page(theme: theme, tops: 0);
+        var box = page.Boxes[0];
+        Canvas.SetTop(box, 598.75 - page.InWindow(box).Y);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(598.75, page.InWindow(box).Y, 0.01);
+        page.KeyboardFake.Show(new Rect(0, keyboardTop, Keyboard.Width, 800 - keyboardTop));
+
+        page.Tap(box);
+
+        // Within a view pixel and a half: the phone's caret stopped 0.41 and 0.83 short of the keyboard (one and two raw
+        // pixels), and ends 30.41 inside the border against our line's 30.28; ours stops at the keyboard, with no gap,
+        // 0.55 and 0.97 less.
+        Assert.Equal(shift, PhoneKeyboardPan.ShiftOf(page.Window), 1.5);
+        Assert.Equal(keyboardTop, page.CaretBottom(box), 0.01);
+    }
+
+    // A box whose bottom the keyboard covers but whose caret it doesn't stays (#200: what moves is the least that shows
+    // the caret).
+    [AvaloniaFact]
+    public void A_Box_Whose_Caret_Is_Above_The_Keyboard_Stays()
+    {
+        using var page = new Page(tops: 0);
+        var box = page.Boxes[0];
+        var below = page.InWindow(box).Bottom - page.CaretBottom(box);
+        Assert.True(below > 2, "the box has room under its caret");
+        Canvas.SetTop(box, Keyboard.Top - page.CaretBottom(box) - below / 2);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(page.InWindow(box).Bottom > Keyboard.Top && page.CaretBottom(box) < Keyboard.Top);
+
+        page.Tap(box);
+
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+    }
+
+    // In a box of many lines, the caret's line is what clears the keyboard, not the box's last.
+    [AvaloniaFact]
+    public void A_Box_Of_Many_Lines_Moves_Until_The_Caret_Line_Clears_The_Keyboard()
+    {
+        using var page = new Page(tops: 600);
+        var box = page.Boxes[0];
+        box.AcceptsReturn = true;
+        box.Text = "one" + Environment.NewLine + "two" + Environment.NewLine + "three" + Environment.NewLine + "four";
+        box.CaretIndex = ("one" + Environment.NewLine + "tw").Length;
+        Dispatcher.UIThread.RunJobs();
+        var lines = page.InWindow(box).Bottom - page.CaretBottom(box);
+        Assert.True(lines > 40, "the caret is on the second line of four");
+
+        page.Tap(box);
+
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
     }
 
     // A keyboard growing or shrinking (a strip of suggestions coming and going) moves the page afresh: the box sits on
@@ -132,11 +214,11 @@ public class KeyboardPanTests
         var box = page.Boxes[0];
         page.KeyboardFake.Show(new Rect(0, Keyboard.Top - 50, Keyboard.Width, Keyboard.Height + 50));
         page.Tap(box);
-        Assert.Equal(Keyboard.Top - 50, page.InWindow(box).Bottom, 0.01);
+        Assert.Equal(Keyboard.Top - 50, page.CaretBottom(box), 0.01);
 
         page.KeyboardFake.Show(Keyboard);
 
-        Assert.Equal(Keyboard.Top, page.InWindow(box).Bottom, 0.01);
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
     }
 
     // The box the page moved for leaving the window, still focused, brings the page back.
@@ -167,7 +249,7 @@ public class KeyboardPanTests
 
         Assert.Same(own, ((Control)page.Window.Content!).RenderTransform);
         Assert.Equal(rest.X, page.InWindow(page.Boxes[0]).X, 0.01);
-        Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
+        Assert.Equal(Keyboard.Top, page.CaretBottom(page.Boxes[0]), 0.01);
     }
 
     // The moved content is cut at the safe area's top (the window's top here: the headless window has no insets), so it
@@ -251,6 +333,31 @@ public class KeyboardPanTests
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
     }
 
+    // A tap on a box with the keyboard already up (from one box to another): the page moves for the line tapped, where
+    // the press puts the caret, not for the line the caret was on before.
+    [AvaloniaFact]
+    public void A_Tap_Moves_The_Page_For_The_Line_It_Puts_The_Caret_On()
+    {
+        using var page = new Page(tops: [100, 600]);
+        var box = page.Boxes[1];
+        box.AcceptsReturn = true;
+        box.Text = string.Join(Environment.NewLine, "one", "two", "three", "four");
+        box.CaretIndex = box.Text.Length;
+        page.Tap(page.Boxes[0]);
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+
+        var rest = page.InWindow(box);
+        page.Window.MouseDown(new Point(rest.X + 30, rest.Y + 12), MouseButton.Left);
+        page.Window.MouseUp(new Point(rest.X + 30, rest.Y + 12), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Same(box, page.Window.FocusManager!.GetFocusedElement());
+        Assert.True(box.CaretIndex <= "one".Length, "the press put the caret on the first line");
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
+    }
+
     // A box at the end of a ScrollViewer, which can scroll no further, moves with the page; the scroll stays.
     [AvaloniaFact]
     public void A_Box_In_A_ScrollViewer_Moves_With_The_Page()
@@ -261,7 +368,7 @@ public class KeyboardPanTests
         Dispatcher.UIThread.RunJobs();
         page.Tap(page.Boxes[0]);
 
-        Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
+        Assert.Equal(Keyboard.Top, page.CaretBottom(page.Boxes[0]), 0.01);
         Assert.Equal(100, scroll.Offset.Y, 0.01);
     }
 
@@ -344,5 +451,59 @@ public class KeyboardPanTests
         keyboard.Show(Keyboard);
         stage.Settle();
         Assert.Equal(AutoSuggestBoxReadings.ListTop, stage.InWindow(stage.List).Y, 0.001);
+    }
+
+    // AutoMaximizeSuggestionArea false (#200): the page doesn't move for an AutoSuggestBox the keyboard doesn't cover, as
+    // for a TextBox.
+    [AvaloniaFact]
+    public void An_AutoSuggestBox_Not_Maximized_And_Not_Covered_Stays()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(keyboard: keyboard);
+        AutoCompleteBoxOptions.SetAutoMaximizeSuggestionArea(stage.Box, false);
+
+        keyboard.Show(Keyboard);
+        stage.Open(12);
+
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(stage.Window));
+    }
+
+    // One the keyboard covers, unread: the TextBox's rule, its caret just clear, would hang the list under the keyboard;
+    // it goes up the least that leaves the list one suggestion's room above the keyboard, and the list shows.
+    [AvaloniaFact]
+    public void An_AutoSuggestBox_Not_Maximized_And_Covered_Moves_Until_Its_List_Has_Room()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(keyboard: keyboard, wrap: page => new Border { Padding = new Thickness(0, 560, 0, 0), Child = page });
+        AutoCompleteBoxOptions.SetAutoMaximizeSuggestionArea(stage.Box, false);
+        Assert.True(CaretBottomIn(stage.TextBox, stage.Window) > Keyboard.Top, "the keyboard covers the caret");
+
+        keyboard.Show(Keyboard);
+        stage.Open(12);
+
+        Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
+        var list = stage.InWindow(stage.List);
+        Assert.Equal(Keyboard.Top - PhoneSuggestionList.KeyboardGap, list.Bottom, 0.01);
+        Assert.Equal(PhoneSuggestionList.OneSuggestion, list.Height, 0.01);
+        Assert.True(stage.InWindow(stage.Box).Y > 0, "the page moved less than the maximized move");
+    }
+
+    // The pan leaves a list not maximized just one suggestion's room: arithmetic's error, a hair short, still counts
+    // the keyboard, rather than pass it over and run the list down under it.
+    [AvaloniaFact]
+    public void A_Keyboard_A_Hair_Short_Of_One_Suggestions_Room_Still_Holds_The_List()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(keyboard: keyboard);
+        keyboard.Show(Keyboard);
+        stage.Open(12);
+        var listTop = stage.InWindow(stage.List).Y;
+
+        var top = listTop + PhoneSuggestionList.KeyboardGap + PhoneSuggestionList.OneSuggestion - 1e-9;
+        keyboard.Show(new Rect(0, top, Keyboard.Width, 800 - top));
+        stage.Settle();
+
+        Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
+        Assert.Equal(top - PhoneSuggestionList.KeyboardGap, stage.InWindow(stage.List).Bottom, 0.01);
     }
 }
