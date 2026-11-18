@@ -41,12 +41,15 @@ namespace Cornflower.Themes.Wp81;
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
 /// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>): every Wp81
 /// Button, CheckBox, TextBox and plain ContentControl, in any template, an app's included. One with no templated parent
-/// returns at once; one in a template of Wp81's, after one walk up its styling parents; one in any other template also
-/// reads the templates under Wp81 (a theme's once, a plain group's each time).</para>
+/// returns at once, and so does one with nothing under Wp81; one in a template of Wp81's, after one walk up its styling
+/// parents, and the first in each template newly built also a read of the themes Wp81 has built; one in any other
+/// template also reads all of Wp81's templates (once) and those under Wp81 (a theme's once, a plain group's each
+/// time).</para>
 /// <para><b>Wp81's own, without building them all</b> (#194). Reading every template Wp81 sets builds all of its
 /// themes, about 90 ms in Release the first time. A template in use came from a theme already built, so the themes
-/// built so far are read first (<see cref="IsWp81s"/>): enough for a part in any template of Wp81's. Only a part in
-/// a template from elsewhere goes on to read them all, once.</para>
+/// built so far are read first (<see cref="IsWp81s"/>), and read again when a template isn't among them, as more may
+/// have been built since: enough for a part in any template of Wp81's. Only a part in a template from elsewhere goes
+/// on to read them all, once, and only when something lies under Wp81 to fall back to.</para>
 /// <para><b>Included files.</b> A <c>StyleInclude</c> is read as what it loaded: Wp81 found inside one, and a file under
 /// Wp81 read as a theme under it.</para>
 /// </remarks>
@@ -96,7 +99,8 @@ internal static class HoleParts
             return;
 
         var (wp81, below) = Under(control);
-        if (wp81 is null || IsWp81s(wp81, template))
+        // With nothing under Wp81 nothing falls back, so whose template it is doesn't matter (#194, the review).
+        if (wp81 is null || below.Count == 0 || IsWp81s(wp81, template))
             return;
 
         var variant = control.ActualThemeVariant;
@@ -127,7 +131,12 @@ internal static class HoleParts
         if (built.Contains(template))
             return true;
         Collect(wp81, built, new HashSet<object>(ReferenceEqualityComparer.Instance), builtOnly: true);
-        return built.Contains(template) || TemplatesOf(wp81).Contains(template);
+        if (built.Contains(template))
+            return true;
+
+        // The full set answers from now on, so the built one goes.
+        Built.Remove(wp81);
+        return TemplatesOf(wp81).Contains(template);
     }
 
     /// <summary>
@@ -232,20 +241,13 @@ internal static class HoleParts
                 CollectTemplates(theme, found);
                 return;
             case IResourceDictionary dictionary:
-                if (builtOnly)
+                // Enumerated, an entry not yet built is still its IDeferredContent: read only the built ones, or build it.
+                foreach (var entry in dictionary)
                 {
-                    // Enumerated, an entry not yet built is still its IDeferredContent, and stays unbuilt.
-                    foreach (var entry in dictionary)
-                    {
-                        if (entry.Value is not IDeferredContent) Collect(entry.Value, found, seen, builtOnly);
-                    }
-                }
-                else
-                {
-                    foreach (var key in dictionary.Keys)
-                    {
-                        if (dictionary.TryGetValue(key, out var value)) Collect(value, found, seen, builtOnly);
-                    }
+                    var value = entry.Value;
+                    if (value is IDeferredContent && (builtOnly || !dictionary.TryGetValue(entry.Key, out value)))
+                        continue;
+                    Collect(value, found, seen, builtOnly);
                 }
 
                 foreach (var variant in dictionary.ThemeDictionaries.Values)
