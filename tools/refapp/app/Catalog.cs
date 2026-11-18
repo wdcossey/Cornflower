@@ -203,6 +203,53 @@ namespace RefApp
                 return l;
             });
 
+            // Tier 4 (#211): the items and headers alone, each state forced on a fresh instance, and the lists with items.
+            // A GridViewItem gets a 120 x 120 grey tile, so its border and earmark have something to sit on.
+            add("ListBoxItem", "default", 100, () => new ListBoxItem { Content = "list box item" });
+            add("ListBoxItem", "selected", 100, () => new ListBoxItem { Content = "list box item", IsSelected = true });
+            add("ListBox", "three-items", 260, () =>
+            {
+                var l = new ListBox();
+                l.Items.Add("one");
+                l.Items.Add("two");
+                l.Items.Add("three");
+                l.SelectedIndex = 1;
+                return l;
+            });
+            add("GridViewItem", "default", 160, () => new GridViewItem { Content = Tile("one") });
+            add("GridViewItem", "selected", 160, () => new GridViewItem { Content = Tile("one"), IsSelected = true });
+            add("GridView", "six-items", 300, () =>
+            {
+                var g = new GridView();
+                foreach (var name in new[] { "one", "two", "three", "four", "five", "six" })
+                {
+                    g.Items.Add(Tile(name));
+                }
+
+                g.SelectedIndex = 1;
+                return g;
+            });
+            add("ListViewHeaderItem", "default", 100, () => new ListViewHeaderItem { Content = "list view header" });
+            add("GridViewHeaderItem", "default", 100, () => new GridViewHeaderItem { Content = "grid view header" });
+            list.Add(new Specimen
+            {
+                Name = "FlipView",
+                Variant = "three-items",
+                Height = 300,
+                FullBleed = true,
+                Make = () =>
+                {
+                    var f = new FlipView();
+                    foreach (var name in new[] { "one", "two", "three" })
+                    {
+                        f.Items.Add(new Grid { Background = new SolidColorBrush(Color.FromArgb(255, 128, 128, 128)), Children = { new TextBlock { Text = name, FontSize = 40 } } });
+                    }
+
+                    f.SelectedIndex = 1;
+                    return f;
+                },
+            });
+
             // The ScrollViewer and ScrollBar (#113, for #116): the indicator shows only while the ScrollBar's IndicatorMode
             // is TouchIndicator, which the ScrollViewer's forced TouchIndicator state sets. A standalone ScrollBar is given
             // round numbers, so its thumb's size can be checked: 200 long, Maximum 100, ViewportSize 50.
@@ -251,6 +298,12 @@ namespace RefApp
             });
 
             return list;
+        }
+
+        /// <summary>A 120 x 120 grey tile with its name, a GridView item's content (#211).</summary>
+        internal static FrameworkElement Tile(string name)
+        {
+            return new Grid { Width = 120, Height = 120, Background = new SolidColorBrush(Color.FromArgb(255, 128, 128, 128)), Children = { new TextBlock { Text = name, FontSize = 20, Margin = new Thickness(6) } } };
         }
 
         /// <summary>Forces a state on a named control inside the specimen's template, and gives it the suite's settle time.</summary>

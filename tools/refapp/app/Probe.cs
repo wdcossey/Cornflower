@@ -152,6 +152,24 @@ namespace RefApp
                 case "keyboardpanboxes":
                     await probe.KeyboardPanBoxes(host);
                     break;
+                case "flipview":
+                    await probe.FlipViewProbe(host);
+                    break;
+                case "flipvertical":
+                    await probe.FlipVerticalProbe(host);
+                    break;
+                case "gridview":
+                    await probe.GridViewProbe(host);
+                    break;
+                case "grouped":
+                    await probe.GroupedProbe(host);
+                    break;
+                case "semanticzoom":
+                    await probe.SemanticZoomProbe(host);
+                    break;
+                case "semanticzoomlocked":
+                    await probe.SemanticZoomProbe(host, true);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;
