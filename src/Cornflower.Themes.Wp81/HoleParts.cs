@@ -43,6 +43,10 @@ namespace Cornflower.Themes.Wp81;
 /// Button, CheckBox, TextBox and plain ContentControl, in any template, an app's included. One with no templated parent
 /// returns at once; one in a template of Wp81's, after one walk up its styling parents; one in any other template also
 /// reads the templates under Wp81 (a theme's once, a plain group's each time).</para>
+/// <para><b>Wp81's own, without building them all</b> (#194). Reading every template Wp81 sets builds all of its
+/// themes, about 90 ms in Release the first time. A template in use came from a theme already built, so the themes
+/// built so far are read first (<see cref="IsWp81s"/>): enough for a part in any template of Wp81's. Only a part in
+/// a template from elsewhere goes on to read them all, once.</para>
 /// <para><b>Included files.</b> A <c>StyleInclude</c> is read as what it loaded: Wp81 found inside one, and a file under
 /// Wp81 read as a theme under it.</para>
 /// </remarks>
@@ -68,7 +72,10 @@ internal static class HoleParts
     private static readonly ConditionalWeakTable<Type, ControlTheme> Bare = new();
 
     /// <summary>Each theme's templates, read once, kept beside the theme.</summary>
-    private static readonly ConditionalWeakTable<object, HashSet<object>> Templates = new();
+    internal static readonly ConditionalWeakTable<object, HashSet<object>> Templates = new();
+
+    /// <summary>The templates of the themes each <see cref="Wp81Theme"/> has built so far, as last read (#194).</summary>
+    internal static readonly ConditionalWeakTable<Wp81Theme, HashSet<object>> Built = new();
 
     static HoleParts()
     {
@@ -89,7 +96,7 @@ internal static class HoleParts
             return;
 
         var (wp81, below) = Under(control);
-        if (wp81 is null || TemplatesOf(wp81).Contains(template))
+        if (wp81 is null || IsWp81s(wp81, template))
             return;
 
         var variant = control.ActualThemeVariant;
@@ -104,6 +111,23 @@ internal static class HoleParts
                 control.Theme = Bare.GetValue(control.StyleKey, key => new ControlTheme(key));
             return;
         }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="template"/> is one <paramref name="wp81"/> sets. The templates of the themes it has built
+    /// so far answer yes for a template in use, with nothing built to find out; they're read again when they don't, as
+    /// more may have been built since. Only a no from them reads every template, building every theme, once (#194).
+    /// </summary>
+    private static bool IsWp81s(Wp81Theme wp81, object template)
+    {
+        if (Templates.TryGetValue(wp81, out var all))
+            return all.Contains(template);
+
+        var built = Built.GetValue(wp81, _ => new HashSet<object>(ReferenceEqualityComparer.Instance));
+        if (built.Contains(template))
+            return true;
+        Collect(wp81, built, new HashSet<object>(ReferenceEqualityComparer.Instance), builtOnly: true);
+        return built.Contains(template) || TemplatesOf(wp81).Contains(template);
     }
 
     /// <summary>
@@ -189,7 +213,7 @@ internal static class HoleParts
         return found;
     }
 
-    private static void Collect(object? node, HashSet<object> found, HashSet<object> seen)
+    private static void Collect(object? node, HashSet<object> found, HashSet<object> seen, bool builtOnly = false)
     {
         if (node is null || !seen.Add(node))
             return;
@@ -199,38 +223,49 @@ internal static class HoleParts
             case Wp81Theme when seen.Count > 1:
                 return;                                          // another Wp81 inside what is under this one
             case ResourceInclude include:
-                Collect(include.Loaded, found, seen);
+                Collect(include.Loaded, found, seen, builtOnly);
                 return;
             case StyleInclude include:                       // a theme an app brings in from a file; a Wp81 root is skipped above
-                Collect(include.Loaded, found, seen);
+                Collect(include.Loaded, found, seen, builtOnly);
                 return;
             case ControlTheme theme:
                 CollectTemplates(theme, found);
                 return;
             case IResourceDictionary dictionary:
-                foreach (var key in dictionary.Keys)
+                if (builtOnly)
                 {
-                    if (dictionary.TryGetValue(key, out var value)) Collect(value, found, seen);
+                    // Enumerated, an entry not yet built is still its IDeferredContent, and stays unbuilt.
+                    foreach (var entry in dictionary)
+                    {
+                        if (entry.Value is not IDeferredContent) Collect(entry.Value, found, seen, builtOnly);
+                    }
+                }
+                else
+                {
+                    foreach (var key in dictionary.Keys)
+                    {
+                        if (dictionary.TryGetValue(key, out var value)) Collect(value, found, seen, builtOnly);
+                    }
                 }
 
                 foreach (var variant in dictionary.ThemeDictionaries.Values)
-                    Collect(variant, found, seen);
+                    Collect(variant, found, seen, builtOnly);
                 foreach (var merged in dictionary.MergedDictionaries)
-                    Collect(merged, found, seen);
+                    Collect(merged, found, seen, builtOnly);
                 return;
             case Styles styles:
-                Collect(styles.Resources, found, seen);
+                Collect(styles.Resources, found, seen, builtOnly);
                 foreach (var style in styles)
-                    Collect(style, found, seen);
+                    Collect(style, found, seen, builtOnly);
                 return;
             case StyledElement element:
-                Collect(element.Resources, found, seen);
+                Collect(element.Resources, found, seen, builtOnly);
                 return;
             case Application application:
-                Collect(application.Resources, found, seen);
+                Collect(application.Resources, found, seen, builtOnly);
                 return;
             case StyleBase style:
-                Collect(style.Resources, found, seen);
+                Collect(style.Resources, found, seen, builtOnly);
                 return;
         }
     }
