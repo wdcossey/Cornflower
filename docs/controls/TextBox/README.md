@@ -1,6 +1,6 @@
 # TextBox
 
-Status: done · [#36](https://github.com/wdcossey/CornflowerUI/issues/36) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page textbox` on `main` at `7dddcde`: cold 789 ms, the page opened in 401 ms, the first screen's specimens drawn, a tap focuses a box with the accent round it, and typing works) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the textbox page opened in 62 ms with 123 elements) · owed: captures of a caret, a selection and the keyboard
+Status: done · [#36](https://github.com/wdcossey/CornflowerUI/issues/36) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page textbox` on `main` at `7dddcde`: cold 789 ms, the page opened in 401 ms, the first screen's specimens drawn, a tap focuses a box with the accent round it, and typing works) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the textbox page opened in 62 ms with 123 elements) · owed: captures of a caret, a selection and the keyboard · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
 
 The Windows Phone 8.1 TextBox: Avalonia's `TextBox`, themed by `Wp81Theme` with the phone's default style and
 template, in `src/Cornflower.Themes.Wp81/Controls/TextBox.axaml`. WinRT's `Header` is `cf:ControlHeader.Header`,
@@ -47,6 +47,11 @@ a header adds its line and 4.8.
   NumericUpDown), a TextBox keeps Simple's theme (`HoleParts`), as their Buttons do.
 - **Dark and light**: every brush follows the theme variant; the focus border and the selection follow the app's
   accent (`SystemColorControlAccentColor`).
+- **The keyboard moves the page up** (#179): while it is up, a focused box it covers goes up until its bottom is at
+  the keyboard's top, never its top above the window's; one it leaves clear stays; it goes back as the keyboard goes.
+  The whole window's content moves, a box in a ScrollViewer with it; a box in a popup moves nothing
+  (`PhoneKeyboardPan`, internal, the theme's setter; [its plan](../KeyboardPan/PLAN.md)). That a TextBox moves the
+  least, at once, is assumed: owed, a read on the phone, and the device run on the Pixel 8.
 
 ## Resource keys
 
@@ -72,7 +77,7 @@ A `Grid` › `BorderElement`, `HeaderContentPresenter`, and `ContentRow` › `In
 Rung 1 (theme) for the setters, the states, the template, the placeholder, the part's `ScrollViewer` theme and the
 cleared focus adorner; rung 2 for `Header` and `HeaderTemplate` (`ControlHeader`, attached), the header's and the
 placeholder's line (`PhoneHeaderLine`) and the text's (`PhoneTextBoxLine`, a converter the style binds the box's
-`LineHeight` through), all but `ControlHeader` internal to the theme; rung 6 (recorded) for the baseline and the
+`LineHeight` through) and the keyboard's pan (`PhoneKeyboardPan`), all but `ControlHeader` internal to the theme; rung 6 (recorded) for the baseline and the
 rounding. No type is substituted.
 
 ## Extensions

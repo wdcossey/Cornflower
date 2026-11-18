@@ -31,8 +31,8 @@ namespace Cornflower.Themes.Wp81;
 /// itself and Avalonia never sees it; so the keyboard going down while the box has the focus does the same.</para>
 /// <para><b>A tap on a suggestion</b> closes the list and leaves the focus in the box, so the keyboard stays, as on the
 /// phone: the template's list and its items take no focus, and the list is closed here as the release selects.</para>
-/// <para>The page doesn't move up to put the box at the window's top, as the phone's does: that is the shell's, and
-/// Avalonia has no such pan (a recorded gap).</para>
+/// <para>The page moves up to put the box at the window's top while the keyboard is up, as the phone's does
+/// (<see cref="PhoneKeyboardPan"/>, the TextBox part's); the list is hung and sized again as it moves.</para>
 /// </remarks>
 internal static class PhoneSuggestionList
 {
@@ -189,6 +189,7 @@ internal static class PhoneSuggestionList
             _clientSize = _top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(_ => Place()));
             if (_top.InsetsManager is { } insets)
                 insets.SafeAreaChanged += OnSafeAreaChanged;
+            PhoneKeyboardPan.Moved += OnPanMoved;
             _keyboard = KeyboardOf(_top);
             if (_keyboard is not null)
             {
@@ -203,6 +204,7 @@ internal static class PhoneSuggestionList
             {
                 if (_top.InsetsManager is { } insets)
                     insets.SafeAreaChanged -= OnSafeAreaChanged;
+                PhoneKeyboardPan.Moved -= OnPanMoved;
             }
             if (_keyboard is not null)
             {
@@ -217,6 +219,13 @@ internal static class PhoneSuggestionList
 
 
         private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => Place();
+
+        /// <summary>The page moved under the open list (a transform, which lays nothing out): hung and sized again.</summary>
+        private void OnPanMoved(TopLevel top)
+        {
+            if (top == _top)
+                Place();
+        }
 
         /// <summary>While the list is open, it follows the box as the page lays it out (a scroll, a resize).</summary>
         private void OnOpened(object? sender, EventArgs e)
@@ -249,7 +258,7 @@ internal static class PhoneSuggestionList
         /// <summary>
         /// Hangs the open list from the box's bottom border and gives it the room below, down to the keyboard. A keyboard
         /// that covers nothing, or leaves less than one suggestion's room, is passed over (the list then runs under it to
-        /// the window's bottom, as the page doesn't move up as the phone's does); with less room than that at all, the
+        /// the window's bottom: a box in a popup, which the page's move doesn't take up); with less room than that at all, the
         /// list closes rather than stay open and unseen.
         /// </summary>
         private void Place()

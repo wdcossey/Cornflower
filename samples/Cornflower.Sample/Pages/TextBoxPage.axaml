@@ -40,6 +40,11 @@
           </StackPanel>
         </Border>
       </ThemeVariantScope>
+
+      <!-- The page's last box: tapped, the keyboard comes up over where it was, and the page moves up so it shows just
+           above the keyboard's top; the keyboard going down brings the page back (PhoneKeyboardPan, #179). -->
+      <TextBlock Text="under the keyboard" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <TextBox x:Name="Low" cf:ControlHeader.Header="last" PlaceholderText="the page moves up" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>
