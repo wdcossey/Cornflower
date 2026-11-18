@@ -202,6 +202,98 @@ namespace RefApp
         }
 
         /// <summary>
+        /// The keyboard's pan, timed (#179): a white 40 px square 100 down, a button 200 down and a TextBox 560 down (under the
+        /// keyboard, as Popups.cs's TextBox/low). From the tap, five times: the TextBox focused from code, 2.5 s, the button
+        /// focused (the keyboard goes), 2.5 s. The recording shows the square move with the page; the log has each focus,
+        /// the InputPane's Showing and Hiding with their OccludedRect, and the square's bounds in the window 2 s after each.
+        /// </summary>
+        private async Task KeyboardPan(Grid host)
+        {
+            var marker = new Windows.UI.Xaml.Shapes.Rectangle { Width = 40, Height = 40, Fill = new SolidColorBrush(Colors.White), Margin = new Thickness(19, 100, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            var away = new Button { Content = "away", Margin = new Thickness(19, 200, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            var box = new TextBox { Header = "text box", Text = "Agjy", Margin = new Thickness(0, 560, 0, 0), VerticalAlignment = VerticalAlignment.Top };
+            var page = await Page(host, marker, away, box);
+            var pane = Windows.UI.ViewManagement.InputPane.GetForCurrentView();
+            pane.Showing += (s, e) => Log("showing", RectText(e.OccludedRect));
+            pane.Hiding += (s, e) => Log("hiding", RectText(e.OccludedRect));
+            Func<Task> sequence = async () =>
+            {
+                for (var i = 0; i < 5; i++)
+                {
+                    Log("focus", "box " + box.Focus(FocusState.Programmatic));
+                    await Task.Delay(2000);
+                    Log("held", "marker " + RectText(Bounds(marker)) + "; occluded " + RectText(pane.OccludedRect));
+                    await Task.Delay(500);
+                    Log("blur", "away " + away.Focus(FocusState.Programmatic));
+                    await Task.Delay(2000);
+                    Log("held", "marker " + RectText(Bounds(marker)) + "; occluded " + RectText(pane.OccludedRect));
+                    await Task.Delay(500);
+                }
+            };
+            await RunAfterTap(page, sequence);
+        }
+
+        /// <summary>
+        /// The keyboard's pan for boxes placed differently (#179), read from the app alone (the pan shows in
+        /// <c>TransformToVisual</c>): the square and button of <see cref="KeyboardPan"/>, then one box at a time, each focused
+        /// from code twice, 2 s, and the button focused, 1.5 s. Logged 2 s after each focus: the square's and the box's bounds
+        /// in the window and the OccludedRect. The boxes: the TextBox of keyboardpan (full width, 560 down); the same where
+        /// Popups.cs's stage puts it (19 in from each side, 572.08 down); empty; without its header (its border where it
+        /// was); a PasswordBox; an AutoSuggestBox with AutoMaximizeSuggestionArea false; and the first again, last.
+        /// </summary>
+        private async Task KeyboardPanBoxes(Grid host)
+        {
+            var marker = new Windows.UI.Xaml.Shapes.Rectangle { Width = 40, Height = 40, Fill = new SolidColorBrush(Colors.White), Margin = new Thickness(19, 100, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            var away = new Button { Content = "away", Margin = new Thickness(19, 200, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            var boxes = new List<KeyValuePair<string, Control>>
+            {
+                new KeyValuePair<string, Control>("full", new TextBox { Header = "text box", Text = "Agjy", Margin = new Thickness(0, 560, 0, 0) }),
+                new KeyValuePair<string, Control>("stage", new TextBox { Header = "text box", Text = "Agjy", Margin = new Thickness(19, 572.083, 19, 0) }),
+                new KeyValuePair<string, Control>("empty", new TextBox { Header = "text box", Margin = new Thickness(0, 560, 0, 0) }),
+                new KeyValuePair<string, Control>("noheader", new TextBox { Text = "Agjy", Margin = new Thickness(0, 586.667, 0, 0) }),
+                new KeyValuePair<string, Control>("password", new PasswordBox { Header = "password box", Password = "Agjy", Margin = new Thickness(0, 560, 0, 0) }),
+                new KeyValuePair<string, Control>("suggest", new AutoSuggestBox { Header = "auto suggest box", AutoMaximizeSuggestionArea = false, Margin = new Thickness(0, 560, 0, 0) }),
+                new KeyValuePair<string, Control>("full-again", new TextBox { Header = "text box", Text = "Agjy", Margin = new Thickness(0, 560, 0, 0) }),
+            };
+            var controls = new List<UIElement> { marker, away };
+            foreach (var b in boxes)
+            {
+                b.Value.VerticalAlignment = VerticalAlignment.Top;
+                controls.Add(b.Value);
+            }
+
+            var page = await Page(host, controls.ToArray());
+            foreach (var b in boxes)
+            {
+                b.Value.Visibility = Visibility.Collapsed;
+            }
+
+            var pane = Windows.UI.ViewManagement.InputPane.GetForCurrentView();
+            Func<Task> sequence = async () =>
+            {
+                foreach (var b in boxes)
+                {
+                    b.Value.Visibility = Visibility.Visible;
+                    await Task.Delay(500);
+                    var target = b.Value is AutoSuggestBox ? PopupCatalog.FindNamed(b.Value, "TextBox") as Control : b.Value;
+                    for (var i = 0; i < 2; i++)
+                    {
+                        Log("focus", b.Key + " " + (target != null && target.Focus(FocusState.Programmatic)));
+                        await Task.Delay(2000);
+                        Log("held", b.Key + ": marker " + RectText(Bounds(marker)) + "; box " + RectText(Bounds(b.Value)) + "; occluded " + RectText(pane.OccludedRect));
+                        away.Focus(FocusState.Programmatic);
+                        await Task.Delay(1500);
+                    }
+
+                    b.Value.Visibility = Visibility.Collapsed;
+                }
+            };
+            await RunAfterTap(page, sequence);
+        }
+
+        private static string RectText(Windows.Foundation.Rect r) => Num(r.X) + " " + Num(r.Y) + " " + Num(r.Width) + " " + Num(r.Height);
+
+        /// <summary>
         /// The ProgressRing's Active animation (owed before #28: the suite's forced Active state captures no dots, as the
         /// dots only show while the storyboard runs). An active ring at its default size and one 120 px wide, watched for
         /// 6 s from the tap: every dot's opacity and transform each frame.

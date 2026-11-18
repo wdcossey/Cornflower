@@ -23,4 +23,17 @@ The names are the reference app's: `dark__<control>__<variant>__popup__screen.pn
   meets the keyboard's top; the box's bottom border stays under the keyboard.
 - `TextBox__scroll-low-focused`: the TextBox 560 down inside a ScrollViewer: it ends where it does on the page.
 
+The second read (#179, #201), dark, from `20261118-1440-dev11` (`-Popups only -Grab -Only
+'^(TextBox/(low-focused|scroll-low)|AutoSuggestBox/low-nomax|PasswordBox/low-reveal)'`), the same profile and date:
+
+- `AutoSuggestBox__low-nomax-focused`: an AutoSuggestBox 560 down with `AutoMaximizeSuggestionArea` false, focused:
+  the page moves until the box's bottom meets the keyboard's top.
+- `AutoSuggestBox__low-nomax-list-3`, `__low-nomax-list-12`: the same, then given "a" and 3 or 12 suggestions: the
+  page moves 10.42 further and the list opens above the box, as tall as its items or up to 18.75 from the window's top.
+- `PasswordBox__low-reveal-rest`, `__low-reveal-focused`: a PasswordBox 560 down with `IsPasswordRevealButtonEnabled`
+  (its "Show Password" row), at rest and focused: the page moves to the caret, as without the row, which stays under
+  the keyboard.
+- `TextBox__scroll-low-rest`: the TextBox 560 down inside the ScrollViewer, at rest (its focused grab is the
+  `scroll-low-focused` above).
+
 What they show, in numbers, is in [`tools/refapp/README.md`](../../../tools/refapp/README.md), "The keyboard's pan".

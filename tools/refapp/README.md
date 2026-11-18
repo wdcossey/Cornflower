@@ -27,6 +27,8 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Probe scrollend -Record           # 
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe pivot -Record               # Pivot's header strip (see Motion; also turnstile, hub)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe popupcurves -Record         # the popups' bands, eight times each (see Motion)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe dismiss                     # each popup dismissed by Back and by taps; the AutoSuggestBox's events (#150)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpan -Record         # the keyboard's pan, five times up and down (#179)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpanboxes            # the pan for six boxes, read from the app (#179)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'   # popups by name, or name/variant
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
@@ -1795,8 +1797,56 @@ are in [`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).
   grabbed) went off the top with it, so the page moved at least 24.58; nothing shows the ScrollViewer scrolling, but
   the specimen logs no `VerticalOffset`, so one grab can't split the move between the two. Its dark grab is byte for
   byte the plain page's: two frames of the grab loop, 7 s apart, came out the same.
-- Not read: whether the move slides and how long it takes (`-Record` goes with `-Probe` only), an AutoSuggestBox
-  with `AutoMaximizeSuggestionArea` false that the keyboard covers, and the ScrollViewer's `VerticalOffset`.
+- Not read here: whether the move slides and how long it takes (`-Record` goes with `-Probe` only), an AutoSuggestBox
+  with `AutoMaximizeSuggestionArea` false that the keyboard covers, and the ScrollViewer's `VerticalOffset`. The next
+  section reads them.
+
+### The keyboard's pan: an AutoSuggestBox without the maximized list, the reveal row, the ScrollViewer, the slide (2026-11-18, device 11, #179, #201)
+
+`20261118-1436-dev11` and `20261118-1440-dev11` (`-Popups only -Grab -Only
+'^(TextBox/(low-focused|scroll-low)|AutoSuggestBox/low-nomax|PasswordBox/low-reveal)'`, the first without
+`TextBox/low-focused`), dark and light, which measure the same; `20261118-1443-dev11` (`-Probe keyboardpan -Record`);
+`20261118-1447-dev11` and `20261118-1450-dev11` (`-Probe keyboardpanboxes`). The view is 450 × 800. Each `Panned` box
+now writes a collapsed `readout` TextBlock 300 ms before its stage is dumped: the ScrollViewer's `VerticalOffset`, the
+box's bounds in the window and `InputPane.OccludedRect`. **The pan shows in `TransformToVisual(null)`**: the box's
+bounds in the window are where the grab shows it, so the app can read the move without a grab. The PNGs are in
+[`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).
+
+| Box, 560 down (the control 572.08 to 637.92, its border from 598.75) | Focused: the border | The page moved | The keyboard's top |
+|---|---|---|---|
+| AutoSuggestBox, `AutoMaximizeSuggestionArea` false | 414.17 to 453.33: its bottom at the keyboard's top | **184.58** | 453.33 |
+| The same, then "a" and 3 or 12 suggestions (1.2 s after the focus) | 403.75 to 442.92: its bottom 10.42 above the keyboard | **195** | 453.33 |
+| PasswordBox with `IsPasswordRevealButtonEnabled` (the control to 688.75) | 482.5 to 521.67, as without the row | **116.25** | 513.75 |
+| TextBox in a ScrollViewer, `VerticalOffset` 0 at rest and focused | 422.5 to 461.67, as on the page | **176.25** | 453.33 |
+
+- **An AutoSuggestBox without the maximized list moves its whole box above the keyboard**, not to the caret: 184.58,
+  where a TextBox in the same place goes 176.25. When its list opens it opens **above the box**, never below: its
+  bottom at 406.25, over the box's top border (403.75 to 406.25), 151.25 tall for 3 suggestions (from 255; 48.75 a
+  suggestion and 2.5 of border at each end) and 387.5 for 12 (from 18.75; its `MaxHeight` is 387.5, and it scrolls).
+  With it the page moves 10.42 further, the box's bottom 10.42 above the keyboard. The text and the list are given
+  together, so these runs don't say which of the two moves it.
+- **The reveal row doesn't change the move**: the PasswordBox goes up 116.25 as without it, the caret's line to the
+  keyboard's top. The "Show Password" check box (631.25 to 688.75 at rest, its glyph from 647.08 to 672.5) ends at
+  515 to 572.5, all of it under the keyboard (513.75); showing it would take 175.
+- **A ScrollViewer doesn't scroll for the keyboard**: its `VerticalOffset` stays 0, and the page moves 176.25, as for
+  the TextBox outside one.
+- **The first box focused after the app starts doesn't follow the rule**: 1436's first capture (the ScrollViewer's
+  TextBox, dark) went 195, the box's bottom 10.42 above the keyboard, with a paste button in the keyboard's strip, and
+  1440's first (`TextBox/low-focused`, dark) didn't move at all. The probes show the same: `keyboardpanboxes` focuses
+  six boxes in turn, each twice, in a page that fills the window, the move read from a square 100 down; its first box
+  went 182.92 both times, its bottom 10.42 above the keyboard, and the same box focused again last went 164.17, the
+  caret's rule. The other boxes followed the rules above: one where the stage puts it (19 in, 572.08 down) 176.25, an
+  empty one 164.17, one without a header (its border 586.67 down) 164.17, a PasswordBox 104.17, and an AutoSuggestBox
+  without the maximized list 172.5, its bottom at the keyboard. In `keyboardpan` the one box was focused five times
+  and went 182.92 each time. So the box+10.42 move is what the first focused box gets, not a rule for every box.
+
+**The slide** (`keyboardpan`: the first box's 182.92, five times up and down). Read from one column of the recording,
+which has about 30 new frames of the emulator's display a second (33 to 50 ms apart), against the page at rest. **It
+slides, both ways.** Up: the keyboard starts rising a frame or two (35 to 70 ms) before the page moves, and the page
+takes about 0.3 s from its first moved frame to rest (0.25 to 0.32 s), slowing down as it goes: of the move, 0.23,
+0.42, 0.58, 0.70, 0.79, 0.87, 0.92, 0.99 and 1 at the fifth slide's frames. The keyboard is nearly up (458 against 453.33)
+by the page's fourth moved frame. Down: about 0.2 s, slow first and fast last (183.33, 170.83, 160, 144.17, then 100
+to 120, 40 and 0 within 0.1 s), as the keyboard goes. The frames are too far apart to fit a curve to.
 
 ## Popup pixels
 
