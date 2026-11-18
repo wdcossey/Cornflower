@@ -93,7 +93,8 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 ### Focus, the keyboard and the page
 
 - **Focus brings up the keyboard**: Avalonia's own, on a phone, for the TextBox part (its `TextInputMethodClient`).
-- **The page moves up** until the control's top is at the window's top (21.67 at the reference app's place): the
+- **The page moves up** until the control's top is at the window's top (21.67 at the reference app's place), or with
+  `AutoMaximizeSuggestionArea` false only as far as leaves the list one suggestion's room (#201): the
   phone's shell pans the page while the keyboard is up. Avalonia has nothing that does it; its `InputPane` reports the
   keyboard's rectangle, and a `ScrollViewer` can bring the box into view, but nothing moves a page that doesn't scroll.
   Done since by #179 for every text box, as the shell's: `PhoneKeyboardPan` ([its plan](../KeyboardPan/PLAN.md)).

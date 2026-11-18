@@ -194,7 +194,7 @@ The runs of 2026-11-18:
   No real-window run: a desktop shows no keyboard pane.
 - **The phone's pan, read** (#200, 8.1 Update 1 1080p, device 11): how far the phone moves the page for a box halfway
   down and for one under the keyboard, an AutoSuggestBox with `AutoMaximizeSuggestionArea` true and false, and a TextBox
-  in a ScrollViewer. The numbers are in [`tools/refapp`](../tools/refapp/README.md), "The keyboard's pan"; the grabs in
+  in a ScrollViewer (the move only: no `VerticalOffset` was logged, so scroll and move aren't split). The numbers are in [`tools/refapp`](../tools/refapp/README.md), "The keyboard's pan"; the grabs in
   `ref/wp81/KeyboardPan/`. #201 came of it.
 - **#201's caret rule** (#202). The Pixel 8 (Release, over wireless adb, `6bce3d4`, 13:24): every check passed. A
   covered TextBox (the light section's and the last) and the PasswordBox stop with the caret's bottom on the keyboard's
@@ -204,7 +204,7 @@ The runs of 2026-11-18:
 
 Owed: the sample at speed 2 on the phone (#189); [#197](https://github.com/wdcossey/Cornflower/issues/197), Back taking the focus as it hides the keyboard (in
 progress); and the reads each control's README lists. In progress on the VM: a covered AutoSuggestBox with
-`AutoMaximizeSuggestionArea` false, a PasswordBox's reveal row, a box in a ScrollViewer, and the timing of the pan's slide.
+`AutoMaximizeSuggestionArea` false, a PasswordBox's reveal row, a ScrollViewer's `VerticalOffset` under the pan, and the timing of the pan's slide.
 Next, after #197: Tier 4.
 
 ### Tier 4

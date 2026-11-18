@@ -7,9 +7,9 @@
 ("ap"), 3 and 12 ("a") suggestions. Segoe WP.
 **Ours:** headless frames from `tests/Cornflower.Tests/Controls/AutoSuggestBoxFrames.cs`, Avalonia 12.1.4 with Skia,
 450 × 800 at 2.4, an `AutoCompleteBox` with the same values (the header by `cf:ControlHeader.Header`), in
-[`frames/`](frames). Focused, ours is stood where the phone's page moved it (headless has no keyboard, so `PhoneKeyboardPan`
-doesn't move it), its caret transparent; no keyboard is drawn, and twelve suggestions stop at the phone's keyboard's top, as the list does
-when Avalonia reports that keyboard. Selawik.
+[`frames/`](frames). Focused, ours is stood where the phone's page moved it (headless has no keyboard, so
+`PhoneKeyboardPan` doesn't move it), its caret transparent; no keyboard is drawn, and twelve suggestions stop at the
+phone's keyboard's top, as the list does when Avalonia reports that keyboard. Selawik.
 
 Text isn't compared by pixel: the fonts differ by design ([ADR 0001](../../decisions/0001-what-faithful-means.md)).
 Sizes, positions and colours are compared by measurement, here and in the tests.
