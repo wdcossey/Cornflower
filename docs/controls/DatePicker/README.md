@@ -61,8 +61,8 @@ popup the picker is shown in), `Columns`, `PickerBarSpace`, `PickerBar`.
 ## The ladder
 
 Rung 1 for the four themes; rung 2 for the popup (`PhoneDateTimePicker`, on `PhonePopupHost`). No part class: Avalonia's
-presenter is placed full screen by the host as it is (PLAN.md). `DatePickerFlyout` and `TimePickerFlyout` aren't
-added (PLAN.md, "The checklists").
+presenter is placed full screen by the host as it is (PLAN.md). `DatePickerFlyout` and `TimePickerFlyout` are
+#184's, on these presenters ([docs/controls/DatePickerFlyout/](../DatePickerFlyout/README.md)).
 
 ## Known gaps
 
@@ -73,7 +73,7 @@ added (PLAN.md, "The checklists").
 - **Avalonia's pickers place the 12-hour clock's AM and PM last**, and so does the button's text when it moves a
   24-hour culture's pattern to the 12-hour clock; a culture that writes them first (ja-JP) is shown with them last.
 - **No `Closed` event**: Avalonia's pickers have none, nor have WinRT's. The DatePickerFlyout's, a tick after its bands
-  have gone (17 ticks), is for that type, not added (PLAN.md).
+  have gone (17 ticks), is #184's type's.
 - **`SelectedDateChanged` isn't raised on an unchanged accept**, as Avalonia's property; the phone's `DateChanged` on an
   unchanged accept wasn't read (#150 read the flyout's `DatePicked`, which comes).
 - **The selected items are one raw pixel wider** than the phone's: #154's items are drawn unrounded.
