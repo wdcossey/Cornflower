@@ -27,7 +27,10 @@ namespace Cornflower.Themes.Wp81;
 /// priority on the window's presenter of it, so the content's own transform (an app's, a page's motion) is left alone:
 /// a box in a <see cref="ScrollViewer"/> moves with the page, not by scrolling, as a scroll can't take a box at the end
 /// of its content up. A box in a popup (a ContentDialog's) moves nothing: #150 saw a focused TextBox's dialog stay at the
-/// top. The safe area, the popups and the keyboard stay where they are; the AutoSuggestBox's list is hung from its box
+/// top. The moved content is cut at the safe area's top, so it goes under the status bar unseen (the phone's system tray
+/// stays as the page slides under it), and what the move leaves bare, above and below, shows the page's background
+/// (<c>ApplicationPageBackgroundThemeBrush</c>) rather than the window's own. The safe area, the popups and the keyboard
+/// stay where they are; the AutoSuggestBox's list is hung from its box
 /// again as the page moves (<see cref="Moved"/>).</para>
 /// <para><b>When.</b> As the keyboard comes up, changes or goes (worked out afresh), as the focus comes to or leaves a
 /// box (the least change from where the page is), and as the box the page moved for leaves the window. The move is at
@@ -48,6 +51,12 @@ internal static class PhoneKeyboardPan
         // The focus leaving: once it has settled, as it may be on its way to another box.
         InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
     }
+
+    /// <summary>The page's background, shown where the move leaves the window bare.</summary>
+    internal const string PageBackground = "ApplicationPageBackgroundThemeBrush";
+
+    /// <summary>Far enough, for the clip's other three sides.</summary>
+    private const double Reach = 1e6;
 
     /// <summary>Raised with the window as its content moves, after it has.</summary>
     internal static event Action<TopLevel>? Moved;
@@ -75,9 +84,12 @@ internal static class PhoneKeyboardPan
     {
         private readonly TopLevel _top;
         private readonly TranslateTransform _transform = new();
+        private readonly RectangleGeometry _clip = new();
         private PhoneSuggestionList.IPhoneKeyboard? _keyboard;
         private Visual? _moved;
         private IDisposable? _shown;
+        private IDisposable? _clipped;
+        private IDisposable? _backed;
         private TextBox? _for;
 
         public Pan(TopLevel top) => _top = top;
@@ -100,17 +112,46 @@ internal static class PhoneKeyboardPan
             Follow(shift > 0 ? box : null);
             if (shift == Shift && (shift == 0 || mover == _moved))
                 return;
-            _shown?.Dispose();
-            _shown = null;
-            _moved = null;
             Shift = shift;
             if (shift > 0 && mover is not null)
             {
                 _transform.Y = -shift;
-                _shown = mover.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
-                _moved = mover;
+                _clip.Rect = ClipFor(mover, shift);
+                if (mover != _moved)
+                {
+                    TakeBack();
+                    _shown = mover.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
+                    _clipped = mover.SetValue(Visual.ClipProperty, _clip, BindingPriority.Animation);
+                    // What the move leaves bare below the page, and above it under the safe area's top: the page's
+                    // background, not the window's own (Simple's grey).
+                    _backed = _top.Bind(TemplatedControl.BackgroundProperty,
+                        _top.GetResourceObservable(PageBackground), BindingPriority.Animation);
+                    _moved = mover;
+                }
             }
+            else
+                TakeBack();
             Moved?.Invoke(_top);
+        }
+
+        private void TakeBack()
+        {
+            _shown?.Dispose();
+            _clipped?.Dispose();
+            _backed?.Dispose();
+            _shown = _clipped = _backed = null;
+            _moved = null;
+        }
+
+        /// <summary>
+        /// The moved content cut at the safe area's top, so that it goes under the status bar unseen, as the phone's page
+        /// slides under its system tray, which stays. In the mover's own coordinates, which the move takes with it.
+        /// </summary>
+        private Rect ClipFor(Visual mover, double shift)
+        {
+            var at = mover.GetVisualParent() is { } parent && parent.TranslatePoint(mover.Bounds.Position, _top) is { } p ? p.Y : 0;
+            var top = PhonePopupHost.AreaOf(_top).Top + shift - at;
+            return new Rect(-Reach, top, 2 * Reach, Reach);
         }
 
         /// <summary>

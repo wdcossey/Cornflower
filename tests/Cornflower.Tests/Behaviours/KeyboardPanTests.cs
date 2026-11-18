@@ -170,6 +170,44 @@ public class KeyboardPanTests
         Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
     }
 
+    // The moved content is cut at the safe area's top (the window's top here: the headless window has no insets), so it
+    // goes under Android's status bar unseen, as the phone's page under its system tray. The cut is taken away with the
+    // move.
+    [AvaloniaFact]
+    public void The_Moved_Page_Is_Cut_At_The_Safe_Areas_Top()
+    {
+        using var page = new Page(tops: 600);
+        var mover = Assert.IsAssignableFrom<Visual>(((Visual)page.Window.Content!).GetVisualParent());
+
+        page.Tap(page.Boxes[0]);
+
+        var cut = Assert.IsType<RectangleGeometry>(mover.Clip).Rect;
+        Assert.Equal(0, mover.TranslatePoint(new Point(0, cut.Top), page.Window)!.Value.Y, 0.01);
+        Assert.True(cut.Bottom > page.Window.ClientSize.Height + PhoneKeyboardPan.ShiftOf(page.Window));
+
+        page.KeyboardFake.Hide();
+        Assert.Null(mover.Clip);
+    }
+
+    // What the move leaves bare below the page shows the page's background, not the window's own (Simple's grey: a band
+    // the Pixel showed between the page's end and the keyboard); the window's own comes back with the page.
+    [AvaloniaFact]
+    public void What_The_Move_Leaves_Bare_Shows_The_Pages_Background()
+    {
+        using var page = new Page(tops: 600);
+        var own = page.Window.Background;
+        var pageBrush = Assert.IsAssignableFrom<ISolidColorBrush>(page.Window.FindResource(page.Window.ActualThemeVariant, PhoneKeyboardPan.PageBackground));
+        Assert.NotEqual(pageBrush, own);
+
+        page.Tap(page.Boxes[0]);
+
+        using (var frame = page.Scene.Capture())
+            Assert.Equal(pageBrush.Color, Frames.PixelAt(frame, 2, frame.PixelSize.Height - 2));
+
+        page.KeyboardFake.Hide();
+        Assert.Same(own, page.Window.Background);
+    }
+
     // A box the keyboard leaves clear stays where it is.
     [AvaloniaFact]
     public void A_TextBox_Above_The_Keyboard_Stays()

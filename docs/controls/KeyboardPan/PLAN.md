@@ -46,6 +46,12 @@ From #150 (`tools/refapp/README.md`, "Tier 3's popups: their layout, the pickers
 - The move is a `TranslateTransform` at animation priority on the window's presenter of its content, not on the
   content: the content's own transform (an app's, a page's motion) is left alone, and a new content is moved as the
   old was. Hit testing follows it: a tap on the moved box reaches it.
+- The moved content is cut at the safe area's top, so it goes under Android's status bar unseen, as the phone's page
+  slides under its system tray, which stays (the Pixel run of a0f1a02 showed text over the clock without it). What the
+  move leaves bare, under the status bar and below the page's end, shows the page's background
+  (`ApplicationPageBackgroundThemeBrush`, on the window at animation priority), not the window's own: the Pixel showed
+  Simple's grey in a band between the page's end and the keyboard when the AutoSuggestBox moved the page further than
+  the keyboard is tall.
 - The popups (the phone's are in the overlay layer), the safe area and the keyboard stay where they are. A box in a
   popup, a ContentDialog's included, moves nothing. A box in a popup that is a window of its own (a desktop's) moves
   nothing either.
@@ -81,6 +87,7 @@ numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is
 - The keyboard changing its height moves the page afresh.
 - The box leaving the window brings the page back.
 - The content's own transform is left alone.
+- The moved page is cut at the safe area's top; what the move leaves bare shows the page's background.
 - The focus moving to another box moves the page the least; off every box, the page comes back.
 - A box at the end of a ScrollViewer moves with the page; the scroll stays.
 - A box in an overlay popup moves nothing. (A popup that is a window of its own the headless platform never makes,
