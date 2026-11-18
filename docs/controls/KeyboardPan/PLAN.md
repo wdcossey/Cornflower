@@ -1,7 +1,9 @@
 # The keyboard's pan (#179)
 
 While the keyboard is up, the page moves up so the focused text box is not under it, and comes back down when the
-keyboard goes. For every text box of Wp81's: the TextBox, the PasswordBox theme and the AutoSuggestBox. It is the
+keyboard goes. For every box with Wp81's TextBox or PasswordBox theme, the AutoSuggestBox's TextBox part included. A
+TextBox that keeps Simple's theme inside a Simple template (`HoleParts`: NumericUpDown, CalendarDatePicker) doesn't
+move the page (a known gap). It is the
 phone shell's, not a control's, so it is a shared behaviour (rung 2): `PhoneKeyboardPan`, internal to the theme,
 turned on by the TextBox and PasswordBox themes' own setter (the AutoSuggestBox's TextBox part has the TextBox theme).
 
@@ -37,16 +39,36 @@ From #150 (`tools/refapp/README.md`, "Tier 3's popups: their layout, the pickers
   `StateChanged`). Android neither pans nor resizes the Avalonia view (the sample's activity sets no
   `windowSoftInputMode`). The keyboard is read through `PhoneSuggestionList.KeyboardOf`, the seam the AutoSuggestBox's
   list already uses, which a test replaces with a fake.
-- One pan per window, made the first time a box of ours in it takes the focus. It works out the move again as the
-  keyboard comes up, changes or goes, and as the focus comes to or leaves a box (once the focus has settled).
-- The move is a `TranslateTransform` on the window's content, at animation priority over the content's own, so an
-  app's own transform comes back as it was. Hit testing follows it: a tap on the moved box reaches it.
+- One pan per window, made the first time a box of ours in it takes the focus. It works out the move afresh as the
+  keyboard comes up, changes or goes (so a keyboard that grows shorter brings the page down with it). As the focus
+  comes to or leaves a box (once the focus has settled) it changes the move the least, so a box already in view
+  leaves the page where it is. The box the page moved for leaving the window brings the page back.
+- The move is a `TranslateTransform` at animation priority on the window's presenter of its content, not on the
+  content: the content's own transform (an app's, a page's motion) is left alone, and a new content is moved as the
+  old was. Hit testing follows it: a tap on the moved box reaches it.
 - The popups (the phone's are in the overlay layer), the safe area and the keyboard stay where they are. A box in a
   popup, a ContentDialog's included, moves nothing. A box in a popup that is a window of its own (a desktop's) moves
   nothing either.
 - The AutoSuggestBox's list is hung from the box and sized to the keyboard again as the page moves
   (`PhoneKeyboardPan.Moved`, which `PhoneSuggestionList` listens to): a transform lays nothing out, so nothing else
   would tell it.
+
+## From Avonic
+
+Avonic (Ionic for Avalonia) solved the same problem for Ionic's inputs (`InputShims`, `KeyboardAssist`). Taken:
+
+- **Avalonia's keyboard facts.** It reports the pane's change as its animation starts, and Android's `OccludedRect` can
+  still be empty then: the keyboard here reads the change's `EndRect` while the pane is open
+  (`PhoneSuggestionList`'s `PaneKeyboard`, so the list gains it too).
+- **Windows.** Every window has a pane, the touch keyboard, whose place can be beside or below the window: only what
+  it covers of the window counts, and a pane over none of it moves nothing. macOS and Linux have no pane, so nothing
+  moves on a desktop with no touch keyboard.
+- **Focus moving between boxes keeps the move.** Avonic waits 120 ms after focus leaves; here the pan waits for the
+  focus to settle (the dispatcher's next turn), as the move is worked out again from the next box at once.
+
+Not taken: Ionic's mechanics and numbers. Ionic pads the scroll content at its end by the keyboard's height and
+scrolls the field to 50 above the keyboard over 150 to 400 ms. The phone's shell moves the page instead, and its
+numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is unread.
 
 ## Tests
 
@@ -56,9 +78,14 @@ From #150 (`tools/refapp/README.md`, "Tier 3's popups: their layout, the pickers
   it; the keyboard going down brings it back.
 - The PasswordBox theme does the same.
 - A TextBox above the keyboard stays.
+- The keyboard changing its height moves the page afresh.
+- The box leaving the window brings the page back.
+- The content's own transform is left alone.
 - The focus moving to another box moves the page the least; off every box, the page comes back.
 - A box at the end of a ScrollViewer moves with the page; the scroll stays.
-- A box in an overlay popup moves nothing.
+- A box in an overlay popup moves nothing. (A popup that is a window of its own the headless platform never makes,
+  so that guard has no test.)
+- A keyboard over none of the window (Windows' touch keyboard beside it) moves nothing.
 - Under Simple alone nothing moves.
 - The AutoSuggestBox goes up until its top is at the window's top, and its list then hangs from the box and runs down
   to 2.5 above the keyboard (#150's 63.33 and 450.83).

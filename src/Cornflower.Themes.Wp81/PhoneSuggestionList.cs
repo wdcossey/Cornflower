@@ -88,7 +88,7 @@ internal static class PhoneSuggestionList
     }
 
     /// <summary>The box of ours that has the focus in the top level, if one has.</summary>
-    private static AutoCompleteBox? BoxWithFocus(TopLevel top) =>
+    internal static AutoCompleteBox? BoxWithFocus(TopLevel top) =>
         (top.FocusManager?.GetFocusedElement() as Visual)?.GetSelfAndVisualAncestors()
             .OfType<AutoCompleteBox>().FirstOrDefault(GetIsEnabled);
 
@@ -304,6 +304,7 @@ internal static class PhoneSuggestionList
     private sealed class PaneKeyboard : IPhoneKeyboard
     {
         private readonly IInputPane _pane;
+        private Rect _end;
 
         public PaneKeyboard(IInputPane pane)
         {
@@ -313,12 +314,20 @@ internal static class PhoneSuggestionList
 
         public bool IsOpen => _pane.State == InputPaneState.Open;
 
-        public Rect Occluded => _pane.OccludedRect;
+        /// <summary>
+        /// Where an opening keyboard ends, as Avalonia reports the change when the pane's animation starts and Android's
+        /// <see cref="IInputPane.OccludedRect"/> can still be empty then (Avonic's <c>KeyboardAssist</c>); else the pane's.
+        /// </summary>
+        public Rect Occluded => IsOpen && _end.Height > 0 ? _end : _pane.OccludedRect;
 
         public event EventHandler? Changed;
 
         public void Dispose() => _pane.StateChanged -= OnStateChanged;
 
-        private void OnStateChanged(object? sender, InputPaneStateEventArgs e) => Changed?.Invoke(this, EventArgs.Empty);
+        private void OnStateChanged(object? sender, InputPaneStateEventArgs e)
+        {
+            _end = e.NewState == InputPaneState.Open ? e.EndRect : default;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

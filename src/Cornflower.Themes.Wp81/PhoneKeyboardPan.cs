@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
@@ -23,13 +24,14 @@ namespace Cornflower.Themes.Wp81;
 /// further than puts its own top at the window's top; one the keyboard doesn't cover stays. That a TextBox moves the
 /// least, not to the top, is assumed (the phone's shell's usual way; no read of it yet).</para>
 /// <para><b>What moves.</b> The window's content, all of it, through a <see cref="TranslateTransform"/> at animation
-/// priority over the content's own (so an app's own transform comes back as it was): a box in a
-/// <see cref="ScrollViewer"/> moves with the page, not by scrolling, as a scroll can't take a box at the end of its
-/// content up. A box in a popup (a ContentDialog's) moves nothing: #150 saw a focused TextBox's dialog stay at the top.
-/// The safe area, the popups and the keyboard stay where they are; the AutoSuggestBox's list is hung from its box again
-/// as the page moves (<see cref="Moved"/>).</para>
-/// <para><b>When.</b> As the keyboard comes up, changes or goes, and as the focus comes to or leaves a box. The move is
-/// at once, not a slide: whether the phone's slides, and how fast, is unmeasured.</para>
+/// priority on the window's presenter of it, so the content's own transform (an app's, a page's motion) is left alone:
+/// a box in a <see cref="ScrollViewer"/> moves with the page, not by scrolling, as a scroll can't take a box at the end
+/// of its content up. A box in a popup (a ContentDialog's) moves nothing: #150 saw a focused TextBox's dialog stay at the
+/// top. The safe area, the popups and the keyboard stay where they are; the AutoSuggestBox's list is hung from its box
+/// again as the page moves (<see cref="Moved"/>).</para>
+/// <para><b>When.</b> As the keyboard comes up, changes or goes (worked out afresh), as the focus comes to or leaves a
+/// box (the least change from where the page is), and as the box the page moved for leaves the window. The move is at
+/// once, not a slide: whether the phone's slides, and how fast, is unmeasured.</para>
 /// </remarks>
 internal static class PhoneKeyboardPan
 {
@@ -42,13 +44,9 @@ internal static class PhoneKeyboardPan
 
     static PhoneKeyboardPan()
     {
-        InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.Update());
+        InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.Update(keyboardChanged: false));
         // The focus leaving: once it has settled, as it may be on its way to another box.
-        InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) =>
-        {
-            if (PanOf(box) is { } pan)
-                Dispatcher.UIThread.Post(pan.Update);
-        });
+        InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
     }
 
     /// <summary>Raised with the window as its content moves, after it has.</summary>
@@ -72,69 +70,99 @@ internal static class PhoneKeyboardPan
         return pan;
     }
 
-    /// <summary>One window's pan: its keyboard, its content and how far that is moved.</summary>
+    /// <summary>One window's pan: its keyboard, what it moves and how far.</summary>
     private sealed class Pan
     {
         private readonly TopLevel _top;
-        private readonly PhoneSuggestionList.IPhoneKeyboard? _keyboard;
         private readonly TranslateTransform _transform = new();
+        private PhoneSuggestionList.IPhoneKeyboard? _keyboard;
         private Visual? _moved;
         private IDisposable? _shown;
+        private TextBox? _for;
 
-        public Pan(TopLevel top)
-        {
-            _top = top;
-            _keyboard = PhoneSuggestionList.KeyboardOf(top);
-            if (_keyboard is not null)
-                _keyboard.Changed += (_, _) => Update();
-        }
+        public Pan(TopLevel top) => _top = top;
 
         public double Shift { get; private set; }
 
-        public void Update()
+        public void UpdateSoon() => Dispatcher.UIThread.Post(() => Update(keyboardChanged: false));
+
+        /// <param name="keyboardChanged">
+        /// The keyboard came, went or changed: the move is worked out afresh, the least it can be. Otherwise (the focus
+        /// moved) it is the least change from where the page is, so a box already in view leaves the page where it is.
+        /// </param>
+        public void Update(bool keyboardChanged)
         {
-            var content = _top.Content as Visual;
-            var shift = Wanted(content);
-            if (shift == Shift && content == _moved)
+            // Asked for again until the window has one (an input pane not there yet at the first focus).
+            if (_keyboard is null && (_keyboard = PhoneSuggestionList.KeyboardOf(_top)) is not null)
+                _keyboard.Changed += (_, _) => Update(keyboardChanged: true);
+            var mover = Mover();
+            var (shift, box) = Wanted(mover, keyboardChanged);
+            Follow(shift > 0 ? box : null);
+            if (shift == Shift && (shift == 0 || mover == _moved))
                 return;
             _shown?.Dispose();
             _shown = null;
             _moved = null;
             Shift = shift;
-            if (shift > 0 && content is not null)
+            if (shift > 0 && mover is not null)
             {
                 _transform.Y = -shift;
-                _shown = content.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
-                _moved = content;
+                _shown = mover.SetValue(Visual.RenderTransformProperty, _transform, BindingPriority.Animation);
+                _moved = mover;
             }
             Moved?.Invoke(_top);
         }
 
-        /// <summary>How far the content should be moved up for the box that has the focus, if one of ours has.</summary>
-        private double Wanted(Visual? content)
+        /// <summary>
+        /// What moves: the window's presenter of its content, so the content's own transform is left alone and a new
+        /// content is moved as the old was; the content itself where the window has no presenter.
+        /// </summary>
+        private Visual? Mover() => _top.Content is not Visual content
+            ? null
+            : content.GetVisualParent() is ContentPresenter presenter && presenter.TemplatedParent == _top ? presenter : content;
+
+        /// <summary>The box the page is moved for: should it leave the window (focused all the while), the page comes back.</summary>
+        private void Follow(TextBox? box)
         {
-            if (_keyboard is not { IsOpen: true } keyboard || keyboard.Occluded.Height <= 0
+            if (box == _for)
+                return;
+            if (_for is not null)
+                _for.DetachedFromVisualTree -= OnGone;
+            _for = box;
+            if (_for is not null)
+                _for.DetachedFromVisualTree += OnGone;
+        }
+
+        private void OnGone(object? sender, VisualTreeAttachmentEventArgs e) => UpdateSoon();
+
+        /// <summary>How far to move up for the box that has the focus, if one of ours has, and that box.</summary>
+        private (double Shift, TextBox? Box) Wanted(Visual? mover, bool keyboardChanged)
+        {
+            if (_keyboard is not { IsOpen: true } keyboard
                 || _top.FocusManager?.GetFocusedElement() is not TextBox box || !GetIsEnabled(box)
-                || content is null || !content.IsVisualAncestorOf(box))
-                return 0;
-            Visual target = box.TemplatedParent is AutoCompleteBox suggest && PhoneSuggestionList.GetIsEnabled(suggest)
-                ? suggest
-                : box;
+                || mover is null || !mover.IsVisualAncestorOf(box))
+                return (0, null);
+            // What the keyboard covers of the window: on Windows every window has a pane (the touch keyboard), whose place
+            // may be beside or below the window (as Avonic's KeyboardAssist.CoveredHeight).
+            var covered = keyboard.Occluded.Intersect(new Rect(_top.ClientSize));
+            if (covered.Height <= 0)
+                return (0, null);
+            Visual target = PhoneSuggestionList.BoxWithFocus(_top) is { } suggest && suggest.IsVisualAncestorOf(box) ? suggest : box;
             if (target.TranslatePoint(default, _top) is not { } at)
-                return 0;
-            // Where it would be were the content not moved.
-            var top = at.Y + Shift;
+                return (0, null);
+            // Where it would be were nothing moved.
+            var top = at.Y + (_moved?.IsVisualAncestorOf(target) == true ? Shift : 0);
             var bottom = top + target.Bounds.Height;
             var area = PhonePopupHost.AreaOf(_top);
             if (target is AutoCompleteBox)
-                return Math.Max(0, top - area.Top);
-            // The least move from where the content is that shows the box above the keyboard, its top if it is taller.
-            var shift = Shift;
-            if (bottom - shift > keyboard.Occluded.Top)
-                shift = bottom - keyboard.Occluded.Top;
+                return (Math.Max(0, top - area.Top), box);
+            // The least move that shows the box above the keyboard, its top if it is taller.
+            var shift = keyboardChanged ? 0 : Shift;
+            if (bottom - shift > covered.Top)
+                shift = bottom - covered.Top;
             if (top - shift < area.Top)
                 shift = top - area.Top;
-            return Math.Max(0, shift);
+            return (Math.Max(0, shift), box);
         }
     }
 }

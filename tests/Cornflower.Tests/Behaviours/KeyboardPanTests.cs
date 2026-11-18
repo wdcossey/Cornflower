@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
@@ -122,6 +123,53 @@ public class KeyboardPanTests
         Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
     }
 
+    // A keyboard growing or shrinking (a strip of suggestions coming and going) moves the page afresh: the box sits on
+    // the keyboard's top again, with no gap left.
+    [AvaloniaFact]
+    public void The_Keyboard_Changing_Height_Moves_The_Page_Afresh()
+    {
+        using var page = new Page(tops: 600);
+        var box = page.Boxes[0];
+        page.KeyboardFake.Show(new Rect(0, Keyboard.Top - 50, Keyboard.Width, Keyboard.Height + 50));
+        page.Tap(box);
+        Assert.Equal(Keyboard.Top - 50, page.InWindow(box).Bottom, 0.01);
+
+        page.KeyboardFake.Show(Keyboard);
+
+        Assert.Equal(Keyboard.Top, page.InWindow(box).Bottom, 0.01);
+    }
+
+    // The box the page moved for leaving the window, still focused, brings the page back.
+    [AvaloniaFact]
+    public void The_Box_Leaving_The_Window_Brings_The_Page_Back()
+    {
+        using var page = new Page(tops: [100, 600]);
+        var rest = page.InWindow(page.Boxes[0]);
+        page.Tap(page.Boxes[1]);
+        Assert.True(PhoneKeyboardPan.ShiftOf(page.Window) > 0);
+
+        ((Canvas)page.Boxes[1].Parent!).Children.Remove(page.Boxes[1]);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+        Assert.Equal(rest, page.InWindow(page.Boxes[0]));
+    }
+
+    // The content's own transform (an app's, a page's motion) is left alone: the move is the window's presenter's.
+    [AvaloniaFact]
+    public void The_Contents_Own_Transform_Is_Left_Alone()
+    {
+        var own = new TranslateTransform(5, 0);
+        using var page = new Page(wrap: c => new Panel { RenderTransform = own, Children = { c } }, tops: 600);
+        var rest = page.InWindow(page.Boxes[0]);
+
+        page.Tap(page.Boxes[0]);
+
+        Assert.Same(own, ((Control)page.Window.Content!).RenderTransform);
+        Assert.Equal(rest.X, page.InWindow(page.Boxes[0]).X, 0.01);
+        Assert.Equal(Keyboard.Top, page.InWindow(page.Boxes[0]).Bottom, 0.01);
+    }
+
     // A box the keyboard leaves clear stays where it is.
     [AvaloniaFact]
     public void A_TextBox_Above_The_Keyboard_Stays()
@@ -130,6 +178,16 @@ public class KeyboardPanTests
         var rest = page.InWindow(page.Boxes[0]);
         page.Tap(page.Boxes[0]);
         Assert.Equal(rest, page.InWindow(page.Boxes[0]));
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+    }
+
+    // A pane over none of the window (Windows' touch keyboard beside or below it) moves nothing.
+    [AvaloniaFact]
+    public void A_Keyboard_Over_None_Of_The_Window_Moves_Nothing()
+    {
+        using var page = new Page(tops: 600);
+        page.KeyboardFake.Show(new Rect(Scene.ReferenceWidth, Keyboard.Top, Keyboard.Width, Keyboard.Height));
+        page.Tap(page.Boxes[0]);
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
     }
 
@@ -170,22 +228,22 @@ public class KeyboardPanTests
     }
 
     // A box in a popup (the phone's are in the overlay layer, a ContentDialog's too) moves nothing: #150 saw a focused
-    // TextBox's dialog stay at the top. Nor does one in a popup that is a window of its own (a desktop's).
-    [AvaloniaTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void A_Box_In_A_Popup_Moves_Nothing(bool overlay)
+    // TextBox's dialog stay at the top. (A popup that is a window of its own, a desktop's, the headless platform never
+    // makes.)
+    [AvaloniaFact]
+    public void A_Box_In_A_Popup_Moves_Nothing()
     {
-        var inPopup = new TextBox { Width = 300, Margin = new Thickness(0, 600, 0, 0) };
+        var inPopup = new TextBox { Width = 300, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom };
         Popup? popup = null;
         using var page = new Page(wrap: c => new Panel
         {
-            Children = { c, (popup = new Popup { ShouldUseOverlayLayer = overlay, Placement = PlacementMode.AnchorAndGravity, Child = inPopup }) },
+            Children = { c, (popup = new Popup { ShouldUseOverlayLayer = true, Placement = PlacementMode.AnchorAndGravity, Child = new Panel { Height = 780, Children = { inPopup } } }) },
         });
         popup!.IsOpen = true;
         Dispatcher.UIThread.RunJobs();
 
         var rest = inPopup.TranslatePoint(default, page.Window);
+        Assert.True(rest!.Value.Y + inPopup.Bounds.Height > Keyboard.Top, "the keyboard covers the box");
 
         page.Tap(inPopup);
 
@@ -240,5 +298,13 @@ public class KeyboardPanTests
         var list = stage.InWindow(stage.List);
         Assert.Equal(AutoSuggestBoxReadings.ListTop, list.Y, 0.001);
         Assert.Equal(Keyboard.Top - PhoneSuggestionList.KeyboardGap, list.Bottom, 0.01);
+
+        // Again with a list its max holds to one height, so that nothing is laid out again: the page's move alone tells it.
+        keyboard.Hide();
+        stage.Box.MaxDropDownHeight = 200;
+        stage.Open(12);
+        keyboard.Show(Keyboard);
+        stage.Settle();
+        Assert.Equal(AutoSuggestBoxReadings.ListTop, stage.InWindow(stage.List).Y, 0.001);
     }
 }
