@@ -19,6 +19,8 @@ namespace Cornflower.Controls;
 /// indeterminate loops, the user's only sign that something is happening; the scroll indicators' timers (how long
 /// they stay after a scroll), as scrolling itself is Avalonia's and doesn't read this either; and the input timings
 /// (a ToggleSwitch's hold, a swipe's speed, the LoopingSelector's flick), which are the finger's, not a motion's.
+/// The keyboard's pan has a time of its own instead (<see cref="KeyboardPanSlide"/>), which only <see cref="Animated"/>
+/// overrides.
 /// </para>
 /// </remarks>
 public static class CornflowerConfig
@@ -36,6 +38,7 @@ public static class CornflowerConfig
     private static double? _tiltSpeed;
     private static double? _pivotAndHubSpeed;
     private static double? _controlSpeed;
+    private static TimeSpan _keyboardPanSlide = PhoneKeyboardPanSlide;
 
     /// <summary>
     /// Whether Cornflower's motions move. Default <see langword="true"/>. Off, each motion that reads it is at its end
@@ -165,6 +168,28 @@ public static class CornflowerConfig
     }
 
     /// <summary>
+    /// How long the page takes to slide up when the keyboard comes up over a focused text box (the keyboard's pan): 300
+    /// ms by default, the phone's (#205). It slides back down in two thirds of it (the phone's 200 ms). Zero or less, and
+    /// the page jumps, up and down, with no slide.
+    /// </summary>
+    /// <remarks>
+    /// Read when a slide starts. A time of its own, so neither <see cref="MotionSpeed"/> nor an area's speed scales it;
+    /// with <see cref="Animated"/> off the page jumps whatever it is.
+    /// </remarks>
+    public static TimeSpan KeyboardPanSlide
+    {
+        get => _keyboardPanSlide;
+        set
+        {
+            _keyboardPanSlide = value;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>The phone's <see cref="KeyboardPanSlide"/>: the page's slide up, about 0.3 s in #205's recording.</summary>
+    internal static TimeSpan PhoneKeyboardPanSlide => TimeSpan.FromMilliseconds(300);
+
+    /// <summary>
     /// Named departures from the phone, each off by default, so the phone's behaviour stays the default (ADR 0006).
     /// Each is recorded in its control's README, under "Departures".
     /// </summary>
@@ -205,6 +230,7 @@ public static class CornflowerConfig
         _animated = true;
         _motionSpeed = 1;
         _popupSpeed = _pageSpeed = _tiltSpeed = _pivotAndHubSpeed = _controlSpeed = null;
+        _keyboardPanSlide = PhoneKeyboardPanSlide;
         Deviations.MenuFlyoutSingleStepOpen = false;
         Changed?.Invoke();
     }

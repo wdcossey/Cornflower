@@ -25,6 +25,7 @@ public class CornflowerConfigTests
         Assert.Null(CornflowerConfig.PivotAndHubSpeed);
         Assert.Null(CornflowerConfig.ControlSpeed);
         Assert.False(CornflowerConfig.Deviations.MenuFlyoutSingleStepOpen);
+        Assert.Equal(TimeSpan.FromMilliseconds(300), CornflowerConfig.KeyboardPanSlide);
         Assert.All(Areas, area => Assert.Equal(1, CornflowerConfig.SpeedOf(area)));
     }
 
@@ -48,6 +49,19 @@ public class CornflowerConfigTests
 
         CornflowerConfig.Animated = false;
         Assert.All(Areas, area => Assert.Equal(CornflowerConfig.NoMotion, CornflowerConfig.SpeedOf(area)));
+    }
+
+    // The keyboard pan's slide is a time of its own, any time, 0 or less turning it off; Reset brings back the phone's.
+    [AvaloniaFact]
+    public void Reset_Brings_Back_The_Phones_Keyboard_Pan_Slide()
+    {
+        using var config = new ConfigScope();
+        CornflowerConfig.KeyboardPanSlide = TimeSpan.FromMilliseconds(-5);
+        Assert.Equal(TimeSpan.FromMilliseconds(-5), CornflowerConfig.KeyboardPanSlide);
+
+        CornflowerConfig.Reset();
+
+        Assert.Equal(TimeSpan.FromMilliseconds(300), CornflowerConfig.KeyboardPanSlide);
     }
 
     [AvaloniaTheory]

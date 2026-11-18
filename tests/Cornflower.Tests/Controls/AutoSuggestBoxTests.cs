@@ -32,11 +32,15 @@ public class AutoSuggestBoxTests
     internal sealed class Stage : IDisposable
     {
         private readonly Func<TopLevel, PhoneSuggestionList.IPhoneKeyboard?> _keyboardOf;
+        private readonly TimeSpan _slide = CornflowerConfig.KeyboardPanSlide;
 
+        /// <param name="slide">The keyboard's pan slides, as on the phone; otherwise it jumps, for a test of where it goes.</param>
         public Stage(ThemeVariant? variant = null, bool atTop = false, IEnumerable<IStyle>? themes = null,
-            FakeKeyboard? keyboard = null, Func<Control, Control>? wrap = null)
+            FakeKeyboard? keyboard = null, Func<Control, Control>? wrap = null, bool slide = false)
         {
             _keyboardOf = PhoneSuggestionList.KeyboardOf;
+            if (!slide)
+                CornflowerConfig.KeyboardPanSlide = TimeSpan.Zero;
             if (keyboard is not null)
                 PhoneSuggestionList.KeyboardOf = _ => keyboard;
             Box = new AutoCompleteBox { PlaceholderText = Placeholder };
@@ -51,6 +55,7 @@ public class AutoSuggestBoxTests
             catch
             {
                 PhoneSuggestionList.KeyboardOf = _keyboardOf;
+                CornflowerConfig.KeyboardPanSlide = _slide;
                 throw;
             }
         }
@@ -116,6 +121,7 @@ public class AutoSuggestBoxTests
         {
             Scene.Dispose();
             PhoneSuggestionList.KeyboardOf = _keyboardOf;
+            CornflowerConfig.KeyboardPanSlide = _slide;
         }
     }
 

@@ -57,7 +57,7 @@ Raw pixels, the column at x 540 and the row at y 300 (y 160 at rest), read from 
 
 | Behaviour | Phone (#150) | Ours |
 |---|---|---|
-| Focus | the keyboard comes up; the page moves up 21.67, the control's top to the window's top | the platform's keyboard (Avalonia's, on a phone); the page moves up until the control's top is at the window's top (`PhoneKeyboardPan`, #179); with `AutoMaximizeSuggestionArea` false, only until the list has one suggestion's room (#201) |
+| Focus | the keyboard comes up; the page moves up 21.67, the control's top to the window's top | the platform's keyboard (Avalonia's, on a phone); the page moves up until the control's top is at the window's top (`PhoneKeyboardPan`, #179); with `AutoMaximizeSuggestionArea` false, a covered box until its bottom is at the keyboard's top, 10.42 more with the list open above it (#206, #205's read); a slide up and down (#206) |
 | A key | `TextChanged` (`UserInput`) 150 to 177 ms after `KeyDown`; the app sets `ItemsSource`, the list opens | `TextChanged` at once; `Populating` 150 ms after, the app sets `ItemsSource`, the list opens |
 | A tap on a suggestion | `SuggestionChosen` (`Text` still typed), the focus lost and regained in one frame, `TextChanged` (`SuggestionChosen`) 162 ms later, the list closed, the keyboard stays | the text set and `TextChanged`, `SelectionChanged`, the list closed, the focus kept |
 | Enter | `KeyDown` only | with the list open, Avalonia's commit closes it |
@@ -68,8 +68,9 @@ Raw pixels, the column at x 540 and the row at y 300 (y 160 at rest), read from 
 
 ## Known gaps
 
-- **The pan is at once**: the page moves up under the keyboard as the phone's (#179, #201), but without the phone's
-  slide, which is unmeasured. A covered box with `AutoMaximizeSuggestionArea` false is unread on the phone.
+- **The pan's slide is fitted to a 30 fps recording** (#205): 300 ms up and 200 down, its curves exponential eases
+  fitted to frames 33 to 50 ms apart. The 10.42 the page goes further for a list above the box is applied as the list
+  opens; the read can't say whether the text or the list causes it.
 - **The right edge is one raw pixel short** (ADR 0003's rounding, as the TextBox's).
 - **At rest in light the box is 203 grey, the phone's 204**: Skia's blend, as the TextBox's.
 - **The events**: no reason on `TextChanged`, `SelectionChanged` after the text is set, Enter closes the list (the

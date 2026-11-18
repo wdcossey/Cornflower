@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
 using Cornflower.Tests.Controls;
@@ -73,6 +74,9 @@ public class TextBoxPageTests
         var keyboardOf = PhoneSuggestionList.KeyboardOf;
         var keyboard = new AutoSuggestBoxTests.FakeKeyboard();
         PhoneSuggestionList.KeyboardOf = _ => keyboard;
+        // Where it goes, not how it slides there (KeyboardPanTests).
+        using var config = new ConfigScope();
+        CornflowerConfig.KeyboardPanSlide = TimeSpan.Zero;
         try
         {
             var page = new TextBoxPage();

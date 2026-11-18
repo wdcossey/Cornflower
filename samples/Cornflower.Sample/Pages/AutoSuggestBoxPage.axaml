@@ -24,12 +24,6 @@
     <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
     <AutoCompleteBox x:Name="Disabled" cf:ControlHeader.Header="disabled" Text="apple" IsEnabled="False" />
 
-    <!-- AutoMaximizeSuggestionArea false (#201): the keyboard moves the page only if it leaves the list no room, and then
-         the least that gives it one suggestion's; not to the window's top. -->
-    <TextBlock Text="not maximized" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
-    <AutoCompleteBox x:Name="NotMaximized" cf:ControlHeader.Header="fruit" PlaceholderText="type a fruit"
-                     cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea="False" Populating="OnPopulating" />
-
     <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
       <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
         <StackPanel>
@@ -39,5 +33,12 @@
         </StackPanel>
       </Border>
     </ThemeVariantScope>
+
+    <!-- AutoMaximizeSuggestionArea false (#201, #206): the keyboard moves the page only if it covers the box, and then
+         until the box's bottom is at the keyboard's top, not to the window's top; the list opens above the box, the page
+         going 10.42 further. Last on the page, so the keyboard covers it (on the Pixel 8 its top is near 570 of 914). -->
+    <TextBlock Text="not maximized" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+    <AutoCompleteBox x:Name="NotMaximized" cf:ControlHeader.Header="fruit" PlaceholderText="type a fruit"
+                     cf:AutoCompleteBoxOptions.AutoMaximizeSuggestionArea="False" Populating="OnPopulating" />
   </StackPanel>
 </UserControl>
