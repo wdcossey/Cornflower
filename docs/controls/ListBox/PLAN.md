@@ -32,7 +32,8 @@ Each with its evidence, and its test in `tests/Cornflower.Tests/Controls/ListBox
 | Behaviour | Evidence | Test |
 |---|---|---|
 | The keys: the list's theme gives each item, its own ones too, the item's; a ListBox with no Theme stays the ListView | ARCHITECTURE's "under another name" row; #130 | `The_Keyed_List_Gives_Its_Items_The_Keyed_Item_Theme_And_A_Plain_ListBox_Stays_The_ListView` |
-| The list's setters: foreground, background, border, the ScrollViewer's attached values, tab stop and navigation, font, `VirtualizingStackPanel`, no focus adorner | the style; the dump | `The_Lists_Style_Sets_What_The_Phone_Read` |
+| The list's setters: foreground, background, border, the ScrollViewer's attached values, tab stop and navigation, font (over a parent's), `VirtualizingStackPanel`, no focus adorner | the style; the dump | `The_Lists_Style_Sets_What_The_Phone_Read` |
+| The list's font is its own, over a parent's | the style | `The_List_Sets_Its_Own_Font_Over_Its_Parents` |
 | The phone's ScrollViewer, its values bound from the list's, `Padding` on the items | the template | `Its_ScrollViewer_Is_The_Phones_With_The_Lists_Values` |
 | The pale box, drawn inside the transparent 1.5 border (4 raw pixels of page), the selection in the accent | the capture `dark__ListBox__three-items__base` and light | `The_List_Draws_The_Pale_Box_Inside_Its_Border_And_The_Selection_In_The_Accent` |
 | The bounds: the items at 1.6667 inside the border, 32.0833 tall; the content at 6.5, 8, 16.25 tall, its own width | the dump | `The_Bounds_Are_The_Phones_Within_Avalonias_Rounding` |
@@ -187,7 +188,7 @@ _none_
 | [x] | `Background` | `{ThemeResource ListBoxBackgroundThemeBrush}` | `TemplatedControl.Background` | Themed: ListBoxBackgroundThemeBrush, drawn inside the border (`BackgroundSizing` InnerBorderEdge, as WinRT's Border) |
 | [x] | `BorderBrush` | `{ThemeResource ListBoxBorderThemeBrush}` | `TemplatedControl.BorderBrush` | Themed: ListBoxBorderThemeBrush |
 | [x] | `BorderThickness` | `{ThemeResource ListBoxBorderThemeThickness}` | `TemplatedControl.BorderThickness` | Themed: ListBoxBorderThemeThickness |
-| [x] | `ScrollViewer.HorizontalScrollBarVisibility` | `Disabled` | `ScrollViewer.HorizontalScrollBarVisibility (attached)` | Themed: Disabled, bound to the ScrollViewer |
+| [x] | `ScrollViewer.HorizontalScrollBarVisibility` | `Disabled` | `ScrollViewer.HorizontalScrollBarVisibility (attached)` | Avalonia's ListBox's default, Disabled, bound to the ScrollViewer |
 | [x] | `ScrollViewer.VerticalScrollBarVisibility` | `Auto` | `ScrollViewer.VerticalScrollBarVisibility (attached)` | Themed: Auto, bound to the ScrollViewer |
 | [-] | `ScrollViewer.HorizontalScrollMode` | `Disabled` | none | not applicable: Avalonia's ScrollViewer has no scroll modes (ScrollViewer README); horizontal scrolling is off by the bar's Disabled |
 | [-] | `ScrollViewer.VerticalScrollMode` | `Auto` | none | not applicable: as HorizontalScrollMode |
@@ -195,7 +196,7 @@ _none_
 | [x] | `ScrollViewer.IsDeferredScrollingEnabled` | `False` | `ScrollViewer.IsDeferredScrollingEnabled (attached)` | Themed: False, bound to the ScrollViewer |
 | [x] | `ScrollViewer.BringIntoViewOnFocusChange` | `True` | `ScrollViewer.BringIntoViewOnFocusChange (attached)` | Themed: True, bound to the ScrollViewer |
 | [x] | `IsTabStop` | `False` | `InputElement.IsTabStop` | Themed: False |
-| [x] | `TabNavigation` | `Once` | none | Themed: `KeyboardNavigation.TabNavigation` Once |
+| [x] | `TabNavigation` | `Once` | none | Avalonia's ListBox's default, `KeyboardNavigation.TabNavigation` Once |
 | [x] | `FontFamily` | `{ThemeResource ContentControlThemeFontFamily}` | `TemplatedControl.FontFamily` | Themed: ContentControlThemeFontFamily |
 | [x] | `FontSize` | `{ThemeResource ControlContentThemeFontSize}` | `TemplatedControl.FontSize` | Themed: ControlContentThemeFontSize, 12 |
 | [x] | `ItemsPanel` | `ItemsPanelTemplate` | `ItemsControl.ItemsPanel` | Themed: a `VirtualizingStackPanel` |

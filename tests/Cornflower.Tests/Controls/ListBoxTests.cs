@@ -178,6 +178,20 @@ public class ListBoxTests
         Assert.Equal(BorderThickness, root.BorderThickness);
     }
 
+    // The list's own font, not its parent's: ContentControlThemeFontFamily at 12, as the phone's style sets them.
+    [AvaloniaFact]
+    public void The_List_Sets_Its_Own_Font_Over_Its_Parents()
+    {
+        var list = new ListBox { ItemsSource = new[] { "one" } };
+        list.Bind(StyledElement.ThemeProperty, list.GetResourceObservable("Wp81ListBoxTheme"));
+        var parent = new ContentControl { FontFamily = new FontFamily("Courier New"), FontSize = 30, Content = list };
+        using var scene = new Scene(parent);
+
+        Assert.Equal(scene.Window.FindResource("ContentControlThemeFontFamily"), list.FontFamily);
+        Assert.Equal(FontSize, list.FontSize);
+        Assert.Equal(FontSize, ((ListBoxItem)list.ContainerFromIndex(0)!).FontSize);
+    }
+
     // The phone's ScrollViewer, with the thin indicators, its values bound from the list's attached ones, named as
     // Avalonia's ListBox looks for it.
     [AvaloniaFact]

@@ -110,19 +110,18 @@
   </ControlTheme>
 
   <ControlTheme x:Key="Wp81ListBoxTheme" TargetType="ListBox">
+    <!-- The phone's HorizontalScrollBarVisibility Disabled, TabNavigation Once and no focus visual are Avalonia's ListBox's
+         defaults, so not set here. -->
     <Setter Property="Foreground" Value="{DynamicResource ListBoxForegroundThemeBrush}" />
     <Setter Property="Background" Value="{DynamicResource ListBoxBackgroundThemeBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource ListBoxBorderThemeBrush}" />
     <Setter Property="BorderThickness" Value="{DynamicResource ListBoxBorderThemeThickness}" />
-    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
     <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
     <Setter Property="ScrollViewer.BringIntoViewOnFocusChange" Value="True" />
     <Setter Property="IsTabStop" Value="False" />
-    <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
     <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
     <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="ItemContainerTheme" Value="{StaticResource Wp81ListBoxItemTheme}" />
     <!-- No check mode: set, not inherited, so a ListBox in an item of a ListView in the check mode isn't in it. -->
     <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="False" />
