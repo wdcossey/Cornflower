@@ -146,6 +146,12 @@ namespace RefApp
                 case "dismissagain":
                     await probe.DismissProbe(host, true);
                     break;
+                case "keyboardpan":
+                    await probe.KeyboardPan(host);
+                    break;
+                case "keyboardpanboxes":
+                    await probe.KeyboardPanBoxes(host);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;

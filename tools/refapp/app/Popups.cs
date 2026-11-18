@@ -179,6 +179,17 @@ namespace RefApp
             list.Add(Panned("PasswordBox", "low-rest", 560, false, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
             list.Add(Panned("PasswordBox", "low-focused", 560, true, false, () => new PasswordBox { Header = "password box", Password = "Agjy" }));
 
+            // #179's second read: an AutoSuggestBox with AutoMaximizeSuggestionArea false that the keyboard covers, focused and
+            // then, 1.2 s later, given "a" and a list of 3 or 12 suggestions; a PasswordBox with its reveal row under the
+            // keyboard; the ScrollViewer's rest, and its VerticalOffset (each Panned box writes a collapsed "readout").
+            Func<Control> lowSuggest = () => new AutoSuggestBox { Header = "auto suggest box", PlaceholderText = "type a fruit", AutoMaximizeSuggestionArea = false };
+            list.Add(Panned("AutoSuggestBox", "low-nomax-focused", 560, true, false, lowSuggest));
+            list.Add(Panned("AutoSuggestBox", "low-nomax-list-3", 560, true, false, lowSuggest, Typed(3)));
+            list.Add(Panned("AutoSuggestBox", "low-nomax-list-12", 560, true, false, lowSuggest, Typed(12)));
+            list.Add(Panned("PasswordBox", "low-reveal-rest", 560, false, false, () => new PasswordBox { Header = "password box", Password = "Agjy", IsPasswordRevealButtonEnabled = true }));
+            list.Add(Panned("PasswordBox", "low-reveal-focused", 560, true, false, () => new PasswordBox { Header = "password box", Password = "Agjy", IsPasswordRevealButtonEnabled = true }));
+            list.Add(Panned("TextBox", "scroll-low-rest", 560, false, true, () => new TextBox { Header = "text box", Text = "Agjy" }));
+
             // ContentDialog's layout (#150): no button, the primary or the secondary alone, a long title and content
             // longer than the screen, and a TextBox in the content focused from code (the keyboard).
             list.Add(Dialog("no-buttons", false, null, null));
@@ -569,16 +580,20 @@ namespace RefApp
         /// line at the stage's top, focused from code with <paramref name="focus"/> (an AutoSuggestBox's TextBox part); with
         /// <paramref name="scroll"/> the box sits in a ScrollViewer with 800 px of content below it, the line outside it.
         /// The page's move is read from the screen grab: the line's and the box's places at rest against focused.
+        /// <paramref name="then"/>, if given, runs on the box 1.2 s after the focus (an AutoSuggestBox's typing). Before the
+        /// stage is dumped (from 550 ms before), a collapsed TextBlock named "readout" is given what the app can read: the ScrollViewer's
+        /// VerticalOffset, the box's top and bottom in the window, and the InputPane's OccludedRect.
         /// </summary>
-        private static PopupSpecimen Panned(string name, string variant, double top, bool focus, bool scroll, Func<Control> make)
+        private static PopupSpecimen Panned(string name, string variant, double top, bool focus, bool scroll, Func<Control> make, Action<Control> then = null)
         {
+            var settle = then != null ? 3000 : 1500;
             return new PopupSpecimen
             {
                 Name = name,
                 Variant = variant,
                 Height = 800,
-                SettleMs = 1500,
-                NoPopup = true,
+                SettleMs = settle,
+                NoPopup = then == null,
                 MakeHost = () =>
                 {
                     var box = make();
@@ -586,12 +601,13 @@ namespace RefApp
                     box.Margin = new Thickness(0, top, 0, 0);
                     var grid = new Grid { Height = 780, VerticalAlignment = VerticalAlignment.Top, Tag = box };
                     grid.Children.Add(new TextBlock { Text = "page top", VerticalAlignment = VerticalAlignment.Top });
+                    grid.Children.Add(new TextBlock { Name = "readout", Visibility = Visibility.Collapsed });
                     if (scroll)
                     {
                         var content = new StackPanel();
                         content.Children.Add(box);
                         content.Children.Add(new Border { Height = 800 });
-                        grid.Children.Add(new ScrollViewer { Content = content });
+                        grid.Children.Add(new ScrollViewer { Name = "scroller", Content = content });
                     }
                     else
                     {
@@ -612,10 +628,89 @@ namespace RefApp
                         }
                     }
 
-                    return null;
+                    if (then != null)
+                    {
+                        Later(host, 1200, () => then((Control)host.Tag));
+                    }
+
+                    Later(host, settle - 300, () => Readout(host));
+                    return host;
                 },
-                Close = (host, h) => { },
+                // A fault in the delayed steps, kept in the readout, goes into the run's errors; so does a list that didn't open.
+                Fault = h =>
+                {
+                    var readout = FindNamed((FrameworkElement)h, "readout") as TextBlock;
+                    if (readout != null && readout.Text.StartsWith("fault: ", StringComparison.Ordinal))
+                    {
+                        return readout.Text;
+                    }
+
+                    return then != null && VisualTreeHelper.GetOpenPopups(Window.Current).Count == 0 ? "no popup open" : null;
+                },
+                Close = (host, h) =>
+                {
+                    var box = host.Tag as AutoSuggestBox;
+                    if (box != null)
+                    {
+                        box.IsSuggestionListOpen = false;
+                    }
+                },
             };
+        }
+
+        /// <summary>An AutoSuggestBox's typing, for <see cref="Panned"/>: "a", and a list of the first <paramref name="count"/> fruits, opened.</summary>
+        private static Action<Control> Typed(int count)
+        {
+            return c =>
+            {
+                var box = (AutoSuggestBox)c;
+                box.Text = "a";
+                box.ItemsSource = Fruits.Take(count).ToList();
+                box.IsSuggestionListOpen = true;
+            };
+        }
+
+        /// <summary>Runs <paramref name="a"/> on the UI thread after <paramref name="ms"/>; a fault goes into the host's readout, which keeps it.</summary>
+        private static async void Later(FrameworkElement host, int ms, Action a)
+        {
+            await Task.Delay(ms);
+            try
+            {
+                a();
+            }
+            catch (Exception ex)
+            {
+                var readout = FindNamed(host, "readout") as TextBlock;
+                if (readout != null)
+                {
+                    readout.Text = "fault: " + ex.GetType().Name + ": " + ex.Message;
+                }
+            }
+        }
+
+        /// <summary>Writes what the app can read of the pan into a <see cref="Panned"/> host's readout.</summary>
+        private static void Readout(FrameworkElement host)
+        {
+            var box = (Control)host.Tag;
+            var scroller = FindNamed(host, "scroller") as ScrollViewer;
+            var r = box.TransformToVisual(null).TransformBounds(new Rect(0, 0, box.ActualWidth, box.ActualHeight));
+            var o = Windows.UI.ViewManagement.InputPane.GetForCurrentView().OccludedRect;
+            var readout = (TextBlock)FindNamed(host, "readout");
+            if (readout.Text.StartsWith("fault: ", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            readout.Text = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "offset {0}; box {1} to {2}; occluded {3} {4} {5} {6}",
+                scroller != null ? scroller.VerticalOffset : double.NaN,
+                r.Top,
+                r.Bottom,
+                o.X,
+                o.Y,
+                o.Width,
+                o.Height);
         }
 
         /// <summary>Twelve fruit names, the AutoSuggestBox's suggestions.</summary>
