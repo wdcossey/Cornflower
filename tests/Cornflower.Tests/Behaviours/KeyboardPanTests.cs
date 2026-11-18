@@ -333,6 +333,31 @@ public class KeyboardPanTests
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
     }
 
+    // A tap on a box with the keyboard already up (from one box to another): the page moves for the line tapped, where
+    // the press puts the caret, not for the line the caret was on before.
+    [AvaloniaFact]
+    public void A_Tap_Moves_The_Page_For_The_Line_It_Puts_The_Caret_On()
+    {
+        using var page = new Page(tops: [100, 600]);
+        var box = page.Boxes[1];
+        box.AcceptsReturn = true;
+        box.Text = string.Join(Environment.NewLine, "one", "two", "three", "four");
+        box.CaretIndex = box.Text.Length;
+        page.Tap(page.Boxes[0]);
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+
+        var rest = page.InWindow(box);
+        page.Window.MouseDown(new Point(rest.X + 30, rest.Y + 12), MouseButton.Left);
+        page.Window.MouseUp(new Point(rest.X + 30, rest.Y + 12), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Same(box, page.Window.FocusManager!.GetFocusedElement());
+        Assert.True(box.CaretIndex <= "one".Length, "the press put the caret on the first line");
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
+    }
+
     // A box at the end of a ScrollViewer, which can scroll no further, moves with the page; the scroll stays.
     [AvaloniaFact]
     public void A_Box_In_A_ScrollViewer_Moves_With_The_Page()
@@ -461,5 +486,24 @@ public class KeyboardPanTests
         Assert.Equal(Keyboard.Top - PhoneSuggestionList.KeyboardGap, list.Bottom, 0.01);
         Assert.Equal(PhoneSuggestionList.OneSuggestion, list.Height, 0.01);
         Assert.True(stage.InWindow(stage.Box).Y > 0, "the page moved less than the maximized move");
+    }
+
+    // The pan leaves a list not maximized just one suggestion's room: arithmetic's error, a hair short, still counts
+    // the keyboard, rather than pass it over and run the list down under it.
+    [AvaloniaFact]
+    public void A_Keyboard_A_Hair_Short_Of_One_Suggestions_Room_Still_Holds_The_List()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(keyboard: keyboard);
+        keyboard.Show(Keyboard);
+        stage.Open(12);
+        var listTop = stage.InWindow(stage.List).Y;
+
+        var top = listTop + PhoneSuggestionList.KeyboardGap + PhoneSuggestionList.OneSuggestion - 1e-9;
+        keyboard.Show(new Rect(0, top, Keyboard.Width, 800 - top));
+        stage.Settle();
+
+        Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
+        Assert.Equal(top - PhoneSuggestionList.KeyboardGap, stage.InWindow(stage.List).Bottom, 0.01);
     }
 }
