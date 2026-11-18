@@ -1,6 +1,6 @@
 # DatePicker and TimePicker, and their full-screen pickers: plan
 
-Issue [#156](https://github.com/wdcossey/CornflowerUI/issues/156). Rung 1: Wp81 themes for Avalonia's `DatePicker`,
+Issue [#156](https://github.com/wdcossey/Cornflower/issues/156). Rung 1: Wp81 themes for Avalonia's `DatePicker`,
 `TimePicker`, `DatePickerPresenter` and `TimePickerPresenter`; rung 2 for the popup (`PhoneDateTimePicker`, internal to
 the theme, on #151's `PhonePopupHost`). No type of Cornflower's own. The wheel is #154's (`Wp81LoopingSelectorTheme`),
 the bar #153's (`Controls/PickerBar.axaml`), the popup and its rows #181's host.

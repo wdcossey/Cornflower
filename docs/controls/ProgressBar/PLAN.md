@@ -1,6 +1,6 @@
 # ProgressBar: plan
 
-[#35](https://github.com/wdcossey/CornflowerUI/issues/35). The 8.1 ProgressBar: Avalonia's own `ProgressBar`, themed (rung
+[#35](https://github.com/wdcossey/Cornflower/issues/35). The 8.1 ProgressBar: Avalonia's own `ProgressBar`, themed (rung
 1), with the phone's default style and template as the Wp81 theme's `ControlTheme`, and its `Indeterminate` storyboard
 run frame by frame, as ProgressRing's `Active` is.
 

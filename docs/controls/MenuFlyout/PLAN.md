@@ -1,6 +1,6 @@
 # MenuFlyout, MenuFlyoutPresenter and the menu's items: plan
 
-[#152](https://github.com/wdcossey/CornflowerUI/issues/152). The 8.1 MenuFlyout: Avalonia's `MenuFlyout` and
+[#152](https://github.com/wdcossey/Cornflower/issues/152). The 8.1 MenuFlyout: Avalonia's `MenuFlyout` and
 `MenuFlyoutPresenter`, the presenter themed (rung 1) and the popup round it a behaviour the theme turns on (rung 2),
 on the Flyout's popup host (#151). Avalonia has no `MenuFlyoutItem`, `ToggleMenuFlyoutItem` or `MenuFlyoutSeparator`:
 a `MenuFlyout` holds `MenuItem`s (`ToggleType` `CheckBox` is the toggle item) and `Separator`s, so the phone's items are

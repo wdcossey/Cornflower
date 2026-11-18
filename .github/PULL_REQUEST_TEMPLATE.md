@@ -16,7 +16,7 @@ The emulator's capture beside ours, through URLs pinned to the commit. Name the 
 
 ## Review
 
-- `/code-review` findings: _n_ raised, _n_ fixed, _n_ waived (reasons below)
+- `/code-review <level>`, one pass: _n_ raised, _n_ fixed, _n_ waived (reasons below); tokens _n_ (or "not measured")
 -
 
 ## Checks

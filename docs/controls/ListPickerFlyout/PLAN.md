@@ -1,6 +1,6 @@
 # ListPickerFlyout, PickerFlyout and their presenters: plan
 
-[#153](https://github.com/wdcossey/CornflowerUI/issues/153). The 8.1 full-screen pickers and the pickers' bar. WinRT's
+[#153](https://github.com/wdcossey/Cornflower/issues/153). The 8.1 full-screen pickers and the pickers' bar. WinRT's
 `ListPickerFlyout`, `PickerFlyout`, `ListPickerFlyoutPresenter`, `PickerFlyoutPresenter` and `PickerFlyoutBase` have no
 Avalonia type, so they are new controls in `Cornflower.Controls` (rung 5): the flyouts on Avalonia's `PopupFlyoutBase`,
 the presenters on its `PickerPresenterBase`, as the issue asks. The presenters are themed (rung 1); the popup round them

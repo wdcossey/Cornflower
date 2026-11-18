@@ -1,6 +1,6 @@
 # TextBlock and the text styles: plan
 
-[#26](https://github.com/wdcossey/CornflowerUI/issues/26). The 8.1 type ramp: the `TextBlock` styles of the
+[#26](https://github.com/wdcossey/Cornflower/issues/26). The 8.1 type ramp: the `TextBlock` styles of the
 phone's `generic.xaml`, as Avalonia `ControlTheme`s under the same keys, with resources an extension pack can
 override ([ADR 0004](../../decisions/0004-larger-screens-as-an-extension-pack.md)).
 
@@ -201,7 +201,7 @@ them.
 
 ## Dependencies and captures
 
-- Tokens ([#19](https://github.com/wdcossey/CornflowerUI/issues/19)) and fonts ([#18](https://github.com/wdcossey/CornflowerUI/issues/18)): merged.
+- Tokens ([#19](https://github.com/wdcossey/Cornflower/issues/19)) and fonts ([#18](https://github.com/wdcossey/Cornflower/issues/18)): merged.
 - Captures: the 14 catalogued styles, dark and light, from refapp run `20261108-1443-dev11` on the reference
   profile, committed under [`ref/wp81/TextBlock/`](../../../ref/wp81/TextBlock/README.md).
 - `MessageDialogTitleStyle` and `MessageDialogContentStyle`, and every style with two lines and wrapped, dark and

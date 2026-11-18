@@ -69,7 +69,7 @@ Every "reported" cell is measured from the era's own files before it goes in a p
 ### How switching would work
 
 Proposed. The mechanism is unproven; a Tier 0 spike tests it
-([#14](https://github.com/wdcossey/CornflowerUI/issues/14)).
+([#14](https://github.com/wdcossey/Cornflower/issues/14)).
 
 - **One controls package, one theme package per era.** `Cornflower.Controls` holds the new
   controls with behaviour only. `Cornflower.Themes.Wp81` holds the era's tokens and
@@ -155,11 +155,12 @@ behaviour, and record the rung in the control's plan.
    line rules; the scroll indicators, `PhoneScrollIndicators` and `PhoneIndicatorFade` (#116); the
    list check mode, `PhoneListMultiSelect` (#119, and its box's own press, #142); the app bar's
    stepped height and motion, `PhoneAppBar` (#141); the ComboBox's two forms, `PhoneComboBox` (#182); the date and
-   time pickers opened full screen on the phone's popup host, `PhoneDateTimePicker` (#183).
+   time pickers opened full screen on the phone's popup host, `PhoneDateTimePicker` (#183); the page moved up for the
+   keyboard, `PhoneKeyboardPan` (#179).
 3. **Part class**: our own control placed inside Avalonia's template, where the behaviour lives in
    a part. A `ScrollContentPresenter` subclass with our gesture recogniser for scroll physics (not
    built: #116 recorded the physics as a deviation, and
-   [#129](https://github.com/wdcossey/CornflowerUI/issues/129) is the part). A presenter for a full-screen picker was planned here; the date and time
+   [#129](https://github.com/wdcossey/Cornflower/issues/129) is the part). A presenter for a full-screen picker was planned here; the date and time
    pickers didn't need one (#183). The app-facing type doesn't change. Avonic's
    `ButtonInner` is this.
 4. **Subclass** in `Cornflower.Controls`, with the WinRT name, when the control's own input or
@@ -171,14 +172,17 @@ behaviour, and record the rung in the control's plan.
      behaviour, not a hole;
    - the control's README lists it as a type substitution.
 
-   None so far. `ComboBox` was expected here, for its full-screen mode, and became an attached
+   None so far that changes a control's input or selection. The picker flyouts' presenters (#184)
+   subclass Avalonia's `DatePickerPresenter` and `TimePickerPresenter` with no members, only so a
+   theme can draw them as the flyouts'. `ComboBox` was expected here, for its full-screen mode, and became an attached
    behaviour instead (rung 2, #182). Keep the set short and listed.
 5. **New control** with the WinRT name, when Avalonia has no type of that shape. Built: ProgressRing
    (#28), Pivot (#121) and Hub (#122), each running its own motion (`PivotMotion`, `HubMotion`), the
    Pivot's swipe and the Hub's pan one recogniser (`SidewaysSwipeGestureRecognizer`); ContentDialog
-   (#157), ListPickerFlyout and PickerFlyout and their presenters (#153). LoopingSelector is Avalonia's
-   panel, themed and driven by a behaviour (#154). Expected: DatePickerFlyout and TimePickerFlyout
-   (#184), SemanticZoom, and later Windows Phone 8.0's Panorama, LongListSelector and HubTile.
+   (#157), ListPickerFlyout and PickerFlyout and their presenters (#153), DatePickerFlyout and
+   TimePickerFlyout (#184, their presenters bare subclasses of Avalonia's). LoopingSelector is Avalonia's panel, themed and
+   driven by a behaviour (#154). Expected: SemanticZoom, and later Windows Phone 8.0's Panorama,
+   LongListSelector and HubTile.
 6. **Recorded deviation**, with its measurement and reason.
 
 Behaviour in a subclass or part class is set at style priority, so it survives a replaced theme.
@@ -203,7 +207,7 @@ reflection, for the controls era 1 themes most:
 
 Every control of interest is unsealed and exposes `OnApplyTemplate`, `OnPropertyChanged` and its
 input handlers as protected virtuals. Two consequences follow from Avalonia's docs and are tested
-by a Tier 0 spike ([#16](https://github.com/wdcossey/CornflowerUI/issues/16)): a subclass gets no
+by a Tier 0 spike ([#16](https://github.com/wdcossey/Cornflower/issues/16)): a subclass gets no
 theme unless it overrides `StyleKeyOverride` to its base or ships a theme keyed to itself; and
 that theme may be `BasedOn` the base's.
 
@@ -238,16 +242,16 @@ Still proposed: an `Accent` property on the theme, as a shortcut for the resourc
 - **An unthemed control is a hole**: it gets no template at all, or Fluent's if that is also
   installed. During development, Avalonia's Simple theme sits underneath `Wp81Theme` in the
   sample and the tests, and a test lists every templated Avalonia control with no Wp81 theme
-  ([#13](https://github.com/wdcossey/CornflowerUI/issues/13)). A templated control is a public,
+  ([#13](https://github.com/wdcossey/Cornflower/issues/13)). A templated control is a public,
   concrete `TemplatedControl` that `SimpleTheme` themes by its type, in Dark or Light, or one of
   Cornflower's own, by its style key. The list is `tests/Cornflower.Tests/Completeness/Holes.txt`,
   79 names at Avalonia 12.1.4, and their count is the measure of completeness. `Wp81Theme` itself includes no fallback; a shipped app chooses its own. What a
   control with no `ControlTheme` does is a Tier 0 spike
-  ([#15](https://github.com/wdcossey/CornflowerUI/issues/15)).
+  ([#15](https://github.com/wdcossey/Cornflower/issues/15)).
 
 ## Dark, light and accent
 
-What exists ([#19](https://github.com/wdcossey/CornflowerUI/issues/19)):
+What exists ([#19](https://github.com/wdcossey/Cornflower/issues/19)):
 
 - Dark and light are Avalonia's `ThemeVariant`. `Tokens/Colors.axaml` holds the 8.1 SDK's
   `Default` dictionary as `Dark` and its `Light` dictionary as `Light`: 319 keys each. Each
@@ -276,9 +280,9 @@ Proposed:
 ## Fonts and icons
 
 On the measurements in [ADR 0001](decisions/0001-what-faithful-means.md). Text
-([#18](https://github.com/wdcossey/CornflowerUI/issues/18)), the template glyphs
-([#20](https://github.com/wdcossey/CornflowerUI/issues/20)) and Lucide
-([#21](https://github.com/wdcossey/CornflowerUI/issues/21)) exist; the Noto package is proposed.
+([#18](https://github.com/wdcossey/Cornflower/issues/18)), the template glyphs
+([#20](https://github.com/wdcossey/Cornflower/issues/20)) and Lucide
+([#21](https://github.com/wdcossey/Cornflower/issues/21)) exist; the Noto package is proposed.
 
 - **Text** is Selawik 1.01 (OFL-1.1), bundled in the theme as `avares://` fonts, so the theme
   package's licence is `Apache-2.0 AND OFL-1.1`. `Tokens/Fonts.axaml` holds the six 8.1 font
@@ -310,7 +314,7 @@ On the measurements in [ADR 0001](decisions/0001-what-faithful-means.md). Text
   There is no TextBox clear button and no ComboBox or picker arrow on the phone. The CheckBox's
   indeterminate mark is a `Rectangle` whose fill is transparent, so at rest it doesn't show in
   either theme. Each glyph has a test against named capture pixels
-  ([#20](https://github.com/wdcossey/CornflowerUI/issues/20)). Circles are drawn as arcs in a
+  ([#20](https://github.com/wdcossey/Cornflower/issues/20)). Circles are drawn as arcs in a
   `StreamGeometry`: an `EllipseGeometry` in a `GeometryGroup` drew about 0.45 raw px off centre
   in headless Skia.
 - **Icons an app uses** are Lucide (ISC, with MIT for the icons it took from Feather), generated
@@ -321,7 +325,7 @@ On the measurements in [ADR 0001](decisions/0001-what-faithful-means.md). Text
   `LucideIconStrokeLineCap`, `LucideIconStrokeJoin`). There is no `SymbolIcon`:
   `tools/lucide/symbols.tsv` maps WinRT's `Symbol` names to Lucide names, 161 of 193. Lucide's
   shapes are its own; that is a recorded deviation
-  ([#21](https://github.com/wdcossey/CornflowerUI/issues/21)).
+  ([#21](https://github.com/wdcossey/Cornflower/issues/21)).
 
 ## Larger screens
 
@@ -343,16 +347,16 @@ proposals are unproven.
 
 | The phone has | Avalonia 12.1.4 has | Proposal |
 |---|---|---|
-| Tilt on press | A perspective `MatrixTransform` | `Tilt.IsEnabled`, an attached behaviour that tilts toward the touch point, frame by frame on `CornflowerClock`, at animation priority, on the template part marked `Tilt.IsTarget`, inside an untilted `Transparent` root so that a press at the very edge still hits the control. Not `Rotate3DTransform`: it has no depth offset and puts its eye over its origin. Angle, depth and timing measured from the emulator ([#22](https://github.com/wdcossey/CornflowerUI/issues/22), [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-tilt)) |
-| Navigation transitions (turnstile, slide, continuum) | `IPageTransition`, `PageSlide`, `TransitioningContentControl`, `NavigationPage` | Our own `IPageTransition`s, one per transition, timed from recordings: the turnstile, the slide and the continuum in [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-motion). Done ([#120](https://github.com/wdcossey/CornflowerUI/issues/120)): `TurnstileTransition` (the Wp81 `NavigationPage`'s `PageTransition`), `SlideTransition` and `ContinuumTransition`, frame by frame on `CornflowerClock` |
+| Tilt on press | A perspective `MatrixTransform` | `Tilt.IsEnabled`, an attached behaviour that tilts toward the touch point, frame by frame on `CornflowerClock`, at animation priority, on the template part marked `Tilt.IsTarget`, inside an untilted `Transparent` root so that a press at the very edge still hits the control. Not `Rotate3DTransform`: it has no depth offset and puts its eye over its origin. Angle, depth and timing measured from the emulator ([#22](https://github.com/wdcossey/Cornflower/issues/22), [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-tilt)) |
+| Navigation transitions (turnstile, slide, continuum) | `IPageTransition`, `PageSlide`, `TransitioningContentControl`, `NavigationPage` | Our own `IPageTransition`s, one per transition, timed from recordings: the turnstile, the slide and the continuum in [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-motion). Done ([#120](https://github.com/wdcossey/Cornflower/issues/120)): `TurnstileTransition` (the Wp81 `NavigationPage`'s `PageTransition`), `SlideTransition` and `ContinuumTransition`, frame by frame on `CornflowerClock` |
 | Content and entrance transitions | `ImplicitAnimationCollection` (composition) | An infrastructure item before the controls that use them |
-| Pivot | `TabControl`, `Carousel` | A new control. Its header strip scrolls with the content, which neither does. Done ([#121](https://github.com/wdcossey/CornflowerUI/issues/121)): the swipe, strip and slides frame by frame on `CornflowerClock`, read from the emulator |
-| Hub | none | A new control. Done ([#122](https://github.com/wdcossey/CornflowerUI/issues/122)): the pan, the snap to sections, the loop and the parallax frame by frame on `CornflowerClock`, read from the emulator |
+| Pivot | `TabControl`, `Carousel` | A new control. Its header strip scrolls with the content, which neither does. Done ([#121](https://github.com/wdcossey/Cornflower/issues/121)): the swipe, strip and slides frame by frame on `CornflowerClock`, read from the emulator |
+| Hub | none | A new control. Done ([#122](https://github.com/wdcossey/Cornflower/issues/122)): the pan, the snap to sections, the loop and the parallax frame by frame on `CornflowerClock`, read from the emulator |
 | ContentDialog | none | A new control |
 | ProgressRing | none | A new control. ProgressBar's indeterminate dots are a template |
-| App bar | `CommandBar`, `CommandBarButton` (new in 12.0) | Theme Avalonia's, and measure what it lacks: the minimised state, the ellipsis menu. Done ([#118](https://github.com/wdcossey/CornflowerUI/issues/118)): the shell's drawing, `ClosedDisplayMode` as `CommandBarOptions`, the page keeping the closed bar's height free; the shell's press, stepped open height and motion ([#141](https://github.com/wdcossey/CornflowerUI/issues/141)) |
-| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Done ([#156](https://github.com/wdcossey/CornflowerUI/issues/156)) with no part class: the theme's own `PickerPopup` opens full screen on `PhonePopupHost` in place of Avalonia's `PART_Popup` (`PhoneDateTimePicker`, #183). DatePickerFlyout and TimePickerFlyout as types are [#184](https://github.com/wdcossey/CornflowerUI/issues/184) |
-| ComboBox's full-screen list | `ComboBox` opens its `PART_Popup` from the class | Theme for the inline form; the full form opens `ListPickerFlyout`. Done ([#155](https://github.com/wdcossey/CornflowerUI/issues/155)) as an attached behaviour on Avalonia's own `ComboBox` (`PhoneComboBox`, rung 2, #182), not the subclass first planned, so every ComboBox has both forms. The flip is class behaviour, read from the emulator: 5 items open inline and 6 full screen, by count, not by screen ([#25](https://github.com/wdcossey/CornflowerUI/issues/25)) |
+| App bar | `CommandBar`, `CommandBarButton` (new in 12.0) | Theme Avalonia's, and measure what it lacks: the minimised state, the ellipsis menu. Done ([#118](https://github.com/wdcossey/Cornflower/issues/118)): the shell's drawing, `ClosedDisplayMode` as `CommandBarOptions`, the page keeping the closed bar's height free; the shell's press, stepped open height and motion ([#141](https://github.com/wdcossey/Cornflower/issues/141)) |
+| Picker flyouts with looping selectors | `DatePicker`, `TimePicker`, `DatePickerPresenter` | Theme Avalonia's, which already loop. Done ([#156](https://github.com/wdcossey/Cornflower/issues/156)) with no part class: the theme's own `PickerPopup` opens full screen on `PhonePopupHost` in place of Avalonia's `PART_Popup` (`PhoneDateTimePicker`, #183). DatePickerFlyout and TimePickerFlyout as types done in [#184](https://github.com/wdcossey/Cornflower/issues/184) (#193), on `PickerFlyoutBase`, their presenters bare subclasses of Avalonia's |
+| ComboBox's full-screen list | `ComboBox` opens its `PART_Popup` from the class | Theme for the inline form; the full form opens `ListPickerFlyout`. Done ([#155](https://github.com/wdcossey/Cornflower/issues/155)) as an attached behaviour on Avalonia's own `ComboBox` (`PhoneComboBox`, rung 2, #182), not the subclass first planned, so every ComboBox has both forms. The flip is class behaviour, read from the emulator: 5 items open inline and 6 full screen, by count, not by screen ([#25](https://github.com/wdcossey/Cornflower/issues/25)) |
 | Hardware back button | `BackRequested` | The app's job, documented in [the Page README](controls/Page/README.md) (#120): a `NavigationPage` in a `PageNavigationHost` pops on the request, or the app handles it, as the sample does |
 | Status bar and safe areas | `InsetsManager`, `SafeAreaPadding`, `DisplayEdgeToEdge` | The app's job, with an example. Avonic reached the same decision. Avalonia 12's `TopLevel.AutoSafeAreaPadding` is on by default, and the Android sample relies on it |
 | Orientation states | none | A pseudoclass the control sets from the top level's size |
@@ -370,11 +374,11 @@ Cornflower should need far fewer global rules, because a theme for a control's o
 belongs in its `ControlTheme`, which doesn't have that cost. The budget test carries over anyway,
 set low from the start, and the measurement is repeated on the Android device.
 
-Avonic's metrics collection carried over ([#12](https://github.com/wdcossey/CornflowerUI/issues/12)).
+Avonic's metrics collection carried over ([#12](https://github.com/wdcossey/Cornflower/issues/12)).
 What exists, the limits, the measurements, and what changed in the copy ("From Avonic") are in
 [`docs/performance`](performance/README.md). The table below is the plan it was copied by, kept
 for the Avonic paths; the last of it, `drive.ps1`, came with the desktop sample
-([#9](https://github.com/wdcossey/CornflowerUI/issues/9)):
+([#9](https://github.com/wdcossey/Cornflower/issues/9)):
 
 | Avonic file | What it does | For Cornflower |
 |---|---|---|
@@ -386,7 +390,7 @@ for the Avonic paths; the last of it, `drive.ps1`, came with the desktop sample
 | `tests/Avonic.Components.Tests/Performance/PerformanceMonitorTests.cs` | Proves the line's format, that it reports once a page is in, and that Avalonia's meter still has its three instruments | Copy unchanged |
 | `tools/real-window/drive.ps1` | Drives the real sample window with real input and saves a frame of every page | Copied with the desktop sample (#68): every page opened with a real click, a frame saved, Back, the page's 450 × 800 from the ready line, Alt+Left and resizing. Touch, drags, the wheel, pixel reads and `-Only` came with #115; the per-control sections come back with controls. The phone equivalent is `tools/android/run.ps1` |
 | `tools/breakage/run.js` | Breaks each behaviour in a fresh clone and checks a test goes red | Copy unchanged |
-| `tests/Avonic.Components.Tests/Scene.cs`, `TestClock.cs`, `Frames.cs` | A shown headless window closed when the test ends; a clock the test advances by hand; `PixelAt` on a captured frame | **Done** ([#11](https://github.com/wdcossey/CornflowerUI/issues/11)), with changes: `Scene` is the reference profile, 450 × 800 at 2.4, with the themes in the window's `Styles` and Dark by default; `TestClock` replaces one internal source behind `CornflowerClock`, refuses to nest or go back, and lands a frame 16 ms after it is asked for; `PixelAt` checks bounds and reads only RGBA and BGRA |
+| `tests/Avonic.Components.Tests/Scene.cs`, `TestClock.cs`, `Frames.cs` | A shown headless window closed when the test ends; a clock the test advances by hand; `PixelAt` on a captured frame | **Done** ([#11](https://github.com/wdcossey/Cornflower/issues/11)), with changes: `Scene` is the reference profile, 450 × 800 at 2.4, with the themes in the window's `Styles` and Dark by default; `TestClock` replaces one internal source behind `CornflowerClock`, refuses to nest or go back, and lands a frame 16 ms after it is asked for; `PixelAt` checks bounds and reads only RGBA and BGRA |
 
 The rules behind them, from Avonic's measurements: budget alternatives, not rules or time,
 because alternatives track cost and counts are exact; no metrics code in the library, because
@@ -397,7 +401,7 @@ Android sample is the first chance to put real numbers against the checkpoint.
 ## Testing
 
 What exists: `tests/Cornflower.Tests` runs Avalonia.Headless with Skia and xunit v3, on the
-harness from [#11](https://github.com/wdcossey/CornflowerUI/issues/11):
+harness from [#11](https://github.com/wdcossey/Cornflower/issues/11):
 
 - **`Scene`**: a shown headless window at the reference profile, a 450 × 800 view at render
   scaling 2.4, so a frame is 1080 × 1920 like the emulator's. `SimpleTheme` then `Wp81Theme` go
@@ -456,11 +460,11 @@ control that needs it, and **moves into `CLAUDE.md` only once proven**.
 | `<Style TargetType="Button">` with a `Template` setter, unkeyed | `<ControlTheme x:Key="{x:Type Button}" TargetType="Button">` | 58 unkeyed styles in 8.1; 117 in 19041 |
 | `<Style x:Key="…" TargetType="Button">` | A keyed `ControlTheme`, same key, used through `Theme="{StaticResource …}"` | An app's `Style="{StaticResource …}"` becomes `Theme=` |
 | `BasedOn="{StaticResource …}"` | `BasedOn` on the `ControlTheme` | |
-| A WinRT control Avalonia has as another type with a property set (PasswordBox: a `TextBox` with `PasswordChar`) | A `ControlTheme` for that type keyed by the WinRT name, used as `Theme="{DynamicResource PasswordBox}"` | As PasswordBox does ([#103](https://github.com/wdcossey/CornflowerUI/pull/103)). The checklist generator treats such a control as one Avalonia lacks; its plan maps it by hand |
-| A WinRT control Avalonia has under another name (ListView as `ListBox`, AppBarButton as `CommandBarButton`, Page as `ContentPage`, Frame as `NavigationPage`) | That type's `ControlTheme`, keyed by type | An 8.1 app's list is a ListView, so `ListBox` takes its look ([#130](https://github.com/wdcossey/CornflowerUI/pull/130)); likewise the app bar ([#133](https://github.com/wdcossey/CornflowerUI/pull/133)) and the page and Frame ([#134](https://github.com/wdcossey/CornflowerUI/pull/134)) |
-| A keyed template in the theme resources (`ScrollViewerScrollBarlessTemplate`) | A keyed `ControlTheme` with that template, named `Wp81` and the WinRT name with `Theme` for `Template` (`Wp81ScrollViewerScrollBarlessTheme`), set by `Theme="{DynamicResource …}"` | As ScrollViewer does ([#126](https://github.com/wdcossey/CornflowerUI/pull/126)); the TextBox and PasswordBox templates set it on their ScrollViewer parts |
-| A default style that a template's own parts don't take (`ContentPresenter`'s Left and Top) | No theme for that type | A type-keyed theme would reach every template's presenter. The phone's doesn't reach a template's presenter, nor one in a page ([#125](https://github.com/wdcossey/CornflowerUI/pull/125), [#128](https://github.com/wdcossey/CornflowerUI/pull/128)) |
-| A control the phone's shell draws, not its template (a page's `BottomAppBar`) | The theme follows the shell's screenshots; the template's own look is captured for the record | As CommandBar does ([#133](https://github.com/wdcossey/CornflowerUI/pull/133)) |
+| A WinRT control Avalonia has as another type with a property set (PasswordBox: a `TextBox` with `PasswordChar`) | A `ControlTheme` for that type keyed by the WinRT name, used as `Theme="{DynamicResource PasswordBox}"` | As PasswordBox does ([#103](https://github.com/wdcossey/Cornflower/pull/103)). The checklist generator treats such a control as one Avalonia lacks; its plan maps it by hand |
+| A WinRT control Avalonia has under another name (ListView as `ListBox`, AppBarButton as `CommandBarButton`, Page as `ContentPage`, Frame as `NavigationPage`) | That type's `ControlTheme`, keyed by type | An 8.1 app's list is a ListView, so `ListBox` takes its look ([#130](https://github.com/wdcossey/Cornflower/pull/130)); likewise the app bar ([#133](https://github.com/wdcossey/Cornflower/pull/133)) and the page and Frame ([#134](https://github.com/wdcossey/Cornflower/pull/134)) |
+| A keyed template in the theme resources (`ScrollViewerScrollBarlessTemplate`) | A keyed `ControlTheme` with that template, named `Wp81` and the WinRT name with `Theme` for `Template` (`Wp81ScrollViewerScrollBarlessTheme`), set by `Theme="{DynamicResource …}"` | As ScrollViewer does ([#126](https://github.com/wdcossey/Cornflower/pull/126)); the TextBox and PasswordBox templates set it on their ScrollViewer parts |
+| A default style that a template's own parts don't take (`ContentPresenter`'s Left and Top) | No theme for that type | A type-keyed theme would reach every template's presenter. The phone's doesn't reach a template's presenter, nor one in a page ([#125](https://github.com/wdcossey/Cornflower/pull/125), [#128](https://github.com/wdcossey/Cornflower/pull/128)) |
+| A control the phone's shell draws, not its template (a page's `BottomAppBar`) | The theme follows the shell's screenshots; the template's own look is captured for the record | As CommandBar does ([#133](https://github.com/wdcossey/Cornflower/pull/133)) |
 | A default style for a type Simple's templates hold bare and Simple has no theme for (ContentControl) | The type-keyed theme sets `HoleParts.FallBack` and `HoleParts.FallBackToOwn`, so such a part in a hole keeps Avalonia's own | As ContentControl does (the Tier 2 roll-up) |
 | `{ThemeResource Key}` | `{DynamicResource Key}` | 1,657 uses in 8.1; 3,696 in 19041 |
 | `{StaticResource Key}` | `{StaticResource Key}` in the same file; `{DynamicResource}` across files | Avalonia's docs say a `StaticResource` into another included file fails at load. Measured for a template part's `Theme` (`Wp81HeaderContentPresenterTheme`, in `Controls/HeaderContentPresenter.axaml`, from `TextBox.axaml`): it compiles without a warning and throws `InvalidCastException` when the template is built |
@@ -476,7 +480,7 @@ control that needs it, and **moves into `CLAUDE.md` only once proven**.
 | `x:Name="ContentPresenter"` in a built-in's template | The part name Avalonia's control looks for, such as `PART_ContentPresenter` | Avalonia's code decides the name. Check each control's `[TemplatePart]` attributes |
 | `x:Name="Foo"` in one of our controls' templates | `PART_Foo` | As Avonic does |
 | A template part WinRT has and Avalonia's control doesn't know | Present for looks, but the control won't drive it; or a part class of ours drives it (rung 3) | A source of behaviour differences. List each in the plan |
-| Two parts that show one content, one per state (ToggleButton's `EnabledBackground` and `EnabledContent`, `DisabledBackground` and `DisabledContent`) | One part, restyled per state | Avalonia can't show one element in two presenters. Same pixels ([#93](https://github.com/wdcossey/CornflowerUI/pull/93)) |
+| Two parts that show one content, one per state (ToggleButton's `EnabledBackground` and `EnabledContent`, `DisabledBackground` and `DisabledContent`) | One part, restyled per state | Avalonia can't show one element in two presenters. Same pixels ([#93](https://github.com/wdcossey/Cornflower/pull/93)) |
 | `x:DeferLoadStrategy="Lazy"`, `x:Load` | No equivalent. `IsVisible="False"`, or built in code | 29 uses in 19041; not counted in 8.1. Costs start-up time; measure it |
 
 ### Visual states
@@ -486,23 +490,23 @@ in a nested style.
 
 | WinRT XAML | Avalonia | Note |
 |---|---|---|
-| `VisualState x:Name="PointerOver"` in `CommonStates` | `<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">` | Check whether the phone shows a hover state at all. Avonic found `:pointerover` also applies during a touch; in Avalonia 12.1.4 a touch doesn't set it ([#93](https://github.com/wdcossey/CornflowerUI/pull/93)) |
+| `VisualState x:Name="PointerOver"` in `CommonStates` | `<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">` | Check whether the phone shows a hover state at all. Avonic found `:pointerover` also applies during a touch; in Avalonia 12.1.4 a touch doesn't set it ([#93](https://github.com/wdcossey/Cornflower/pull/93)) |
 | `Pressed` | `^:pressed` | |
 | `Disabled` | `^:disabled` | |
 | `Normal` | The theme's plain setters | |
 | `ObjectAnimationUsingKeyFrames` with one `DiscreteObjectKeyFrame KeyTime="0"` | A `Setter` | An instant assignment written as an animation. 174 storyboards in 8.1, 531 in 19041; most are these |
 | `<VisualState.Setters>` | `Setter`s | None in 8.1, where setters didn't exist yet; 480 blocks in 19041 |
 | Combined states (`UncheckedNormal`, `CheckedPointerOver`, `IndeterminatePressed`) | Combined pseudoclasses: `^:checked:pointerover` | Avalonia has `:checked`, `:unchecked`, `:indeterminate` |
-| A pressed state of a checked control that sets nothing (ToggleButton's `CheckedPressed`) | Left out of the checked selector: `^:checked:not(:pressed), ^:checked[(wp81\|PhonePress.IsOff)=True]` | The checked look comes back when the finger slides off, as on the phone. `PhonePress`, internal to the theme, tells that, as `:pointerover` can't under a touch ([#93](https://github.com/wdcossey/CornflowerUI/pull/93)) |
+| A pressed state of a checked control that sets nothing (ToggleButton's `CheckedPressed`) | Left out of the checked selector: `^:checked:not(:pressed), ^:checked[(wp81\|PhonePress.IsOff)=True]` | The checked look comes back when the finger slides off, as on the phone. `PhonePress`, internal to the theme, tells that, as `:pointerover` can't under a touch ([#93](https://github.com/wdcossey/Cornflower/pull/93)) |
 | ToggleSwitch: `On`, `Off`, `Dragging` | `^:checked`, `^:unchecked`, `^:dragging` | |
 | `SelectionStates`: `Selected`, `Unselected` | `^:selected` | |
-| `ScrollingIndicatorStates`: `TouchIndicator`, `MouseIndicator`, `NoIndicator` (ScrollViewer, ScrollBar) | An internal attached `PhoneScrollIndicators.IndicatorMode` that a behaviour sets on the ScrollViewer from the scroll and the pointer type; the theme's styles pass it to the ScrollBars, `^[(wp81\|PhoneScrollIndicators.IndicatorMode)=TouchIndicator]` | As ScrollViewer does ([#126](https://github.com/wdcossey/CornflowerUI/pull/126)). The fades are a frame loop (`PhoneIndicatorFade`): a style that changes a transition's duration sets new `Transitions`, which stops the running fade |
-| `MultiSelectStates`: `ListMultiSelect` (ListViewItem), from the list's `SelectionMode` | An internal inherited attached `PhoneListMultiSelect.IsOn`, set by the list's theme by `SelectionMode`'s value, which its items inherit | As ListView does ([#130](https://github.com/wdcossey/CornflowerUI/pull/130)): no marking of containers, so made, recycled and own items all follow |
+| `ScrollingIndicatorStates`: `TouchIndicator`, `MouseIndicator`, `NoIndicator` (ScrollViewer, ScrollBar) | An internal attached `PhoneScrollIndicators.IndicatorMode` that a behaviour sets on the ScrollViewer from the scroll and the pointer type; the theme's styles pass it to the ScrollBars, `^[(wp81\|PhoneScrollIndicators.IndicatorMode)=TouchIndicator]` | As ScrollViewer does ([#126](https://github.com/wdcossey/Cornflower/pull/126)). The fades are a frame loop (`PhoneIndicatorFade`): a style that changes a transition's duration sets new `Transitions`, which stops the running fade |
+| `MultiSelectStates`: `ListMultiSelect` (ListViewItem), from the list's `SelectionMode` | An internal inherited attached `PhoneListMultiSelect.IsOn`, set by the list's theme by `SelectionMode`'s value, which its items inherit | As ListView does ([#130](https://github.com/wdcossey/Cornflower/pull/130)): no marking of containers, so made, recycled and own items all follow |
 | `FocusStates`: `Focused`, `PointerFocused` | `^:focus-visible`, `^:focus` | |
-| `CommonStates` `Focused` on a text control (TextBox, PasswordBox, RichEditBox) | `^:focus` | Not `^:focus-visible`: a tap focuses a text box on the phone too. The rule above is for `FocusStates`; the checklist generator maps `Focused` by its group. As TextBox does ([#101](https://github.com/wdcossey/CornflowerUI/pull/101)) |
-| A state Avalonia's control doesn't raise | For a built-in: an attached behaviour that sets a pseudoclass, a part class, a subclass under rung 4, or a recorded gap, in that order. For ours: a pseudoclass named after the state, lower case | Pivot's `:unselectedlocked` ([#140](https://github.com/wdcossey/CornflowerUI/pull/140)), Hub's `:backgroundhidden` and `:backgroundshowing` ([#146](https://github.com/wdcossey/CornflowerUI/pull/146)); a state the phone never enters (`BackgroundImageFadingIn`, read by #136) isn't declared |
-| `CheckboxPressed` (ListViewItem), a press on the check box | An internal attached `PhoneListMultiSelect.IsBoxPressed` that the behaviour sets for the press's life | As ListView does ([#143](https://github.com/wdcossey/CornflowerUI/pull/143)): the box tilts alone; a press elsewhere is `Pressed` |
-| `Orientation`: `Portrait`, `Landscape` | A pseudoclass our control sets from the top level's size | Avalonia has no `:landscape`. Pivot sets `:portrait` and `:landscape`, landscape while the window is wider than tall ([#140](https://github.com/wdcossey/CornflowerUI/pull/140)) |
+| `CommonStates` `Focused` on a text control (TextBox, PasswordBox, RichEditBox) | `^:focus` | Not `^:focus-visible`: a tap focuses a text box on the phone too. The rule above is for `FocusStates`; the checklist generator maps `Focused` by its group. As TextBox does ([#101](https://github.com/wdcossey/Cornflower/pull/101)) |
+| A state Avalonia's control doesn't raise | For a built-in: an attached behaviour that sets a pseudoclass, a part class, a subclass under rung 4, or a recorded gap, in that order. For ours: a pseudoclass named after the state, lower case | Pivot's `:unselectedlocked` ([#140](https://github.com/wdcossey/Cornflower/pull/140)), Hub's `:backgroundhidden` and `:backgroundshowing` ([#146](https://github.com/wdcossey/Cornflower/pull/146)); a state the phone never enters (`BackgroundImageFadingIn`, read by #136) isn't declared |
+| `CheckboxPressed` (ListViewItem), a press on the check box | An internal attached `PhoneListMultiSelect.IsBoxPressed` that the behaviour sets for the press's life | As ListView does ([#143](https://github.com/wdcossey/Cornflower/pull/143)): the box tilts alone; a press elsewhere is `Pressed` |
+| `Orientation`: `Portrait`, `Landscape` | A pseudoclass our control sets from the top level's size | Avalonia has no `:landscape`. Pivot sets `:portrait` and `:landscape`, landscape while the window is wider than tall ([#140](https://github.com/wdcossey/Cornflower/pull/140)) |
 | `VisualTransition From="A" To="B" GeneratedDuration="…"` | `Transitions` on the part, with that duration | 50 in 8.1. A WinRT transition runs between two named states only; an Avalonia transition runs on any change of the property. Record where that differs. Tested at its end value |
 
 **8.1 states no rule covers yet, on controls Avalonia has.** The checklist generator, run on all
@@ -512,11 +516,11 @@ another name (PasswordBox, ListViewItem) is treated as one Avalonia lacks, and i
 lower-case pseudoclass of the rule for ours above; its plan maps them by hand. `Portrait` and
 `Landscape` have the orientation rule above, which Pivot gave its pseudoclasses, but the generator
 doesn't apply it yet. Decided since by Tier 1: `MouseOver` (CheckBox, RadioButton) gets no style,
-as the phone changes nothing ([#92](https://github.com/wdcossey/CornflowerUI/pull/92),
-[#94](https://github.com/wdcossey/CornflowerUI/pull/94)); `OnContent` and `OffContent` are `^:checked`
-and `^:unchecked` on ToggleSwitch's content presenters ([#102](https://github.com/wdcossey/CornflowerUI/pull/102));
+as the phone changes nothing ([#92](https://github.com/wdcossey/Cornflower/pull/92),
+[#94](https://github.com/wdcossey/Cornflower/pull/94)); `OnContent` and `OffContent` are `^:checked`
+and `^:unchecked` on ToggleSwitch's content presenters ([#102](https://github.com/wdcossey/Cornflower/pull/102));
 ProgressBar's `Determinate` is the plain setters, `Updating` draws nothing, and `Paused` and `Error`
-can't be reached, as Avalonia has no `ShowPaused` or `ShowError` ([#95](https://github.com/wdcossey/CornflowerUI/pull/95)).
+can't be reached, as Avalonia has no `ShowPaused` or `ShowError` ([#95](https://github.com/wdcossey/Cornflower/pull/95)).
 Still open:
 
 | State | Controls |
@@ -536,14 +540,14 @@ The hard part. These elements name an animation and the platform supplies the mo
 
 | WinRT XAML | Uses in 8.1 | Uses in 19041 | Avalonia | Note |
 |---|---|---|---|---|
-| `PointerDownThemeAnimation`, `PointerUpThemeAnimation` | 18, 31 | 38, 78 | An attached behaviour, set by the template (`Tilt.IsEnabled`, #65), driving a perspective `MatrixTransform` | The tilt. Angle, depth and timing read every frame under real touches, 100 presses over four sizes ([#60](https://github.com/wdcossey/CornflowerUI/pull/60)), and modelled in [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-tilt) |
-| `PointerDownThemeAnimation` on a part other than the template's root | | | `Tilt.IsTarget` on that part; the root around it stays untilted and takes the hits, with a transparent background | The phone's root is already untilted round that part, so no hit root is added, as Button's theme adds one round its tilted `Grid`, the phone's root. HyperlinkButton's `PART_ContentPresenter` ([#91](https://github.com/wdcossey/CornflowerUI/pull/91)), CheckBox's `Grid` ([#92](https://github.com/wdcossey/CornflowerUI/pull/92)), RadioButton's `Container` ([#94](https://github.com/wdcossey/CornflowerUI/pull/94)). A template that runs no theme animation gets no tilt: ToggleButton and RepeatButton ([#93](https://github.com/wdcossey/CornflowerUI/pull/93)), whose forced `Pressed` captures are flat. A template with a `PointerDownThemeAnimation` and no `PointerUpThemeAnimation` transition (HyperlinkButton, RadioButton) may snap back on release; `Tilt` eases back as on a Button until a probe measures one |
+| `PointerDownThemeAnimation`, `PointerUpThemeAnimation` | 18, 31 | 38, 78 | An attached behaviour, set by the template (`Tilt.IsEnabled`, #65), driving a perspective `MatrixTransform` | The tilt. Angle, depth and timing read every frame under real touches, 100 presses over four sizes ([#60](https://github.com/wdcossey/Cornflower/pull/60)), and modelled in [ADR 0005](decisions/0005-decisions-of-2026-11-09-and-10.md#the-tilt) |
+| `PointerDownThemeAnimation` on a part other than the template's root | | | `Tilt.IsTarget` on that part; the root around it stays untilted and takes the hits, with a transparent background | The phone's root is already untilted round that part, so no hit root is added, as Button's theme adds one round its tilted `Grid`, the phone's root. HyperlinkButton's `PART_ContentPresenter` ([#91](https://github.com/wdcossey/Cornflower/pull/91)), CheckBox's `Grid` ([#92](https://github.com/wdcossey/Cornflower/pull/92)), RadioButton's `Container` ([#94](https://github.com/wdcossey/Cornflower/pull/94)). A template that runs no theme animation gets no tilt: ToggleButton and RepeatButton ([#93](https://github.com/wdcossey/Cornflower/pull/93)), whose forced `Pressed` captures are flat. A template with a `PointerDownThemeAnimation` and no `PointerUpThemeAnimation` transition (HyperlinkButton, RadioButton) may snap back on release; `Tilt` eases back as on a Button until a probe measures one |
 | `RepositionThemeAnimation` | 9 | 5 | A transition on the part's offset | The ToggleSwitch knob |
 | `FadeInThemeAnimation`, `FadeOutThemeAnimation` | 4, 4 | 17, 14 | An opacity transition | Durations measured |
 | `EntranceThemeTransition`, `ContentThemeTransition` | — | 5, 4 | Composition implicit animations, or an `IPageTransition` | An infrastructure item |
-| `NavigationThemeTransition` with a `NavigationTransitionInfo` (`CommonNavigationTransitionInfo`, `SlideNavigationTransitionInfo`, `ContinuumNavigationTransitionInfo`) | | | An `IPageTransition` of ours per info, frame by frame on `CornflowerClock`: `TurnstileTransition` (the `NavigationPage` theme's `PageTransition`), `SlideTransition`, `ContinuumTransition`, passed to `PushAsync` and `PopAsync` as the info was to `Frame.Navigate` | As Page does ([#134](https://github.com/wdcossey/CornflowerUI/pull/134)); a page going back plays the transition it came with, as `Frame.GoBack` does |
-| Motion a control's code runs, not its template: DirectManipulation's offset, Pivot's header strip and slide-in, the Hub's pan, snap and loop | | | A frame loop of the control's own on `CornflowerClock` (`PivotMotion`, `HubMotion`), moving render transforms, with the template's ScrollViewer held, not scrolled; the finger by a `GestureRecognizer` (`SidewaysSwipeGestureRecognizer`), touch and pen, past Avalonia's scroll start distance | As Pivot and Hub do ([#140](https://github.com/wdcossey/CornflowerUI/pull/140), [#146](https://github.com/wdcossey/CornflowerUI/pull/146)): Avalonia's inertia and snap points aren't the phone's (#116's recorded deviation), and a wrap or a loop needs content past a ScrollViewer's extent. The curves are fits to the recording, `KeySpline`s and `ExponentialEase`s |
-| A motion the shell runs, not the app's template (the app bar opening and closing) | | | A frame loop in the theme's behaviour for the control (`PhoneAppBar`), fitted to the recording | As CommandBar does ([#144](https://github.com/wdcossey/CornflowerUI/pull/144)) |
+| `NavigationThemeTransition` with a `NavigationTransitionInfo` (`CommonNavigationTransitionInfo`, `SlideNavigationTransitionInfo`, `ContinuumNavigationTransitionInfo`) | | | An `IPageTransition` of ours per info, frame by frame on `CornflowerClock`: `TurnstileTransition` (the `NavigationPage` theme's `PageTransition`), `SlideTransition`, `ContinuumTransition`, passed to `PushAsync` and `PopAsync` as the info was to `Frame.Navigate` | As Page does ([#134](https://github.com/wdcossey/Cornflower/pull/134)); a page going back plays the transition it came with, as `Frame.GoBack` does |
+| Motion a control's code runs, not its template: DirectManipulation's offset, Pivot's header strip and slide-in, the Hub's pan, snap and loop | | | A frame loop of the control's own on `CornflowerClock` (`PivotMotion`, `HubMotion`), moving render transforms, with the template's ScrollViewer held, not scrolled; the finger by a `GestureRecognizer` (`SidewaysSwipeGestureRecognizer`), touch and pen, past Avalonia's scroll start distance | As Pivot and Hub do ([#140](https://github.com/wdcossey/Cornflower/pull/140), [#146](https://github.com/wdcossey/Cornflower/pull/146)): Avalonia's inertia and snap points aren't the phone's (#116's recorded deviation), and a wrap or a loop needs content past a ScrollViewer's extent. The curves are fits to the recording, `KeySpline`s and `ExponentialEase`s |
+| A motion the shell runs, not the app's template (the app bar opening and closing) | | | A frame loop in the theme's behaviour for the control (`PhoneAppBar`), fitted to the recording | As CommandBar does ([#144](https://github.com/wdcossey/Cornflower/pull/144)) |
 | `ExponentialEase`, `KeySpline` in a motion we match frame by frame | | | `PhoneEase` and `KeySplineCurve`, internal to `Cornflower.Controls`, which the theme sees: one of each for every control | The page transitions, the app bar, Pivot and Hub share them since the Tier 2 roll-up |
 | `AddDeleteThemeTransition`, `ReorderThemeTransition` | 3, 3 | 3, 4 | Composition implicit animations on the items panel | With lists |
 | `DragItemThemeAnimation`, `DragOverThemeAnimation`, `DropTargetItemThemeAnimation` | —, 8, 2 | 4, 8, 2 | Later, with list reordering | |
@@ -580,7 +584,7 @@ theme's Avalonia transitions take the speed as they are placed and whenever it i
 | `UseSystemFocusVisuals`, `FocusVisualMargin` | `FocusAdorner`, with the margin in its template | Avonic found an unset `FocusAdorner` falls back to the base theme's, so set it deliberately |
 | `AutomationProperties.AccessibilityView="Raw"` | The same attached property | |
 | `IsTabStop="False"` | `IsTabStop="False"` | |
-| A WinRT flag Avalonia expresses as a class (`IsPasswordRevealButtonEnabled`) | That class (`revealPasswordButton`) | An app sets `Classes="revealPasswordButton"`. As PasswordBox does ([#103](https://github.com/wdcossey/CornflowerUI/pull/103)) |
+| A WinRT flag Avalonia expresses as a class (`IsPasswordRevealButtonEnabled`) | That class (`revealPasswordButton`) | An app sets `Classes="revealPasswordButton"`. As PasswordBox does ([#103](https://github.com/wdcossey/Cornflower/pull/103)) |
 | `ItemsPanelTemplate` | `ItemsPanelTemplate` | |
 | `CornerRadius="{TemplateBinding CornerRadius}"` | The same | Zero throughout these eras |
 
@@ -637,7 +641,7 @@ These apply unchanged. Sources are in Avonic's
 - `Tapped` has a movement limit and isn't raised on a second quick press. A button-like control
   tracks press and release itself.
 - `:pointerover` also applies during a touch, Avonic found. Not in Avalonia 12.1.4: a touch doesn't set it
-  ([#93](https://github.com/wdcossey/CornflowerUI/pull/93)), so the ToggleButton theme tells a finger slid off with `PhonePress`.
+  ([#93](https://github.com/wdcossey/Cornflower/pull/93)), so the ToggleButton theme tells a finger slid off with `PhonePress`.
 
 **Headless tests**
 

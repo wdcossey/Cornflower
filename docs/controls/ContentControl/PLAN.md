@@ -1,6 +1,6 @@
 # ContentControl and ContentPresenter: plan
 
-[#117](https://github.com/wdcossey/CornflowerUI/issues/117). The 8.1 default styles of the two bare types,
+[#117](https://github.com/wdcossey/Cornflower/issues/117). The 8.1 default styles of the two bare types,
 `ContentControl` and `ContentPresenter`, against Avalonia's. Neither has states, resources or brushes: each style sets
 only where the content goes.
 

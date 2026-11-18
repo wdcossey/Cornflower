@@ -1,6 +1,6 @@
 # DatePickerFlyout and TimePickerFlyout
 
-Status: built, tests green · [#184](https://github.com/wdcossey/Cornflower/issues/184) · owed: the device run on the Pixel 8 · owed: the real-window run
+Status: done · [#184](https://github.com/wdcossey/Cornflower/issues/184) · device run passed 2026-11-18 (Pixel 8, Release, over wireless adb, `run.ps1 -Page datetimepicker` on `main` at `70eea78`, 09:32: cold 881 ms, the page opened in 451 ms; both flyouts open full screen with the wheels and the bar, Back closes them with the values unchanged, no exceptions; the time flyout follows en-GB's 24-hour clock) · real-window run passed 2026-11-18 (`tools/real-window/drive.ps1`, Debug, on `main` at `7bb64ce`: 195 of 195, the datetimepicker page opened in 40 ms, layout 11.4)
 
 The Windows Phone 8.1 date and time pickers shown on their own, from any element, with no DatePicker or TimePicker on
 the page: Cornflower's `DatePickerFlyout` and `TimePickerFlyout` (on #153's `PickerFlyoutBase`) and their presenters,
@@ -54,4 +54,4 @@ Rung 5: two types of Cornflower's own, with the WinRT names. Rung 2 for the popu
 - **Members set while it is open** are read at the next opening, not at once.
 - The DatePicker's gaps hold here too: the bar turns with the bottom row; a window of another height is cut in five rows,
   not read on the phone; AM and PM last (docs/controls/DatePicker/README.md, "Known gaps").
-- Owed: the device run on the Pixel 8, and the real-window run.
+- The device run and the real-window run passed on 2026-11-18 (the status line).

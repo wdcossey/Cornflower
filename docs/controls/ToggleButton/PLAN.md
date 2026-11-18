@@ -1,6 +1,6 @@
 # ToggleButton: plan
 
-[#30](https://github.com/wdcossey/CornflowerUI/issues/30), with [RepeatButton](../RepeatButton/PLAN.md). The 8.1
+[#30](https://github.com/wdcossey/Cornflower/issues/30), with [RepeatButton](../RepeatButton/PLAN.md). The 8.1
 ToggleButton, Avalonia's `ToggleButton` themed as the phone's: its default style and template as an Avalonia
 `ControlTheme`, and the phone's look in each of its twelve states, dark and light. This is the plain ToggleButton's
 theme only: CheckBox (#31), RadioButton and ToggleSwitch derive from it in both Avalonia and WinRT, but each has its

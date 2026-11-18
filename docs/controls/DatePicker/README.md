@@ -1,6 +1,6 @@
 # DatePicker and TimePicker, and their full-screen pickers
 
-Status: done but for the real-window run · [#156](https://github.com/wdcossey/CornflowerUI/issues/156) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page datetimepicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 369 ms; the date and time pickers opened by a tap and drawn right) · owed: the real-window run
+Status: done · [#156](https://github.com/wdcossey/Cornflower/issues/156) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page datetimepicker` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 369 ms; the date and time pickers opened by a tap and drawn right) · real-window run passed 2026-11-17 (`tools/real-window/drive.ps1`, Debug, on `main` at `03082b3`: 195 of 195)
 
 The Windows Phone 8.1 date and time pickers: Avalonia's `DatePicker`, `TimePicker`, `DatePickerPresenter` and
 `TimePickerPresenter`, themed by `Wp81Theme` in `src/Cornflower.Themes.Wp81/Controls/DatePicker.axaml` and
@@ -78,4 +78,4 @@ presenter is placed full screen by the host as it is (PLAN.md). `DatePickerFlyou
   unchanged accept wasn't read (#150 read the flyout's `DatePicked`, which comes).
 - **The selected items are one raw pixel wider** than the phone's: #154's items are drawn unrounded.
 - **The text** is Selawik's (ADR 0001).
-- Owed: the device run on the Pixel 8, and the real-window run.
+- The device run passed on 2026-11-17, and the real-window run (the status line).

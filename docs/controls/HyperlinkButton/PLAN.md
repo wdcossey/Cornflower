@@ -1,6 +1,6 @@
 # HyperlinkButton: plan
 
-[#29](https://github.com/wdcossey/CornflowerUI/issues/29). The 8.1 HyperlinkButton, Avalonia's `HyperlinkButton`
+[#29](https://github.com/wdcossey/Cornflower/issues/29). The 8.1 HyperlinkButton, Avalonia's `HyperlinkButton`
 themed as the phone's: its default style and template as an Avalonia `ControlTheme`, and the tilt on the part the
 phone tilts. It looks like a Button's sibling but isn't drawn like one: it is plain text, it tilts only its content,
 and pressing it changes no colour.

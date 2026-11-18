@@ -1,6 +1,6 @@
 # AutoSuggestBox: plan
 
-[#158](https://github.com/wdcossey/CornflowerUI/issues/158). The 8.1 AutoSuggestBox as a theme for Avalonia's
+[#158](https://github.com/wdcossey/Cornflower/issues/158). The 8.1 AutoSuggestBox as a theme for Avalonia's
 `AutoCompleteBox` (rung 1), with one internal behaviour the theme turns on, `PhoneSuggestionList` (rung 2), and the
 header by `ControlHeader` (rung 2, as the TextBox's). No type is substituted. Avalonia's control has a different API;
 every difference is in [the API, side by side](#the-api-side-by-side), with what a small attached helper could give and

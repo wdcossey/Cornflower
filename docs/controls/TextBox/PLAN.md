@@ -1,6 +1,6 @@
 # TextBox: plan
 
-[#36](https://github.com/wdcossey/CornflowerUI/issues/36). The 8.1 TextBox, Avalonia's `TextBox` themed as the
+[#36](https://github.com/wdcossey/Cornflower/issues/36). The 8.1 TextBox, Avalonia's `TextBox` themed as the
 phone's: its default style and template as an Avalonia `ControlTheme`, the phone's box at rest, focused and disabled,
 dark and light, the header by `ControlHeader` (#96), the placeholder, and the text in the phone's line.
 
