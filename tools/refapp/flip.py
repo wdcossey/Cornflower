@@ -58,14 +58,16 @@ for i, (ts, label) in enumerate(steps):
         continue
     press, rel = mine[0]
     s0 = at(press); P0 = s0[2] if s0 else float('nan')
+    # Only the touch's own frames: the setup before it (a SelectedIndex from code) can animate too.
+    seg = [f for f in seg if f[0] >= press]
     r = at(rel); Pr = r[2] if r else float('nan')
     last = [f for f in seg if rel - 100 <= f[0] <= rel]
     sp = ml.linfit([f[0] for f in last], [f[2] for f in last])[1] if len(last) >= 3 else float('nan')
     after = [f for f in seg if f[0] > rel]
     ext = [f[2] for f in seg]
     end = seg[-1] if seg else None
-    settle = (end[0] - rel) if end else float('nan')
-    settle_rt = (end[1] - after[0][1]) if after and end else float('nan')
+    settle = (after[-1][0] - rel) if after else float('nan')
+    settle_rt = (after[-1][1] - after[0][1]) if after else float('nan')
     out = '%-62s P0 %.1f rel %+.1f v %.2f -> end %+.1f (%s) settle %.0f ms [rt %.0f, %d frames] min %+.1f max %+.1f sel %s' % (
         label, P0, Pr - P0, sp, end[2] - P0 if end else float('nan'), 'on' if end and abs(end[2] - P0) > PAGE / 2 else 'back',
         settle, settle_rt, len(after), min(ext) - P0 if ext else 0, max(ext) - P0 if ext else 0, ','.join('%.0f:%s' % (t - rel, d) for t, d in sel))
@@ -73,6 +75,6 @@ for i, (ts, label) in enumerate(steps):
     if len(mine) > 1:
         p2, r2 = mine[1]
         a2 = at(p2); during = [f[2] for f in seg if p2 <= f[0] <= r2]
-        print('    second press %.0f ms after release: P %+.1f, moved %.1f during the press, then end %+.1f' % (p2 - rel, (a2[2] - P0) if a2 else float('nan'), (max(during) - min(during)) if during else 0, end[2] - P0))
+        print('    second press %.0f ms after release: P %+.1f, moved %.1f during the press, then end %+.1f' % (p2 - rel, (a2[2] - P0) if a2 else float('nan'), (max(during) - min(during)) if during else 0, (end[2] - P0) if end else float('nan')))
     if 'swipe left 0' in label or 'SelectedIndex 3' in label:
         print('    frames after release (rt ms, P-P0):', ' '.join('%.1f:%.1f' % (f[1] - after[0][1], f[2] - P0) for f in after[:60]))

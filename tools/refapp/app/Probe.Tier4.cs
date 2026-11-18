@@ -504,7 +504,7 @@ namespace RefApp
             {
                 var popups = VisualTreeHelper.GetOpenPopups(Window.Current);
                 var key = new List<double> { popups.Count, sz.IsZoomedInViewActive ? 1 : 0, lsv != null ? lsv.VerticalOffset : double.NaN, list.Opacity, jump.Opacity };
-                foreach (var p in popups.Where(p => p.Child != null))
+                foreach (var p in popups.Where(p => p.Child is FrameworkElement))
                 {
                     key.Add(p.Child.Opacity);
                     key.Add(Left((FrameworkElement)p.Child));
@@ -534,7 +534,7 @@ namespace RefApp
             await Task.Delay(1500);
             Log("layout", "tiles " + string.Join("; ", tiles.Select(t => t.Key + " " + Num(t.Value.X) + " " + Num(t.Value.Y) + " " + Num(t.Value.Width) + " " + Num(t.Value.Height))));
             var lh = All<ListViewHeaderItem>(list);
-            if (lh.Count == 0 || !tiles.ContainsKey("d"))
+            if (lh.Count == 0 || (!locked && !tiles.ContainsKey("d")))
             {
                 await Finish("missing: a header in the zoomed-in list (" + lh.Count + ") or tile d");
                 return;
@@ -542,7 +542,7 @@ namespace RefApp
 
             var hb = Bounds(lh[0]);
             var ha = new Point(hb.X + 20, hb.Y + hb.Height / 2);
-            var td = tiles["d"];
+            var td = locked ? default(Rect) : tiles["d"];
             Func<ElementTheme, bool, Func<Task>> reset = (theme, can) => () =>
             {
                 sz.IsZoomedInViewActive = true;
@@ -581,12 +581,12 @@ namespace RefApp
             }, 1500);
             Drag(lh[0], "tap header a, then Back", reset(ElementTheme.Dark, true), ha.X, ha.Y, ha.Y, 0, 80, 2500);
             _touches++;
-            _plan.Add(new Planned { Verb = "key", X = 0x70 });
+            _plan.Add(new Planned { Verb = "key", X = BackKey });
             Wait(3000);
             Drag(lh[0], "light: tap header a", reset(ElementTheme.Light, true), ha.X, ha.Y, ha.Y, 0, 80, 2500);
             Code("read the jump list, light", logPopups("open after header a, light"), 1500);
             _touches++;
-            _plan.Add(new Planned { Verb = "key", X = 0x70 });
+            _plan.Add(new Planned { Verb = "key", X = BackKey });
             Wait(3000);
             await RunScheduled(page, header);
         }
@@ -603,7 +603,7 @@ namespace RefApp
         {
             var popups = VisualTreeHelper.GetOpenPopups(Window.Current);
             Log("popups", what + ": " + popups.Count + " open");
-            foreach (var p in popups.Where(p => p.Child != null))
+            foreach (var p in popups.Where(p => p.Child is FrameworkElement))
             {
                 var lines = new StringBuilder();
                 foreach (var e in new[] { (FrameworkElement)p.Child }.Concat(All<FrameworkElement>(p.Child)).Take(80))
