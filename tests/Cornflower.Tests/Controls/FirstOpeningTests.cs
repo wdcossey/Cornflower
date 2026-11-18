@@ -3,10 +3,12 @@ using System.Diagnostics;
 namespace Cornflower.Tests.Controls;
 
 /// <summary>
-/// Each flyout kind's first opening in a process, by <c>IsOpen</c> (#209), run in a process of its own: in the suite an
-/// earlier test has nearly always opened one already. The theme's binders hear a flyout open from a class handler their
-/// type's static setup adds; once that setup was left to the theme's first styling of a presenter, it ran in the middle
-/// of the first opening by <c>IsOpen</c>, too late for it, and that flyout was never bound.
+/// A Flyout's and a MenuFlyout's first opening in a process, by <c>IsOpen</c> (#209), run in a process of their own: in
+/// the suite an earlier test has nearly always opened one already. The theme's binders hear a flyout open from a class
+/// handler their type's static setup adds; left to the theme's first styling of a presenter, that setup ran in the
+/// middle of the first opening by <c>IsOpen</c>, too late for it, and that flyout was never bound
+/// (<c>PhonePopupBinders.SetUp</c> now runs it as the module loads). The pickers' flyouts are set up there too, untested
+/// here: their controls open them by <c>ShowAt</c>.
 /// </summary>
 public class FirstOpeningTests
 {
@@ -20,7 +22,7 @@ public class FirstOpeningTests
     public async Task The_First_Flyouts_Opened_By_IsOpen_Are_Bound()
     {
         // The test assembly is xunit v3's own runner: it runs just these, first, in a new process.
-        var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet")
+        var start = new ProcessStartInfo(DotnetHost())
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -36,20 +38,32 @@ public class FirstOpeningTests
         using var process = Process.Start(start)!;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(2));
-        var output = process.StandardOutput.ReadToEndAsync(timeout.Token);
-        var error = process.StandardError.ReadToEndAsync(timeout.Token);
+        var output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
+        var error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
+        var ended = true;
         try
         {
             await process.WaitForExitAsync(timeout.Token);
         }
         catch (OperationCanceledException)
         {
+            // Ended here, so its pipes close and what it said so far is kept for the failure.
+            ended = false;
             process.Kill(entireProcessTree: true);
-            throw;
         }
 
         var report = await output + await error;
+        Assert.True(ended, "The tests' own process didn't end:" + Environment.NewLine + report);
         Assert.True(process.ExitCode == 0, report);
         Assert.Contains($"Total: {Tests.Length}, Errors: 0, Failed: 0", report);
+    }
+
+    /// <summary>The dotnet host running these tests: <c>dotnet test</c>'s, or this process's if it is one; else PATH's.</summary>
+    private static string DotnetHost()
+    {
+        if (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") is { Length: > 0 } host)
+            return host;
+        var self = Environment.ProcessPath;
+        return Path.GetFileNameWithoutExtension(self) == "dotnet" ? self! : "dotnet";
     }
 }

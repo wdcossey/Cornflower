@@ -19,6 +19,26 @@ internal interface IPhonePopupBinder<TFlyout> : IDisposable where TFlyout : Popu
     void Bind(TFlyout flyout);
 }
 
+/// <summary>The flyout kinds' binders, set up as the module loads.</summary>
+internal static class PhonePopupBinders
+{
+    /// <summary>
+    /// Runs each flyout kind's static setup, which adds the <c>IsOpen</c> class handler its binders hear a flyout open
+    /// from. Left to the theme's first styling of a presenter, it ran in the middle of the first flyout of the kind opened
+    /// by <c>IsOpen</c>, after Avalonia had taken that change's handlers: that flyout was never bound (#209). A new
+    /// binder kind is added here.
+    /// </summary>
+#pragma warning disable CA2255 // A library's module initializer: the one way to come before a flyout's first opening.
+    [ModuleInitializer]
+#pragma warning restore CA2255
+    internal static void SetUp()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(PhoneFlyout).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PhoneMenuFlyout).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PhonePickerFlyout).TypeHandle);
+    }
+}
+
 /// <summary>
 /// The binders of one kind of flyout presenter, for <see cref="PhoneFlyout"/>, <see cref="PhonePickerFlyout"/> and
 /// <see cref="PhoneMenuFlyout"/>: one for each presenter in a popup while its theme's setter turns the phone's popup on,
@@ -45,6 +65,12 @@ internal sealed class PhonePopupBinders<TPresenter, TFlyout, TBinder>
     /// <summary>The binders let go of, until they have given their popups back.</summary>
     private readonly ConditionalWeakTable<TPresenter, TBinder> _leaving = new();
 
+    /// <summary>
+    /// Flyouts heard opening by <c>IsOpen</c> before their popup's presenter had a binder: this handler can come before
+    /// Avalonia's own, which opens the popup. The binder made as the presenter is styled is told then.
+    /// </summary>
+    private readonly ConditionalWeakTable<Popup, TFlyout> _opening = new();
+
     /// <param name="isEnabled">The attached property the presenter's theme sets.</param>
     /// <param name="make">A presenter's binder, for its popup.</param>
     public PhonePopupBinders(AttachedProperty<bool> isEnabled, Func<TPresenter, Popup, TBinder> make)
@@ -54,8 +80,12 @@ internal sealed class PhonePopupBinders<TPresenter, TFlyout, TBinder>
         isEnabled.Changed.AddClassHandler<TPresenter>((presenter, change) => OnEnabledChanged(presenter, change.GetNewValue<bool>()));
         FlyoutBase.IsOpenProperty.Changed.AddClassHandler<TFlyout>((flyout, change) =>
         {
-            if (change.GetNewValue<bool>() && flyout.Popup.Child is TPresenter presenter && _binders.TryGetValue(presenter, out var binder))
+            if (!change.GetNewValue<bool>())
+                return;
+            if (flyout.Popup.Child is TPresenter presenter && _binders.TryGetValue(presenter, out var binder))
                 binder.Bind(flyout);
+            else
+                _opening.AddOrUpdate(flyout.Popup, flyout);
         });
     }
 
@@ -84,7 +114,16 @@ internal sealed class PhonePopupBinders<TPresenter, TFlyout, TBinder>
         }
 
         if (enabled && !_leaving.TryGetValue(presenter, out _) && presenter.Parent is Popup popup)
-            _binders.Add(presenter, _make(presenter, popup));
+        {
+            var binder = _make(presenter, popup);
+            _binders.Add(presenter, binder);
+            if (_opening.TryGetValue(popup, out var flyout))
+            {
+                _opening.Remove(popup);
+                if (flyout.IsOpen && flyout.Popup == popup)
+                    binder.Bind(flyout);
+            }
+        }
     }
 }
 
