@@ -589,12 +589,14 @@ public class AutoSuggestBoxTests
         Assert.False(stage.Box.IsKeyboardFocusWithin);
     }
 
-    // The keyboard going down with the focus elsewhere leaves the box alone.
+    // The keyboard going down with the focus elsewhere leaves the box alone. The other box is kept out of the pan, which
+    // would take its focus (#197), so only the AutoSuggestBox's own handling is tried.
     [AvaloniaFact]
     public void The_Keyboard_Going_Down_With_The_Focus_Elsewhere_Takes_Nothing()
     {
         var keyboard = new FakeKeyboard();
         var other = new TextBox();
+        PhoneKeyboardPan.SetIsEnabled(other, false);
         using var stage = new Stage(keyboard: keyboard);
         stage.Slot.Children.Add(new StackPanel { Margin = new Thickness(0, 200, 0, 0), Children = { other } });
         Dispatcher.UIThread.RunJobs();

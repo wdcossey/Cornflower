@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
@@ -81,6 +82,14 @@ public class KeyboardPanTests
             if (!KeyboardFake.IsOpen)
                 KeyboardFake.Show(Keyboard);
             Dispatcher.UIThread.RunJobs();
+        }
+
+        public RoutedEventArgs Back()
+        {
+            var request = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+            Window.RaiseEvent(request);
+            Dispatcher.UIThread.RunJobs();
+            return request;
         }
 
         public void Dispose()
@@ -397,7 +406,7 @@ public class KeyboardPanTests
         Assert.Equal(rest, inPopup.TranslatePoint(default, page.Window));
     }
 
-    // Under Simple alone the box is Avalonia's own: nothing moves.
+    // Under Simple alone the box is Avalonia's own: nothing moves, and Back and the keyboard going leave its focus.
     [AvaloniaFact]
     public void Simple_Alone_Moves_Nothing()
     {
@@ -406,6 +415,10 @@ public class KeyboardPanTests
         page.Tap(page.Boxes[0]);
         Assert.Equal(rest, page.InWindow(page.Boxes[0]));
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+
+        Assert.False(page.Back().Handled);
+        page.KeyboardFake.Hide();
+        Assert.True(page.Boxes[0].IsFocused);
     }
 
     // #150: focusing the AutoSuggestBox moved the page up until the control's top (its header's) was at the window's
@@ -505,5 +518,150 @@ public class KeyboardPanTests
 
         Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
         Assert.Equal(top - PhoneSuggestionList.KeyboardGap, stage.InWindow(stage.List).Bottom, 0.01);
+    }
+
+    // #150: the phone's first Back hides the keyboard and takes the focus from the box; the next goes on. On Android
+    // the keyboard takes that Back and Avalonia never sees it (#197), so the keyboard going down takes the focus, and a
+    // Back with the page's own handler left to go on. The keyboard changing while up takes nothing.
+    [AvaloniaTheory]
+    [InlineData(null)]
+    [InlineData("PasswordBox")]
+    public void The_Keyboard_Going_Down_Takes_The_Focus_And_The_Next_Back_Goes_On(string? theme)
+    {
+        using var page = new Page(theme: theme, tops: 600);
+        var box = page.Boxes[0];
+        page.Tap(box);
+        page.KeyboardFake.Show(new Rect(0, 500, Keyboard.Width, 300));
+        Assert.True(box.IsFocused, "a keyboard that changes leaves the focus");
+
+        page.KeyboardFake.Hide();
+
+        Assert.False(box.IsKeyboardFocusWithin);
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+        Assert.False(page.Back().Handled, "the next Back is the page's");
+    }
+
+    // On Android the keyboard can be up before the window's first box has the focus (the pan made then): its going still
+    // takes the focus.
+    [AvaloniaFact]
+    public void A_Keyboard_Up_Before_The_First_Focus_Takes_It_As_It_Goes()
+    {
+        using var page = new Page(tops: 600);
+        var box = page.Boxes[0];
+        page.KeyboardFake.Show(Keyboard);
+        Assert.True(box.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.KeyboardFake.Hide();
+
+        Assert.False(box.IsKeyboardFocusWithin);
+    }
+
+    // A Back Avalonia does see while a box has the focus (no keyboard up) is the phone's first Back: it takes the focus
+    // and is taken; the next is the page's.
+    [AvaloniaTheory]
+    [InlineData(null)]
+    [InlineData("PasswordBox")]
+    public void Back_With_A_Box_Focused_Takes_The_Focus_Then_The_Next_Goes_On(string? theme)
+    {
+        using var page = new Page(theme: theme, tops: 100);
+        var box = page.Boxes[0];
+        Assert.True(box.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(page.Back().Handled, "the first Back is the box's");
+        Assert.False(box.IsKeyboardFocusWithin);
+        Assert.False(page.Back().Handled, "the next Back is the page's");
+    }
+
+    // The keyboard going as the focus comes to a read-only box (which asks for none) or to a box not ours, from a box of
+    // ours, leaves the focus there.
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_Keyboard_Going_With_A_Read_Only_Box_Or_One_Not_Ours_Focused_Takes_Nothing(bool readOnly)
+    {
+        using var page = new Page(tops: [600, 100]);
+        var other = page.Boxes[1];
+        if (readOnly)
+            other.IsReadOnly = true;
+        else
+            PhoneKeyboardPan.SetIsEnabled(other, false);
+        page.Tap(page.Boxes[0]);
+        Assert.True(other.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.KeyboardFake.Hide();
+
+        Assert.True(other.IsFocused);
+    }
+
+    // A box under an open popup leaves Back to the popup (the focus put back on the page's box while a Flyout is open).
+    [AvaloniaFact]
+    public void Back_With_A_Box_Under_An_Open_Popup_Is_The_Popups()
+    {
+        var opener = new Button { Content = "more" };
+        var flyout = new Flyout { Content = new TextBlock { Text = "over the page" } };
+        using var page = new Page(wrap: c => new StackPanel { Children = { opener, c } }, tops: 100);
+        var box = page.Boxes[0];
+        flyout.ShowAt(opener);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(box.Focus());
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(flyout.IsOpen);
+
+        Assert.True(page.Back().Handled);
+
+        Assert.True(box.IsFocused, "Back was the popup's");
+    }
+
+    // The keyboard going down with the focus on something not a text box leaves it there.
+    [AvaloniaFact]
+    public void The_Keyboard_Going_Down_With_The_Focus_Elsewhere_Takes_Nothing()
+    {
+        var other = new Button { Content = "other" };
+        using var page = new Page(wrap: c => new StackPanel { Children = { other, c } }, tops: 600);
+        page.Tap(page.Boxes[0]);
+        Assert.True(other.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.KeyboardFake.Hide();
+
+        Assert.True(other.IsFocused);
+    }
+
+    // #150: "in a dialog with a focused TextBox, the first Back hid the keyboard and took the focus from the TextBox, the
+    // dialog staying; the second closed it". The keyboard going down (Android's) or a Back the app sees, alike.
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void In_A_Dialog_The_First_Back_Takes_The_Focus_And_The_Second_Closes_It(bool keyboardTakesBack)
+    {
+        var keyboardOf = PhoneSuggestionList.KeyboardOf;
+        var keyboard = new FakeKeyboard();
+        PhoneSuggestionList.KeyboardOf = _ => keyboard;
+        try
+        {
+            var box = new TextBox { Width = 300 };
+            using var stage = new ContentDialogTests.Stage(content: box);
+            stage.ShowAtRest();
+            Assert.True(box.Focus());
+            Dispatcher.UIThread.RunJobs();
+            keyboard.Show(Keyboard);
+
+            if (keyboardTakesBack)
+                keyboard.Hide();
+            else
+                stage.Back();
+
+            Assert.False(box.IsKeyboardFocusWithin);
+            Assert.True(stage.Dialog.Popup!.IsOpen, "the dialog stays");
+            stage.Back();
+            Assert.True(stage.Result!.IsCompleted, "the second Back closes the dialog");
+        }
+        finally
+        {
+            PhoneSuggestionList.KeyboardOf = keyboardOf;
+        }
     }
 }
