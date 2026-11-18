@@ -574,6 +574,28 @@ public class KeyboardPanTests
         Assert.False(page.Back().Handled, "the next Back is the page's");
     }
 
+    // The keyboard going as the focus comes to a read-only box (which asks for none) or to a box not ours, from a box of
+    // ours, leaves the focus there.
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_Keyboard_Going_With_A_Read_Only_Box_Or_One_Not_Ours_Focused_Takes_Nothing(bool readOnly)
+    {
+        using var page = new Page(tops: [600, 100]);
+        var other = page.Boxes[1];
+        if (readOnly)
+            other.IsReadOnly = true;
+        else
+            PhoneKeyboardPan.SetIsEnabled(other, false);
+        page.Tap(page.Boxes[0]);
+        Assert.True(other.Focus());
+        Dispatcher.UIThread.RunJobs();
+
+        page.KeyboardFake.Hide();
+
+        Assert.True(other.IsFocused);
+    }
+
     // A box under an open popup leaves Back to the popup (the focus put back on the page's box while a Flyout is open).
     [AvaloniaFact]
     public void Back_With_A_Box_Under_An_Open_Popup_Is_The_Popups()

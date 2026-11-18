@@ -169,13 +169,16 @@ internal static class PhoneKeyboardPan
             Moved?.Invoke(_top);
         }
 
-        /// <summary>The keyboard going down while a box of ours has the focus takes it, as the phone's Back does.</summary>
+        /// <summary>
+        /// The keyboard going down while a box of ours has the focus takes it, as the phone's Back does. Not a read-only
+        /// box's: it asks for no keyboard, so the keyboard going as the focus comes to it is the last box's.
+        /// </summary>
         private void OnKeyboardChanged()
         {
             var open = _keyboard?.IsOpen == true;
             var went = _keyboardWasOpen && !open;
             _keyboardWasOpen = open;
-            if (went && BoxWithFocus(_top) is not null)
+            if (went && BoxWithFocus(_top) is { IsReadOnly: false })
                 LetGo(_top);
             Update(keyboardChanged: true);
         }
