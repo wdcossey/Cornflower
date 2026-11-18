@@ -18,11 +18,10 @@ More in [PREVIEW.md](PREVIEW.md).
 > run on a phone); Flyout, MenuFlyout, ListPickerFlyout and PickerFlyout, LoopingSelector, ComboBox, DatePicker and
 > TimePicker and their flyouts, ContentDialog, AutoSuggestBox, and the page moving up for the keyboard (Tier 3, each
 > run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows; a covered TextBox or
-> PasswordBox stops at its caret, #201). Tier 2's follow-ups
-> from the emulator's last reads (#162 to #169) are done and run. Motion is configurable (`CornflowerConfig`: off, or
-> faster or slower, overall or by area), and faithful by default. Owed: the sample at
-> speed 2 on a phone. In progress: Back taking the focus as it hides the keyboard (#197), and the emulator's last
-> reads of the pan. Next, after #197: Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
+> PasswordBox stops at its caret, #201; the page slides, #206; and the Back that hides the keyboard takes the focus,
+> #197). Tier 2's follow-ups from the emulator's last reads (#162 to #169) are done and run. Motion is configurable
+> (`CornflowerConfig`: off, or faster or slower, overall or by area), and faithful by default. Owed: the sample at
+> speed 2 on a phone. Next: Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
 
 ## What "faithful" means here
 

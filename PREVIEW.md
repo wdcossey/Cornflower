@@ -120,8 +120,9 @@ pickers, so they have no pictures of their own.
 
 ## Text and buttons
 
-TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions hanging from the box; below it the sample's
-new box with `AutoMaximizeSuggestionArea` false ("not maximized", #201).
+TextBox; AutoSuggestBox (Avalonia's `AutoCompleteBox` themed), its suggestions hanging from the box; below it the light
+section and, last, so a phone's keyboard covers it, the box with `AutoMaximizeSuggestionArea` false ("not maximized",
+#201, #206).
 
 <p>
 <img src="docs/preview/dark__textbox.png" width="270" alt="TextBox, dark">
@@ -145,5 +146,5 @@ new box with `AutoMaximizeSuggestionArea` false ("not maximized", #201).
 Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan and entrance, the
 popups' swing and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Each
 Hub picture is taken after the entrance's turn. An app can slow the motion, speed it up or turn it off
-(`CornflowerConfig`); the phone's is the default. The page moving up for the keyboard (#179, #201) isn't shown either:
-the gallery has no keyboard.
+(`CornflowerConfig`); the phone's is the default. The page moving up for the keyboard (#179, #201, #206) isn't shown
+either: the gallery has no keyboard.

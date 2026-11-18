@@ -15,7 +15,12 @@ on `6bce3d4`, 13:24: a covered TextBox and the PasswordBox stop with the caret's
 PasswordBox's Show Password row under the keyboard; the default AutoSuggestBox at the window's top; the one with
 `AutoMaximizeSuggestionArea` false moved only until one suggestion fits; the status bar clean) · [#206](https://github.com/wdcossey/Cornflower/issues/206)
 (the slide, and a covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false, as #205 read them): tests and
-breakage pass, owed: the device run on the Pixel 8.
+breakage pass, device run passed 2026-11-18 (Pixel 8, Release, over wireless adb, on `ddb3772`, 16:37 to 16:52: the "not maximized" box
+moved until its bottom met the keyboard's top, with "a" typed its list opened above it and the page went a little
+further; the default box and the last TextBox slid, a frame part way each time: a slide, not its curve) ·
+[#197](https://github.com/wdcossey/Cornflower/issues/197) (Back takes the focus): tests and breakage pass, device run passed 2026-11-18 (Pixel 8, Release,
+on `840c2d9`, 15:17 to 15:21: the first Back hid the keyboard and left the box at rest on the textbox, passwordbox and
+autosuggestbox pages and in a ContentDialog, which stayed; the second went on).
 
 ## What the phone does (read)
 
