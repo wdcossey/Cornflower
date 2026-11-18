@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 
@@ -21,6 +22,12 @@ public class Wp81Theme : Styles
 
     public Wp81Theme(IServiceProvider? _ = null)
     {
+        // The flyouts' binders hear each flyout open from IsOpen's class handler, which their type's static setup adds.
+        // Left to the first presenter the theme styles, that setup would run in the middle of a first flyout opening by
+        // IsOpen, after Avalonia had taken its list of handlers: that flyout would be heard by none (#209).
+        RuntimeHelpers.RunClassConstructor(typeof(PhoneFlyout).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PhoneMenuFlyout).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PhonePickerFlyout).TypeHandle);
         foreach (var path in OrderForMerge(XamlManifest.Paths))
         {
             Resources.MergedDictionaries.Add(new ResourceInclude(BaseUri) { Source = new Uri(BaseUri, path) });
