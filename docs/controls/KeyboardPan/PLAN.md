@@ -126,7 +126,7 @@ numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is
 - Under Simple alone nothing moves.
 - The keyboard going down takes the focus from a TextBox or PasswordBox, and the next Back is the page's; a keyboard
   that changes while up takes nothing, nor does its going with the focus elsewhere. A Back with a box focused takes the
-  focus and is taken. In a ContentDialog either takes the focus, the dialog staying, and the next Back closes it. A
+  focus and is taken; one under an open popup leaves Back to the popup. In a ContentDialog either takes the focus, the dialog staying, and the next Back closes it. A
   keyboard already up when a box first takes the focus still takes it as it goes. Under Simple alone neither takes it.
 - The AutoSuggestBox goes up until its top is at the window's top, and its list then hangs from the box and runs down
   to 2.5 above the keyboard (#150's 63.33 and 450.83).

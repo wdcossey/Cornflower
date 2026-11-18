@@ -574,6 +574,25 @@ public class KeyboardPanTests
         Assert.False(page.Back().Handled, "the next Back is the page's");
     }
 
+    // A box under an open popup leaves Back to the popup (the focus put back on the page's box while a Flyout is open).
+    [AvaloniaFact]
+    public void Back_With_A_Box_Under_An_Open_Popup_Is_The_Popups()
+    {
+        var opener = new Button { Content = "more" };
+        var flyout = new Flyout { Content = new TextBlock { Text = "over the page" } };
+        using var page = new Page(wrap: c => new StackPanel { Children = { opener, c } }, tops: 100);
+        var box = page.Boxes[0];
+        flyout.ShowAt(opener);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(box.Focus());
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(flyout.IsOpen);
+
+        Assert.True(page.Back().Handled);
+
+        Assert.True(box.IsFocused, "Back was the popup's");
+    }
+
     // The keyboard going down with the focus on something not a text box leaves it there.
     [AvaloniaFact]
     public void The_Keyboard_Going_Down_With_The_Focus_Elsewhere_Takes_Nothing()
