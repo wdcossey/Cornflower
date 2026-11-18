@@ -59,9 +59,13 @@ From #205 (`tools/refapp/README.md`, "The keyboard's pan: an AutoSuggestBox with
 - **The box's top stays in the window.** A box taller than the room above the keyboard goes up no further than puts
   its top (its header's) at the safe area's top, as before.
 - **The 10.42 is the list's.** #205 gave the text and the list together, so it can't say which moves the page the
-  further 10.42; it is applied while the list is open (`PhoneKeyboardPan.ListAboveLift`), and kept when it closes
-  (the least change, as for the focus). The list opens above only when the keyboard leaves it less than one
-  suggestion's room below; an uncovered box's list, unread, opens below as before.
+  further 10.42; it is applied as the list opens (`PhoneKeyboardPan.ListAboveLift`), and kept when it closes (the
+  least change, as for the focus). The list opens above whenever the keyboard leaves it less than one suggestion's
+  room below, covered or not: a box just above the keyboard no longer lifts the page for its list, as #201 did (the
+  phone's uncovered box is unread). One with room below opens it below. A box the page's move doesn't take (a
+  ContentDialog's) keeps the old rule, the list running down past the keyboard, as above it could still be under it.
+- **A slide aimed again the same way** (the list opening as the page rises, the keyboard reporting again) goes on from
+  where the page is and ends when it would have, rather than start a whole slide again.
 - **The list above is as tall as a maximized list could be**: no taller than the room from a box at the window's top
   down to the keyboard (387.5, which the phone's twelve showed as its `MaxHeight`), and no higher than the safe area's
   top.

@@ -24,8 +24,8 @@ namespace Cornflower.Themes.Wp81;
 /// (<see cref="AutoCompleteBoxOptions.AutoMaximizeSuggestionAreaProperty"/>, true by default). A TextBox or PasswordBox,
 /// goes up only as far as it must for the caret's line to clear the keyboard's top, its bottom border left under the
 /// keyboard, as #200 read (452.92 against 453.33); an AutoSuggestBox with that false, until the TextBox part's bottom
-/// border is at the keyboard's top, and <see cref="ListAboveLift"/> (10.42) more while its list is open, which then
-/// opens above the box (#205: 184.58, then 195). No further than puts the control's own top at the window's top; one
+/// border is at the keyboard's top, and <see cref="ListAboveLift"/> (10.42) more once its list opens, above the box
+/// (#205: 184.58, then 195), kept when it closes, as the least change from where the page is. No further than puts the control's own top at the window's top; one
 /// the keyboard leaves room for stays.</para>
 /// <para><b>What moves.</b> The window's content, all of it, through a <see cref="TranslateTransform"/> at animation
 /// priority on the window's presenter of it, so the content's own transform (an app's, a page's motion) is left alone:
@@ -69,7 +69,7 @@ internal static class PhoneKeyboardPan
         InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
         // The focus leaving: once it has settled, as it may be on its way to another box.
         InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
-        // An AutoSuggestBox's list opening or closing: one not maximized goes ListAboveLift further while it is open.
+        // An AutoSuggestBox's list opening: one not maximized goes ListAboveLift further; closing, the least change keeps it.
         AutoCompleteBox.IsDropDownOpenProperty.Changed.AddClassHandler<AutoCompleteBox>((box, _) =>
             TopLevel.GetTopLevel(box)?.GetValue(PanProperty)?.UpdateSoon());
         PhonePopupHost.TakeBackFirst(TakesBack);
@@ -82,7 +82,7 @@ internal static class PhoneKeyboardPan
     private const double Reach = 1e6;
 
     /// <summary>
-    /// How much further the page goes for an AutoSuggestBox not maximized while its list is open (#205: the box's bottom
+    /// How much further the page goes for an AutoSuggestBox not maximized once its list opens (#205: the box's bottom
     /// 10.42 above the keyboard, 195 against 184.58). Why is unread (the text and the list came together): it is taken
     /// as the list's.
     /// </summary>
@@ -192,7 +192,8 @@ internal static class PhoneKeyboardPan
             var mover = Mover();
             var (shift, box) = Wanted(mover, keyboardChanged);
             Follow(shift > 0 ? box : null);
-            if (shift == Shift && (shift == 0 || mover == _moved))
+            // Arithmetic's error (the box's place read back through the transform mid-slide) is no change.
+            if (Math.Abs(shift - Shift) < 1e-6 && (shift == 0 || mover == _moved))
                 return;
             Shift = shift;
             if (mover is null || (mover != _moved && shift == 0))
@@ -230,10 +231,15 @@ internal static class PhoneKeyboardPan
                 Show(Shift);
                 return;
             }
+            var now = CornflowerClock.Now;
+            var going = Shift > Shown;
+            // Aimed again while sliding the same way (a list opening, the keyboard reporting again as it rises): on from
+            // here, ending when the slide would have, not a whole slide again.
+            var left = _frame is not null && going == _up ? _length - (now - _start) : TimeSpan.Zero;
             _from = Shown;
-            _up = Shift > Shown;
-            _length = _up ? up : up * DownShare;
-            _start = CornflowerClock.Now;
+            _up = going;
+            _length = left > TimeSpan.Zero ? left : _up ? up : up * DownShare;
+            _start = now;
             _frame ??= CornflowerClock.RequestFrame(_top, Step);
         }
 
@@ -310,9 +316,7 @@ internal static class PhoneKeyboardPan
         /// What moves: the window's presenter of its content, so the content's own transform is left alone and a new
         /// content is moved as the old was; the content itself where the window has no presenter.
         /// </summary>
-        private Visual? Mover() => _top.Content is not Visual content
-            ? null
-            : content.GetVisualParent() is ContentPresenter presenter && presenter.TemplatedParent == _top ? presenter : content;
+        private Visual? Mover() => MoverOf(_top);
 
         /// <summary>The box the page is moved for: should it leave the window (focused all the while), the page comes back.</summary>
         private void Follow(TextBox? box)
@@ -351,7 +355,7 @@ internal static class PhoneKeyboardPan
                 return (Math.Max(0, top - area.Top), box);
             // The least move that shows the caret above the keyboard (#200's read): its line's bottom at the keyboard's
             // top, the box's own bottom left under it. An AutoSuggestBox not maximized, its whole box (#205's read), and
-            // ListAboveLift more while its list is open, the list then above it. Never so far that the control's top
+            // ListAboveLift more with its list open (the least change keeps it after). Never so far that the control's top
             // goes past the safe area's.
             var needed = target is AutoCompleteBox suggesting
                 ? BottomOf(box, _top) + (suggesting.IsDropDownOpen ? ListAboveLift : 0)
@@ -368,6 +372,14 @@ internal static class PhoneKeyboardPan
         }
     }
 
+    /// <summary>What the pan moves in <paramref name="top"/>: its presenter of its content, or the content itself.</summary>
+    private static Visual? MoverOf(TopLevel top) => top.Content is not Visual content
+        ? null
+        : content.GetVisualParent() is ContentPresenter presenter && presenter.TemplatedParent == top ? presenter : content;
+
+    /// <summary>Whether the pan moves <paramref name="visual"/> with the page: not one in a popup (a ContentDialog's).</summary>
+    internal static bool Moves(TopLevel top, Visual visual) => MoverOf(top)?.IsVisualAncestorOf(visual) == true;
+
     /// <summary>The bottom of <paramref name="box"/>'s border in <paramref name="to"/>, as the box is placed now.</summary>
     private static double? BottomOf(TextBox box, Visual to) => box.TranslatePoint(new Point(0, box.Bounds.Height), to)?.Y;
 
@@ -378,7 +390,7 @@ internal static class PhoneKeyboardPan
     internal static double? CaretBottomOf(TextBox box, Visual to)
     {
         if (box.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault(p => p.TemplatedParent == box) is not { } presenter)
-            return box.TranslatePoint(new Point(0, box.Bounds.Height), to)?.Y;
+            return BottomOf(box, to);
         var line = presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex);
         return presenter.TranslatePoint(line.BottomLeft, to)?.Y;
     }

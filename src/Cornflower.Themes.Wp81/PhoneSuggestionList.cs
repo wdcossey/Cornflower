@@ -55,7 +55,7 @@ internal static class PhoneSuggestionList
     /// </summary>
     internal const double OneSuggestion = 53.75;
 
-    /// <summary>Arithmetic's error: the pan leaves a list not maximized exactly one suggestion's room (#201).</summary>
+    /// <summary>Arithmetic's error: a keyboard that leaves the list one suggestion's room, read back a hair short (#201).</summary>
     private const double Rounding = 1e-6;
 
     /// <summary>
@@ -159,6 +159,12 @@ internal static class PhoneSuggestionList
             {
                 _popup.Opened -= OnOpened;
                 _popup.Closed -= OnClosed;
+                // Let go: the template's own place again, not the one set here.
+                if (_popup != popup)
+                {
+                    _popup.ClearValue(Popup.PlacementProperty);
+                    _popup.ClearValue(Popup.VerticalOffsetProperty);
+                }
             }
             if (_textBox is not null)
                 _textBox.LayoutUpdated -= OnLaidOut;
@@ -286,15 +292,17 @@ internal static class PhoneSuggestionList
             var top = boxBottom - border.Bottom;
             var keyboardShort = keyboard is { } covered && covered.Top - KeyboardGap - top < OneSuggestion - Rounding;
             // A box not maximized whose keyboard leaves its list less than one suggestion's room below opens it above
-            // (#205), as tall as its suggestions up to the room a maximized list would have below the box (387.5 for
-            // twelve on the phone, from 18.75 to 406.25) and to the safe area's top.
-            var above = keyboardShort && !AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(_box);
+            // (#205), covered or not, as tall as its suggestions up to the room a maximized list would have below the
+            // box (387.5 for twelve on the phone, from 18.75 to 406.25) and to the safe area's top. Not a box the page's
+            // move doesn't take (a ContentDialog's): above it could still be under the keyboard, so it runs down as before.
+            var above = keyboardShort && !AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(_box) && PhoneKeyboardPan.Moves(_top, _textBox);
             double room;
-            // The box's own top: its border's, under the TextBox part's header.
-            var borderTop = _textBox.GetVisualDescendants().OfType<Border>()
-                .FirstOrDefault(b => b.Name == "BorderElement" && b.TemplatedParent == _textBox)?.TranslatePoint(default, _textBox)?.Y ?? 0;
+            // The box's own top, above it: its border's, under the TextBox part's header.
+            var borderTop = 0d;
             if (above)
             {
+                borderTop = _textBox.GetVisualDescendants().OfType<Border>()
+                    .FirstOrDefault(b => b.Name == "BorderElement" && b.TemplatedParent == _textBox)?.TranslatePoint(default, _textBox)?.Y ?? 0;
                 var maximized = keyboard!.Value.Top - KeyboardGap - (area.Top + at.Y + _textBox.Bounds.Height - control.Y - border.Bottom);
                 room = Math.Min(boxTop + borderTop + border.Top - area.Top, maximized);
             }

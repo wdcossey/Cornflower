@@ -525,6 +525,36 @@ public class KeyboardPanTests
         Assert.Equal(tall, list.Height, 0.01);
     }
 
+    // A box not maximized in a popup, which the page's move doesn't take: its list doesn't open above it (where the
+    // keyboard could still cover it), but runs down past the keyboard as before.
+    [AvaloniaFact]
+    public void A_Box_Not_Maximized_In_A_Popup_Keeps_Its_List_Below()
+    {
+        var keyboard = new FakeKeyboard();
+        var inPopup = new AutoCompleteBox { Width = 300, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom, MinimumPopulateDelay = TimeSpan.Zero };
+        AutoCompleteBoxOptions.SetAutoMaximizeSuggestionArea(inPopup, false);
+        Popup? popup = null;
+        using var stage = new Stage(keyboard: keyboard, wrap: c => new Panel
+        {
+            Children = { c, (popup = new Popup { ShouldUseOverlayLayer = true, Placement = PlacementMode.AnchorAndGravity, Child = new Panel { Height = 700, Children = { inPopup } } }) },
+        });
+        popup!.IsOpen = true;
+        stage.Settle();
+        keyboard.Show(Keyboard);
+        var part = inPopup.GetVisualDescendants().OfType<TextBox>().First();
+        Assert.True(stage.InWindow(part).Bottom > Keyboard.Top, "the keyboard covers the box");
+
+        Assert.True(part.Focus());
+        inPopup.ItemsSource = AutoSuggestBoxReadings.Fruits.Take(3).ToList();
+        inPopup.Text = "a";
+        inPopup.IsDropDownOpen = true;
+        stage.Settle();
+
+        Assert.True(inPopup.IsDropDownOpen, "the list stays open");
+        Assert.Equal(PlacementMode.Bottom, inPopup.GetVisualDescendants().OfType<Popup>().Single(p => p.Name == "PART_Popup").Placement);
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(stage.Window));
+    }
+
     // The slide (#205's recording): up over 300 ms on an ease-out, from the keyboard's change; down over 200 on an
     // ease-in, as it goes; the box where the slide has the page at each frame; at rest, the page given back.
     [AvaloniaFact]
@@ -621,7 +651,8 @@ public class KeyboardPanTests
 
         page.KeyboardFake.Show(new Rect(0, 500, Keyboard.Width, 300));
         Assert.Equal(restCaret - 500, PhoneKeyboardPan.ShiftOf(page.Window), 0.01);
-        clock.At(400);
+        // Aimed again the same way: it ends when the first slide would have, at 300 ms, not a whole slide later.
+        clock.At(304);
         Assert.Equal(500, page.CaretBottom(box), 0.01);
 
         page.KeyboardFake.Hide();
@@ -660,8 +691,8 @@ public class KeyboardPanTests
         Assert.Equal(AutoSuggestBoxReadings.ListTop, stage.InWindow(stage.List).Y, 0.01);
     }
 
-    // The pan leaves a list not maximized just one suggestion's room: arithmetic's error, a hair short, still counts
-    // the keyboard, rather than pass it over and run the list down under it.
+    // A keyboard that leaves the list just one suggestion's room, read back a hair short (arithmetic's error), still
+    // counts, rather than pass it over and run the list down under it.
     [AvaloniaFact]
     public void A_Keyboard_A_Hair_Short_Of_One_Suggestions_Room_Still_Holds_The_List()
     {

@@ -178,12 +178,9 @@ public static class CornflowerConfig
     /// </remarks>
     public static TimeSpan KeyboardPanSlide
     {
+        // No Changed: it is read as each slide starts, and no Avalonia transition takes it.
         get => _keyboardPanSlide;
-        set
-        {
-            _keyboardPanSlide = value;
-            Changed?.Invoke();
-        }
+        set => _keyboardPanSlide = value;
     }
 
     /// <summary>The phone's <see cref="KeyboardPanSlide"/>: the page's slide up, about 0.3 s in #205's recording.</summary>
