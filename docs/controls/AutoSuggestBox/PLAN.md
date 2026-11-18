@@ -93,10 +93,13 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 ### Focus, the keyboard and the page
 
 - **Focus brings up the keyboard**: Avalonia's own, on a phone, for the TextBox part (its `TextInputMethodClient`).
-- **The page moves up** until the control's top is at the window's top (21.67 at the reference app's place): the
+- **The page moves up** until the control's top is at the window's top (21.67 at the reference app's place), or with
+  `AutoMaximizeSuggestionArea` false only as far as leaves the list one suggestion's room (#201): the
   phone's shell pans the page while the keyboard is up. Avalonia has nothing that does it; its `InputPane` reports the
   keyboard's rectangle, and a `ScrollViewer` can bring the box into view, but nothing moves a page that doesn't scroll.
   Done since by #179 for every text box, as the shell's: `PhoneKeyboardPan` ([its plan](../KeyboardPan/PLAN.md)).
+  #200 read how far the phone moves it, with `AutoMaximizeSuggestionArea` true and false
+  ([`tools/refapp/README.md`](../../../tools/refapp/README.md), "The keyboard's pan"); #201 (#202) follows it.
 - **The list's room** is the keyboard's top (Avalonia's `InputPane.OccludedRect`) less 2.5, as the phone's; with no
   keyboard, the window's bottom inside its safe area.
 - **Back** and **the keyboard going down** close the list and take the focus, as the phone's one Back does.
@@ -143,8 +146,8 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 
 ## For you to decide
 
-- Should Cornflower move the page up while the keyboard is up, as the phone's shell does (for every text box, not just
-  this one)? It changes every page's layout under the keyboard; no sound default, so not done.
+- Nothing open. Whether Cornflower moves the page up for the keyboard was decided by the user on 2026-11-16: it does,
+  for every text box (#179, done in #196).
 
 ## Dependencies
 
@@ -159,7 +162,7 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
   read.
 - A keyboard that grows while up (another layout of keys): Avalonia's `InputPane` raises only its state, so the list's
   room follows it when the window or the page lays out again, not before.
-- The device run on the Pixel 8 (the keyboard's rectangle and Back on Android) and the real-window run.
+- A covered box with `AutoMaximizeSuggestionArea` false: not read on the phone (ours follows #201's rule).
 
 ## Checklist
 
