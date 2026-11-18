@@ -10,7 +10,10 @@ turned on by the TextBox and PasswordBox themes' own setter (the AutoSuggestBox'
 Status: done · tests and breakage pass · device run passed 2026-11-18 (Pixel 8, Release: at 11:51 on `a0f1a02` it
 found two faults, fixed in `07a0d02`; again at 12:02 on `07a0d02`, every step of #196's list passed on the textbox,
 passwordbox and autosuggestbox pages) · no real-window run (a desktop shows no keyboard pane) · [#201](https://github.com/wdcossey/Cornflower/issues/201)
-(the caret rule, `AutoMaximizeSuggestionArea`): tests and breakage pass, owed: the device run on the Pixel 8 · owed: the
+(the caret rule, `AutoMaximizeSuggestionArea`): tests and breakage pass, device run passed 2026-11-18 (Pixel 8, Release,
+on `6bce3d4`, 13:24: a covered TextBox and the PasswordBox stop with the caret's bottom on the keyboard's top, the
+PasswordBox's Show Password row under the keyboard; the default AutoSuggestBox at the window's top; the one with
+`AutoMaximizeSuggestionArea` false moved only until one suggestion fits; the status bar clean) · owed: the
 pan's motion, a box in a ScrollViewer (scroll or move), and a covered AutoSuggestBox with `AutoMaximizeSuggestionArea`
 false.
 

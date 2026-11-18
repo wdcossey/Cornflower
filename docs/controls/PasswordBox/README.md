@@ -1,6 +1,6 @@
 # PasswordBox
 
-Status: done · [#37](https://github.com/wdcossey/Cornflower/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the lowest box the keyboard covers moves up to just above it, under Gboard's taller password keyboard too) · the caret rule, [#201](https://github.com/wdcossey/Cornflower/issues/201): tests and breakage pass, owed: the device run on the Pixel 8
+Status: done · [#37](https://github.com/wdcossey/Cornflower/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the lowest box the keyboard covers moves up to just above it, under Gboard's taller password keyboard too) · the caret rule, [#201](https://github.com/wdcossey/Cornflower/issues/201): tests and breakage pass, device run passed 2026-11-18 (Pixel 8, Release, over wireless adb, on `6bce3d4`, 13:24: a covered box stops with the caret's bottom on the keyboard's top, its Show Password row left under the keyboard; the phone's is unread)
 
 The Windows Phone 8.1 PasswordBox: Avalonia's `TextBox` with the `ControlTheme` keyed `PasswordBox`, WinRT's name, the
 phone's default style and template, in `src/Cornflower.Themes.Wp81/Controls/PasswordBox.axaml`. Avalonia has no
@@ -50,7 +50,7 @@ line, the reveal button and the phone's pointer-over look.
   above the window's; one whose caret it leaves clear stays; it goes back as the keyboard goes.
   The whole window's content moves, a box in a ScrollViewer with it; a box in a popup moves nothing
   (`PhoneKeyboardPan`, internal, the theme's setter, as the TextBox's; [its plan](../KeyboardPan/PLAN.md)). That the move is at
-  once is assumed (the phone's motion unread). The device run passed on 2026-11-18, before #201's caret rule.
+  once is assumed (the phone's motion unread). The device run passed on 2026-11-18, and again with #201's caret rule.
 
 ## Resource keys
 
