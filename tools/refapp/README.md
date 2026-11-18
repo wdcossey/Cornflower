@@ -1791,10 +1791,12 @@ are in [`ref/wp81/KeyboardPan/`](../../ref/wp81/KeyboardPan/).
 - **The PasswordBox's keyboard has no word-suggestion strip**: its top is at 513.75 (286.25 tall), 60.42 lower than the
   TextBox's.
 - **In a ScrollViewer** the box ends where it does on the page, and the "page top" line outside the ScrollViewer (15 to
-  24.58 at rest) went off the top with it, so the page moved at least 24.58; nothing shows the ScrollViewer scrolling,
-  but one grab can't split the move between the two.
-- Not read: whether the move slides and how long it takes (`-Record` goes with `-Probe` only), and an AutoSuggestBox
-  with `AutoMaximizeSuggestionArea` false that the keyboard covers.
+  24.58 at rest on the plain page; the ScrollViewer over it has a transparent background, and its own rest wasn't
+  grabbed) went off the top with it, so the page moved at least 24.58; nothing shows the ScrollViewer scrolling, but
+  the specimen logs no `VerticalOffset`, so one grab can't split the move between the two. Its dark grab is byte for
+  byte the plain page's: two frames of the grab loop, 7 s apart, came out the same.
+- Not read: whether the move slides and how long it takes (`-Record` goes with `-Probe` only), an AutoSuggestBox
+  with `AutoMaximizeSuggestionArea` false that the keyboard covers, and the ScrollViewer's `VerticalOffset`.
 
 ## Popup pixels
 

@@ -162,7 +162,7 @@ namespace RefApp
             list.Add(Suggest("list-12", "a", 12, true));
 
             // #179. How far the page moves for a box the keyboard doesn't cover: an AutoSuggestBox and a TextBox 300 view
-            // px down the stage (clear of the keyboard's top, 453.33), at rest and focused, the box again with
+            // px down the stage (clear of the keyboard's top: 453.33, a PasswordBox's 513.75), at rest and focused, the box again with
             // AutoMaximizeSuggestionArea false; a TextBox 560 down (under the keyboard), on the page and in a ScrollViewer; a
             // PasswordBox at both places.
             // A "page top" line at the stage's top shows whether the page moved or only the ScrollViewer scrolled.
