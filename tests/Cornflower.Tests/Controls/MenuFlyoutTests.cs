@@ -510,6 +510,7 @@ public class MenuFlyoutTests
     public void Opened_By_IsOpen_It_Is_Placed_Against_Its_Target_Too()
     {
         // Opened by IsOpen, the flyout opens its popup before it says it is open: the menu is placed again then.
+        // #209: the first menu in a process too (FirstOpeningTests runs this in a process of its own).
         using var stage = new Stage(targetTop: Placements[1].TargetTop);
         stage.Button.Flyout = stage.Flyout;
 

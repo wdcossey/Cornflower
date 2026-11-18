@@ -633,6 +633,23 @@ public class FlyoutTests
     }
 
     [AvaloniaFact]
+    public void Opened_By_IsOpen_Its_Closing_Is_Held_Too()
+    {
+        // #209: the first flyout in a process opened by IsOpen too (FirstOpeningTests runs this in a process of its own).
+        using var stage = new Stage();
+        stage.Button.Flyout = stage.Flyout;
+        stage.Flyout.IsOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+
+        stage.Flyout.Hide();
+
+        Assert.True(stage.Flyout.Popup.IsOpen);
+        stage.At(stage.Clock.Now.TotalMilliseconds + 500);
+        Assert.False(stage.Flyout.Popup.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void Back_Closes_The_Flyout_Before_The_NavigationPage_Goes_Back()
     {
         // Avalonia's PageNavigationHost passes the window's Back to its NavigationPage from an instance handler; the
