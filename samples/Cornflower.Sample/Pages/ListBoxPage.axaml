@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.ListBoxPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 ListBox, the list kept for 8.0's apps: Avalonia's ListBox in the keyed Wp81ListBoxTheme, which gives its
+    items Wp81ListBoxItemTheme (a ListBox with no Theme is the ListView). The pale box, black 12 px text, the selection
+    in the accent. Press an item to see the pressed brush and the Button's tilt; tap one to select it. Below: a disabled
+    list with an item selected, and the light theme. The lists selected from the start have AutoScrollToSelectedItem
+    off, so the page opens at its top.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="default" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <ListBox x:Name="Default" Theme="{DynamicResource Wp81ListBoxTheme}" AutoScrollToSelectedItem="False" Height="200" />
+
+      <TextBlock Text="disabled" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ListBox x:Name="Disabled" Theme="{DynamicResource Wp81ListBoxTheme}" AutoScrollToSelectedItem="False" Height="110" IsEnabled="False" />
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <ListBox x:Name="Light" Theme="{DynamicResource Wp81ListBoxTheme}" AutoScrollToSelectedItem="False" Height="110" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
