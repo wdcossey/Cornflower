@@ -1,6 +1,6 @@
 # AutoSuggestBox
 
-Status: done but for Back on Android and the real-window run · [#158](https://github.com/wdcossey/CornflowerUI/issues/158) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 385 ms; the suggestion list shown with 'a' typed, above the keyboard; the page stays where it is, which is [#179](https://github.com/wdcossey/CornflowerUI/issues/179)) · owed: Back closing the list on Android · owed: the real-window run · owed: captures of the list's motion and of landscape
+Status: done but for Back on Android and the real-window run · [#158](https://github.com/wdcossey/CornflowerUI/issues/158) · device run passed 2026-11-17 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page autosuggestbox` on `main` at `9a24f7f`, 17:40 to 17:44, cold starts 747 to 813 ms over the run's pages: the page opened in 385 ms; the suggestion list shown with 'a' typed, above the keyboard; the page stays where it is, which is [#179](https://github.com/wdcossey/CornflowerUI/issues/179)) · owed: Back closing the list on Android · owed: the real-window run · owed: captures of the list's motion and of landscape · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
 
 The Windows Phone 8.1 AutoSuggestBox: Avalonia's `AutoCompleteBox`, themed by `Wp81Theme` with the phone's default
 style and template, in `src/Cornflower.Themes.Wp81/Controls/AutoCompleteBox.axaml`. WinRT's `Header` is
@@ -51,8 +51,10 @@ void OnPopulating(object? sender, PopulatingEventArgs e) => ((AutoCompleteBox)se
 - **Back** closes the list and takes the focus from the box, before the page's `NavigationPage` sees it; the next Back
   is the page's. The keyboard going down (Android's keyboard takes the first Back itself) does the same.
 - **The list is drawn in the window**, in its overlay layer, never as a window of its own.
-- **Not done**: the page doesn't move up so the box is at the window's top, as the phone's does (the shell's, not the
-  control's; see the plan).
+- **The keyboard moves the page up** until the control's top (its header's) is at the window's top, as #150 read
+  (21.67 up at the reference app's place), and back down as it goes; the list is hung and sized again as the page
+  moves (#179: `PhoneKeyboardPan`, the TextBox part's, [its plan](../KeyboardPan/PLAN.md)). The move is at once
+  (the phone's motion unmeasured). Owed: the device run on the Pixel 8.
 
 ## Resource keys
 
@@ -70,7 +72,7 @@ A `Grid` › `PART_TextBox` (Wp81's TextBox) and `PART_Popup` › `SuggestionsCo
 
 Rung 1 (theme) for the setters, the template and the list's items; rung 2 for `Header` (`ControlHeader`, attached) and
 `PhoneSuggestionList`, internal: the list's place and height, closing it on a tap, Back and the keyboard going down;
-rung 6 (recorded) for the page's move, the events' order and reason, Enter, and the rounding. No type is substituted.
+`PhoneKeyboardPan`, internal, the TextBox part's, for the page's move (#179); rung 6 (recorded) for the events' order and reason, Enter, and the rounding. No type is substituted.
 
 ## Extensions
 

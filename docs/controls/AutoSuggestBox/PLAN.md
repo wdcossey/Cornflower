@@ -96,7 +96,7 @@ Avalonia's own members the phone lacks are kept as Avalonia's: `SelectedItem`, `
 - **The page moves up** until the control's top is at the window's top (21.67 at the reference app's place): the
   phone's shell pans the page while the keyboard is up. Avalonia has nothing that does it; its `InputPane` reports the
   keyboard's rectangle, and a `ScrollViewer` can bring the box into view, but nothing moves a page that doesn't scroll.
-  Recorded, not done: it would be the page's or the shell's, for every text box, not this control's.
+  Done since by #179 for every text box, as the shell's: `PhoneKeyboardPan` ([its plan](../KeyboardPan/PLAN.md)).
 - **The list's room** is the keyboard's top (Avalonia's `InputPane.OccludedRect`) less 2.5, as the phone's; with no
   keyboard, the window's bottom inside its safe area.
 - **Back** and **the keyboard going down** close the list and take the focus, as the phone's one Back does.

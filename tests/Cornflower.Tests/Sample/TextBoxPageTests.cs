@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -5,6 +6,8 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
+using Cornflower.Tests.Controls;
+using Cornflower.Themes.Wp81;
 
 namespace Cornflower.Tests.Sample;
 
@@ -27,7 +30,7 @@ public class TextBoxPageTests
         using var scene = new Scene(page);
 
         var boxes = page.GetVisualDescendants().OfType<TextBox>().ToList();
-        Assert.Equal(7, boxes.Count);
+        Assert.Equal(8, boxes.Count);
         Assert.All(boxes, box => Assert.Contains(box.GetVisualDescendants(), v => v is Border { Name: "BorderElement" }));
         Assert.Equal(3, boxes.Count(b => !b.IsEnabled));
     }
@@ -60,5 +63,35 @@ public class TextBoxPageTests
         name.Text = "";
         Dispatcher.UIThread.RunJobs();
         Assert.Equal("-", state.Text);
+    }
+
+    // #179: the page's last box, scrolled to and tapped, moves up as the keyboard comes and goes back down after it.
+    [AvaloniaFact]
+    public void The_Last_Box_Moves_Up_Over_The_Keyboard_And_Back()
+    {
+        var keyboardOf = PhoneSuggestionList.KeyboardOf;
+        var keyboard = new AutoSuggestBoxTests.FakeKeyboard();
+        PhoneSuggestionList.KeyboardOf = _ => keyboard;
+        try
+        {
+            var page = new TextBoxPage();
+            using var scene = new Scene(page);
+            var low = page.FindControl<TextBox>("Low")!;
+            page.GetVisualDescendants().OfType<ScrollViewer>().First().ScrollToEnd();
+            Dispatcher.UIThread.RunJobs();
+            var rest = low.TranslatePoint(default, scene.Window)!.Value.Y;
+
+            Assert.True(low.Focus());
+            keyboard.Show(AutoSuggestBoxReadings.Keyboard);
+
+            Assert.Equal(AutoSuggestBoxReadings.Keyboard.Top, low.TranslatePoint(new Point(0, low.Bounds.Height), scene.Window)!.Value.Y, 0.01);
+
+            keyboard.Hide();
+            Assert.Equal(rest, low.TranslatePoint(default, scene.Window)!.Value.Y, 0.01);
+        }
+        finally
+        {
+            PhoneSuggestionList.KeyboardOf = keyboardOf;
+        }
     }
 }

@@ -1,6 +1,6 @@
 # PasswordBox
 
-Status: done · [#37](https://github.com/wdcossey/CornflowerUI/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password
+Status: done · [#37](https://github.com/wdcossey/CornflowerUI/issues/37) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page passwordbox` on `main` at `3bcf02e`: cold 804 ms, the page opened in 410 ms, the first screen's specimens drawn, typing shows circles and Show Password shows the text) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the passwordbox page opened in 25 ms with 98 elements) · owed: a capture of a shown password · owed: the device run on the Pixel 8 for the keyboard's pan (#179)
 
 The Windows Phone 8.1 PasswordBox: Avalonia's `TextBox` with the `ControlTheme` keyed `PasswordBox`, WinRT's name, the
 phone's default style and template, in `src/Cornflower.Themes.Wp81/Controls/PasswordBox.axaml`. Avalonia has no
@@ -42,6 +42,11 @@ line, the reveal button and the phone's pointer-over look.
 - **Under a pointer** (a mouse) the box is drawn whole, as the phone's empty `PointerOver` state ends the 0.8.
 - **Disabled**, the CheckBox is disabled too.
 - **Dark and light**: every brush follows the theme variant; the focus border and the selection follow the accent.
+- **The keyboard moves the page up** (#179): while it is up, a focused box it covers goes up until its bottom is at
+  the keyboard's top, never its top above the window's; one it leaves clear stays; it goes back as the keyboard goes.
+  The whole window's content moves, a box in a ScrollViewer with it; a box in a popup moves nothing
+  (`PhoneKeyboardPan`, internal, the theme's setter, as the TextBox's; [its plan](../KeyboardPan/PLAN.md)). That a TextBox moves the
+  least, at once, is assumed: owed, a read on the phone, and the device run on the Pixel 8.
 
 ## Resource keys
 
@@ -59,7 +64,7 @@ A `Grid` › `BorderElement`, `HeaderContentPresenter`, `ContentRow` › `InnerL
 
 Rung 1 (theme): a keyed `ControlTheme` for Avalonia's `TextBox`, the reveal button by Avalonia's class, Wp81's CheckBox
 for it; rung 2 for `Header` (`ControlHeader`) and the lines (`PhoneHeaderLine`, `PhoneTextBoxLine`, shared with the
-TextBox); `PhoneRevealButton`, internal, for the `ButtonStates`' unticking; rung 6 (recorded) for the baseline and the rounding. No type is substituted: no PasswordBox
+TextBox) and the keyboard's pan (`PhoneKeyboardPan`, shared with the TextBox); `PhoneRevealButton`, internal, for the `ButtonStates`' unticking; rung 6 (recorded) for the baseline and the rounding. No type is substituted: no PasswordBox
 class.
 
 ## Extensions
