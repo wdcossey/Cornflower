@@ -589,12 +589,12 @@ public class AutoSuggestBoxTests
         Assert.False(stage.Box.IsKeyboardFocusWithin);
     }
 
-    // The keyboard going down with the focus elsewhere leaves the box alone.
+    // The keyboard going down with the focus elsewhere (not a text box, whose focus it takes: #197) leaves the box alone.
     [AvaloniaFact]
     public void The_Keyboard_Going_Down_With_The_Focus_Elsewhere_Takes_Nothing()
     {
         var keyboard = new FakeKeyboard();
-        var other = new TextBox();
+        var other = new Button { Content = "other" };
         using var stage = new Stage(keyboard: keyboard);
         stage.Slot.Children.Add(new StackPanel { Margin = new Thickness(0, 200, 0, 0), Children = { other } });
         Dispatcher.UIThread.RunJobs();

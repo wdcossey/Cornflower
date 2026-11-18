@@ -27,6 +27,8 @@ line, the reveal button and the phone's pointer-over look.
 - **As the TextBox** (#36): the box at 0.8 at rest, the accent round white focused, the border alone disabled; the
   header; the placeholder while empty, here at the box's own size; the text in the phone's line.
 - **Masked** with `●`, WinRT's default `PasswordChar`, on one line with no return.
+- **The keyboard's pan and Back** are the TextBox's (#179, #197): the page moves up for the caret, and the first Back,
+  or the keyboard going down, takes the focus ([the TextBox's README](../TextBox/README.md)).
 - **The keyboard is told it's a password** (`TextInputOptions`: `ContentType` `Password`, `IsSensitive`, no
   suggestions), masked or shown, as by every TextBox with a `PasswordChar` under Wp81 (`PhonePasswordKeyboard`, the
   TextBox's too): on the Pixel 8 Gboard had suggested words from a typed password (#104), and with this shows none,

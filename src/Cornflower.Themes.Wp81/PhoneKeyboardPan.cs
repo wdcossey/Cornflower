@@ -38,6 +38,13 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>When.</b> As the keyboard comes up, changes or goes (worked out afresh), as the focus comes to or leaves a
 /// box (the least change from where the page is), and as the box the page moved for leaves the window. The move is at
 /// once, not a slide: whether the phone's slides, and how fast, is unmeasured.</para>
+/// <para><b>Back and the keyboard.</b> On the phone the first Back hides the keyboard and takes the focus from the box,
+/// a dialog it is in staying; the next Back goes on (#150). On Android the keyboard takes that Back itself and Avalonia
+/// never sees it (#197: on the Pixel the page neither went back nor lost the box's focus), so the keyboard going down
+/// while a box of ours has the focus takes the focus. A Back Avalonia does see while one has it (no keyboard up: a
+/// hardware one, a desktop) does the same through the phone popups' Back handler
+/// (<see cref="PhonePopupHost.TakeBackFirst"/>), before any popup, and is taken. An AutoSuggestBox's TextBox part is
+/// one of ours, so this covers it too, as <see cref="PhoneSuggestionList"/> already did (closing its list).</para>
 /// </remarks>
 internal static class PhoneKeyboardPan
 {
@@ -54,6 +61,7 @@ internal static class PhoneKeyboardPan
         InputElement.GotFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
         // The focus leaving: once it has settled, as it may be on its way to another box.
         InputElement.LostFocusEvent.AddClassHandler<TextBox>((box, _) => PanOf(box)?.UpdateSoon());
+        PhonePopupHost.TakeBackFirst(TakesBack);
     }
 
     /// <summary>The page's background, shown where the move leaves the window bare.</summary>
@@ -71,6 +79,25 @@ internal static class PhoneKeyboardPan
 
     /// <summary>How far the window's content is moved up now (0 when it isn't).</summary>
     internal static double ShiftOf(TopLevel top) => top.GetValue(PanProperty)?.Shift ?? 0;
+
+    /// <summary>
+    /// Back while a box of ours has the focus, in the topmost popup if one is open: take its focus; Back is taken. A box
+    /// under an open popup leaves Back to the popup.
+    /// </summary>
+    private static bool TakesBack(TopLevel top, PhonePopupHost? over)
+    {
+        if (BoxWithFocus(top) is not { } box || (over is not null && !over.Holds(box)))
+            return false;
+        LetGo(top);
+        return true;
+    }
+
+    /// <summary>The text box of ours that has the focus in the top level, if one has (an AutoSuggestBox's part included).</summary>
+    private static TextBox? BoxWithFocus(TopLevel top) =>
+        top.FocusManager?.GetFocusedElement() is TextBox box && GetIsEnabled(box) ? box : null;
+
+    /// <summary>What the phone does on Back or when its keyboard goes: the box loses the focus.</summary>
+    private static void LetGo(TopLevel top) => top.FocusManager?.Focus(null);
 
     /// <summary>The window's pan, made the first time a box of ours in it has the focus.</summary>
     private static Pan? PanOf(TextBox box)
@@ -95,6 +122,7 @@ internal static class PhoneKeyboardPan
         private IDisposable? _clipped;
         private IDisposable? _backed;
         private TextBox? _for;
+        private bool _keyboardWasOpen;
 
         public Pan(TopLevel top) => _top = top;
 
@@ -110,7 +138,10 @@ internal static class PhoneKeyboardPan
         {
             // Asked for again until the window has one (an input pane not there yet at the first focus).
             if (_keyboard is null && (_keyboard = PhoneSuggestionList.KeyboardOf(_top)) is not null)
-                _keyboard.Changed += (_, _) => Update(keyboardChanged: true);
+            {
+                _keyboardWasOpen = _keyboard.IsOpen;
+                _keyboard.Changed += (_, _) => OnKeyboardChanged();
+            }
             var mover = Mover();
             var (shift, box) = Wanted(mover, keyboardChanged);
             Follow(shift > 0 ? box : null);
@@ -136,6 +167,17 @@ internal static class PhoneKeyboardPan
             else
                 TakeBack();
             Moved?.Invoke(_top);
+        }
+
+        /// <summary>The keyboard going down while a box of ours has the focus takes it, as the phone's Back does.</summary>
+        private void OnKeyboardChanged()
+        {
+            var open = _keyboard?.IsOpen == true;
+            var went = _keyboardWasOpen && !open;
+            _keyboardWasOpen = open;
+            if (went && BoxWithFocus(_top) is not null)
+                LetGo(_top);
+            Update(keyboardChanged: true);
         }
 
         private void TakeBack()

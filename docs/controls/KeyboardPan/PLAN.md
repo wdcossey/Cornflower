@@ -23,7 +23,8 @@ From #150 (`tools/refapp/README.md`, "Tier 3's popups: their layout, the pickers
   keyboard covered none of it.
 - The keyboard is 346.67 tall from y 453.33.
 - In a ContentDialog a focused TextBox's dialog stayed at the top, the keyboard below.
-- The keyboard takes Back first: one Back hides it.
+- The keyboard takes Back first: one Back hides it and takes the focus from the box; in a ContentDialog the dialog
+  stays, and the second Back closes it.
 
 From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan/`), boxes 300 and 560 down:
 
@@ -80,6 +81,13 @@ From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan
 - The AutoSuggestBox's list is hung from the box and sized to the keyboard again as the page moves
   (`PhoneKeyboardPan.Moved`, which `PhoneSuggestionList` listens to): a transform lays nothing out, so nothing else
   would tell it.
+- **Back and the keyboard** (#197). On Android the keyboard takes the Back that hides it, and Avalonia never sees it:
+  on the Pixel (#196's run) that Back left the page where it was and the box focused, where a Back reaching the app
+  would have gone back a page. So the keyboard going down (the pane open, then not) while a box of ours has the focus
+  clears the focus, the AutoSuggestBox's TextBox part included, as `PhoneSuggestionList` already did for it. A
+  Back Avalonia does see while a box has the focus (a hardware keyboard, a desktop) clears it too, through
+  `PhonePopupHost.TakeBackFirst`, before any popup, and is taken; the next Back goes on. Android's own hide key (none
+  on the phone) does the same; so does the keyboard going as the app leaves the screen, the box unfocused on return.
 
 ## From Avonic
 
@@ -116,6 +124,10 @@ numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is
   so that guard has no test.)
 - A keyboard over none of the window (Windows' touch keyboard beside it) moves nothing.
 - Under Simple alone nothing moves.
+- The keyboard going down takes the focus from a TextBox or PasswordBox, and the next Back is the page's; a keyboard
+  that changes while up takes nothing, nor does its going with the focus elsewhere. A Back with a box focused takes the
+  focus and is taken. In a ContentDialog either takes the focus, the dialog staying, and the next Back closes it. A
+  keyboard already up when a box first takes the focus still takes it as it goes. Under Simple alone neither takes it.
 - The AutoSuggestBox goes up until its top is at the window's top, and its list then hangs from the box and runs down
   to 2.5 above the keyboard (#150's 63.33 and 450.83).
 - #200's boxes 560 down move as the phone's did: 176.25 and 116.25 within a view pixel, the caret's line at the
