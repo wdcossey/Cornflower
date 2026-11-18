@@ -27,13 +27,19 @@ public class KeyboardPanTests
 {
     private static readonly Rect Keyboard = AutoSuggestBoxReadings.Keyboard;
 
-    /// <summary>A page of text boxes at the given tops, with a fake keyboard for the window.</summary>
+    /// <summary>
+    /// A page of text boxes at the given tops, with a fake keyboard for the window. The page jumps, unless
+    /// <paramref name="slide"/>: where it goes is held here, how it slides there by the slide's own tests.
+    /// </summary>
     private sealed class Page : IDisposable
     {
         private readonly Func<TopLevel, PhoneSuggestionList.IPhoneKeyboard?> _keyboardOf = PhoneSuggestionList.KeyboardOf;
+        private readonly ConfigScope _config = new();
 
-        public Page(Func<Control, Control>? wrap = null, string? theme = null, bool simpleAlone = false, params double[] tops)
+        public Page(Func<Control, Control>? wrap = null, string? theme = null, bool simpleAlone = false, bool slide = false, params double[] tops)
         {
+            if (!slide)
+                CornflowerConfig.KeyboardPanSlide = TimeSpan.Zero;
             PhoneSuggestionList.KeyboardOf = _ => KeyboardFake;
             var canvas = new Canvas { Height = 900 };
             foreach (var top in tops)
@@ -57,6 +63,7 @@ public class KeyboardPanTests
             catch
             {
                 PhoneSuggestionList.KeyboardOf = _keyboardOf;
+                _config.Dispose();
                 throw;
             }
         }
@@ -96,6 +103,7 @@ public class KeyboardPanTests
         {
             Scene.Dispose();
             PhoneSuggestionList.KeyboardOf = _keyboardOf;
+            _config.Dispose();
         }
     }
 
@@ -481,28 +489,210 @@ public class KeyboardPanTests
         Assert.Equal(0, PhoneKeyboardPan.ShiftOf(stage.Window));
     }
 
-    // One the keyboard covers, unread: the TextBox's rule, its caret just clear, would hang the list under the keyboard;
-    // it goes up the least that leaves the list one suggestion's room above the keyboard, and the list shows.
-    [AvaloniaFact]
-    public void An_AutoSuggestBox_Not_Maximized_And_Covered_Moves_Until_Its_List_Has_Room()
+    // #205's read, the control 572.08 to 637.92 down, the keyboard's top 453.33: focused, the page moves 184.58, the box's
+    // bottom border to the keyboard's top (not its caret's line, as a TextBox's: 176.25); with suggestions, the list opens
+    // above the box, its bottom border on the box's top border (406.25), 151.25 tall for three and 387.5 for twelve (from
+    // 18.75), and the page moves 10.42 more, 195 in all.
+    [AvaloniaTheory]
+    [InlineData(3, AutoSuggestBoxReadings.ThreeTall)]
+    [InlineData(12, AutoSuggestBoxReadings.TwelveTall)]
+    public void A_Covered_AutoSuggestBox_Not_Maximized_Moves_Its_Box_Above_The_Keyboard_And_Opens_Its_List_Above(int n, double tall)
     {
         var keyboard = new FakeKeyboard();
-        using var stage = new Stage(keyboard: keyboard, wrap: page => new Border { Padding = new Thickness(0, 560, 0, 0), Child = page });
+        var page = new Border();
+        using var stage = new Stage(keyboard: keyboard, wrap: inner => { page.Child = inner; return page; });
         AutoCompleteBoxOptions.SetAutoMaximizeSuggestionArea(stage.Box, false);
-        Assert.True(CaretBottomIn(stage.TextBox, stage.Window) > Keyboard.Top, "the keyboard covers the caret");
+        page.Padding = new Thickness(0, 572.08 - stage.InWindow(stage.Box).Y, 0, 0);
+        stage.Settle();
+        Assert.Equal(637.92, stage.InWindow(stage.TextBox).Bottom, 0.01);
 
         keyboard.Show(Keyboard);
+        stage.Focus();
+
+        Assert.Equal(184.58, PhoneKeyboardPan.ShiftOf(stage.Window), 0.01);
+        Assert.Equal(Keyboard.Top, stage.InWindow(stage.TextBox).Bottom, 0.01);
+
+        stage.Open(n);
+
+        Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
+        Assert.Equal(195, PhoneKeyboardPan.ShiftOf(stage.Window), 0.01);
+        var box = stage.InWindow(stage.TextBox);
+        Assert.Equal(Keyboard.Top - PhoneKeyboardPan.ListAboveLift, box.Bottom, 0.01);
+        var border = stage.InWindow(stage.TextBox.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "BorderElement"));
+        Assert.Equal(403.75, border.Top, 0.01);
+        var list = stage.InWindow(stage.List);
+        Assert.Equal(border.Top + AutoSuggestBoxReadings.ListBorder, list.Bottom, 0.01);
+        Assert.Equal(tall, list.Height, 0.01);
+    }
+
+    // A box not maximized in a popup, which the page's move doesn't take: its list doesn't open above it (where the
+    // keyboard could still cover it), but runs down past the keyboard as before.
+    [AvaloniaFact]
+    public void A_Box_Not_Maximized_In_A_Popup_Keeps_Its_List_Below()
+    {
+        var keyboard = new FakeKeyboard();
+        var inPopup = new AutoCompleteBox { Width = 300, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom, MinimumPopulateDelay = TimeSpan.Zero };
+        AutoCompleteBoxOptions.SetAutoMaximizeSuggestionArea(inPopup, false);
+        Popup? popup = null;
+        using var stage = new Stage(keyboard: keyboard, wrap: c => new Panel
+        {
+            Children = { c, (popup = new Popup { ShouldUseOverlayLayer = true, Placement = PlacementMode.AnchorAndGravity, Child = new Panel { Height = 700, Children = { inPopup } } }) },
+        });
+        popup!.IsOpen = true;
+        stage.Settle();
+        keyboard.Show(Keyboard);
+        var part = inPopup.GetVisualDescendants().OfType<TextBox>().First();
+        Assert.True(stage.InWindow(part).Bottom > Keyboard.Top, "the keyboard covers the box");
+
+        Assert.True(part.Focus());
+        inPopup.ItemsSource = AutoSuggestBoxReadings.Fruits.Take(3).ToList();
+        inPopup.Text = "a";
+        inPopup.IsDropDownOpen = true;
+        stage.Settle();
+
+        Assert.True(inPopup.IsDropDownOpen, "the list stays open");
+        Assert.Equal(PlacementMode.Bottom, inPopup.GetVisualDescendants().OfType<Popup>().Single(p => p.Name == "PART_Popup").Placement);
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(stage.Window));
+    }
+
+    // The slide (#205's recording): up over 300 ms on an ease-out, from the keyboard's change; down over 200 on an
+    // ease-in, as it goes; the box where the slide has the page at each frame; at rest, the page given back.
+    [AvaloniaFact]
+    public void The_Page_Slides_Up_On_An_Ease_Out_And_Down_On_An_Ease_In()
+    {
+        using var page = new Page(slide: true, tops: 600);
+        using var clock = new TestClock();
+        var box = page.Boxes[0];
+        var rest = page.InWindow(box).Y;
+        Assert.Equal(TimeSpan.FromMilliseconds(300), CornflowerConfig.KeyboardPanSlide);
+
+        page.Tap(box);
+        var shift = PhoneKeyboardPan.ShiftOf(page.Window);
+        Assert.True(shift > 0);
+        Assert.Equal(0, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        Assert.Equal(rest, page.InWindow(box).Y, 0.01);
+
+        foreach (var at in new[] { 16, 96, 192, 288 })
+        {
+            clock.At(at);
+            var shown = shift * PhoneEase.ExponentialOut(PhoneKeyboardPan.UpExponent, at / 300d);
+            Assert.Equal(shown, PhoneKeyboardPan.ShownShiftOf(page.Window), 1e-6);
+            Assert.Equal(rest - shown, page.InWindow(box).Y, 0.01);
+        }
+        clock.At(304);
+        Assert.Equal(shift, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        Assert.Equal(Keyboard.Top, page.CaretBottom(box), 0.01);
+
+        clock.At(400);
+        page.KeyboardFake.Hide();
+        Assert.Equal(0, PhoneKeyboardPan.ShiftOf(page.Window));
+        Assert.Equal(shift, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        foreach (var at in new[] { 16, 96, 192 })
+        {
+            clock.At(400 + at);
+            var shown = shift * (1 - PhoneEase.ExponentialIn(PhoneKeyboardPan.DownExponent, at / 200d));
+            Assert.Equal(shown, PhoneKeyboardPan.ShownShiftOf(page.Window), 1e-6);
+            Assert.Equal(rest - shown, page.InWindow(box).Y, 0.01);
+        }
+        clock.At(608);
+        Assert.Equal(0, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        Assert.Equal(rest, page.InWindow(box).Y);
+        Assert.Null(page.Scene.Window.Presenter!.RenderTransform);
+        Assert.Equal(0, clock.Pending);
+    }
+
+    // The config's slide: its time is read as a slide starts; 0 or less, or Animated off, and the page jumps both ways.
+    [AvaloniaTheory]
+    [InlineData(150, true)]
+    [InlineData(0, true)]
+    [InlineData(-100, true)]
+    [InlineData(300, false)]
+    public void The_Slide_Takes_The_Configs_Time_And_Zero_Or_Less_Or_Animated_Off_Jumps(double milliseconds, bool animated)
+    {
+        using var page = new Page(slide: true, tops: 600);
+        using var clock = new TestClock();
+        CornflowerConfig.KeyboardPanSlide = TimeSpan.FromMilliseconds(milliseconds);
+        CornflowerConfig.Animated = animated;
+        var jumps = milliseconds <= 0 || !animated;
+
+        page.Tap(page.Boxes[0]);
+        var shift = PhoneKeyboardPan.ShiftOf(page.Window);
+        Assert.Equal(jumps ? shift : 0, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        if (!jumps)
+        {
+            clock.At(64);
+            Assert.Equal(shift * PhoneEase.ExponentialOut(PhoneKeyboardPan.UpExponent, 64 / milliseconds), PhoneKeyboardPan.ShownShiftOf(page.Window), 1e-6);
+            clock.At(milliseconds + 16);
+            Assert.Equal(shift, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        }
+
+        page.KeyboardFake.Hide();
+        Assert.Equal(jumps ? 0 : shift, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        if (!jumps)
+        {
+            clock.At(milliseconds + 16 + milliseconds * PhoneKeyboardPan.DownShare + 16);
+            Assert.Equal(0, PhoneKeyboardPan.ShownShiftOf(page.Window));
+        }
+    }
+
+    // A keyboard that changes midway aims from where the box rests, not where the slide has it; a slide turned midway
+    // (the box tapped again as the page slides down) goes back from where the page is.
+    [AvaloniaFact]
+    public void A_Slide_Changed_Midway_Goes_From_Where_The_Page_Is()
+    {
+        using var page = new Page(slide: true, tops: 600);
+        using var clock = new TestClock();
+        var box = page.Boxes[0];
+        var restCaret = page.CaretBottom(box);
+        page.Tap(box);
+        clock.At(96);
+        var midway = PhoneKeyboardPan.ShownShiftOf(page.Window);
+        Assert.True(midway > 0);
+
+        page.KeyboardFake.Show(new Rect(0, 500, Keyboard.Width, 300));
+        Assert.Equal(restCaret - 500, PhoneKeyboardPan.ShiftOf(page.Window), 0.01);
+        // Aimed again the same way: it ends when the first slide would have, at 300 ms, not a whole slide later.
+        clock.At(304);
+        Assert.Equal(500, page.CaretBottom(box), 0.01);
+
+        page.KeyboardFake.Hide();
+        clock.At(448);
+        midway = PhoneKeyboardPan.ShownShiftOf(page.Window);
+        Assert.True(midway > 0 && midway < restCaret - 500);
+        page.Tap(box);
+        var shift = PhoneKeyboardPan.ShiftOf(page.Window);
+        Assert.Equal(restCaret - Keyboard.Top, shift, 0.01);
+        clock.At(464);
+        Assert.Equal(midway + (shift - midway) * PhoneEase.ExponentialOut(PhoneKeyboardPan.UpExponent, 16 / 300d),
+            PhoneKeyboardPan.ShownShiftOf(page.Window), 1e-6);
+    }
+
+    // The list opened as the page starts to slide up for a maximized box low on the page: sized for where the slide ends
+    // (down to the keyboard), not where the box is now, under the keyboard, where it would have no room and close.
+    [AvaloniaFact]
+    public void The_List_Is_Sized_For_Where_The_Slide_Ends()
+    {
+        var keyboard = new FakeKeyboard();
+        using var stage = new Stage(keyboard: keyboard, slide: true, wrap: page => new Border { Padding = new Thickness(0, 700, 0, 0), Child = page });
+        using var clock = new TestClock();
+        keyboard.Show(Keyboard);
+
         stage.Open(12);
 
         Assert.True(stage.Box.IsDropDownOpen, "the list stays open");
-        var list = stage.InWindow(stage.List);
-        Assert.Equal(Keyboard.Top - PhoneSuggestionList.KeyboardGap, list.Bottom, 0.01);
-        Assert.Equal(PhoneSuggestionList.OneSuggestion, list.Height, 0.01);
-        Assert.True(stage.InWindow(stage.Box).Y > 0, "the page moved less than the maximized move");
+        Assert.True(PhoneKeyboardPan.ShownShiftOf(stage.Window) < PhoneKeyboardPan.ShiftOf(stage.Window));
+        Assert.Equal(AutoSuggestBoxReadings.TwelveTall, stage.List.MaxHeight, 0.01);
+        clock.At(160);
+        stage.Settle();
+        Assert.Equal(AutoSuggestBoxReadings.TwelveTall, stage.List.MaxHeight, 0.01);
+        clock.At(320);
+        stage.Settle();
+        Assert.Equal(AutoSuggestBoxReadings.TwelveTall, stage.List.MaxHeight, 0.01);
+        Assert.Equal(AutoSuggestBoxReadings.ListTop, stage.InWindow(stage.List).Y, 0.01);
     }
 
-    // The pan leaves a list not maximized just one suggestion's room: arithmetic's error, a hair short, still counts
-    // the keyboard, rather than pass it over and run the list down under it.
+    // A keyboard that leaves the list just one suggestion's room, read back a hair short (arithmetic's error), still
+    // counts, rather than pass it over and run the list down under it.
     [AvaloniaFact]
     public void A_Keyboard_A_Hair_Short_Of_One_Suggestions_Room_Still_Holds_The_List()
     {

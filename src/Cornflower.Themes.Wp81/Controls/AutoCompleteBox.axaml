@@ -14,7 +14,8 @@
       header is cf:ControlHeader.Header and HeaderTemplate (WinRT's Header), passed on to the box's.
     - PART_Popup is the phone's SuggestionsPopup: drawn in the window's overlay layer, as the phone has one window, and
       hung from the box's bottom border (PhoneSuggestionList moves it up by the border, so the two borders lie on each
-      other, and gives it the room down to the keyboard).
+      other, and gives it the room down to the keyboard); with AutoMaximizeSuggestionArea false and no room below for one
+      suggestion, hung above the box's top border instead (#206).
     - SuggestionsContainer, the box's width, white (AutoSuggestBackgroundThemeBrush, the same in both themes) in a 2.5
       border of the accent (PhoneAccentBrush, TextControlBorderThemeThickness).
     - PART_SelectingItemsControl is the phone's SuggestionsList, a ListView: Wp81's ListBox, its items the phone's
@@ -58,7 +59,7 @@
                    MaxLength="{TemplateBinding MaxLength}"
                    InnerLeftContent="{TemplateBinding InnerLeftContent}"
                    InnerRightContent="{TemplateBinding InnerRightContent}" />
-          <!-- The placement no positioner adjusts: PhoneSuggestionList gives the list the room it has below the box. A tap
+          <!-- The placement no positioner adjusts: PhoneSuggestionList gives the list its room, and its side. A tap
                elsewhere closes the list (Avalonia's light dismiss); a tap on the box goes to the box, the list staying. -->
           <Popup x:Name="PART_Popup"
                  PlacementTarget="{Binding #PART_TextBox}"

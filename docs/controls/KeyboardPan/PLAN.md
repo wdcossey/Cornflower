@@ -13,9 +13,9 @@ passwordbox and autosuggestbox pages) · no real-window run (a desktop shows no 
 (the caret rule, `AutoMaximizeSuggestionArea`): tests and breakage pass, device run passed 2026-11-18 (Pixel 8, Release,
 on `6bce3d4`, 13:24: a covered TextBox and the PasswordBox stop with the caret's bottom on the keyboard's top, the
 PasswordBox's Show Password row under the keyboard; the default AutoSuggestBox at the window's top; the one with
-`AutoMaximizeSuggestionArea` false moved only until one suggestion fits; the status bar clean) · owed: the
-pan's motion, a box in a ScrollViewer (scroll or move), and a covered AutoSuggestBox with `AutoMaximizeSuggestionArea`
-false.
+`AutoMaximizeSuggestionArea` false moved only until one suggestion fits; the status bar clean) · [#206](https://github.com/wdcossey/Cornflower/issues/206)
+(the slide, and a covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false, as #205 read them): tests and
+breakage pass, owed: the device run on the Pixel 8.
 
 ## What the phone does (read)
 
@@ -39,24 +39,41 @@ From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan
   of the box stay under the keyboard. The PasswordBox's keyboard has no suggestion strip: 60.42 lower.
 - **In a ScrollViewer** the box ends where it does on the page.
 
+From #205 (`tools/refapp/README.md`, "The keyboard's pan: an AutoSuggestBox without the maximized list, ..."):
+
+- **A covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false moves its whole box** above the keyboard: 184.58
+  for the control 572.08 to 637.92 down, its bottom border at the keyboard's top. With suggestions its list opens
+  **above** the box (its bottom 406.25, on the box's top border; 151.25 tall for three, 387.5 for twelve, from 18.75),
+  and the page goes **10.42** further, 195 in all.
+- **The reveal row doesn't change the move**, and **a ScrollViewer doesn't scroll**: its `VerticalOffset` stays 0.
+- **It slides, both ways**, in a recording of about 30 frames a second: up in about 0.3 s, slowing as it goes, from
+  the keyboard's start (the first moved frame 35 to 70 ms after it, already 0.23 of the way); down in about 0.2 s,
+  slow first and fast last.
+
 ## What is assumed (not read)
 
 - **The caret is its line.** The phone's caret is 27.08 tall from 3.33 inside the border; here the caret's line (the
   text presenter's, 1.33 em), from where the presenter's layout puts it, ends 30.28 inside the border against the
   phone's 30.41. The page stops with that line's bottom at the keyboard's top, no gap: the phone stopped 0.41 and 0.83
   short (one and two raw pixels), so within a view pixel. For a box of many lines, the caret's line.
-- **What a covered PasswordBox's reveal row does** (the `revealPasswordButton` class's row under the text): it stays
-  under the keyboard with the rest of the box below the caret. #200 read a PasswordBox without it; owed.
 - **The box's top stays in the window.** A box taller than the room above the keyboard goes up no further than puts
   its top (its header's) at the safe area's top, as before.
-- **A covered AutoSuggestBox with `AutoMaximizeSuggestionArea` false** moves the least that leaves its list one
-  suggestion's room above the keyboard (53.75 and the 2.5 gap under the TextBox part's border), the control's top (its
-  header's) kept in the window. Unread. The TextBox's rule, its caret just clear, would have hung the list under the
-  keyboard, where nothing shows it. A box that leaves that room already stays, as #200 read for one 300 down.
-- **The move is at once.** Whether the phone's slides, and how fast, is unmeasured.
-- **A box in a ScrollViewer moves with the page.** The whole window's content moves, as the shell's pan does; the
-  ScrollViewer is not scrolled. A scroll can't take a box at the end of its content up, and the sample's pages all
-  sit in the shell's ScrollViewer, most at its end.
+- **The 10.42 is the list's.** #205 gave the text and the list together, so it can't say which moves the page the
+  further 10.42; it is applied as the list opens (`PhoneKeyboardPan.ListAboveLift`), and kept when it closes (the
+  least change, as for the focus). The list opens above whenever the keyboard leaves it less than one suggestion's
+  room below, covered or not: a box just above the keyboard no longer lifts the page for its list, as #201 did (the
+  phone's uncovered box is unread). One with room below opens it below. A box the page's move doesn't take (a
+  ContentDialog's) keeps the old rule, the list running down past the keyboard, as above it could still be under it.
+- **A slide aimed again the same way** (the list opening as the page rises, the keyboard reporting again) goes on from
+  where the page is and ends when it would have, rather than start a whole slide again.
+- **The list above is as tall as a maximized list could be**: no taller than the room from a box at the window's top
+  down to the keyboard (387.5, which the phone's twelve showed as its `MaxHeight`), and no higher than the safe area's
+  top.
+- **The slide's curves.** WinRT's exponential ease (`PhoneEase`, as every fitted motion here): up, ease-out exponent
+  2 over 300 ms; down, ease-in 3.5 over 200 ms, fitted to the recording's frames, which are too far apart for more.
+  It starts as the keyboard's change is reported, as the fit puts the phone's start with the keyboard's (the first
+  moved frame ~32 ms in), so no delay is added. A change midway slides from where the page is.
+- **A box in a ScrollViewer moves with the page**, as #205 read: the ScrollViewer is not scrolled.
 - **Landscape** is the same rule with the keyboard Avalonia reports.
 
 ## How it works
@@ -69,6 +86,12 @@ From #200 (`tools/refapp/README.md`, "The keyboard's pan"; `ref/wp81/KeyboardPan
   keyboard comes up, changes or goes (so a keyboard that grows shorter brings the page down with it). As the focus
   comes to or leaves a box (once the focus has settled) it changes the move the least, so a box already in view
   leaves the page where it is. The box the page moved for leaving the window brings the page back.
+- **The slide** runs on `CornflowerClock`'s frames, so tests step it. `CornflowerConfig.KeyboardPanSlide` (300 ms)
+  is the time up, two thirds of it down; 0 or less, or `CornflowerConfig.Animated` off, and the page jumps. It is a
+  time of its own: `MotionSpeed` and the areas' speeds don't scale it. Where the page goes (`ShiftOf`) is worked out
+  from where the box would be unmoved (the transform as it is now, mid-slide), and the AutoSuggestBox's list is sized
+  for where the slide ends (`StillToGo`), so a list that opens as the page starts to rise doesn't find no room and
+  close.
 - The move is a `TranslateTransform` at animation priority on the window's presenter of its content, not on the
   content: the content's own transform (an app's, a page's motion) is left alone, and a new content is moved as the
   old was. Hit testing follows it: a tap on the moved box reaches it.
@@ -108,7 +131,7 @@ Avonic (Ionic for Avalonia) solved the same problem for Ionic's inputs (`InputSh
 
 Not taken: Ionic's mechanics and numbers. Ionic pads the scroll content at its end by the keyboard's height and
 scrolls the field to 50 above the keyboard over 150 to 400 ms. The phone's shell moves the page instead, and its
-numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is unread.
+numbers are #150's and #200's, its motion #205's.
 
 ## Tests
 
@@ -140,15 +163,19 @@ numbers are #150's (the AutoSuggestBox's top at the window's top); its motion is
   keyboard's top (TextBox and PasswordBox, each with its keyboard).
 - A box whose bottom the keyboard covers but not its caret stays.
 - In a box of many lines the caret's line, not the last, ends at the keyboard's top.
-- `AutoMaximizeSuggestionArea` false: an AutoSuggestBox the keyboard doesn't cover stays; one it covers goes up until
-  its list, open, has one suggestion's room above the keyboard.
+- `AutoMaximizeSuggestionArea` false: an AutoSuggestBox the keyboard doesn't cover stays; #205's covered one goes
+  184.58, its bottom to the keyboard's top, then with three or twelve suggestions 195, the list above the box (its
+  bottom 406.25, 151.25 and 387.5 tall).
+- The slide: up on the ease-out over 300 ms and down on the ease-in over 200, the box where each frame has it, the page
+  given back at rest; the config's time read (150 ms), 0 or less or `Animated` off jumping; a keyboard changing midway
+  aims from where the box rests; a slide turned midway goes from where the page is; the list opened as the page starts
+  to rise is sized for where it ends.
 
 `tests/Cornflower.Tests/Sample/TextBoxPageTests.cs`: the TextBox page's last box, scrolled to and tapped, moves up over
 the keyboard and back.
 
 ## Left out, with reasons
 
-- **A slide.** Unmeasured; a jump is the plain choice until it is read.
 - **Moving again while the box grows or the caret moves** (a many-line box gaining a line, or the caret going down a
   line, with the keyboard up), or as the window turns without the keyboard changing. The move is worked out on the keyboard's and the focus's changes only.
 - **Scrolling a ScrollViewer instead.** See above. If a read shows the phone scrolls, the pan would scroll the nearest

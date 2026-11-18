@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Reactive;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
 
@@ -17,12 +18,16 @@ namespace Cornflower.Themes.Wp81;
 /// <remarks>
 /// <para><b>Where.</b> The list's top border lies on the box's bottom border: as the list opens, the template's
 /// <c>PART_Popup</c> is moved up by the <c>PART_TextBox</c>'s bottom border (2.5), so the list's top is the box's bottom
-/// less 2.5 (63.33 on the phone, its box from 26.67 to 65.83).</para>
+/// less 2.5 (63.33 on the phone, its box from 26.67 to 65.83). With <c>AutoMaximizeSuggestionArea</c> false and a
+/// keyboard that leaves it less than one suggestion's room below, it opens above the box instead, its bottom border on
+/// the box's top border (#205: its bottom at 406.25, the box's border from 403.75).</para>
 /// <para><b>How tall.</b> As tall as its suggestions, up to the room below the box: down to 2.5 above the keyboard's top
 /// while the keyboard is up (twelve suggestions run to 450.83, the keyboard's top 453.33), or above the window's bottom,
 /// inside its safe area, when there is none; and never over <see cref="AutoCompleteBox.MaxDropDownHeight"/> (WinRT's
-/// <c>MaxSuggestionListHeight</c>). Worked out as it opens, and again while it is open when the keyboard, the window,
-/// its safe area or the page's layout changes, the list placed again under the box if the page moved it.</para>
+/// <c>MaxSuggestionListHeight</c>). Above the box, up to the safe area's top and no taller than the room a maximized
+/// list would have below it (#205: 387.5 for twelve, 151.25 for three). Worked out as it opens, and again while it is
+/// open when the keyboard, the window, its safe area or the page's layout changes, the list placed again on the box if
+/// the page moved it; for where the page's slide ends (<see cref="PhoneKeyboardPan.StillToGo"/>), not where it is.</para>
 /// <para><b>Back and the keyboard.</b> On the phone one Back hides the keyboard, closes the list and takes the focus from
 /// the box, in one frame, and the next Back reaches the app (#150). Here the phone popups' Back handler
 /// (<see cref="PhonePopupHost.TakeBackFirst"/>, <see cref="PhonePopupDismissal.BackTakesFocusFirst"/>) does it for a
@@ -32,8 +37,8 @@ namespace Cornflower.Themes.Wp81;
 /// <para><b>A tap on a suggestion</b> closes the list and leaves the focus in the box, so the keyboard stays, as on the
 /// phone: the template's list and its items take no focus, and the list is closed here as the release selects.</para>
 /// <para>The page moves up to put the box at the window's top while the keyboard is up, as the phone's does, or with
-/// <c>AutoMaximizeSuggestionArea</c> false only as far as leaves the list one suggestion's room above the keyboard
-/// (<see cref="PhoneKeyboardPan"/>, the TextBox part's); the list is hung and sized again as it moves.</para>
+/// <c>AutoMaximizeSuggestionArea</c> false only until the box's bottom is at the keyboard's top, 10.42 more while the
+/// list is open (<see cref="PhoneKeyboardPan"/>, the TextBox part's); the list is hung and sized again as it moves.</para>
 /// </remarks>
 internal static class PhoneSuggestionList
 {
@@ -50,7 +55,7 @@ internal static class PhoneSuggestionList
     /// </summary>
     internal const double OneSuggestion = 53.75;
 
-    /// <summary>Arithmetic's error: the pan leaves a list not maximized exactly one suggestion's room (#201).</summary>
+    /// <summary>Arithmetic's error: a keyboard that leaves the list one suggestion's room, read back a hair short (#201).</summary>
     private const double Rounding = 1e-6;
 
     /// <summary>
@@ -154,6 +159,12 @@ internal static class PhoneSuggestionList
             {
                 _popup.Opened -= OnOpened;
                 _popup.Closed -= OnClosed;
+                // Let go: the template's own place again, not the one set here.
+                if (_popup != popup)
+                {
+                    _popup.ClearValue(Popup.PlacementProperty);
+                    _popup.ClearValue(Popup.VerticalOffsetProperty);
+                }
             }
             if (_textBox is not null)
                 _textBox.LayoutUpdated -= OnLaidOut;
@@ -269,26 +280,54 @@ internal static class PhoneSuggestionList
         {
             if (_popup is not { IsOpen: true } || _textBox is null || _top is null || _list is not { } list)
                 return;
-            if (_textBox.TranslatePoint(new Point(0, _textBox.Bounds.Height), _top) is not { } below)
+            if (_textBox.TranslatePoint(default, _top) is not { } at || _box.TranslatePoint(default, _top) is not { } control)
                 return;
-            var offset = -_textBox.BorderThickness.Bottom;
-            // Avalonia places an open popup again only when its target's own bounds change, not when the page moves the
-            // target (a scroll, a margin); an offset change places it again, so the list stays hung from the box.
-            if (_placedAt is { } was && was != below)
-                _popup.VerticalOffset = offset - 1;
-            _popup.VerticalOffset = offset;
-            _placedAt = below;
-            var top = below.Y + offset;
-            var bottom = PhonePopupHost.AreaOf(_top).Bottom;
-            if (_keyboard is { IsOpen: true } keyboard && keyboard.Occluded.Height > 0
-                && keyboard.Occluded.Top - KeyboardGap - top >= OneSuggestion - Rounding)
-                bottom = Math.Min(bottom, keyboard.Occluded.Top);
-            var room = bottom - KeyboardGap - top;
+            var border = _textBox.BorderThickness;
+            // Sized for where the box will be once the page's slide ends, not where the slide has it now (hung from it
+            // as it is, so the list goes with it).
+            var boxTop = at.Y - PhoneKeyboardPan.StillToGo(_top, _textBox);
+            var boxBottom = boxTop + _textBox.Bounds.Height;
+            var area = PhonePopupHost.AreaOf(_top);
+            var keyboard = _keyboard is { IsOpen: true } open && open.Occluded.Height > 0 ? open.Occluded : (Rect?)null;
+            var top = boxBottom - border.Bottom;
+            var keyboardShort = keyboard is { } covered && covered.Top - KeyboardGap - top < OneSuggestion - Rounding;
+            // A box not maximized whose keyboard leaves its list less than one suggestion's room below opens it above
+            // (#205), covered or not, as tall as its suggestions up to the room a maximized list would have below the
+            // box (387.5 for twelve on the phone, from 18.75 to 406.25) and to the safe area's top. Not a box the page's
+            // move doesn't take (a ContentDialog's): above it could still be under the keyboard, so it runs down as before.
+            var above = keyboardShort && !AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(_box) && PhoneKeyboardPan.Moves(_top, _textBox);
+            double room;
+            // The box's own top, above it: its border's, under the TextBox part's header.
+            var borderTop = 0d;
+            if (above)
+            {
+                borderTop = _textBox.GetVisualDescendants().OfType<Border>()
+                    .FirstOrDefault(b => b.Name == "BorderElement" && b.TemplatedParent == _textBox)?.TranslatePoint(default, _textBox)?.Y ?? 0;
+                var maximized = keyboard!.Value.Top - KeyboardGap - (area.Top + at.Y + _textBox.Bounds.Height - control.Y - border.Bottom);
+                room = Math.Min(boxTop + borderTop + border.Top - area.Top, maximized);
+            }
+            else
+            {
+                var bottom = area.Bottom;
+                if (keyboard is { } under && !keyboardShort)
+                    bottom = Math.Min(bottom, under.Top);
+                room = bottom - KeyboardGap - top;
+            }
             if (room < OneSuggestion - Rounding)
             {
                 _box.SetCurrentValue(AutoCompleteBox.IsDropDownOpenProperty, false);
                 return;
             }
+            // The list's border on the box's: its top on the bottom border below, its bottom on the top border above.
+            var placement = above ? PlacementMode.Top : PlacementMode.Bottom;
+            var offset = above ? borderTop + border.Top : -border.Bottom;
+            // Avalonia places an open popup again only when its target's own bounds change, not when the page moves the
+            // target (a scroll, a margin, the pan); an offset change places it again, so the list stays hung from the box.
+            if (_placedAt is { } was && (was != at || _popup.Placement != placement))
+                _popup.VerticalOffset = offset - 1;
+            _popup.Placement = placement;
+            _popup.VerticalOffset = offset;
+            _placedAt = at;
             list.MaxHeight = Math.Min(room, _box.MaxDropDownHeight);
         }
     }
