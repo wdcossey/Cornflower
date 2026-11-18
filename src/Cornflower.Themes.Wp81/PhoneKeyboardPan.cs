@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 
 namespace Cornflower.Themes.Wp81;
 
@@ -19,10 +20,11 @@ namespace Cornflower.Themes.Wp81;
 /// </summary>
 /// <remarks>
 /// <para><b>How far.</b> An AutoSuggestBox goes up until the control's top (its header's) is at the window's top, inside
-/// its safe area, as #150 read on the phone (48.33 to 26.67 for the box, 21.67 up), even when the keyboard didn't cover
-/// it. A TextBox or PasswordBox goes up only as far as it must for its bottom to clear the keyboard's top, and no
-/// further than puts its own top at the window's top; one the keyboard doesn't cover stays. That a TextBox moves the
-/// least, not to the top, is assumed (the phone's shell's usual way; no read of it yet).</para>
+/// its safe area, even when the keyboard didn't cover it: #150 read 21.67 up from 48.33, #200 312.08 up from 300 down
+/// (<see cref="AutoCompleteBoxOptions.AutoMaximizeSuggestionAreaProperty"/>, true by default). A TextBox or PasswordBox,
+/// and an AutoSuggestBox with that false, goes up only as far as it must for the caret's line to clear the keyboard's
+/// top, its bottom border left under the keyboard, as #200 read (452.92 against 453.33), and no further than puts the
+/// control's own top at the window's top; one whose caret the keyboard doesn't cover stays.</para>
 /// <para><b>What moves.</b> The window's content, all of it, through a <see cref="TranslateTransform"/> at animation
 /// priority on the window's presenter of it, so the content's own transform (an app's, a page's motion) is left alone:
 /// a box in a <see cref="ScrollViewer"/> moves with the page, not by scrolling, as a scroll can't take a box at the end
@@ -192,12 +194,16 @@ internal static class PhoneKeyboardPan
             if (target.TranslatePoint(default, _top) is not { } at)
                 return (0, null);
             // Where it would be were nothing moved.
-            var top = at.Y + (_moved?.IsVisualAncestorOf(target) == true ? Shift : 0);
-            var bottom = top + target.Bounds.Height;
+            var moved = _moved?.IsVisualAncestorOf(target) == true ? Shift : 0;
+            var top = at.Y + moved;
             var area = PhonePopupHost.AreaOf(_top);
-            if (target is AutoCompleteBox)
+            if (target is AutoCompleteBox suggestBox && AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(suggestBox))
                 return (Math.Max(0, top - area.Top), box);
-            // The least move that shows the box above the keyboard, its top if it is taller.
+            // The least move that shows the caret above the keyboard (#200's read): its line's bottom at the keyboard's
+            // top, the box's own bottom left under it; never so far that the control's top goes past the safe area's.
+            if (CaretBottomOf(box, _top) is not { } caret)
+                return (0, null);
+            var bottom = caret + moved;
             var shift = keyboardChanged ? 0 : Shift;
             if (bottom - shift > covered.Top)
                 shift = bottom - covered.Top;
@@ -205,5 +211,20 @@ internal static class PhoneKeyboardPan
                 shift = top - area.Top;
             return (Math.Max(0, shift), box);
         }
+    }
+
+    /// <summary>
+    /// The bottom of the caret's line in the window, as the box is placed now: for a box of many lines, the line the
+    /// caret is on. No lower than the box's own bottom, as a line scrolled out of the box isn't shown; the box's bottom
+    /// where its template has no text presenter.
+    /// </summary>
+    internal static double? CaretBottomOf(TextBox box, Visual to)
+    {
+        if (box.TranslatePoint(new Point(0, box.Bounds.Height), to) is not { } boxBottom)
+            return null;
+        if (box.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault(p => p.TemplatedParent == box) is not { } presenter)
+            return boxBottom.Y;
+        var line = presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex);
+        return presenter.TranslatePoint(line.BottomLeft, to) is { } caret ? Math.Min(caret.Y, boxBottom.Y) : boxBottom.Y;
     }
 }

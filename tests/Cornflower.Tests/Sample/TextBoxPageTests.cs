@@ -65,7 +65,8 @@ public class TextBoxPageTests
         Assert.Equal("-", state.Text);
     }
 
-    // #179: the page's last box, scrolled to and tapped, moves up as the keyboard comes and goes back down after it.
+    // #179: the page's last box, scrolled to and tapped, moves up as the keyboard comes (until its caret clears it, #201)
+    // and goes back down after it.
     [AvaloniaFact]
     public void The_Last_Box_Moves_Up_Over_The_Keyboard_And_Back()
     {
@@ -84,7 +85,7 @@ public class TextBoxPageTests
             Assert.True(low.Focus());
             keyboard.Show(AutoSuggestBoxReadings.Keyboard);
 
-            Assert.Equal(AutoSuggestBoxReadings.Keyboard.Top, low.TranslatePoint(new Point(0, low.Bounds.Height), scene.Window)!.Value.Y, 0.01);
+            Assert.Equal(AutoSuggestBoxReadings.Keyboard.Top, Behaviours.KeyboardPanTests.CaretBottomIn(low, scene.Window), 0.01);
 
             keyboard.Hide();
             Assert.Equal(rest, low.TranslatePoint(default, scene.Window)!.Value.Y, 0.01);

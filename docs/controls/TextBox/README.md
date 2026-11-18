@@ -1,6 +1,6 @@
 # TextBox
 
-Status: done · [#36](https://github.com/wdcossey/Cornflower/issues/36) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page textbox` on `main` at `7dddcde`: cold 789 ms, the page opened in 401 ms, the first screen's specimens drawn, a tap focuses a box with the accent round it, and typing works) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the textbox page opened in 62 ms with 123 elements) · owed: captures of a caret, a selection and the keyboard · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the last box and the light section's box move up to just above the keyboard, Back brings the page down, a box near the top moves nothing) · open: Back hides the keyboard but leaves the box focused, [#197](https://github.com/wdcossey/Cornflower/issues/197)
+Status: done · [#36](https://github.com/wdcossey/Cornflower/issues/36) · device run passed 2026-11-12 (Pixel 8, Release, over wireless adb, `run.ps1 -Page textbox` on `main` at `7dddcde`: cold 789 ms, the page opened in 401 ms, the first screen's specimens drawn, a tap focuses a box with the accent round it, and typing works) · real-window run passed 2026-11-12 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `3bcf02e`: 71 of 71, the textbox page opened in 62 ms with 123 elements) · owed: captures of a caret, a selection and the keyboard · the keyboard's pan, [#179](https://github.com/wdcossey/Cornflower/issues/179), device run passed 2026-11-18 (Pixel 8, Release, on `07a0d02`, 12:02, after a run at 11:51 on `a0f1a02` found two faults, fixed in `07a0d02`: the last box and the light section's box move up to just above the keyboard, Back brings the page down, a box near the top moves nothing) · the caret rule, [#201](https://github.com/wdcossey/Cornflower/issues/201): tests and breakage pass, owed: the device run on the Pixel 8 · open: Back hides the keyboard but leaves the box focused, [#197](https://github.com/wdcossey/Cornflower/issues/197)
 
 The Windows Phone 8.1 TextBox: Avalonia's `TextBox`, themed by `Wp81Theme` with the phone's default style and
 template, in `src/Cornflower.Themes.Wp81/Controls/TextBox.axaml`. WinRT's `Header` is `cf:ControlHeader.Header`,
@@ -47,11 +47,13 @@ a header adds its line and 4.8.
   NumericUpDown), a TextBox keeps Simple's theme (`HoleParts`), as their Buttons do.
 - **Dark and light**: every brush follows the theme variant; the focus border and the selection follow the app's
   accent (`SystemColorControlAccentColor`).
-- **The keyboard moves the page up** (#179): while it is up, a focused box it covers goes up until its bottom is at
-  the keyboard's top, never its top above the window's; one it leaves clear stays; it goes back as the keyboard goes.
+- **The keyboard moves the page up** (#179, #201): while it is up, a focused box whose caret it covers goes up until
+  the caret's line ends at the keyboard's top, the box's bottom border left under the keyboard, as #200 read on the
+  phone (176.25 up, 8.33 of the box under the keyboard); for a box of many lines, the caret's line. Never the box's top
+  above the window's; one whose caret it leaves clear stays; it goes back as the keyboard goes.
   The whole window's content moves, a box in a ScrollViewer with it; a box in a popup moves nothing
-  (`PhoneKeyboardPan`, internal, the theme's setter; [its plan](../KeyboardPan/PLAN.md)). That a TextBox moves the
-  least, at once, is assumed: owed, a read on the phone. The device run passed on 2026-11-18.
+  (`PhoneKeyboardPan`, internal, the theme's setter; [its plan](../KeyboardPan/PLAN.md)). That the move is at
+  once is assumed (the phone's motion unread). The device run passed on 2026-11-18, before #201's caret rule.
 
 ## Resource keys
 

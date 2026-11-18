@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornflower.Controls;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
 using Cornflower.Themes.Wp81;
@@ -32,9 +33,10 @@ public class AutoSuggestBoxPageTests
         using var scene = new Scene(page);
 
         var boxes = page.GetVisualDescendants().OfType<AutoCompleteBox>().ToList();
-        Assert.Equal(3, boxes.Count);
+        Assert.Equal(4, boxes.Count);
         Assert.All(boxes, box => Assert.True(PhoneSuggestionList.GetIsEnabled(box)));
         Assert.Single(boxes, b => !b.IsEnabled);
+        Assert.Single(boxes, b => !AutoCompleteBoxOptions.GetAutoMaximizeSuggestionArea(b));
         Assert.Equal("autosuggestbox", page.FindControl<SamplePageHeader>("Header")!.Title);
     }
 
