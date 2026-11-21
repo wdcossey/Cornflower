@@ -54,7 +54,7 @@ public sealed class ItemClickEventArgs : RoutedEventArgs
 /// <code>&lt;ListBox cf:ListBoxOptions.IsItemClickEnabled="True" cf:ListBoxOptions.ItemClick="OnItemClick" /&gt;</code>
 /// <code>list.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) =&gt; Open(e.ClickedItem));</code>
 /// </example>
-public static class ListBoxOptions
+public static partial class ListBoxOptions
 {
     /// <summary>Whether a tap on an item clicks it, not selects it: WinRT's <c>IsItemClickEnabled</c>. Off by default.</summary>
     public static readonly AttachedProperty<bool> IsItemClickEnabledProperty =
@@ -101,15 +101,17 @@ public static class ListBoxOptions
         InputElement.PointerCaptureLostEvent.AddClassHandler<Interactive>(OnCaptureLost, handledEventsToo: true);
         InputElement.HoldingEvent.AddClassHandler<ListBoxItem>(OnHolding, handledEventsToo: true);
         InputElement.LostFocusEvent.AddClassHandler<ListBoxItem>(OnLostFocus, handledEventsToo: true);
+
+        HookGrouping();
     }
 
     public static bool GetIsItemClickEnabled(ListBox list) => list.GetValue(IsItemClickEnabledProperty);
 
     public static void SetIsItemClickEnabled(ListBox list, bool value) => list.SetValue(IsItemClickEnabledProperty, value);
 
-    /// <summary>The item's list, if it clicks its items: item click on, in any selection mode (#169).</summary>
+    /// <summary>The item's list, if it clicks its items: item click on, in any selection mode (#169); a group's header never clicks.</summary>
     private static ListBox? Clicking(ListBoxItem item) =>
-        ItemsControl.ItemsControlFromItemContainer(item) is ListBox list && GetIsItemClickEnabled(list) ? list : null;
+        item is not ListViewHeaderItem && ItemsControl.ItemsControlFromItemContainer(item) is ListBox list && GetIsItemClickEnabled(list) ? list : null;
 
     /// <summary>
     /// The select-all keys on a list that clicks, from the list or one of its own items, not from a control inside an

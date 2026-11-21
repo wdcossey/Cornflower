@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ListViewHeaderItem, and GridViewHeaderItem, whose default style is the same: a grouped list's
+    header (cf:ListBoxOptions.GroupedItemsSource), the SDK's generic.xaml re-expressed as an Avalonia ControlTheme.
+    docs/controls/GroupedLists/PLAN.md has the values and their sources.
+
+    TiltContainer, a Border in the header's Background (Transparent), round the presenter: no margin, no padding, the
+    content Left and Top, in ContentControlThemeFontFamily at ControlContentThemeFontSize. Pressed runs the phone's
+    PointerDownThemeAnimation on TiltContainer, the template's root, which Tilt tilts; Normal, PointerOver and Disabled
+    change nothing. A plain string takes the phone's presenter line (PhoneHeaderLine), as a ListViewItem's does.
+  -->
+  <ControlTheme x:Key="{x:Type cf:ListViewHeaderItem}" TargetType="cf:ListViewHeaderItem">
+    <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="TiltContainer" Background="{TemplateBinding Background}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
