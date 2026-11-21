@@ -26,7 +26,9 @@ Avalonia's `ListBox`, and `ListViewHeaderItem` is the header. The header's theme
   there stay selected.
 - **`GroupHeaderTemplate`**: WinRT's `GroupStyle.HeaderTemplate`, its data the group.
 - **A GridView** is the same, in its theme (`Theme="{DynamicResource Wp81GridViewTheme}"`): each group starts a row.
-- Selection and item click are the list's: `SelectedItem` and `SelectedItems` hold items only.
+- Selection and item click are the list's: `SelectedItem` and `SelectedItems` hold items, but for one
+  `SelectionChanged` after a select all, a Shift range, a header's index from code or `AlwaysSelected`'s first pick,
+  when a header is in them until it is let go.
 
 ## Behaviours
 
@@ -47,6 +49,7 @@ page is `grouped lists`.
   group's items are the group itself (no `ItemsPath`).
 - **The pinned header is drawn over `ApplicationPageBackgroundThemeBrush`**; over a page with its own background, set
   `PART_StickyHeader`'s `Background`. The list's `Padding` doesn't move it.
+- **A change to a group lays the whole list out again**: the realized items, and the focus in the list, are made anew.
 - **No `GroupItem`**: the phone's panels make none.
 - The phone's header goes `Pressed` > `PointerOver` on release, then `Normal` 355 ms later; `PointerOver` draws
   nothing, so there is no state to follow: ours runs the tilt's return on release, as the phone's does.

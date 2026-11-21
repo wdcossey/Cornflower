@@ -60,12 +60,13 @@ in `Controls/ListView.axaml`, the ListView's template gains the sticky header, b
 
 The ListView's header sticks at the top; the GridView's doesn't (the recording). On the phone this is the panel's:
 `ItemsStackPanel` pins, `ItemsWrapGrid` doesn't. So here: the ListView's template (and so the GridView's, based on it)
-holds an empty, hidden `Border` named `PART_StickyHeader` over the top of its ScrollViewer. A grouped list puts a
-`ListViewHeaderItem` in it (an ungrouped list's template holds no `ListBoxItem` of its own, which the AutoSuggestBox's
-and ListPickerFlyout's tests count), and, if its items panel is a vertical stack (`VirtualizingStackPanel` or
-`StackPanel`), shows it with the group whose items are at the top of the viewport, once that group's own header has
-gone above the top; the next group's header pushes it up as it arrives. Ours follows the list's `LayoutUpdated`. The
-GridView's `WrapPanel` never shows it. The `Border` is drawn over the page's brush
+holds an empty, hidden `Border` named `PART_StickyHeader` in the ScrollViewer's content, over the items, so the
+viewport clips it, a pan or the wheel on it scrolls the list, and the scroll indicator draws over it. A grouped list
+puts a `ListViewHeaderItem` in it (an ungrouped list's template holds no `ListBoxItem` of its own, which the
+AutoSuggestBox's and ListPickerFlyout's tests count), and, if its items panel is a vertical stack
+(`VirtualizingStackPanel` or `StackPanel`), shows it at the viewport's top with the group whose items are there, once
+that group's own header has gone above the top; the next group's header pushes it up as it arrives. Ours follows the
+list's `LayoutUpdated`. The GridView's `WrapPanel` never shows it. The `Border` is drawn over the page's brush
 (`ApplicationPageBackgroundThemeBrush`), so the items going under it don't show through: in the recording nothing of
 "a item 4" shows round the pinned "a", though it sits under it.
 
@@ -88,7 +89,10 @@ Each with its evidence and its test in `tests/Cornflower.Tests/Controls/GroupedL
 | The ListView's header sticks, pushed up by the next | the recording | `A_ListViews_Header_Sticks_At_The_Top` |
 | The GridView's doesn't | the recording | `A_GridViews_Header_Scrolls_Away` |
 | A change to a group lays the list out again, keeping the selection | WinRT's view follows its source | `A_Change_To_A_Group_Shows_And_Keeps_The_Selection` |
-| A new `GroupHeaderTemplate` takes effect, the pinned header's too | no dead props | `A_New_Header_Template_Takes_Effect` |
+| A new `GroupHeaderTemplate` takes effect, the pinned header's too, without laying the list out again | no dead props | `A_New_Header_Template_Takes_Effect` |
+| The pinned header is clipped by the viewport, and a wheel or pan on it scrolls | the phone's is the panel's own | `The_Pinned_Header_Is_In_The_Viewport` |
+| A string among the groups is no group | WinRT's grouped source holds collections | `A_String_Is_No_Group` |
+| New groups aren't touched by the old ones' clean-up | review | `New_Groups_Keep_Their_Selection_From_The_Old_Ones_Clean_Up` |
 | `GroupedItemsSource` cleared: the list is empty | no dead props | `Clearing_The_Groups_Clears_The_List` |
 | `ScrollGroupToTop` | for #215 | `A_Group_Scrolls_To_The_Top` |
 
@@ -120,8 +124,14 @@ same tilt as the ListView's items. The phone goes `Pressed` > `PointerOver` on r
   `Background`. To reverse: `Transparent`.
 - **A header taken into the selection is let go just after**, posted to the dispatcher: changed while the list raises
   its `SelectionChanged`, Avalonia's `SelectedItems` takes the items in twice. So after select all, a Shift range or a
-  header's index from code, the app sees one `SelectionChanged` with the header and one without. To reverse: a
-  selection model of our own.
+  header's index from code, or `AlwaysSelected`'s first pick, the app sees one `SelectionChanged` with the header in
+  `SelectedItem` and `SelectedItems`, then one without: a handler that casts `SelectedItem` must check its type. To
+  reverse: a selection model of our own.
+- **A change to a group lays the whole list out again** (a new `ItemsSource`): the realized containers and the focus
+  inside the list go, and a bulk add of n items costs n re-flattens. The phone's view changes item by item. To
+  reverse: translate each group's change into the flat list's own change (an issue of its own if apps need it).
+- **The next header pushes the pinned one up.** The recording's frames don't show that moment (unread), so the test
+  pins ours; the coordinator's device and recording checks are owed it. To reverse: drop the push.
 - **The list's `Padding` doesn't move the pinned header**, which spans the list's width less its border.
 
 ## Checklists

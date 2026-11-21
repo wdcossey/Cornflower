@@ -356,6 +356,21 @@ public class GroupedListTests
         Assert.False(host.IsVisible);
     }
 
+    // The pinned header is in the list's scrolled content: the viewport clips it as it is pushed, and the wheel on it
+    // scrolls the list, as a pan on the phone's does.
+    [AvaloniaFact]
+    public void The_Pinned_Header_Is_In_The_Viewport()
+    {
+        using var page = new ProbePage();
+        page.ScrollTo(140);
+        Assert.True(page.Scroll.IsVisualAncestorOf(page.StickyHost));
+
+        page.Window.MouseWheel(page.Sticky.TranslatePoint(new Point(100, 15), page.Window)!.Value, new Vector(0, -1));
+        page.Settle();
+
+        Assert.True(page.Scroll.Offset.Y > 140);
+    }
+
     // The recording: panned, the GridView's top row shows with no header over it.
     [AvaloniaFact]
     public void A_GridViews_Header_Scrolls_Away()
@@ -412,12 +427,40 @@ public class GroupedListTests
         using var page = new ProbePage();
         page.ScrollTo(140);
         var template = new FuncDataTemplate<Letter>((letter, _) => new TextBlock { Text = letter.Key.ToUpperInvariant() });
+        var a = page.Header(HeaderA);
 
         ListBoxOptions.SetGroupHeaderTemplate(page.List, template);
         page.Settle();
 
+        Assert.Same(a, page.Header(HeaderA));   // the same headers: the list isn't laid out again
+
         Assert.All(page.List.Items.OfType<ListViewHeaderItem>(), header => Assert.Same(template, header.ContentTemplate));
         Assert.Same(template, page.Sticky.ContentTemplate);
+    }
+
+    // A string among the groups is a value, not a group of its characters: no header.
+    [AvaloniaFact]
+    public void A_String_Is_No_Group()
+    {
+        using var page = new ProbePage(groups: new object[] { "apple", Letters()[0] });
+
+        Assert.Equal(6, page.List.ItemCount);
+        Assert.Equal("a", ((Letter)page.Header(0).Content!).Key);
+    }
+
+    // A header's index selected from code, then new groups: the old groups' clean-up, run after, lets go of nothing in
+    // the new ones.
+    [AvaloniaFact]
+    public void New_Groups_Keep_Their_Selection_From_The_Old_Ones_Clean_Up()
+    {
+        using var page = new ProbePage();
+        page.List.SelectedIndex = HeaderC;
+
+        ListBoxOptions.SetGroupedItemsSource(page.List, new[] { new Letter("z", Enumerable.Range(1, 10).Select(i => $"z item {i}")) });
+        page.List.SelectedIndex = HeaderC;
+        page.Settle();
+
+        Assert.Equal("z item 6", page.List.SelectedItem);
     }
 
     // Cleared, the list is ungrouped and empty.

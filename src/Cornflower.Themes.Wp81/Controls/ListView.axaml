@@ -71,32 +71,33 @@
         <Border BorderBrush="{TemplateBinding BorderBrush}"
                 Background="{TemplateBinding Background}"
                 BorderThickness="{TemplateBinding BorderThickness}">
-          <Panel>
-            <ScrollViewer x:Name="PART_ScrollViewer"
-                          HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
-                          VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
-                          IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
-                          IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
-                          BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
-                          AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
-                          IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
-                          HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
-                          VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}">
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}">
+            <Panel>
               <ItemsPresenter x:Name="PART_ItemsPresenter"
                               ItemsPanel="{TemplateBinding ItemsPanel}"
                               Margin="{TemplateBinding Padding}"
                               HorizontalAlignment="Stretch"
                               VerticalAlignment="Top" />
-            </ScrollViewer>
-            <!-- A grouped list's pinned header (cf:ListBoxOptions.GroupedItemsSource): ListBoxOptions puts a
-                 cf:ListViewHeaderItem in it, and shows and moves it, in a vertical stack, as the phone's ItemsStackPanel
-                 pins its group's header; never in the GridView's WrapPanel. Over the page's brush, so the items going
-                 under it don't show through, as on the phone. -->
-            <Border x:Name="PART_StickyHeader"
-                    IsVisible="False"
-                    VerticalAlignment="Top"
-                    Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
-          </Panel>
+              <!-- A grouped list's pinned header (cf:ListBoxOptions.GroupedItemsSource): ListBoxOptions puts a
+                   cf:ListViewHeaderItem in it, and shows it at the viewport's top, in a vertical stack, as the phone's
+                   ItemsStackPanel pins its group's header; never in the GridView's WrapPanel. Inside the ScrollViewer, so
+                   the viewport clips it, a pan or the wheel on it scrolls the list, and the indicator draws over it. Over
+                   the page's brush, so the items going under it don't show through, as on the phone. -->
+              <Border x:Name="PART_StickyHeader"
+                      IsVisible="False"
+                      VerticalAlignment="Top"
+                      Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+            </Panel>
+          </ScrollViewer>
         </Border>
       </ControlTemplate>
     </Setter>

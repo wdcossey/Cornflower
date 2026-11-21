@@ -27,8 +27,8 @@ public static partial class ListBoxOptions
     /// </summary>
     /// <remarks>
     /// The headers are items of the list, so <see cref="SelectingItemsControl.SelectedIndex"/> counts them, where
-    /// WinRT's counts items alone; a header is never selected, so <c>SelectedItem</c> and <c>SelectedItems</c> are the
-    /// phone's. A list whose items panel is a vertical stack (the ListView's) pins the header of the group at its top:
+    /// WinRT's counts items alone. A header taken into the selection (select all, a Shift range, code) is let go just
+    /// after, so <c>SelectedItem</c> and <c>SelectedItems</c> hold items but for that one <c>SelectionChanged</c>. A list whose items panel is a vertical stack (the ListView's) pins the header of the group at its top:
     /// a <see cref="ListViewHeaderItem"/> put in its template's <c>PART_StickyHeader</c>, a <see cref="Border"/>, if it
     /// has one.
     /// </remarks>
@@ -72,7 +72,8 @@ public static partial class ListBoxOptions
                 list.ClearValue(ItemsControl.ItemsSourceProperty);
             }
         });
-        GroupHeaderTemplateProperty.Changed.AddClassHandler<ListBox>((list, _) => list.GetValue(GroupingProperty)?.Rebuild());
+        GroupHeaderTemplateProperty.Changed.AddClassHandler<ListBox>((list, e) =>
+            list.GetValue(GroupingProperty)?.SetHeaderTemplate(e.GetNewValue<IDataTemplate?>()));
     }
 
     /// <summary>A grouped list's state: its flattened items, its headers, and its pinned header.</summary>
@@ -85,11 +86,12 @@ public static partial class ListBoxOptions
         private readonly List<ListViewHeaderItem> _headers = [];
         private readonly List<int> _headerIndexes = [];
         private readonly List<int> _groupOf = [];
-        private readonly TranslateTransform _push = new();
+        private readonly TranslateTransform _place = new();
         private List<object?> _flat = [];
         private Border? _stickyHost;
         private ListViewHeaderItem? _sticky;
         private bool _letGoPending;
+        private bool _detached;
 
         public Grouping(ListBox list, IEnumerable source)
         {
@@ -99,13 +101,13 @@ public static partial class ListBoxOptions
             _list.SelectionChanged += OnSelectionChanged;
             _list.TemplateApplied += OnTemplateApplied;
             _list.LayoutUpdated += OnLayoutUpdated;
-            FindSticky(_list.GetVisualDescendants().OfType<Border>()
-                .FirstOrDefault(b => b.Name == "PART_StickyHeader" && ReferenceEquals(b.TemplatedParent, _list)));
+            FindSticky(_list.GetTemplateDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "PART_StickyHeader"));
             Rebuild();
         }
 
         public void Detach()
         {
+            _detached = true;
             _list.ContainerPrepared -= OnContainerPrepared;
             _list.SelectionChanged -= OnSelectionChanged;
             _list.TemplateApplied -= OnTemplateApplied;
@@ -129,7 +131,8 @@ public static partial class ListBoxOptions
             var flat = new List<object?>();
             foreach (var group in _source)
             {
-                if (group is not IEnumerable items)
+                // A string is a value, not a group of its characters.
+                if (group is string || group is not IEnumerable items)
                 {
                     continue;
                 }
@@ -165,6 +168,20 @@ public static partial class ListBoxOptions
             }
         }
 
+        /// <summary>A new header template, on each header and the pinned one: nothing else changes.</summary>
+        public void SetHeaderTemplate(IDataTemplate? template)
+        {
+            foreach (var header in _headers)
+            {
+                header.ContentTemplate = template;
+            }
+
+            if (_sticky is not null)
+            {
+                _sticky.ContentTemplate = template;
+            }
+        }
+
         public bool ScrollToTop(object group)
         {
             var at = _groups.IndexOf(group);
@@ -188,7 +205,7 @@ public static partial class ListBoxOptions
 
         private void Watch(object source)
         {
-            if (source is INotifyCollectionChanged changing)
+            if (source is INotifyCollectionChanged changing && !_watched.Contains(changing))
             {
                 WeakEvents.CollectionChanged.Subscribe(changing, this);
                 _watched.Add(changing);
@@ -238,6 +255,11 @@ public static partial class ListBoxOptions
         private void LetGoOfHeaders()
         {
             _letGoPending = false;
+            if (_detached)
+            {
+                return;
+            }
+
             var selection = _list.Selection;
             var headers = selection.SelectedIndexes.Where(IsHeader).ToList();
             if (headers.Count == 0)
@@ -299,18 +321,20 @@ public static partial class ListBoxOptions
             }
 
             object? group = null;
-            var push = 0.0;
+            var top = 0.0;
+            // The host is in the scrolled content, so the viewport's top is the scroll offset down it.
             if (_list.Scroll is ScrollViewer scroll &&
                 _list.ItemsPanelRoot is VirtualizingStackPanel { Orientation: Orientation.Vertical } or StackPanel { Orientation: Orientation.Vertical } &&
-                TopIndex(scroll) is { } top)
+                TopIndex(scroll) is { } first)
             {
-                var at = _groupOf[top];
+                var at = _groupOf[first];
                 if (TopOf(_headers[at], scroll) is not { } own || own < 0)
                 {
                     group = _groups[at];
+                    top = scroll.Offset.Y;
                     if (at + 1 < _headers.Count && TopOf(_headers[at + 1], scroll) is { } next)
                     {
-                        push = Math.Min(0, next - _stickyHost.Bounds.Height);
+                        top += Math.Min(0, next - _stickyHost.Bounds.Height);
                     }
                 }
             }
@@ -322,8 +346,8 @@ public static partial class ListBoxOptions
             }
 
             _sticky.Content = group;
-            _push.Y = push;
-            _stickyHost.RenderTransform = _push;
+            _place.Y = top;
+            _stickyHost.RenderTransform = _place;
         }
 
         /// <summary>The index of the first realized container that reaches below the viewport's top.</summary>
@@ -332,9 +356,9 @@ public static partial class ListBoxOptions
             int? top = null;
             foreach (var container in _list.GetRealizedContainers())
             {
-                if (TopOf(container, scroll) is { } y && y + container.Bounds.Height > 0 &&
-                    _list.IndexFromContainer(container) is var index and >= 0 && index < _groupOf.Count &&
-                    (top is null || index < top))
+                if (container.IsVisible && _list.IndexFromContainer(container) is var index and >= 0 &&
+                    index < _groupOf.Count && (top is null || index < top) &&
+                    container.TranslatePoint(default, scroll) is { } at && at.Y + container.Bounds.Height > 0)
                 {
                     top = index;
                 }
@@ -344,10 +368,7 @@ public static partial class ListBoxOptions
         }
 
         /// <summary>A realized, shown container's top, in the viewport; null if it isn't.</summary>
-        private Visual? Realized(Control container) =>
-            container.IsVisible && _list.IndexFromContainer(container) >= 0 ? container : null;
-
         private double? TopOf(Control container, ScrollViewer scroll) =>
-            Realized(container)?.TranslatePoint(default, scroll)?.Y;
+            container.IsVisible && _list.IndexFromContainer(container) >= 0 ? container.TranslatePoint(default, scroll)?.Y : null;
     }
 }
