@@ -109,11 +109,11 @@ Ours, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`, is the same tree 
 - The tick is `Wp81.Glyph.CheckMark` at its own size, as the CheckBox's (#92): the phone's is 18.5 × 17 stretched and
   arranged at 18.33 × 17.08, the glyph's own size.
 - **Left out:** the placeholder `TextBlock` and `Rectangle` (DataPlaceholder: Avalonia has no data virtualisation);
-  the `ScaleTransform` (Reorderable, deferred with reorder); `SelectedEarmark` and `SelectedGlyph`, which only
-  GridMultiSelect shows, a GridView's state a ListView never enters. They are GridViewItem's, with the earmark glyph
-  (#63), in Tier 4.
-- **Kept, though never drawn:** `SelectedBorder` at nought and `SelectedCheckMark`, an empty 34-square panel: they
-  make an item at least 2.5 + 34 + 2.5 tall, 93.6 raw pixels, which both the phone and Avalonia lay out as 94, 39.1667.
+  the `ScaleTransform` (Reorderable, deferred with reorder).
+- **Kept, though never drawn in a ListView:** `SelectedBorder` at nought, round `SelectedCheckMark`, the 34-square
+  panel of the earmark (`SelectedEarmark`, the earmark glyph, #63) and its tick (`SelectedGlyph`), as in the template:
+  #213 put the two paths in, and only GridMultiSelect, a GridView's state, shows them ([GridView](../GridView/PLAN.md)).
+  They make an item at least 2.5 + 34 + 2.5 tall, 93.6 raw pixels, which both the phone and Avalonia lay out as 94, 39.1667.
   That is why a list of strings has its items 39.17 apart.
 
 ### The visual states
@@ -127,7 +127,7 @@ Ours, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`, is the same tree 
 | SelectionStates | Unselected; Selected and SelectedUnfocused | the tick, and SelectedCheckMark, at 1 | `:selected`: the tick |
 | DataVirtualizationStates | DataAvailable; DataPlaceholder | the placeholders shown | left out |
 | MultiSelectStates | NoMultiSelect; ListMultiSelect | CheckboxContainer to X 0, ContentBorder to X 40.5, 0.15 s each way | `PhoneListMultiSelect.IsOn`: the same, 0.15 s, linear |
-| | GridMultiSelect | SelectedBorder at 1 | left out: a GridView's |
+| | GridMultiSelect | SelectedBorder at 1 | a GridView's: `Wp81GridViewItemTheme` ([GridView](../GridView/PLAN.md), #213) |
 | ReorderModeStates, ReorderHintStates | five states | the reorder theme animations | deferred |
 
 **Selected draws nothing in a ListView.** The tick turns on, but the check box is 40.5 to the left of its clip, and
@@ -592,9 +592,9 @@ _none_
 | [-] | `PlaceholderTextBlock` | `TextBlock` | none | not applicable: DataPlaceholder; Avalonia has no data virtualisation |
 | [-] | `PlaceholderRect` | `Rectangle` | none | not applicable: as PlaceholderTextBlock |
 | [x] | `SelectedBorder` | `Border` | `Border#SelectedBorder` | Themed: at nought, for the item's 39.17 minimum |
-| [x] | `SelectedCheckMark` | `Grid` | `Panel#SelectedCheckMark` | Themed: empty, 34 square, for the minimum |
-| [-] | `SelectedEarmark` | `Path` | none | left out: drawn only in GridMultiSelect, a GridView's state; GridViewItem's (Tier 4) |
-| [-] | `SelectedGlyph` | `Path` | none | left out: as SelectedEarmark |
+| [x] | `SelectedCheckMark` | `Grid` | `Grid#SelectedCheckMark` | Themed: 34 square, for the minimum, round the earmark and its tick (#213) |
+| [x] | `SelectedEarmark` | `Path` | `Path#SelectedEarmark` | Themed (#213): drawn only in GridMultiSelect, a GridView's state (`Wp81GridViewItemTheme`) |
+| [x] | `SelectedGlyph` | `Path` | `Path#SelectedGlyph` | Themed (#213): as SelectedEarmark |
 
 #### Visual states (20)
 
@@ -611,7 +611,7 @@ _none_
 | [-] | `DataVirtualizationStates` | `DataPlaceholder` | `PlaceholderTextBlock.Visibility = Visible`<br>`PlaceholderRect.Visibility = Visible` | none | not applicable: no data virtualisation |
 | [x] | `MultiSelectStates` | `NoMultiSelect` | nothing | the theme's plain setters | Themed |
 | [x] | `MultiSelectStates` | `ListMultiSelect` | `CheckboxContainerTranslateTransform.X: DoubleAnimation To=0 Duration=0`<br>`ContentBorderTranslateTransform.X: DoubleAnimation To={ThemeResource ListViewItemContentTranslateX} Duration=0` | `^[(wp81|PhoneListMultiSelect.IsOn)=True]` | Themed: set on the list by the ListView theme, inherited |
-| [-] | `MultiSelectStates` | `GridMultiSelect` | `SelectedBorder.Opacity: DoubleAnimation Duration=0 To=1` | none | not applicable: a GridView's state (Tier 4) |
+| [-] | `MultiSelectStates` | `GridMultiSelect` | `SelectedBorder.Opacity: DoubleAnimation Duration=0 To=1` | none | not applicable to a ListView: a GridView's state, in `Wp81GridViewItemTheme` ([GridView](../GridView/PLAN.md), #213) |
 | [-] | `ReorderModeStates` | `ReorderEnabled` | `DropTargetItemThemeAnimation on OuterContainer` | none | deferred: reorder |
 | [-] | `ReorderModeStates` | `Reorderable` | `ContentScaleTransform.ScaleX: DoubleAnimationUsingKeyFrames 00:00:00.075 → 1.05, 00:00:00.2 → 1.0`<br>`ContentScaleTransform.ScaleY: DoubleAnimationUsingKeyFrames 00:00:00.075 → 1.05, 00:00:00.2 → 1.0` | none | deferred: reorder |
 | [x] | `ReorderModeStates` | `ReorderDisabled` | nothing | the theme's plain setters | Themed: always |
@@ -654,7 +654,7 @@ _none_
 | [-] | `ListViewItemPlaceholderBackgroundThemeBrush` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FF000000` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FFFFFFFF` | yes | not applicable: PlaceholderRect |
 | [x] | `ListViewItemSelectedBackgroundThemeBrush` | `SolidColorBrush {ThemeResource SystemColorControlAccentColor}` | same | yes | Used, by DynamicResource |
 | [x] | `GridViewItemMultiselectBorderThickness` | `2.5` | same | yes | Used, by DynamicResource |
-| [-] | `ListViewItemCheckThemeBrush` | `SolidColorBrush {ThemeResource PhoneTextOverAccentColor} → #FFFFFFFF` | same | yes | left out: SelectedGlyph's |
+| [x] | `ListViewItemCheckThemeBrush` | `SolidColorBrush {ThemeResource PhoneTextOverAccentColor} → #FFFFFFFF` | same | yes | Used, by DynamicResource: SelectedGlyph's (#213) |
 
 ### ListViewHeaderItem
 

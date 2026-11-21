@@ -1,6 +1,6 @@
 # FlipView and FlipViewItem
 
-Status: built · [#214](https://github.com/wdcossey/Cornflower/issues/214) · against #211's captures (run `20261118-2210-dev11`) and probes (`20261118-2213-dev11`, `20261118-2216-dev11`) · owed: the device run on the Pixel 8 and the real-window run
+Status: done · [#214](https://github.com/wdcossey/Cornflower/issues/214) · against #211's captures (run `20261118-2210-dev11`) and probes (`20261118-2213-dev11`, `20261118-2216-dev11`) · device run passed 2026-11-21 on the local Android emulator (AVD `cornflower_pixel8`: the Pixel 8 profile, 1080 × 2400 at 420 dpi, API 35; the Pixel 8 was unavailable), on `214c70f`: at rest the item fills the band less 2.5 a side, no buttons or indicator; a slow short drag goes back, a flick goes on; past the first the item follows the finger, damped, and comes back; the vertical one goes on along Y and a sideways swipe on it moves nothing; the Pixel 8 run is still owed (the feel and the timing) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `214c70f`: 215 of 215)
 
 The Windows Phone 8.1 FlipView: Avalonia's `Carousel` in the Wp81 theme, by type (`src/Cornflower.Themes.Wp81/Controls/Carousel.axaml`),
 with the phone's swipe, snap and ends (`PhoneFlipView`, `PhoneFlipViewMotion`) and an items panel of the theme's

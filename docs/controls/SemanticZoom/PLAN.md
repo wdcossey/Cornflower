@@ -74,7 +74,7 @@ None.
 ## Dependencies
 
 Grouped lists (#131), item click (#132), the GridView's theme (#213, `Wp81GridViewTheme`) and the popup host (#149,
-#150): all built. Owed: the device run on the Pixel 8 and the real-window run; pinch (unread).
+#150): all built. The real-window run and the emulator's device run passed 2026-11-21; owed: the Pixel 8 run; pinch (unread).
 
 ## Checklists
 
