@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
@@ -62,6 +63,21 @@ public class GridViewPageTests
     {
         var page = new GridViewPage();
         using var scene = new Scene(page);
+
+        Assert.Equal(0, page.GetVisualDescendants().OfType<ScrollViewer>().First().Offset.Y);
+    }
+
+    // On the Pixel the page is first laid out short, then at its size (#219's device run): a grid bringing its selection
+    // into view in that short first layout would scroll the page down to it, where it stayed. The page opens at its top
+    // all the same.
+    [AvaloniaFact]
+    public void The_Page_Opens_At_Its_Top_After_A_Short_First_Layout()
+    {
+        var page = new GridViewPage();
+        using var scene = new Scene(page, height: 60);
+        Dispatcher.UIThread.RunJobs();
+        scene.Window.Height = Scene.ReferenceHeight;
+        Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(0, page.GetVisualDescendants().OfType<ScrollViewer>().First().Offset.Y);
     }
