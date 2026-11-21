@@ -41,7 +41,7 @@ Two attached properties on `ListBox`, in `ListBoxOptions` (Cornflower.Controls),
   group is an `IEnumerable` of its items, as `IGrouping<TKey, TItem>` is (`list.GroupBy(...)`). The list's
   `ItemsSource` becomes the groups flattened: each group's header, then its items. A group with no items shows no
   header (WinRT's `GroupStyle.HidesIfEmpty`, here always on). A change to the groups, or to a group that raises
-  `CollectionChanged`, lays the list out again, and the items still there stay selected.
+  `CollectionChanged`, lays the list out again; the items still there stay selected (Avalonia's selection keeps them across the new `ItemsSource`).
 - **`GroupHeaderTemplate`** (`IDataTemplate?`): WinRT's `GroupStyle.HeaderTemplate`. Its data is the group (so
   `{Binding Key}` for an `IGrouping`).
 - **`ListViewHeaderItem`** (Cornflower.Controls): the header container, WinRT's `ListViewHeaderItem`, made by the list,

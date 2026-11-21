@@ -159,6 +159,8 @@ public class GroupedListTests
     public void The_Headers_Style_Sets_What_The_Phone_Read()
     {
         using var page = new ProbePage();
+        page.List.FontSize = 20;   // a page's text size, which the header's own setter stands against
+        page.Settle();
         var header = page.Header(HeaderA);
 
         Assert.Equal(new Thickness(0), header.Margin);
@@ -373,18 +375,19 @@ public class GroupedListTests
     public void A_Change_To_A_Group_Shows_And_Keeps_The_Selection()
     {
         var letters = Letters();
-        using var page = new ProbePage(groups: letters);
-        page.List.SelectedItem = "c item 2";
+        using var page = new ProbePage(groups: letters, mode: SelectionMode.Multiple);
+        page.List.SelectedItems!.Add("a item 3");
+        page.List.SelectedItems.Add("c item 2");
 
         letters[2].Add("c item 6");
         page.Settle();
         Assert.Equal("c item 6", page.List.Items[HeaderC + 6]);
-        Assert.Equal("c item 2", page.List.SelectedItem);
+        Assert.Equal(["a item 3", "c item 2"], page.List.SelectedItems.Cast<object>());
 
         letters[0].Clear();
         page.Settle();
         Assert.Equal("c", ((Letter)page.Header(0).Content!).Key);
-        Assert.Equal("c item 2", page.List.SelectedItem);
+        Assert.Equal(["c item 2"], page.List.SelectedItems.Cast<object>());
     }
 
     // For #215's jump list: a group's header is put at the top.

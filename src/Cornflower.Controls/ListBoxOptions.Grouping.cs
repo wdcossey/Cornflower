@@ -23,7 +23,7 @@ public static partial class ListBoxOptions
     /// WinRT's <c>CollectionViewSource</c> with <c>IsSourceGrouped</c>. The list's <see cref="ItemsControl.ItemsSource"/>
     /// becomes each group's <see cref="ListViewHeaderItem"/> followed by its items; a group with no items shows nothing
     /// (WinRT's <c>HidesIfEmpty</c>). A change to the groups, or to a group that raises <c>CollectionChanged</c>, lays
-    /// the list out again, and the items still there stay selected. Null, the default, leaves the list ungrouped.
+    /// the list out again; the items still there stay selected (Avalonia's selection keeps them across the new `ItemsSource`). Null, the default, leaves the list ungrouped.
     /// </summary>
     /// <remarks>
     /// The headers are items of the list, so <see cref="SelectingItemsControl.SelectedIndex"/> counts them, where
@@ -116,10 +116,9 @@ public static partial class ListBoxOptions
 
         public void OnEvent(object? sender, WeakEvent ev, NotifyCollectionChangedEventArgs e) => Rebuild();
 
-        /// <summary>Flattens the groups again, and selects again the items still there.</summary>
+        /// <summary>Flattens the groups again: Avalonia's selection keeps the selected items still there.</summary>
         public void Rebuild()
         {
-            var selected = _list.SelectedItems?.Cast<object?>().ToList() ?? [];
             var template = GetGroupHeaderTemplate(_list);
             Unwatch();
             Watch(_source);
@@ -159,14 +158,6 @@ public static partial class ListBoxOptions
 
             _flat = flat;
             _list.ItemsSource = flat;
-            foreach (var item in selected)
-            {
-                var index = flat.IndexOf(item);
-                if (index >= 0)
-                {
-                    _list.Selection.Select(index);
-                }
-            }
 
             if (_sticky is not null)
             {
