@@ -1,6 +1,6 @@
 # GridView and GridViewItem
 
-Status: built · [#213](https://github.com/wdcossey/Cornflower/issues/213) · against #211's captures (run `20261118-2210-dev11`) and probe (`20261118-2219-dev11`) · owed: the device run on the Pixel 8 and the real-window run
+Status: done · [#213](https://github.com/wdcossey/Cornflower/issues/213) · against #211's captures (run `20261118-2210-dev11`) and probe (`20261118-2219-dev11`) · device run passed 2026-11-21 (Pixel 8, Release, over wireless adb, on `e7fee63`: single tiles abut, a press tilts, the check mode's border and earmarks, taps toggle, a tap at a top-left corner toggles, light; the page opened scrolled down, fixed in `6094ce4`, [#220](https://github.com/wdcossey/Cornflower/issues/220) following up the cause; rechecked on `6094ce4`: it opens at the top, cold start 756 ms, the page opened in 369 ms) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `6094ce4`: 204 of 205; the one failure, 'Alt+Left goes back', stopped on a UI Automation COM error before it checked anything, and passed 4 of 4 run alone)
 
 The Windows Phone 8.1 GridView and GridViewItem: Avalonia's `ListBox` and `ListBoxItem` in two keyed themes,
 `Wp81GridViewTheme` and `Wp81GridViewItemTheme`, based on the ListView's, at the end of

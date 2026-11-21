@@ -150,7 +150,8 @@ public static class CornflowerConfig
     /// <summary>
     /// The other controls' motions' speed, or null, the default, for <see cref="MotionSpeed"/>: the AppBar's and the
     /// CommandBar's open and close, the LoopingSelector's move and its wheels' expansion, the ToggleSwitch's knob, the
-    /// ListView's check boxes sliding in, the inline ComboBox's open, and the scroll indicators' fade.
+    /// ListView's check boxes sliding in, the inline ComboBox's open, the FlipView's swipe, snap and move from code,
+    /// and the scroll indicators' fade.
     /// </summary>
     /// <remarks>
     /// Read when each motion starts; the ToggleSwitch's knob and the ListView's check boxes, Avalonia's transitions, take

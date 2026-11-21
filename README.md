@@ -19,9 +19,12 @@ More in [PREVIEW.md](PREVIEW.md).
 > TimePicker and their flyouts, ContentDialog, AutoSuggestBox, and the page moving up for the keyboard (Tier 3, each
 > run on a phone and in the desktop window, but the keyboard's pan, which only a phone shows; a covered TextBox or
 > PasswordBox stops at its caret, #201; the page slides, #206; and the Back that hides the keyboard takes the focus,
-> #197). Tier 2's follow-ups from the emulator's last reads (#162 to #169) are done and run. Motion is configurable
+> #197); the 8.1 ListBox, GridView, grouped lists with their headers, FlipView and SemanticZoom (Tier 4, each run in
+> the desktop window; the ListBox and GridView on a phone, the other three so far on the Android emulator, their phone
+> run owed). Tier 2's follow-ups from the emulator's last reads (#162 to #169) are done and run. Motion is configurable
 > (`CornflowerConfig`: off, or faster or slower, overall or by area), and faithful by default. Owed: the sample at
-> speed 2 on a phone. Next: Tier 4. The [roadmap](docs/ROADMAP.md) has the rest.
+> speed 2 on a phone. Next: the plain themes for the controls the phone never had. The [roadmap](docs/ROADMAP.md) has
+> the rest.
 
 ## What "faithful" means here
 

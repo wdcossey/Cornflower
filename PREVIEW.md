@@ -141,10 +141,44 @@ box (under the list), the light section and, last, so a phone's keyboard covers 
 <img src="docs/preview/light__radiobutton.png" width="270" alt="RadioButton, light">
 </p>
 
+## Tier 4's lists, the FlipView and SemanticZoom
+
+The 8.1 ListBox, the list kept for 8.0's apps, as a keyed theme (`Wp81ListBoxTheme`): a pale box with black 12 px
+text in both themes, the selection in the accent. The GridView (`Wp81GridViewTheme`): tiles that abut, three a row,
+and in the check mode the accent border on every tile and the earmark on a selected one.
+
+<p>
+<img src="docs/preview/dark__listbox.png" width="270" alt="ListBox, dark">
+<img src="docs/preview/light__listbox.png" width="270" alt="ListBox, light">
+</p>
+<p>
+<img src="docs/preview/dark__gridview.png" width="270" alt="GridView, Single and the check mode, dark">
+<img src="docs/preview/light__gridview.png" width="270" alt="GridView, light">
+</p>
+
+Grouped lists (`ListBoxOptions.GroupedItemsSource`): each group's header, then its items, an empty group hidden. The
+ListView's header pins at its top as it scrolls; the GridView's don't. The sample's grid items are bare text, so in
+the grid they run together. SemanticZoom's zoomed-in view, a contacts list grouped a to z; its jump list opens over
+the whole window on a tap of a header.
+
+<p>
+<img src="docs/preview/dark__grouped-lists.png" width="270" alt="A grouped ListView over a grouped GridView, dark">
+<img src="docs/preview/dark__semantic-zoom.png" width="270" alt="SemanticZoom, zoomed in, dark">
+</p>
+
+FlipView, Avalonia's `Carousel` themed: the item fills the FlipView less 2.5 a side, with no buttons and no
+indicator; above, sideways, and below, up and down.
+
+<p>
+<img src="docs/preview/dark__flipview.png" width="270" alt="FlipView, sideways and up and down, dark">
+<img src="docs/preview/light__flipview.png" width="270" alt="FlipView, light">
+</p>
+
 ## Not shown
 
 Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide, the Hub's pan and entrance, the
 popups' swing and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Each
 Hub picture is taken after the entrance's turn. An app can slow the motion, speed it up or turn it off
 (`CornflowerConfig`); the phone's is the default. The page moving up for the keyboard (#179, #201, #206) isn't shown
-either: the gallery has no keyboard.
+either: the gallery has no keyboard. Nor are the FlipView's swipe and SemanticZoom's jump list: the gallery
+opens no jump list.

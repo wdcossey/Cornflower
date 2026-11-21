@@ -172,5 +172,5 @@ same rows: the class has no members of its own, and its default style is `ListVi
 
 ## Dependencies
 
-ListView (#119) and GridView (#213) themes, `Tilt`, `ListBoxOptions`' item click (#132). Owed: the device run on the
-Pixel 8 and the real-window run.
+ListView (#119) and GridView (#213) themes, `Tilt`, `ListBoxOptions`' item click (#132). The real-window run and the emulator's
+device run passed 2026-11-21; owed: the Pixel 8 run.

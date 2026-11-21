@@ -1,6 +1,6 @@
 # Grouped lists: ListViewHeaderItem and GridViewHeaderItem
 
-Status: built · [#131](https://github.com/wdcossey/Cornflower/issues/131) · against #211's probe (run `20261118-2221-dev11`) and recording (`20261118-2249-dev11`) · owed: the device run on the Pixel 8 and the real-window run
+Status: done · [#131](https://github.com/wdcossey/Cornflower/issues/131) · against #211's probe (run `20261118-2221-dev11`) and recording (`20261118-2249-dev11`) · device run passed 2026-11-21 on the local Android emulator (AVD `cornflower_pixel8`: the Pixel 8 profile, 1080 × 2400 at 420 dpi, API 35; the Pixel 8 was unavailable), on `e918275`: a header's hold tilts, its tap selects nothing, the ListView's header pins at its top and the next pushes it up, then pins, the GridView's top row has no header over it; the Pixel 8 run is still owed · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `e918275`: 210 of 210)
 
 A grouped ListView or GridView, as an 8.1 app writes one with a grouped `CollectionViewSource` and a `GroupStyle`: each
 group's header, then its items. Avalonia 12.1.4 has no grouping, so `ListBoxOptions` (Cornflower.Controls) adds it to

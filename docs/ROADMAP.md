@@ -93,7 +93,7 @@ step, and a control that climbs a rung says so in its PR.
 | [#116](https://github.com/wdcossey/Cornflower/issues/116) | ScrollViewer, ScrollBar, Thumb | all three exist | Theme; ScrollBar is the phone's thin indicator; the indicators by `PhoneScrollIndicators` and `PhoneIndicatorFade`; the scroll physics a recorded deviation, measured by [#113](https://github.com/wdcossey/Cornflower/issues/113) (a part class is [#129](https://github.com/wdcossey/Cornflower/issues/129), an enhancement carried past Tier 2). The worked example for Tier 2: ListView, Page, Pivot and Hub hold one; done 2026-11-15 (#126), device run passed 2026-11-15 | 1, 2, 6 |
 | [#117](https://github.com/wdcossey/Cornflower/issues/117) | ContentControl, ContentPresenter | both exist | Theme, by type since the Tier 2 roll-up, #139 (keyed until then); ContentPresenter keeps Avalonia's own, as the phone's style reaches no template's presenter; done 2026-11-15 (#125), device run passed 2026-11-15 | 1, 2 |
 | [#118](https://github.com/wdcossey/Cornflower/issues/118) | CommandBar, AppBarButton, AppBarToggleButton, AppBarSeparator | CommandBar, CommandBarButton and the rest (new in 12.0) | Theme, after the shell's drawing of the app bar; the minimised bar by `CommandBarOptions.ClosedDisplayMode`; a command closes the open bar (`PhoneAppBarClose`). The shell's press, the open bar's stepped height and its motion (`PhoneAppBar`): [#141](https://github.com/wdcossey/Cornflower/issues/141), done 2026-11-16 (#144), device run passed 2026-11-16. Light's pressed look is [#168](https://github.com/wdcossey/Cornflower/issues/168), done 2026-11-17 (#186), device and real-window runs passed 2026-11-17. AppBarSeparator has no default style on the phone, and draws nothing; done 2026-11-15 (#133), device run passed 2026-11-15 | 1, 2 |
-| [#119](https://github.com/wdcossey/Cornflower/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/Cornflower/issues/131)); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/Cornflower/issues/132), done 2026-11-15, #138; `Multiple` alone clicks, as Single, #145); the check box's own press, and `Extended` with no boxes ([#142](https://github.com/wdcossey/Cornflower/issues/142), done 2026-11-16, #143, device run passed 2026-11-16); item click in the check mode as the phone's, [#169](https://github.com/wdcossey/Cornflower/issues/169), done 2026-11-17 (#186), device and real-window runs passed 2026-11-17; reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
+| [#119](https://github.com/wdcossey/Cornflower/issues/119) | ListView, ListViewItem, ListViewHeaderItem, GroupItem | ListBox, ListBoxItem; no header items (Avalonia has no grouping) | Theme; the check mode by `PhoneListMultiSelect`; ListViewHeaderItem and GroupItem deferred with grouping ([#131](https://github.com/wdcossey/Cornflower/issues/131), done 2026-11-21, #221); `ItemClick` and `IsItemClickEnabled` by `ListBoxOptions` ([#132](https://github.com/wdcossey/Cornflower/issues/132), done 2026-11-15, #138; `Multiple` alone clicks, as Single, #145); the check box's own press, and `Extended` with no boxes ([#142](https://github.com/wdcossey/Cornflower/issues/142), done 2026-11-16, #143, device run passed 2026-11-16); item click in the check mode as the phone's, [#169](https://github.com/wdcossey/Cornflower/issues/169), done 2026-11-17 (#186), device and real-window runs passed 2026-11-17; reorder deferred; done 2026-11-15 (#130), device run passed 2026-11-15 | 1, 2 |
 | [#120](https://github.com/wdcossey/Cornflower/issues/120) | Page, Frame | NavigationPage, ContentPage (new in 12.0); Frame: `NavigationPage` (Avalonia has no `Frame`) | Theme, plus our own page transitions (`TurnstileTransition`, `SlideTransition`, `ContinuumTransition`). `NavigationPage` is the navigation host; done 2026-11-15 (#134), device run passed 2026-11-16 | 1 |
 | [#121](https://github.com/wdcossey/Cornflower/issues/121) | Pivot, PivotItem, PivotHeaderItem | none (`TabControl` and `Carousel` are the nearest) | New control. Its header strip scrolls with the content, which neither does. The worked example for Tier 2's new controls: the swipe, strip and slides are the control's own (`PivotMotion`, on `CornflowerClock`, read by #128 and #136), its ScrollViewer held, not scrolled; done 2026-11-16 (#140), device run passed 2026-11-16. #148's reads followed in #187 (2026-11-17): [#162](https://github.com/wdcossey/Cornflower/issues/162) where a release goes, [#163](https://github.com/wdcossey/Cornflower/issues/163) a press while it moves, [#164](https://github.com/wdcossey/Cornflower/issues/164) the item events; device and real-window runs passed 2026-11-17 | 5 |
 | [#122](https://github.com/wdcossey/Cornflower/issues/122) | Hub, HubSection | none | New control, on Pivot's pieces: the pan, the snap to sections, the loop and the header's and background's parallax are the control's own (`HubMotion`, read by #128 and #136); the swipe recogniser shared with Pivot since the Tier 2 roll-up; done 2026-11-16 (#146), device run passed 2026-11-16. #148's reads followed in #188 (2026-11-17): [#165](https://github.com/wdcossey/Cornflower/issues/165) the loop backwards, [#166](https://github.com/wdcossey/Cornflower/issues/166) the entrance, [#167](https://github.com/wdcossey/Cornflower/issues/167) an image narrower than the screen; device and real-window runs passed 2026-11-17 | 5 |
@@ -111,7 +111,7 @@ they are the record, not this list.
 **Tier 2 is complete** (2026-11-16, rolled up in the Tier 2 roll-up), but for
 [#129](https://github.com/wdcossey/Cornflower/issues/129), the scroll physics as a part class: an enhancement of #116's
 recorded deviation, carried forward, not a gap in the shell. Grouped lists
-([#131](https://github.com/wdcossey/Cornflower/issues/131)) are Tier 4's. The runs owed at the roll-up are done, on
+([#131](https://github.com/wdcossey/Cornflower/issues/131)) are Tier 4's (done 2026-11-21, #221). The runs owed at the roll-up are done, on
 the sample shell on `NavigationPage`:
 - **The Pixel 8** (Android 17, wireless adb, Release, `main` at `ae652d3`, 2026-11-16 22:48 to 22:50): every page ready,
   `page=411.43x840`, cold starts 716 to 826 ms. `page` opened in 308 ms, `pivot` 352, `hub` 339, `commandbar` 379 (the
@@ -232,14 +232,32 @@ emulator's, not copied. Next: Tier 4.
 
 ### Tier 4
 
-| Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
-|---|---|---|---|
-| GridView, GridViewItem, GridViewHeaderItem | ListBox with a wrapping panel; the header item: to check | Theme | 1, 2 |
-| SemanticZoom | none | New control: the jump list | 5 |
-| FlipView, FlipViewItem | Carousel | Theme. Measure the snap and swipe | 1 |
-| ListBox, ListBoxItem | ListBox, ListBoxItem | Theme | 1 |
-| RichEditBox, RichTextBlock | none in the free packages | Later, or out | — |
-| Controls Avalonia has and the phone never had: Calendar, TreeView, DataGrid, SplitView, Menu, TabControl, Expander, NumericUpDown, ColorPicker and more | — | A plain theme in the era's style, labelled as ours and not a reproduction | 1 |
+| Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
+|---|---|---|---|---|
+| [#212](https://github.com/wdcossey/Cornflower/issues/212) | ListBox, ListBoxItem | ListBox, ListBoxItem | Theme, keyed (`Wp81ListBoxTheme`, which gives its items `Wp81ListBoxItemTheme`), as `ListBox` by type is the ListView: the pale box, 12 px text, the tilt; no check mode; done 2026-11-21 (#218), device run passed 2026-11-21 (Pixel 8), real-window run passed 2026-11-21 | 1 |
+| [#213](https://github.com/wdcossey/Cornflower/issues/213) | GridView, GridViewItem | ListBox with a wrapping panel | Theme, keyed (`Wp81GridViewTheme`, `Wp81GridViewItemTheme`), on the ListView's; the check mode is GridMultiSelect's border and earmark, never the box; the earmark's paths went into the ListViewItem's template, a rule-7 edit to `ListView.axaml` the user approved; done 2026-11-21 (#219), device run passed 2026-11-21 (Pixel 8; the page opened scrolled down, fixed in the PR, the cause [#220](https://github.com/wdcossey/Cornflower/issues/220)), real-window run passed 2026-11-21 | 1, 2 |
+| [#131](https://github.com/wdcossey/Cornflower/issues/131) | ListViewHeaderItem, GridViewHeaderItem, GroupItem (grouped lists) | none: Avalonia has no grouping | Cornflower's own: `ListBoxOptions.GroupedItemsSource` and `GroupHeaderTemplate`, and `ListViewHeaderItem`, themed; the ListView's header pinned, the GridView's not; no GroupItem (the phone's panels make none); `SelectedIndex` counts the headers ([#222](https://github.com/wdcossey/Cornflower/issues/222), accepted); done 2026-11-21 (#221), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
+| [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Carousel | Theme, with the phone's swipe, snap, ends and a change from code (`PhoneFlipView`, on the Pivot's recogniser and release rule), no buttons or indicator; up and down with a vertical `PageSlide`; done 2026-11-21 (#223), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 1, 2 |
+| [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | none | New control: the grouped list and its jump list, a popup over the whole window on `PhonePopupHost`, with the two converters; done 2026-11-21 (#224), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
+| — | RichEditBox, RichTextBlock | none in the free packages | Later, or out | — |
+| [#216](https://github.com/wdcossey/Cornflower/issues/216) | Controls Avalonia has and the phone never had: Calendar, TreeView, DataGrid, SplitView, Menu, TabControl, Expander, NumericUpDown, ColorPicker and more | — | A plain theme in the era's style, labelled as ours and not a reproduction; the plan is [#216](https://github.com/wdcossey/Cornflower/issues/216) | 1 |
+
+The reads Tier 4 needs were [#211](https://github.com/wdcossey/Cornflower/issues/211), done 2026-11-18 (#217): the SDK's files first, then the emulator for what
+they can't tell (`tools/refapp/README.md`, "Tier 4's reads"; `ref/wp81/FlipView/`, `GridView/`, `ListBox/`,
+`SemanticZoom/` and `ListView/`). Before them, #209, the flaky MenuFlyout test, was a real bug: the first flyout a
+process opened by `IsOpen` wasn't bound (done 2026-11-18, #210).
+
+The runs, all on 2026-11-21: the real window (`drive.ps1`, Debug) passed on each of #218, #219, #221, #223 and #224. The
+device runs of #218 and #219 were on the Pixel 8; #221's, #223's and #224's on the local Android emulator (AVD
+`cornflower_pixel8`, the Pixel 8 profile, API 35), as the Pixel 8 was unavailable, so **their Pixel run is still
+owed** (#223's and #224's for the feel and the timing).
+
+Open: [#216](https://github.com/wdcossey/Cornflower/issues/216), the plain themes' plan; [#220](https://github.com/wdcossey/Cornflower/issues/220), a selected list scrolls the page round it into view where the
+phone scrolls only the list; [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+`SelectedItems` for one `SelectionChanged`; [#225](https://github.com/wdcossey/Cornflower/issues/225), a read of a grouped ListView's pinned header as the next one
+arrives; and #129, carried from Tier 2. Owed besides the Pixel runs: the reads each README lists (the GridView's
+`ItemClick`, SemanticZoom's pinch). Tier 4's controls are done but RichEditBox and RichTextBlock (later, or out). Next:
+the plain themes (#216).
 
 ### Out of scope
 
@@ -446,7 +464,15 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#184](https://github.com/wdcossey/Cornflower/issues/184) | DatePickerFlyout, TimePickerFlyout, and their presenters | Done 2026-11-18 (#193) |
 | [#189](https://github.com/wdcossey/Cornflower/issues/189) | `CornflowerConfig`: motion settings, faithful by default | Done 2026-11-17 (#190) |
 | [#194](https://github.com/wdcossey/Cornflower/issues/194) | `HoleParts`: the first check built every Wp81 template | Done 2026-11-18 (#195) |
+| [#209](https://github.com/wdcossey/Cornflower/issues/209) | The flaky MenuFlyout test: the first flyout opened by `IsOpen` wasn't bound | Done 2026-11-18 (#210) |
+| [#211](https://github.com/wdcossey/Cornflower/issues/211) | Read: Tier 4's controls (FlipView, GridView, grouped lists, SemanticZoom, ListBox) | Done 2026-11-18 (#217) |
+| [#212](https://github.com/wdcossey/Cornflower/issues/212) | ListBox, ListBoxItem (keyed) | Done 2026-11-21 (#218) |
+| [#213](https://github.com/wdcossey/Cornflower/issues/213) | GridView, GridViewItem | Done 2026-11-21 (#219) |
+| [#131](https://github.com/wdcossey/Cornflower/issues/131) | Grouped lists: ListViewHeaderItem, GridViewHeaderItem | Done 2026-11-21 (#221) |
+| [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Done 2026-11-21 (#223) |
+| [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | Done 2026-11-21 (#224) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
-reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Each row's device run on
+reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Tier 4's controls are done (#131,
+#212 to #215, on #211's reads), three of them owed their Pixel run (above); the plain themes (#216) are next. Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.

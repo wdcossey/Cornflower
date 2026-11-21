@@ -1,6 +1,6 @@
 # SemanticZoom
 
-Status: built · [#215](https://github.com/wdcossey/Cornflower/issues/215) · against #211's recording (run `20261118-2231-dev11-partial`) and probes (`20261118-2237-dev11`, `20261118-2246-dev11-partial`) · owed: the device run on the Pixel 8 and the real-window run
+Status: done · [#215](https://github.com/wdcossey/Cornflower/issues/215) · against #211's recording (run `20261118-2231-dev11-partial`) and probes (`20261118-2237-dev11`, `20261118-2246-dev11-partial`) · device run passed 2026-11-21 on the local Android emulator (AVD `cornflower_pixel8`: the Pixel 8 profile, 1080 × 2400 at 420 dpi, API 35; the Pixel 8 was unavailable), on `fd6ad5a`: a tap on a header opens the jump list over the whole window, no dim, the list showing between the tiles, the empty letters dark grey; a tile closes it with its header at the list's top; an empty letter's tile does nothing; Back closes it with the list where it was; the Pixel 8 run is still owed (the timing) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `fd6ad5a`: 220 of 220)
 
 The Windows Phone 8.1 SemanticZoom: a grouped list and its jump list. Cornflower's own control, `SemanticZoom`
 (`src/Cornflower.Controls/Controls/SemanticZoom/`), its Wp81 theme (`src/Cornflower.Themes.Wp81/Controls/SemanticZoom.axaml`),
