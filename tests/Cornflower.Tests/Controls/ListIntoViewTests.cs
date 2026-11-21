@@ -143,6 +143,20 @@ public class ListIntoViewTests
         Assert.True(page.Inner.Offset.Y > 0, "ScrollIntoView didn't scroll the list");
     }
 
+    // The list itself asked into view is the page's to bring in.
+    [AvaloniaTheory]
+    [MemberData(nameof(Themes))]
+    public void The_List_Itself_Brought_Into_View_Scrolls_The_Page(string theme)
+    {
+        using var page = new Page(theme, firstHeight: Scene.ReferenceHeight);
+        page.Reset();
+
+        page.List.BringIntoView();
+        page.Settle();
+
+        Assert.True(page.Viewer.Offset.Y > 0, "the page didn't scroll to the list");
+    }
+
     // The focus still goes through: an item focused by the keyboard is brought into view in the page as well.
     [AvaloniaTheory]
     [MemberData(nameof(Themes))]

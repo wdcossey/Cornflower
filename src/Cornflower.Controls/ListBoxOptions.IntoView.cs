@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.VisualTree;
 
 namespace Cornflower.Controls;
 
@@ -26,10 +25,10 @@ public static partial class ListBoxOptions
     /// layout or not; with this on, a request the list's own ScrollViewer didn't take stops at the list.
     /// </para>
     /// <para>
-    /// The focus still goes through: a request for the focused element, or for an item it is in, goes on to the page,
-    /// so an item focused by the keyboard (an arrow key, Tab) is brought into view in every ScrollViewer round it, as an
-    /// item given the keyboard's focus is on the phone. What stays Avalonia's, in the list itself: it scrolls to a
-    /// selection at load, and to one set in code with no focus in it, where the phone's list doesn't move.
+    /// The focus still goes through: a request for the focused element goes on to the page, so an item focused by the
+    /// keyboard (an arrow key, Tab) is brought into view in every ScrollViewer round it, as an item given the keyboard's
+    /// focus is on the phone. What stays Avalonia's, in the list itself: it scrolls to a selection at load, and to one set
+    /// in code with no focus in it, where the phone's list doesn't move.
     /// </para>
     /// </remarks>
     public static readonly AttachedProperty<bool> KeepsScrollInListProperty =
@@ -43,17 +42,17 @@ public static partial class ListBoxOptions
         Control.RequestBringIntoViewEvent.AddClassHandler<ListBox>(OnRequestBringIntoView);
 
     /// <summary>
-    /// A request from inside the list that its own ScrollViewer didn't take (one that moved it is handled there): stopped,
-    /// unless it is the focus's.
+    /// A request from inside the list (a bubbling request's target is on its route) that its own ScrollViewer didn't take
+    /// (one that moved it is handled there): stopped, unless it is the focus's.
     /// </summary>
     private static void OnRequestBringIntoView(ListBox list, RequestBringIntoViewEventArgs e)
     {
-        if (!GetKeepsScrollInList(list) || e.TargetObject is not { } target || ReferenceEquals(target, list) ||
-            !list.IsVisualAncestorOf(target))
+        // The list's own request (list.BringIntoView()) is the page's to take.
+        if (!GetKeepsScrollInList(list) || e.TargetObject is not { } target || ReferenceEquals(target, list))
             return;
 
-        if (TopLevel.GetTopLevel(list)?.FocusManager?.GetFocusedElement() is Visual focused &&
-            (ReferenceEquals(focused, target) || target.IsVisualAncestorOf(focused)))
+        // The focus's own request: ScrollViewer brings the focused element into view on a focus change.
+        if (ReferenceEquals(TopLevel.GetTopLevel(list)?.FocusManager?.GetFocusedElement(), target))
             return;
 
         e.Handled = true;
