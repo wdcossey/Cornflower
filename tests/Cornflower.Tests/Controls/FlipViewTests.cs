@@ -401,6 +401,8 @@ public class FlipViewTests
         var page = new ScrollViewer { Height = 300, VerticalAlignment = VerticalAlignment.Top, Content = new StackPanel { Children = { carousel, new Border { Height = 2000 } } } };
         using var scene = new Scene(page);
         carousel.SelectedIndex = 1;
+        scene.Window.UpdateLayout();                     // the next frame's layout, where Avalonia scrolls to a selection
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         clock.At(1000);
         scene.Window.UpdateLayout();
         Assert.Equal(0, page.Offset.Y);
