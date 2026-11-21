@@ -54,7 +54,9 @@ An 8.1 page's ListView is Avalonia's `ListBox`, with no style:
   view, with no animation, as the phone's does with the focus in the list (Avalonia's `AutoScrollToSelectedItem`).
 - **The page round the list stays put** (#220): the selection, at load or set in code, and `ScrollIntoView` scroll the
   list's own ScrollViewer alone, never a page's round it, as on the phone (`ListBoxOptions.KeepsScrollInList`, which
-  the theme sets). An item given the focus by the keyboard (an arrow key, Tab) is brought into view in the page too.
+  the theme sets). An item given the focus by the keyboard (an arrow key, Tab) is brought into view in the page too;
+  one focused from code (`Focus()`) or by a press, in the list alone, as the phone's `FocusState.Programmatic` brings
+  nothing into view. A control inside an item asking to be seen (a TextBox's caret) still moves the page.
 - **Selected** turns on the tick, which only the check mode shows: in Single mode a selected item looks like the
   others, as on the phone.
 - **The check mode** (`Multiple` with `Toggle`): the box, `CheckBox`'s brushes and the `Wp81.Glyph.CheckMark` tick,
@@ -107,8 +109,8 @@ None.
 - **The list scrolls itself to its selection at load, and to one set in code with no focus in it**; the phone's
   doesn't move (#220), and scrolls to a selection set in code only with the focus in the list (#136), the focus going
   to the item. The page round it stays put in both (above).
-- **A focus set in code** (`Focus()`) brings the item into view in a page round the list too, as every Avalonia
-  ScrollViewer does; the phone's `FocusState.Programmatic` brings nothing into view, its `Keyboard` does (#220).
+- **An item focused from code, or by a press, is still brought into view in the list itself**; the phone's
+  `FocusState.Programmatic` brings nothing into view (#220). Its pointer focus wasn't read.
 - **In Simple's AutoCompleteBox and file dialog**, which now hold this list, a selection made with the keyboard or the
   mouse draws nothing, until those controls get themes of their own.
 - **A selection of several in `Multiple`** (WinRT's Extended, chosen with Ctrl or Shift) draws nothing, as on the phone.

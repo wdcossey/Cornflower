@@ -1,5 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace Cornflower.Controls;
 
@@ -22,13 +25,15 @@ public static partial class ListBoxOptions
     /// goes on to the page's. So a selected list low on a page in a ScrollViewer scrolls the page down to it, at load,
     /// and on Android, whose first layout of a page is short, the page stays there. On the phone (the reference app,
     /// #220) neither the selection, at load or set in code, nor <c>ScrollIntoView</c> moves the page, a short first
-    /// layout or not; with this on, a request the list's own ScrollViewer didn't take stops at the list.
+    /// layout or not; with this on, a request for one of the list's items that its own ScrollViewer didn't take stops
+    /// at the list. A request from a control inside an item (a TextBox's caret), and the list's own, go on.
     /// </para>
     /// <para>
-    /// The focus still goes through: a request for the focused element goes on to the page, so an item focused by the
-    /// keyboard (an arrow key, Tab) is brought into view in every ScrollViewer round it, as an item given the keyboard's
-    /// focus is on the phone. What stays Avalonia's, in the list itself: it scrolls to a selection at load, and to one set
-    /// in code with no focus in it, where the phone's list doesn't move.
+    /// The keyboard's focus still goes through: an item given the focus by the keyboard (an arrow key, Tab) is brought
+    /// into view in every ScrollViewer round it, as an item given <c>FocusState.Keyboard</c> is on the phone. An item
+    /// focused from code (<c>Focus()</c>) or by a press is brought into view in the list alone: the phone's
+    /// <c>FocusState.Programmatic</c> brings nothing into view. What stays Avalonia's, in the list itself: it scrolls to
+    /// a selection at load, and to one set in code with no focus in it, where the phone's list doesn't move.
     /// </para>
     /// </remarks>
     public static readonly AttachedProperty<bool> KeepsScrollInListProperty =
@@ -38,21 +43,64 @@ public static partial class ListBoxOptions
 
     public static void SetKeepsScrollInList(ListBox list, bool value) => list.SetValue(KeepsScrollInListProperty, value);
 
-    private static void HookIntoView() =>
+    /// <summary>
+    /// The item the keyboard has just focused, while its <c>GotFocus</c> is routed: each ScrollViewer round it brings it
+    /// into view on the way (<c>BringIntoViewOnFocusChange</c>), and those requests go on.
+    /// </summary>
+    private static ListBoxItem? _keyboardFocused;
+
+    /// <summary>The list a key is on its way to, while it is routed and handled.</summary>
+    private static ListBox? _keyInList;
+
+    private static void HookIntoView()
+    {
         Control.RequestBringIntoViewEvent.AddClassHandler<ListBox>(OnRequestBringIntoView);
+        // On the item, before the event bubbles to the ScrollViewers round it.
+        InputElement.GotFocusEvent.AddClassHandler<ListBoxItem>(OnItemGotFocus, handledEventsToo: true);
+        InputElement.KeyDownEvent.AddClassHandler<ListBox>(OnListKeyDownForFocus, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private static void OnItemGotFocus(ListBoxItem item, FocusChangedEventArgs e)
+    {
+        // Tab, or a key the list is handling: Avalonia's ListBox moves the focus on an arrow key with no method.
+        if (!ReferenceEquals(e.Source, item) ||
+            e.NavigationMethod is not (NavigationMethod.Tab or NavigationMethod.Directional) &&
+            (_keyInList is null || !ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(item), _keyInList)))
+            return;
+
+        _keyboardFocused = item;
+        // Cleared once this GotFocus has been routed and handled, all of it synchronous.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ReferenceEquals(_keyboardFocused, item))
+                _keyboardFocused = null;
+        }, DispatcherPriority.Send);
+    }
+
+    /// <summary>A key on its way to a list that keeps its scroll: whatever it focuses, the keyboard focused.</summary>
+    private static void OnListKeyDownForFocus(ListBox list, KeyEventArgs e)
+    {
+        if (!GetKeepsScrollInList(list))
+            return;
+
+        _keyInList = list;
+        // Cleared once the key has been handled, synchronously.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ReferenceEquals(_keyInList, list))
+                _keyInList = null;
+        }, DispatcherPriority.Send);
+    }
 
     /// <summary>
-    /// A request from inside the list (a bubbling request's target is on its route) that its own ScrollViewer didn't take
-    /// (one that moved it is handled there): stopped, unless it is the focus's.
+    /// A request for one of the list's own items that its own ScrollViewer didn't take (one that moved it is handled
+    /// there): stopped, unless the keyboard has just focused that item.
     /// </summary>
     private static void OnRequestBringIntoView(ListBox list, RequestBringIntoViewEventArgs e)
     {
-        // The list's own request (list.BringIntoView()) is the page's to take.
-        if (!GetKeepsScrollInList(list) || e.TargetObject is not { } target || ReferenceEquals(target, list))
-            return;
-
-        // The focus's own request: ScrollViewer brings the focused element into view on a focus change.
-        if (ReferenceEquals(TopLevel.GetTopLevel(list)?.FocusManager?.GetFocusedElement(), target))
+        if (!GetKeepsScrollInList(list) || e.TargetObject is not ListBoxItem item ||
+            !ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(item), list) ||
+            ReferenceEquals(item, _keyboardFocused))
             return;
 
         e.Handled = true;

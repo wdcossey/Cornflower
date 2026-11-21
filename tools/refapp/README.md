@@ -1048,7 +1048,8 @@ after a start tap, in `app\Probe.IntoView.cs`. A page `ScrollViewer` (the 450 ×
 list, and 400 more. The list is a ListView of 30 strings (each 39.17 tall) or a GridView of 30 tiles of 120 (three a
 row), either 300 tall (its own ScrollViewer scrolls) or left free (its viewport is its extent, 1175 or 1200, so only the
 page can scroll), with item 20 selected before it loads. Offsets read 1.2 to 1.5 s after each step; before each step
-after a load, both put back to 0. The ListView and the GridView behave alike.
+after a load, both put back to 0, but for the keyboard focus in `listintoviewfocus`, which comes straight after the
+code focus's step. The ListView and the GridView behave alike.
 
 | Step | 300 tall: page, list | Free: page |
 |---|---|---|
@@ -1058,7 +1059,7 @@ after a load, both put back to 0. The ListView and the GridView behave alike.
 | `ScrollIntoView` item 28 | 0; ListView 835.83, GridView 900 (the item's bottom on the list's) | 0 |
 | `ScrollIntoView` item 2 (already in view) | 0, 0 | 0 |
 | Item 0 focused from code (`Programmatic`), then `SelectedIndex` 25 | 0; ListView 718.33, GridView 780 (the least); the focus moves to item 25 | 0; the focus moves to 25 |
-| Item 0 focused as by the keyboard (`Keyboard`) | ListView 147.5, GridView 228.33; list 0 | the same |
+| Item 0 focused as by the keyboard (`Keyboard`), the list left at 718.33 / 780 by the step before | ListView 147.5, GridView 228.33; the list back to 0 to show item 0 | the same |
 | ... then `SelectedIndex` 27 | 400 (the list's bottom on the page's), list 805 or 900; the focus moves to 27 | ListView 1205, GridView 1300 |
 | Item 25 focused from code, no selection change | not read (no container) | 0 |
 | Item 27 focused as by the keyboard | not read (no container) | ListView 1205, GridView 1300 |

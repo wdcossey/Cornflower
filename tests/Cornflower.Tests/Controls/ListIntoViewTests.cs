@@ -157,7 +157,22 @@ public class ListIntoViewTests
         Assert.True(page.Viewer.Offset.Y > 0, "the page didn't scroll to the list");
     }
 
-    // The focus still goes through: an item focused by the keyboard is brought into view in the page as well.
+    // A control inside an item asking to be seen (a TextBox's caret, say) is the page's to bring in too.
+    [AvaloniaTheory]
+    [MemberData(nameof(Themes))]
+    public void A_Control_Inside_An_Item_Brought_Into_View_Scrolls_The_Page(string theme)
+    {
+        using var page = new Page(theme, firstHeight: Scene.ReferenceHeight);
+        page.Reset();
+        var inner = page.Item(0).GetVisualDescendants().OfType<TextBlock>().First();
+
+        inner.BringIntoView();
+        page.Settle();
+
+        Assert.True(page.Viewer.Offset.Y > 0, "the page didn't scroll to the control");
+    }
+
+    // The keyboard's focus still goes through: an item it focuses is brought into view in the page as well.
     [AvaloniaTheory]
     [MemberData(nameof(Themes))]
     public void A_Focused_Item_Is_Brought_Into_View_In_The_Page_Too(string theme)
@@ -172,20 +187,41 @@ public class ListIntoViewTests
         Assert.InRange(page.Item(0).TranslatePoint(default, page.Window)!.Value.Y, 0, Scene.ReferenceHeight - page.Item(0).Bounds.Height);
     }
 
-    // Arrow keys still move the list to the item they focus, and the page as far as it takes to show it.
+    // A focus set in code is the phone's FocusState.Programmatic, which brings nothing into view in the page (#220).
     [AvaloniaTheory]
     [MemberData(nameof(Themes))]
-    public void Arrow_Keys_Scroll_The_List_To_The_Item_They_Focus(string theme)
+    public void An_Item_Focused_From_Code_Leaves_The_Page(string theme)
     {
         using var page = new Page(theme, firstHeight: Scene.ReferenceHeight);
+        page.Reset();
+
+        Assert.True(page.Item(0).Focus());
+        page.Settle();
+
+        Assert.Equal(0, page.Viewer.Offset.Y);
+    }
+
+    public static TheoryData<string, bool> ThemesHeightAndFree => new()
+    {
+        { "ListView", false }, { "ListView", true },
+        { "Wp81ListBoxTheme", false }, { "Wp81ListBoxTheme", true },
+        { "Wp81GridViewTheme", false }, { "Wp81GridViewTheme", true },
+    };
+
+    // Arrow keys still move the list to the item they focus, and the page as far as it takes to show it; in a free list,
+    // the page alone.
+    [AvaloniaTheory]
+    [MemberData(nameof(ThemesHeightAndFree))]
+    public void Arrow_Keys_Scroll_To_The_Item_They_Focus(string theme, bool free)
+    {
+        using var page = new Page(theme, free, firstHeight: Scene.ReferenceHeight);
         page.List.SelectedIndex = 0;
         page.Reset();
         Assert.True(page.Item(0).Focus(NavigationMethod.Tab));
         page.Settle();
-        var pageOffset = page.Viewer.Offset.Y;
-        Assert.True(pageOffset > 0, "the page didn't scroll to the focused item");
+        Assert.True(page.Viewer.Offset.Y > 0, "the page didn't scroll to the focused item");
 
-        // Fifteen on: item 15, below the list's 300 (down a stack; right along the grid's rows, three a row).
+        // Fifteen on: item 15, below the list's 300 or the page's fold (down a stack; right along the grid's rows).
         var (key, physical) = theme == "Wp81GridViewTheme" ? (Key.Right, PhysicalKey.ArrowRight) : (Key.Down, PhysicalKey.ArrowDown);
         for (var i = 0; i < 15; i++)
         {
@@ -196,8 +232,12 @@ public class ListIntoViewTests
 
         var focused = Assert.IsType<ListBoxItem>(page.Window.FocusManager!.GetFocusedElement());
         Assert.True(page.List.IndexFromContainer(focused) >= 15, $"focus reached item {page.List.IndexFromContainer(focused)}");
-        Assert.True(page.Inner.Offset.Y > 0, "the arrow keys didn't scroll the list");
-        Assert.InRange(focused.TranslatePoint(default, page.Inner)!.Value.Y, -0.01, page.Inner.Viewport.Height - focused.Bounds.Height + 0.01);
+        if (!free)
+        {
+            Assert.True(page.Inner.Offset.Y > 0, "the arrow keys didn't scroll the list");
+            Assert.InRange(focused.TranslatePoint(default, page.Inner)!.Value.Y, -0.01, page.Inner.Viewport.Height - focused.Bounds.Height + 0.01);
+        }
+
         Assert.InRange(focused.TranslatePoint(default, page.Window)!.Value.Y, -0.01, Scene.ReferenceHeight - focused.Bounds.Height + 0.01);
     }
 }
