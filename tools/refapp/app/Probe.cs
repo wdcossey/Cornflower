@@ -164,6 +164,9 @@ namespace RefApp
                 case "grouped":
                     await probe.GroupedProbe(host);
                     break;
+                case "groupedpush":
+                    await probe.GroupedPushProbe(host);
+                    break;
                 case "semanticzoom":
                     await probe.SemanticZoomProbe(host);
                     break;
