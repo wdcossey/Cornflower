@@ -468,7 +468,7 @@ namespace RefApp
         /// <summary>
         /// The pinned header as the next one arrives (#225), made to be recorded: the grouped ListView alone (330 tall, as
         /// in <see cref="GroupedProbe"/>; header c comes 225.8 under header a). The offset is set from code 1 px at a time
-        /// from 180 to 240, each held 250 ms, logged; then, from 0, a slow drag up of 280 px over 8 s, held 1 s. The
+        /// from 180 to 240, each held about 250 ms, logged; then, from 0, a slow drag up of 280 px over 8 s, held 1 s. The
         /// offset is logged every frame.
         /// </summary>
         private async Task GroupedPushProbe(Grid host)
