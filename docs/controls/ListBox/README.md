@@ -2,7 +2,7 @@
 
 Status: done · [#212](https://github.com/wdcossey/Cornflower/issues/212) · against #211's captures (run `20261118-2210-dev11`) · device run passed 2026-11-21 (Pixel 8, Release, over wireless adb, on `45b8c0a`: cold start 770 ms, the page opened in 400 ms; at rest, a press (the tilt, paler), a tap (the accent moves), a press on the selected row (the pale tint, black text), the disabled list (no response) and the light list, each as described) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `45b8c0a`: 200 of 200)
 
-The Windows Phone 8.1 ListBox and ListBoxItem, the list 8.1 kept for 8.0's apps: Avalonia's `ListBox` and `ListBoxItem`
+The Windows Phone 8.1 ListBox and ListBoxItem, the WinRT list 8.1 brought over from Windows 8: Avalonia's `ListBox` and `ListBoxItem`
 in two keyed themes, `Wp81ListBoxTheme` and `Wp81ListBoxItemTheme`, with the phone's default styles and the item's
 template, in `src/Cornflower.Themes.Wp81/Controls/ListBox.axaml`; the press the Button's tilt. The plan, with every value
 and its source, is [PLAN.md](PLAN.md); the phone's captures beside ours are in [COMPARISON.md](COMPARISON.md).
@@ -29,6 +29,15 @@ phone's ListBox, name its theme; it gives its items theirs:
   inside a transparent 1.5 border; black text in both (`ListBoxForegroundThemeBrush`), `ContentControlThemeFontFamily` at
   `ControlContentThemeFontSize` (12); `IsTabStop` off, `TabNavigation` once; no horizontal scroll, the vertical
   indicator `Auto`; items in a `VirtualizingStackPanel`.
+- **The light theme is hard to read, as on the phone.** The phone's palette keys that give the dark theme its pale box
+  give the light theme black text on a 75% black box (about #404040 over the white page), and a press draws the same;
+  only the selected item, white on the accent, reads well. This is 8.1's own: the Update 1 image's `themeresources.xaml`
+  (Light: `PhoneBaseMediumHighColor` #BF000000, `PhoneBaseBlackColor` #FF000000) and the emulator's capture
+  ([`light__ListBox__three-items__base.png`](../../../ref/wp81/ListBox/light__ListBox__three-items__base.png)) agree.
+  Cornflower keeps it faithful. For a readable light list, an app overrides `ListBoxBackgroundThemeBrush` and
+  `ListBoxItemPressedBackgroundThemeBrush` (and, if it changes the text, `ListBoxForegroundThemeBrush` and
+  `ListBoxItemPressedForegroundThemeBrush`) in its own `Light` theme dictionary; setting the ListBox's `Background` alone
+  fixes the list at rest but not the press. Or it uses the [ListView](../ListView/README.md).
 - **The item's style**: a transparent background, padding 6.5, 8, the content at the left and centred down; 32.08 tall
   for one line of text, in the phone's 1.33 em line.
 - **Selected**: the item in the accent, its text white, in both themes.
