@@ -173,6 +173,12 @@ namespace RefApp
                 case "semanticzoomlocked":
                     await probe.SemanticZoomProbe(host, true);
                     break;
+                case "listintoview":
+                    await probe.ListIntoView(host);
+                    break;
+                case "listintoviewfocus":
+                    await probe.ListIntoView(host, true);
+                    break;
                 default:
                     await probe.Finish("unknown probe " + name);
                     break;

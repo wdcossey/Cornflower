@@ -124,6 +124,8 @@
     <Setter Property="BorderBrush" Value="{DynamicResource ListBoxBorderThemeBrush}" />
     <Setter Property="BorderThickness" Value="{DynamicResource ListBoxBorderThemeThickness}" />
     <Setter Property="IsTabStop" Value="False" />
+    <!-- Not a property on the phone: its ScrollIntoView and selection scroll the list's own ScrollViewer alone (#220). -->
+    <Setter Property="cf:ListBoxOptions.KeepsScrollInList" Value="True" />
     <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
     <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
     <Setter Property="ItemContainerTheme" Value="{DynamicResource Wp81ListBoxItemTheme}" />

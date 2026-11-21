@@ -31,6 +31,8 @@ it gives its items theirs:
   (`GridViewItemMargin` 0, no padding), their content centred both ways.
 - **The press**: the ListView item's, the Button's tilt on the whole item inside an untilted root, at once on a press.
 - **Selected**, in `Single`, draws nothing.
+- **The page round the grid stays put**, as the ListView's (#220, [its behaviours](../ListView/README.md#behaviours)):
+  the selection and `ScrollIntoView` scroll the grid alone; the phone's GridView does the same.
 - **The check mode**: a 2.5 accent border on every item; a selected one adds the 34 × 34 accent earmark at its top right
   with a white tick; a tap toggles. No check box, and the content doesn't move.
 - **Disabled**: the content at 0.4, and no border or earmark.

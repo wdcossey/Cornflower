@@ -103,6 +103,7 @@ public static partial class ListBoxOptions
         InputElement.LostFocusEvent.AddClassHandler<ListBoxItem>(OnLostFocus, handledEventsToo: true);
 
         HookGrouping();
+        HookIntoView();
     }
 
     public static bool GetIsItemClickEnabled(ListBox list) => list.GetValue(IsItemClickEnabledProperty);

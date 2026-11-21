@@ -55,6 +55,8 @@
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
     <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
     <Setter Property="ScrollViewer.BringIntoViewOnFocusChange" Value="True" />
+    <!-- Not a property on the phone: its ScrollIntoView and selection scroll the list's own ScrollViewer alone (#220). -->
+    <Setter Property="cf:ListBoxOptions.KeepsScrollInList" Value="True" />
     <!-- Not set by the phone's style: what its ListView inherits from the page. -->
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />

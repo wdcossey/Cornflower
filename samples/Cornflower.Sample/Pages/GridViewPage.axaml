@@ -11,9 +11,6 @@
     Grey 120 x 120 tiles, as the reference app's, three a row, abutting. Press a tile to see the ListView item's tilt; in
     Single a selected tile draws nothing. The check mode (SelectionMode Multiple, Toggle): the accent border on every
     tile, and the earmark with its tick on a selected one; tap to toggle. Below: the check mode in the light theme.
-    No grid scrolls to its selection (AutoScrollToSelectedItem off): Avalonia brings a selected item into view in every
-    ScrollViewer round it, and on Android the page's first layout is short, so the page would open scrolled down to the
-    first grid and stay there. The phone's ScrollIntoView scrolls only the list's own ScrollViewer.
   -->
   <UserControl.Resources>
     <DataTemplate x:Key="Tile" x:DataType="x:String">
@@ -28,18 +25,18 @@
 
       <TextBlock Text="single" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
       <ListBox x:Name="Single" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}"
-               AutoScrollToSelectedItem="False" Height="300" />
+               Height="300" />
 
       <TextBlock Text="check mode" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
       <ListBox x:Name="Check" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}"
-               SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" Height="240" />
+               SelectionMode="Multiple,Toggle" Height="240" />
 
       <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
         <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
           <StackPanel>
             <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
             <ListBox x:Name="Light" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}"
-                     SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" Height="240" />
+                     SelectionMode="Multiple,Toggle" Height="240" />
           </StackPanel>
         </Border>
       </ThemeVariantScope>
