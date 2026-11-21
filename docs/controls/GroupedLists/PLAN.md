@@ -130,8 +130,8 @@ same tilt as the ListView's items. The phone goes `Pressed` > `PointerOver` on r
 - **A change to a group lays the whole list out again** (a new `ItemsSource`): the realized containers and the focus
   inside the list go, and a bulk add of n items costs n re-flattens. The phone's view changes item by item. To
   reverse: translate each group's change into the flat list's own change (an issue of its own if apps need it).
-- **The next header pushes the pinned one up.** The recording's frames don't show that moment (unread), so the test
-  pins ours; the coordinator's device and recording checks are owed it. To reverse: drop the push.
+- **The next header pushes the pinned one up.** Built before it was read; read since by `-Probe groupedpush` (#225,
+  run `20261121-1754-dev11`): the phone pushes it 1:1 from offset 196, with no fade, as ours does. The test pins ours.
 - **The list's `Padding` doesn't move the pinned header**, which spans the list's width less its border.
 
 ## Checklists

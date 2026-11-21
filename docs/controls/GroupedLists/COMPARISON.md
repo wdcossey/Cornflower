@@ -1,7 +1,7 @@
 # Grouped lists: comparison
 
 The phone: #211's probe of a grouped ListView over a grouped GridView (run `20261118-2221-dev11`) and its screen
-recording (`20261118-2249-dev11`), numbers in `tools/refapp/README.md`, "Tier 4's reads", Grouped lists. The pinned
+recording (`20261118-2249-dev11`), and #225's `groupedpush` recording of the push (`20261121-1754-dev11`), numbers in `tools/refapp/README.md`, "Tier 4's reads", Grouped lists. The pinned
 header shows only in the recording: `RenderTargetBitmap` leaves it out. Ours: `GroupedListTests` (measurements) and
 `GroupedListFrames` (headless, 450 × 800 at 2.4, dark), the probe's page: each list 19 in, 330 tall, groups a to h of
 five items, b and e empty, each header the letter in `GroupHeaderTextBlockStyle`.
@@ -40,7 +40,7 @@ place.
 |---|---|---|---|
 | ListView panned about 140: header a pinned at the top, "a item 5" below it | yes | yes (panned 140) | match |
 | Items under the pinned header don't show through | "a item 4", under it, doesn't show | drawn over `ApplicationPageBackgroundThemeBrush` | match on the page's brush; deliberate difference on a page with a background of its own |
-| The next header pushes the pinned one up | not in the frames | yes (`A_ListViews_Header_Sticks_At_The_Top`) | not read: ours pushes it, so the two never overlap |
+| The next header pushes the pinned one up | yes, read by `-Probe groupedpush` (#225, run `20261121-1754-dev11`): 1:1 with the scroll from offset 196, no fade; [start](../../../ref/wp81/ListView/recording__grouped-list-push-start-dark.png), [partway](../../../ref/wp81/ListView/recording__grouped-list-push-mid-dark.png) | yes (`A_ListViews_Header_Sticks_At_The_Top`) | match: ours is pushed 1:1, opaque, and the two never overlap |
 | GridView panned: no header over the top row; header c gone up with its group | yes | yes | match |
 
 ## The press

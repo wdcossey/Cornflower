@@ -1,6 +1,6 @@
 # ListBox and ListBoxItem
 
-Status: done · [#212](https://github.com/wdcossey/Cornflower/issues/212) · against #211's captures (run `20261118-2210-dev11`) · device run passed 2026-11-21 (Pixel 8, Release, over wireless adb, on `45b8c0a`: cold start 770 ms, the page opened in 400 ms; at rest, a press (the tilt, paler), a tap (the accent moves), a press on the selected row (the pale tint, black text), the disabled list (no response) and the light list, each as described) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `45b8c0a`: 200 of 200)
+Status: done · [#212](https://github.com/wdcossey/Cornflower/issues/212) · against #211's captures (run `20261118-2210-dev11`) · device run passed 2026-11-21 (Pixel 8, Release, over wireless adb, on `45b8c0a`: cold start 770 ms, the page opened in 400 ms; at rest, a press (the tilt, paler), a tap (the accent moves), a press on the selected row (the pale tint, black text), the disabled list (no response) and the light list, each as described) · real-window run passed 2026-11-21 (`tools/real-window/drive.ps1`, Debug, on `45b8c0a`: 200 of 200) · [#220](https://github.com/wdcossey/Cornflower/issues/220)'s fix (#229), in the theme: its Pixel and real-window runs are owed
 
 The Windows Phone 8.1 ListBox and ListBoxItem, the WinRT list 8.1 brought over from Windows 8: Avalonia's `ListBox` and `ListBoxItem`
 in two keyed themes, `Wp81ListBoxTheme` and `Wp81ListBoxItemTheme`, with the phone's default styles and the item's
