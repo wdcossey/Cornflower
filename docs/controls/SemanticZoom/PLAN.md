@@ -34,7 +34,8 @@ Each with its evidence and its test in `tests/Cornflower.Tests/Controls/Semantic
 | Back closes it the same way, at once; Started with no source or destination; the list stays; the app's Back isn't called | the probe and the recording | `Back_Closes_The_Jump_List_And_Leaves_The_List_Where_It_Was` |
 | `IsZoomedInViewActive` and `ToggleActiveView()` change the view from code | WinRT's API | `The_View_Changes_From_Code` |
 | Zoomed out before it is shown, or taken out of the window and put back, the jump list opens | follows from `IsZoomedInViewActive` | `A_Zoomed_Out_View_Opens_As_It_Is_Shown_And_Again_As_It_Comes_Back` |
-| `CanChangeViews` false: nothing changes the view | the phone closed the app; decided (#215) not to copy it | `With_CanChangeViews_False_Nothing_Changes_The_View` |
+| `CanChangeViews` false: the view doesn't zoom out; a jump list already open still closes | the phone closed the app; decided (#215) not to copy it | `With_CanChangeViews_False_The_View_Does_Not_Zoom_Out` |
+| A `ViewChangeStarted` handler may move the destination, and the list lands there | WinRT's writable arguments, an 8.1 app's usual handler | `A_Started_Handler_Moves_Where_The_List_Lands` |
 
 The sample page's test (`tests/Cornflower.Tests/Sample/SemanticZoomPageTests.cs`) also holds that the views take the page's
 data context while the jump list is closed (they are the SemanticZoom's logical children, as WinRT's are in its tree).
@@ -94,7 +95,7 @@ WinRT `Windows.UI.Xaml.Controls.SemanticZoom`; Avalonia none: a new control (run
 | [x] | `ZoomedInView` | `ISemanticZoomInformation` | `ZoomedInView` | `Control`: a grouped `ListBox` (`ListBoxOptions.GroupedItemsSource`) |
 | [x] | `IsZoomedInViewActive` | `Boolean` | `IsZoomedInViewActive` | A direct property, two-way, true by default |
 | [-] | `IsZoomOutButtonEnabled` | `Boolean` | none | Not applicable: the phone draws no zoom-out button (#211: `True`, and nothing drawn) |
-| [x] | `CanChangeViews` | `Boolean` | `CanChangeViews` | False: no change of view (decided, #215; the phone closed the app) |
+| [x] | `CanChangeViews` | `Boolean` | `CanChangeViews` | False: no zoom-out (decided, #215; the phone closed the app); an open jump list still closes |
 
 #### Events (2)
 
@@ -138,9 +139,9 @@ _none_
 
 | ✓ | WinRT | Type | Avalonia | Action |
 |---|---|---|---|---|
-| [x] | `SourceItem` | `SemanticZoomLocation` | `SourceItem` | |
+| [x] | `SourceItem` | `SemanticZoomLocation` | `SourceItem` | Writable, as WinRT's |
 | [x] | `IsSourceZoomedInView` | `Boolean` | `IsSourceZoomedInView` | |
-| [x] | `DestinationItem` | `SemanticZoomLocation` | `DestinationItem` | |
+| [x] | `DestinationItem` | `SemanticZoomLocation` | `DestinationItem` | Writable: set in `ViewChangeStarted`, the list lands there |
 | [x] | `SemanticZoomLocation.Item` | `Object` | `Item` | Null for Back and a zoom-in in code |
 | [-] | `SemanticZoomLocation.Bounds` | `Rect` | none | Left out: nothing in an 8.1 app's jump list reads it |
 

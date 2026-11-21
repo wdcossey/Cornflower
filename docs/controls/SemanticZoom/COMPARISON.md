@@ -39,6 +39,6 @@ Measured on ours by the tests; on the phone's stills by eye, at 0.83 view px a p
 | A tile's tap closes it from about 100 ms, the top row first, over about 80 ms | match, by the fit: 100 ms, then 78 ms for eight rows |
 | Back closes it the same way; no source or destination; the list stays; the app's Back not called | match |
 | No zoom-out button | match: none drawn |
-| `CanChangeViews` false | deliberate difference: the phone closed the app at a header's tap; ours changes nothing (decided, #215) |
+| `CanChangeViews` false | deliberate difference: the phone closed the app at a header's tap; ours doesn't zoom out (decided, #215) |
 | Pinch | gap: unread (the emulator's mouse is one finger); not built |
-| The jump list scrolled to the destination group as it opens | gap: unread; ours opens at its top |
+| The jump list scrolled to the destination group as it opens | gap: unread; ours opens where it was left |

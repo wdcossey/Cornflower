@@ -143,7 +143,8 @@ internal static class PhoneSemanticZoom
         private void Show()
         {
             _pending = null;
-            if (_zoom.IsZoomedInViewActive || _zoom.Popup is not { } popup)
+            // Taken out of the window meanwhile, it opens as it comes back (SemanticZoom.OnAttachedToVisualTree).
+            if (_zoom.IsZoomedInViewActive || _zoom.Popup is not { } popup || TopLevel.GetTopLevel(_zoom) is null)
                 return;
             Hold(popup);
             if (popup.Child is ThemeVariantScope scope && scope.Name == ScopePart && TopLevel.GetTopLevel(_zoom) is { } top)
@@ -212,14 +213,15 @@ internal static class PhoneSemanticZoom
             if (Host is not { } host)
                 return;
             var height = TileHeight() is > 0 and var measured ? measured : RowHeight;
-            var rows = Rows(height, host.Area.Height);
+            // Enough rows for the longer side, so a turn of the phone mid-opening leaves no row at rest.
+            var rows = Rows(height, Math.Max(host.Area.Width, host.Area.Height));
             if (rows.Height != host.Rows.Height || rows.Rates.Length != host.Rows.Rates.Length)
                 host.Rows = rows;
         }
 
-        /// <summary>The first tile's height with its margin, if the zoomed-out view is a list with one laid out.</summary>
+        /// <summary>A realized tile's height with its margin, if the zoomed-out view is a list with one laid out.</summary>
         private double TileHeight() =>
-            _zoom.ZoomedOutView is ListBox list && list.ContainerFromIndex(0) is { } tile
+            _zoom.ZoomedOutView is ListBox list && list.GetRealizedContainers().FirstOrDefault() is { } tile
                 ? tile.Bounds.Height + tile.Margin.Top + tile.Margin.Bottom
                 : 0;
     }

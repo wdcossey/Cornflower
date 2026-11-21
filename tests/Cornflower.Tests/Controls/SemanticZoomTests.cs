@@ -643,9 +643,9 @@ public class SemanticZoomTests
         Assert.True(stage.Popup.IsOpen);
     }
 
-    // #211: with CanChangeViews false a tap on a header closed the app. Decided (#215): nothing changes the view.
+    // #211: with CanChangeViews false a tap on a header closed the app. Decided (#215): the view doesn't zoom out.
     [AvaloniaFact]
-    public void With_CanChangeViews_False_Nothing_Changes_The_View()
+    public void With_CanChangeViews_False_The_View_Does_Not_Zoom_Out()
     {
         using var stage = new Stage(canChange: false);
         stage.TapHeader("a");
@@ -656,5 +656,26 @@ public class SemanticZoomTests
         Assert.Empty(stage.Events);
         Assert.True(stage.Zoom.IsZoomedInViewActive);
         Assert.False(stage.Popup.IsOpen);
+        // Turned off with the jump list open, it still closes: Back isn't trapped behind it.
+        stage.Zoom.CanChangeViews = true;
+        stage.Zoom.IsZoomedInViewActive = false;
+        stage.At(stage.Now + 1000);
+        stage.Zoom.CanChangeViews = false;
+        Assert.True(stage.Back().Handled);
+        Assert.True(stage.Zoom.IsZoomedInViewActive);
+    }
+
+    // WinRT's arguments are writable: an 8.1 app's ViewChangeStarted handler may move the destination, and the list lands there.
+    [AvaloniaFact]
+    public void A_Started_Handler_Moves_Where_The_List_Lands()
+    {
+        using var stage = new Stage();
+        stage.OpenAtRest();
+        var c = stage.Groups[2];
+        stage.Zoom.ViewChangeStarted += (_, e) => e.DestinationItem = new SemanticZoomLocation { Item = c };
+        stage.TapTile("d");
+
+        Assert.Equal(ZoomTop, stage.InWindow(stage.Header("c")).Y, Tolerance);
+        Assert.Same(c, stage.Events.Last(e => e.Name == "completed").Args.DestinationItem.Item);
     }
 }

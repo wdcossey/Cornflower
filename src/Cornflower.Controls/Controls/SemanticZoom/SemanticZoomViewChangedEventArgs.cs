@@ -4,10 +4,15 @@ namespace Cornflower.Controls;
 /// <remarks>WinRT's <c>Bounds</c> is left out: nothing in an 8.1 app's use of the jump list reads it.</remarks>
 public sealed class SemanticZoomLocation
 {
+    /// <summary>A location with no item, for a handler to fill.</summary>
+    public SemanticZoomLocation()
+    {
+    }
+
     internal SemanticZoomLocation(object? item) => Item = item;
 
     /// <summary>The item: a group, or an item of the zoomed-in list; null when there is none (Back).</summary>
-    public object? Item { get; }
+    public object? Item { get; set; }
 }
 
 /// <summary>The data of <see cref="SemanticZoom.ViewChangeStarted"/> and <see cref="SemanticZoom.ViewChangeCompleted"/>: WinRT's <c>SemanticZoomViewChangedEventArgs</c>.</summary>
@@ -27,11 +32,12 @@ public sealed class SemanticZoomViewChangedEventArgs : EventArgs
     /// Where the change starts: zooming out, the zoomed-in list's top item; zooming in, the group whose tile was tapped.
     /// Its <see cref="SemanticZoomLocation.Item"/> is null for Back and a change made in code.
     /// </summary>
-    public SemanticZoomLocation SourceItem { get; }
+    public SemanticZoomLocation SourceItem { get; set; }
 
     /// <summary>
     /// Where the change goes: zooming out, the group of the header tapped (or of the top item, in code); zooming in, the
     /// group whose tile was tapped. Its <see cref="SemanticZoomLocation.Item"/> is null for Back and a zoom-in made in code.
+    /// Set in <see cref="SemanticZoom.ViewChangeStarted"/>, it moves where the list lands, as WinRT's does.
     /// </summary>
-    public SemanticZoomLocation DestinationItem { get; }
+    public SemanticZoomLocation DestinationItem { get; set; }
 }

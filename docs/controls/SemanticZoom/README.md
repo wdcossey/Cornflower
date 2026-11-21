@@ -40,13 +40,15 @@ and `JumpListItemForegroundConverter`, public in `Cornflower.Controls`. The plan
   group's header, the pinned one too, opens the jump list.
 - **`ZoomedOutView`**: a `ListBox` of the same groups, all of them (the empty ones show greyed), usually in the GridView's
   theme. Its tiles are your template, as on the phone; the converters colour them. The SemanticZoom turns its
-  `ListBoxOptions.IsItemClickEnabled` on, so a tap selects nothing: a group with items zooms in to it, an empty group's
+  `ListBoxOptions.IsItemClickEnabled` on (and off again when the view goes), so a tap selects nothing: a group with items zooms in to it, an empty group's
   tile does nothing. Another kind of view changes view only by `IsZoomedInViewActive` or `ToggleActiveView()`.
 - **The converters**: given a group (an `IEnumerable` of its items), `Enabled` for one with items, `Disabled` for an
   empty one. Unset, each is the app's `JumpListDefault*` resource in the app's theme (Wp81's: the accent, #FF1F1F1F dark
   or #FFDEDEDE light; the letter white, or #FFA5A5A5 on a light empty tile).
 - **`IsZoomedInViewActive`**, **`ToggleActiveView()`**, **`ViewChangeStarted`**, **`ViewChangeCompleted`** and
-  **`CanChangeViews`** as WinRT's.
+  **`CanChangeViews`** as WinRT's. A `ViewChangeStarted` handler may set `e.DestinationItem` (a new
+  `SemanticZoomLocation { Item = ... }`), and the list lands there. Set to a value it refuses (`CanChangeViews` false),
+  `IsZoomedInViewActive` raises no change, so a two-way binding keeps the value it set.
 - Set `AutoScrollToSelectedItem="False"` on both lists, as on every phone list (#220).
 
 ## Behaviours
@@ -82,17 +84,20 @@ Rung 5: a new control. Avalonia 12.1.4 has none.
 
 - **`CanChangeViews` false: no change of view.** On the phone a tap on a header closed the app (#211, runs
   `20261118-2231-dev11-partial` and `20261118-2246-dev11-partial`); a control needn't copy a crash. Decided by the
-  coordinator on #215, reversible: here nothing changes the view, from a tap, Back or code.
+  coordinator on #215, reversible: here the view doesn't zoom out, from a tap or code. A jump list already open when it
+  turns false still closes (a tile, Back, code), so it never traps the page.
 
 ## Known gaps
 
 - **Pinch is not built.** The phone's pinch wasn't read (the emulator's mouse is one finger); the jump list opens by a tap
   on a header, or in code.
-- **The jump list opens at its top.** WinRT may scroll it to the destination group; unread, so not built.
+- **The jump list opens where it was left.** WinRT may scroll it to the destination group; unread, so not built.
 - **The motion is a fit** to the recording's shape (PLAN.md, "The motion's numbers"): every row opens at one rate from the
   Flyout's 80°, where the phone's first frame is nearer edge-on.
 - **The converters read the app's resources** (`Application.Current`), so Wp81 has to be in the app's styles, as an app
-  has it; a brush is read as a tile is bound, so a change of the app's theme shows on tiles bound after it.
+  has it; a brush is read as a tile is bound, so a change of the app's theme, or a group gaining or losing its items,
+  shows on tiles bound after it (a tile's tap reads the group as it is). The popup takes the window's theme, the
+  converters the app's: a window that asks for another theme than its app's gets the app's tile brushes.
 - **`IsZoomOutButtonEnabled` and `SemanticZoomLocation.Bounds` are left out**: the phone draws no zoom-out button, and
   nothing in a jump list reads the bounds.
 - **Only a `ListBox` view** clicks its tiles and lands the list; the views are `Control`s, not `ISemanticZoomInformation`.

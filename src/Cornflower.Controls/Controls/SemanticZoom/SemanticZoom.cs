@@ -215,14 +215,19 @@ public class SemanticZoom : TemplatedControl
     /// </summary>
     private void ChangeView(bool zoomIn, object? source, object? destination, bool byTile)
     {
-        if (zoomIn == _zoomedIn || !CanChangeViews)
+        // CanChangeViews false stops a zoom-out; a jump list already open still closes, so it never traps the page.
+        if (zoomIn == _zoomedIn || !zoomIn && !CanChangeViews)
             return;
-        ViewChangeStarted?.Invoke(this, new SemanticZoomViewChangedEventArgs(_zoomedIn, source, destination));
+        var started = new SemanticZoomViewChangedEventArgs(_zoomedIn, source, destination);
+        ViewChangeStarted?.Invoke(this, started);
+        // A handler may move where the change goes, as an 8.1 app's does (e.DestinationItem = ...).
+        source = started.SourceItem.Item;
+        destination = started.DestinationItem.Item;
         var from = _zoomedIn;
         SetAndRaise(IsZoomedInViewActiveProperty, ref _zoomedIn, zoomIn);
         if (zoomIn)
         {
-            if (destination is not null && ListOf(ZoomedInView) is { } list && !ListBoxOptions.ScrollGroupToTop(list, destination))
+            if (destination is not null && ZoomedInView as ListBox is { } list && !ListBoxOptions.ScrollGroupToTop(list, destination))
                 list.ScrollIntoView(destination);
             ClosePopup(byTile);
         }
@@ -283,7 +288,7 @@ public class SemanticZoom : TemplatedControl
             LogicalChildren.Add(view);
     }
 
-    /// <summary>A list as the zoomed-out view clicks its tiles, so a tap selects nothing; given back as it was when it goes.</summary>
+    /// <summary>A list as the zoomed-out view clicks its tiles, so a tap selects nothing; turned off again when it goes.</summary>
     private void OnZoomedOutViewChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_jumpList is not null)
@@ -300,12 +305,10 @@ public class SemanticZoom : TemplatedControl
         }
     }
 
-    private static ListBox? ListOf(Control? view) => view as ListBox;
-
     /// <summary>The zoomed-in list's top item: the first realized item, not a header, that reaches below the viewport's top.</summary>
     private object? TopItem()
     {
-        if (ListOf(ZoomedInView) is not { Scroll: ScrollViewer scroll } list)
+        if (ZoomedInView as ListBox is not { Scroll: ScrollViewer scroll } list)
             return null;
         object? top = null;
         var topIndex = int.MaxValue;
@@ -324,7 +327,7 @@ public class SemanticZoom : TemplatedControl
     /// <summary>The group of the zoomed-in list's that holds <paramref name="item"/>; none if it isn't grouped or holds none.</summary>
     private object? GroupOf(object? item)
     {
-        if (item is null || ListOf(ZoomedInView) is not { } list || ListBoxOptions.GetGroupedItemsSource(list) is not { } groups)
+        if (item is null || ZoomedInView as ListBox is not { } list || ListBoxOptions.GetGroupedItemsSource(list) is not { } groups)
             return null;
         foreach (var group in groups)
         {

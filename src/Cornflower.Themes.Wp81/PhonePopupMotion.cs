@@ -164,9 +164,9 @@ internal static class PhonePopupMotion
     /// A full popup of <paramref name="bands"/> bands is closed (<c>Closed</c>) on the last whole tick before its last
     /// band is gone: 22 ticks for the reference's 8 (14 + 8.2), as read.
     /// </summary>
-    internal static TimeSpan ClosedAfter(int bands) => ClosedAfter(bands, CloseRate, CloseStagger);
-
-    /// <summary>As <see cref="ClosedAfter(int)"/>, for bands that close at <paramref name="rate"/>, <paramref name="stagger"/> ticks apart.</summary>
+    /// <param name="bands">The bands.</param>
+    /// <param name="rate">Their closing rate (the Flyout's <see cref="CloseRate"/>, or the rows' own).</param>
+    /// <param name="stagger">The ticks between their starts (the Flyout's <see cref="CloseStagger"/>, or the rows' own).</param>
     internal static TimeSpan ClosedAfter(int bands, double rate, double stagger) =>
         Tick * Math.Floor(stagger * Math.Max(0, bands - 1) + CloseTo / rate);
 
@@ -217,9 +217,7 @@ internal static class PhonePopupMotion
     /// <paramref name="from"/>, its angle when it was asked to close (0 at rest; mid-opening, wherever it had got to).
     /// At <see cref="CloseTo"/> back, it is gone.
     /// </summary>
-    internal static double ClosingAngle(int band, double from, TimeSpan time) => ClosingAngle(band, from, time, CloseRate, CloseStagger);
-
-    /// <summary>As <see cref="ClosingAngle(int, double, TimeSpan)"/>, for bands that close at <paramref name="rate"/>, <paramref name="stagger"/> ticks apart.</summary>
+    /// <remarks>The bands close at <paramref name="rate"/> a tick, <paramref name="stagger"/> ticks apart: the Flyout's <see cref="CloseRate"/> and <see cref="CloseStagger"/>, or the rows' own.</remarks>
     internal static double ClosingAngle(int band, double from, TimeSpan time, double rate, double stagger) =>
         Math.Max(-CloseTo, from - rate * Math.Max(0, Ticks(time) - stagger * band));
 
