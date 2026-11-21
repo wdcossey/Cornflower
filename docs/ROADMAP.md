@@ -235,7 +235,7 @@ emulator's, not copied. Next: Tier 4.
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
 | [#212](https://github.com/wdcossey/Cornflower/issues/212) | ListBox, ListBoxItem | ListBox, ListBoxItem | Theme, keyed (`Wp81ListBoxTheme`, which gives its items `Wp81ListBoxItemTheme`), as `ListBox` by type is the ListView: the pale box, 12 px text, the tilt; no check mode; done 2026-11-21 (#218), device run passed 2026-11-21 (Pixel 8), real-window run passed 2026-11-21 | 1 |
-| [#213](https://github.com/wdcossey/Cornflower/issues/213) | GridView, GridViewItem | ListBox with a wrapping panel | Theme, keyed (`Wp81GridViewTheme`, `Wp81GridViewItemTheme`), on the ListView's; the check mode is GridMultiSelect's border and earmark, never the box; the earmark's paths went into the ListViewItem's template, a rule-7 edit to `ListView.axaml` the user approved; done 2026-11-21 (#219), device run passed 2026-11-21 (Pixel 8; the page opened scrolled down, fixed in the PR, the cause [#220](https://github.com/wdcossey/Cornflower/issues/220)), real-window run passed 2026-11-21 | 1, 2 |
+| [#213](https://github.com/wdcossey/Cornflower/issues/213) | GridView, GridViewItem | ListBox with a wrapping panel | Theme, keyed (`Wp81GridViewTheme`, `Wp81GridViewItemTheme`), on the ListView's; the check mode is GridMultiSelect's border and earmark, never the box; the earmark's paths went into the ListViewItem's template, a rule-7 edit to `ListView.axaml` the user approved; done 2026-11-21 (#219), device run passed 2026-11-21 (Pixel 8; the page opened scrolled down, fixed in the PR, the cause [#220](https://github.com/wdcossey/Cornflower/issues/220), fixed in the themes by #229), real-window run passed 2026-11-21 | 1, 2 |
 | [#131](https://github.com/wdcossey/Cornflower/issues/131) | ListViewHeaderItem, GridViewHeaderItem, GroupItem (grouped lists) | none: Avalonia has no grouping | Cornflower's own: `ListBoxOptions.GroupedItemsSource` and `GroupHeaderTemplate`, and `ListViewHeaderItem`, themed; the ListView's header pinned, the GridView's not; no GroupItem (the phone's panels make none); `SelectedIndex` counts the headers ([#222](https://github.com/wdcossey/Cornflower/issues/222), accepted); done 2026-11-21 (#221), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
 | [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Carousel | Theme, with the phone's swipe, snap, ends and a change from code (`PhoneFlipView`, on the Pivot's recogniser and release rule), no buttons or indicator; up and down with a vertical `PageSlide`; done 2026-11-21 (#223), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 1, 2 |
 | [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | none | New control: the grouped list and its jump list, a popup over the whole window on `PhonePopupHost`, with the two converters; done 2026-11-21 (#224), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
@@ -254,10 +254,19 @@ device runs of #218 and #219 were on the Pixel 8; #221's, #223's and #224's on t
 `cornflower_pixel8`, the Pixel 8 profile, API 35), as the Pixel 8 was unavailable, so **their Pixel run is still
 owed** (#223's and #224's for the feel and the timing).
 
-Open: [#216](https://github.com/wdcossey/Cornflower/issues/216), the plain themes' plan; [#220](https://github.com/wdcossey/Cornflower/issues/220), a selected list scrolls the page round it into view where the
-phone scrolls only the list; [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
-`SelectedItems` for one `SelectionChanged`; [#225](https://github.com/wdcossey/Cornflower/issues/225), a read of a grouped ListView's pinned header as the next one
-arrives; and #129, carried from Tier 2. Owed besides the Pixel runs: the reads each README lists (the GridView's
+After the controls, two follow-ups, both done 2026-11-21. [#225](https://github.com/wdcossey/Cornflower/issues/225)
+(#228) read the grouped ListView's pinned header as the next one arrives (`-Probe groupedpush`): it is pushed up 1:1
+from offset 196, with no fade, as #221's is, so nothing changed. [#220](https://github.com/wdcossey/Cornflower/issues/220)
+(#229): a list's scroll to an item stays in the list, as on the phone (`-Probe listintoview` and `listintoviewfocus`):
+`ListBoxOptions.KeepsScrollInList`, on in the ListView, GridView and ListBox themes, and the samples' workaround gone.
+Its runs are owed: the Pixel (the gridview and listview pages open at their top) and the real window (arrow keys and
+Tab into a list low on a page).
+
+Open: [#216](https://github.com/wdcossey/Cornflower/issues/216), the plain themes' plan (next); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+`SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure);
+[#230](https://github.com/wdcossey/Cornflower/issues/230), the Hub listens with `handledEventsToo`, so a request a
+`KeepsScrollInList` list stopped can still move the Hub (#229's review); and #129, carried from Tier 2. Owed: the Pixel
+runs of #221, #223 and #224, and #229's runs. Owed besides the runs: the reads each README lists (the GridView's
 `ItemClick`, SemanticZoom's pinch). Tier 4's controls are done but RichEditBox and RichTextBlock (later, or out). Next:
 the plain themes (#216).
 
@@ -473,8 +482,10 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#131](https://github.com/wdcossey/Cornflower/issues/131) | Grouped lists: ListViewHeaderItem, GridViewHeaderItem | Done 2026-11-21 (#221) |
 | [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Done 2026-11-21 (#223) |
 | [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | Done 2026-11-21 (#224) |
+| [#225](https://github.com/wdcossey/Cornflower/issues/225) | Read: a grouped ListView's pinned header pushed by the next | Done 2026-11-21 (#228) |
+| [#220](https://github.com/wdcossey/Cornflower/issues/220) | A list's scroll to an item stays in the list | Done 2026-11-21 (#229) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
 reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Tier 4's controls are done (#131,
-#212 to #215, on #211's reads), three of them owed their Pixel run (above); the plain themes (#216) are next. Each row's device run on
+#212 to #215, on #211's reads), three of them owed their Pixel run, and #220's fix (#229) its runs (above); the plain themes (#216) are next. Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.
