@@ -27,10 +27,10 @@
     - ContentContainer and TiltContainer, the part the phone's PointerDownThemeAnimation targets, so it is marked
       Tilt.IsTarget: the whole content tilts, the check box doesn't; ContentBorder draws the item's Background,
       BorderBrush and BorderThickness, and slides 40.5 to the right in the check mode.
-    - SelectedBorder and SelectedCheckMark, at nought opacity: a ListView item never shows them (only GridMultiSelect,
-      a GridView's state, does), but they make an item at least 2.5 + 34 + 2.5 tall, 39.17 once laid out at 2.4,
-      as the phone's are. So the earmark and its tick, which draw only in GridMultiSelect, are left out: they are
-      GridViewItem's.
+    - SelectedBorder at nought opacity, round SelectedCheckMark, the earmark (Wp81.Glyph.SelectedEarmark) and its tick
+      (Wp81.Glyph.CheckMark stretched to 17 x 14.5), which Selected shows: a ListView item never shows them, as
+      SelectedBorder shows only in GridMultiSelect, a GridView's state (Wp81GridViewItemTheme, at the end of this file), but they make an item
+      at least 2.5 + 34 + 2.5 tall, 39.17 once laid out at 2.4, as the phone's are.
     - Left out: the placeholder TextBlock and Rectangle (DataPlaceholder: Avalonia has no data virtualisation), the
       ScaleTransform and the reorder states (reorder is deferred).
 
@@ -38,8 +38,8 @@
     TiltContainer, in the check mode too; CheckboxPressed, a press on the box in the check mode
     (wp81:PhoneListMultiSelect.IsBoxPressed), fills the box with the accent and draws the tick over it, and
     PhoneListMultiSelect tilts the box alone, with no return. Disabled dims the content to ListViewItemDisabledThemeOpacity (the 8.1
-    Update 1 runtime's 0.4) and the box and tick to their disabled brushes. Selected (:selected) shows the tick, which
-    shows only in the check mode. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme sets
+    Update 1 runtime's 0.4), the box and tick to their disabled brushes, and the selected parts to Transparent.
+    Selected (:selected) shows the tick, which shows only in the check mode, and SelectedCheckMark. ListMultiSelect is wp81:PhoneListMultiSelect.IsOn, which the ListView theme sets
     on a list whose SelectionMode has Multiple and Toggle (WinRT's Multiple; Multiple alone, its Extended, the phone
     shows with no boxes), and its items inherit: the box comes in and the content goes over, both over
     the phone's 0.15 s, linear. Its two offsets are ListViewItemContentOffsetX (-40.5) and
@@ -176,19 +176,40 @@
                     Opacity="0"
                     BorderBrush="{DynamicResource ListViewItemSelectedBackgroundThemeBrush}"
                     BorderThickness="{DynamicResource GridViewItemMultiselectBorderThickness}">
-              <Panel x:Name="SelectedCheckMark"
-                     Width="34"
-                     Height="34"
-                     HorizontalAlignment="Right"
-                     VerticalAlignment="Top" />
+              <Grid x:Name="SelectedCheckMark"
+                    Opacity="0"
+                    Width="34"
+                    Height="34"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top">
+                <Path x:Name="SelectedEarmark"
+                      Stretch="Fill"
+                      Fill="{DynamicResource ListViewItemSelectedBackgroundThemeBrush}"
+                      Data="{DynamicResource Wp81.Glyph.SelectedEarmark}" />
+                <Path x:Name="SelectedGlyph"
+                      Width="17"
+                      Height="14.5"
+                      Margin="0,1,1,0"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"
+                      Stretch="Fill"
+                      Fill="{DynamicResource ListViewItemCheckThemeBrush}"
+                      Data="{DynamicResource Wp81.Glyph.CheckMark}" />
+              </Grid>
             </Border>
           </Grid>
         </Border>
       </ControlTemplate>
     </Setter>
 
-    <Style Selector="^:selected /template/ Path#CheckGlyph">
-      <Setter Property="Opacity" Value="1" />
+    <!-- Selected: the tick, and SelectedCheckMark, which shows only inside SelectedBorder, in a GridView's GridMultiSelect. -->
+    <Style Selector="^:selected">
+      <Style Selector="^ /template/ Path#CheckGlyph">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+      <Style Selector="^ /template/ Grid#SelectedCheckMark">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
     </Style>
 
     <!-- ListMultiSelect: the box comes in and the content goes over. A press off the box is Pressed, the content's tilt. -->
@@ -222,6 +243,72 @@
       <Style Selector="^ /template/ Path#CheckGlyph">
         <Setter Property="Fill" Value="{DynamicResource CheckBoxDisabledForegroundThemeBrush}" />
       </Style>
+      <Style Selector="^ /template/ Border#SelectedBorder">
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ Path#SelectedEarmark">
+        <Setter Property="Fill" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ Path#SelectedGlyph">
+        <Setter Property="Fill" Value="Transparent" />
+      </Style>
     </Style>
+  </ControlTheme>
+
+  <!--
+    The Windows Phone 8.1 GridView and GridViewItem: the 8.1 Update 1 runtime's gridview.json and gridviewitem.json (the
+    SDK's generic.xaml), re-expressed as Avalonia ControlThemes on Avalonia's ListBox and ListBoxItem.
+    docs/controls/GridView/PLAN.md has the values and their sources.
+
+    In this file, not one of their own, as each is BasedOn the ListView's theme by StaticResource, which finds only a
+    resource of its own file. Keyed, not by type, as the ListBox's (Controls/ListBox.axaml): Avalonia's ListBox already
+    wears the ListView's look. The phone's GridView is a ListViewBase with a wrapping panel, and its item's template is
+    the ListViewItem's, so both themes are based on the ListView's and change only what the phone's styles change. An app
+    names the list; the list's theme gives its items theirs:
+
+      <ListBox Theme="{DynamicResource Wp81GridViewTheme}" />
+      <ListBoxItem Theme="{DynamicResource Wp81GridViewItemTheme}" />   (an item on its own)
+
+    GridView: the ListView's, its template, its ScrollViewer's values and its check mode (SelectionMode Multiple with
+    Toggle sets PhoneListMultiSelect.IsOn, which the items inherit), with the phone's ItemsWrapGrid, Orientation
+    Horizontal, as Avalonia's WrapPanel: items fill a row left to right and wrap, and the list scrolls down.
+
+    GridViewItem: the ListViewItem's template, press (Tilt on TiltContainer) and states, with GridViewItemMargin (0) and
+    the content centred both ways (the phone's style sets neither alignment, so WinRT's Center stands, where the
+    ListViewItem's sets Left and Top). Its check mode is GridMultiSelect, not ListMultiSelect: SelectedBorder, the 2.5
+    accent border, on every item, and SelectedCheckMark, the earmark and its tick, on a selected one (the ListViewItem's
+    :selected). The check box never comes in and the content doesn't move, so the box is hidden: never laid out, it has no
+    bounds, so PhoneListMultiSelect finds no box to press, and a press anywhere on the item is its content's tilt.
+  -->
+
+  <ControlTheme x:Key="Wp81GridViewItemTheme" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+    <Setter Property="Margin" Value="{DynamicResource GridViewItemMargin}" />
+    <!-- Not set by the phone's style: WinRT's own default. -->
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+
+    <!-- The ListMultiSelect box never comes in a GridView: hidden, so it neither draws nor takes the box's press. -->
+    <Style Selector="^ /template/ Border#CheckboxTiltContainer">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- GridMultiSelect: the border on every item; the content stays where it is. -->
+    <Style Selector="^[(wp81|PhoneListMultiSelect.IsOn)=True]">
+      <Style Selector="^ /template/ Border#ContentBorder">
+        <Setter Property="RenderTransform" Value="none" />
+      </Style>
+      <Style Selector="^ /template/ Border#SelectedBorder">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="Wp81GridViewTheme" TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
+    <Setter Property="ItemContainerTheme" Value="{DynamicResource Wp81GridViewItemTheme}" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <WrapPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </Setter>
   </ControlTheme>
 </ResourceDictionary>
