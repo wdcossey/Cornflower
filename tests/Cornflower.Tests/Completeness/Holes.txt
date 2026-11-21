@@ -10,7 +10,6 @@ CalendarButton
 CalendarDatePicker
 CalendarDayButton
 CalendarItem
-Carousel
 CarouselPage
 ContextMenu
 DataValidationErrors

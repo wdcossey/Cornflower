@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             xmlns:pages="using:Cornflower.Sample.Pages"
+             x:Class="Cornflower.Sample.Pages.FlipViewPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 FlipView: Avalonia's Carousel in the Wp81 theme. Five coloured items edge to edge, 2.5 in from each side.
+    Drag one a little and let go: it goes back; past half way, or with a flick, it goes on to the next. Past the first or
+    the last it moves less than the finger and comes back; it never goes round. The buttons set SelectedIndex from code:
+    one along animates, two along jumps. Below, the same turned up and down (a vertical PageSlide as PageTransition).
+  -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="Panel" x:DataType="pages:FlipViewSample">
+      <Border Background="{Binding Brush}">
+        <TextBlock Text="{Binding Name}" Margin="12" FontSize="32" Foreground="White" />
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="horizontal" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <Carousel x:Name="Across" ItemTemplate="{StaticResource Panel}" Height="240" Margin="-19,0" />
+      <TextBlock x:Name="State" Margin="0,6,0,0" />
+      <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,6,0,0">
+        <Button Content="next" Click="OnNext" />
+        <Button Content="two on" Click="OnTwoOn" />
+        <Button Content="first" Click="OnFirst" />
+      </StackPanel>
+
+      <TextBlock Text="vertical" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Carousel x:Name="Down" ItemTemplate="{StaticResource Panel}" Height="240" Margin="-19,0">
+        <Carousel.PageTransition>
+          <PageSlide Orientation="Vertical" />
+        </Carousel.PageTransition>
+      </Carousel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -5,8 +5,9 @@ using Avalonia.Input.GestureRecognizers;
 namespace Cornflower.Controls;
 
 /// <summary>
-/// What a <see cref="SidewaysSwipeGestureRecognizer"/> drags: a <see cref="Pivot"/>'s items or a <see cref="Hub"/>'s
-/// sections. Each control implements it explicitly, so none of it is the control's public API.
+/// What a <see cref="SidewaysSwipeGestureRecognizer"/> drags: a <see cref="Pivot"/>'s items, a <see cref="Hub"/>'s
+/// sections, or a FlipView's (the Wp81 theme's Carousel's) items. Each implements it explicitly, so none of it is the
+/// control's public API.
 /// </summary>
 internal interface ISidewaysSwipeTarget
 {
@@ -27,10 +28,16 @@ internal interface ISidewaysSwipeTarget
     /// <summary>The finger has moved far enough sideways: the drag begins, from where the content is.</summary>
     void BeginDrag();
 
-    /// <summary>The finger is <paramref name="travel"/> left of where it came down, in view pixels.</summary>
+    /// <summary>
+    /// The finger is <paramref name="travel"/> left of where it came down, in view pixels; up, for a
+    /// <see cref="SidewaysSwipeGestureRecognizer.Vertical"/> recogniser.
+    /// </summary>
     void Drag(double travel);
 
-    /// <summary>The finger has lifted, or was taken, at <paramref name="velocity"/> view pixels a millisecond, right positive.</summary>
+    /// <summary>
+    /// The finger has lifted, or was taken, at <paramref name="velocity"/> view pixels a millisecond, right positive;
+    /// down positive, for a <see cref="SidewaysSwipeGestureRecognizer.Vertical"/> recogniser.
+    /// </summary>
     void Release(double velocity);
 }
 
@@ -50,6 +57,9 @@ internal interface ISidewaysSwipeTarget
 /// <para>
 /// Touch and pen only, as Avalonia's <see cref="ScrollGestureRecognizer"/>: a mouse drags nothing, and selects by the
 /// Pivot's header strip.
+/// </para>
+/// <para>
+/// A vertical FlipView's is turned on its side (<see cref="Vertical"/>): the same rules, up and down for sideways.
 /// </para>
 /// </remarks>
 internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
@@ -77,6 +87,12 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
     /// <summary>A recogniser for <paramref name="control"/>, which it reads positions in and drags.</summary>
     public static SidewaysSwipeGestureRecognizer For<T>(T control) where T : Visual, ISidewaysSwipeTarget => new(control, control);
 
+    /// <summary>A recogniser for <paramref name="control"/>, which it reads positions in, dragging <paramref name="target"/>.</summary>
+    public static SidewaysSwipeGestureRecognizer For(Visual control, ISidewaysSwipeTarget target) => new(control, target);
+
+    /// <summary>Whether the swipe is up and down instead of sideways: a vertical FlipView's. Off by default.</summary>
+    public bool Vertical { get; set; }
+
     protected override void PointerPressed(PointerPressedEventArgs e)
     {
         if (_tracking is not null || e.Pointer.Type is not (PointerType.Touch or PointerType.Pen))
@@ -102,9 +118,11 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
 
         var point = e.GetPosition(_control);
         var delta = point - _press;
+        var along = Along(delta);
+        var across = Vertical ? delta.X : delta.Y;
         if (!_dragging)
         {
-            if (Math.Abs(delta.X) <= StartDistance || Math.Abs(delta.X) <= Math.Abs(delta.Y) || !_target.CanSwipe)
+            if (Math.Abs(along) <= StartDistance || Math.Abs(along) <= Math.Abs(across) || !_target.CanSwipe)
                 return;
 
             _dragging = true;
@@ -115,8 +133,8 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
             }
         }
 
-        Track(point.X);
-        _target.Drag(_press.X - point.X);
+        Track(Along(point));
+        _target.Drag(-along);
         e.Handled = true;
     }
 
@@ -127,7 +145,7 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
 
         if (_dragging)
         {
-            Track(e.GetPosition(_control).X);
+            Track(Along(e.GetPosition(_control)));
             _target.Release(Velocity());
             e.Handled = true;
         }
@@ -148,6 +166,8 @@ internal sealed class SidewaysSwipeGestureRecognizer : GestureRecognizer
             _target.Release(0);
         Reset();
     }
+
+    private double Along(Point point) => Vertical ? point.Y : point.X;
 
     private void Track(double x)
     {

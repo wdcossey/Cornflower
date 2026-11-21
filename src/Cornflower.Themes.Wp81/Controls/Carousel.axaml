@@ -1,0 +1,52 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 FlipView, on Avalonia's Carousel: the SDK's generic.xaml default style for FlipView,
+    re-expressed as an Avalonia ControlTheme. docs/controls/FlipView/PLAN.md has the values and their sources (#211's
+    reads, tools/refapp/README.md, "Tier 4's reads").
+
+    The phone's template is a Border, 2.5 in from each side, round a ScrollViewer round the items, and nothing else: no
+    previous and next buttons, no indicator, no visual states. The Border is the phone's, bound to Background,
+    BorderBrush and BorderThickness (Transparent and 0, the phone's setters). The ScrollViewer is not: the phone's
+    snaps by item, and here PhoneFlipView's motion moves the items instead, laid out by PhoneFlipViewPanel, every item
+    the size of the Border's inside, edge to edge. The Border clips them.
+
+    FlipViewItem has no Avalonia type: the Carousel's container is a ContentPresenter, which, as the phone's
+    FlipViewItem, draws nothing of its own and stretches its content over the whole item.
+
+    The swipe, the snap and a change of one to SelectedIndex animating are PhoneFlipView's, on CornflowerClock.
+    IsSwipeEnabled, Avalonia's, is on, as the phone's FlipView always swipes; set it off and the finger drags nothing.
+    A vertical FlipView is Avalonia's: a PageSlide with Orientation Vertical as PageTransition. The PageTransition never
+    runs (its panel, Avalonia's VirtualizingCarouselPanel, is replaced); only its axis is read.
+
+      <Carousel ItemsSource="{Binding Photos}" />
+      <Carousel>
+        <Carousel.PageTransition><PageSlide Orientation="Vertical" /></Carousel.PageTransition>
+      </Carousel>
+  -->
+  <ControlTheme x:Key="{x:Type Carousel}" TargetType="Carousel">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="IsSwipeEnabled" Value="True" />
+    <Setter Property="wp81:PhoneFlipView.IsEnabled" Value="True" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <wp81:PhoneFlipViewPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Margin="2.5"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                ClipToBounds="True">
+          <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
