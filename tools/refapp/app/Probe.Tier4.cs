@@ -466,6 +466,45 @@ namespace RefApp
         }
 
         /// <summary>
+        /// The pinned header as the next one arrives (#225), made to be recorded: the grouped ListView alone (330 tall, as
+        /// in <see cref="GroupedProbe"/>; header c comes 225.8 under header a). The offset is set from code 1 px at a time
+        /// from 180 to 240, each held 250 ms, logged; then, from 0, a slow drag up of 280 px over 8 s, held 1 s. The
+        /// offset is logged every frame.
+        /// </summary>
+        private async Task GroupedPushProbe(Grid host)
+        {
+            var list = new ListView { Name = "list", Height = 330, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(19, HeaderHeight + 10, 19, 0), ItemsSource = Grouped().View };
+            list.GroupStyle.Add(LetterHeaders());
+            var header = Header();
+            var page = await Page(host, header, list);
+            var lsv = Find(list, "ScrollViewer") as ScrollViewer;
+            if (lsv == null)
+            {
+                await Finish("missing: the list's ScrollViewer");
+                return;
+            }
+
+            LogHeaders(list, "list");
+            WatchFrames(() => new[] { lsv.VerticalOffset }, k => "list offset " + Num(k[0]));
+            var top = Bounds(list).Y;
+            Code("offsets 180 to 240 from code, 1 px every 250 ms", async () =>
+            {
+                for (var y = 180; y <= 240; y++)
+                {
+                    lsv.ChangeView(null, y, null, true);
+                    Log("setup", "offset " + y);
+                    await Task.Delay(250);
+                }
+            }, 18000);
+            Drag(list, "drag the list up 280 px over 8 s, held 1 s", () =>
+            {
+                lsv.ChangeView(null, 0, null, true);
+                return Task.FromResult(true);
+            }, 300, top + 310, top + 30, 8000, 1000, 3000);
+            await RunScheduled(page, header);
+        }
+
+        /// <summary>
         /// SemanticZoom (#211), made to be recorded: a grouped ListView (groups a to h, b and e empty and hidden) zoomed
         /// in, and a GridView of the groups zoomed out, in the jump list's usual tiles (the converters' brushes, 99 x 99,
         /// as the 8.1 docs' sample). Before the touches the zoomed-out view is opened from code to read where its tiles

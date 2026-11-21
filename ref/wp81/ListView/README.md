@@ -54,3 +54,9 @@ by `-Probe grouped`: `tools/refapp/README.md`, "Grouped lists".
 `-Probe grouped -Record`, run `20261118-2249-dev11` (540 × 960, the display window at the fitting zoom, 0.83 view px
 a pixel): the grouped ListView (top) over the grouped GridView, at rest and with the list panned about 140 px and held,
 its header a pinned at the top. `RenderTargetBitmap` leaves the pinned header out, so these come from the recording.
+
+`recording__grouped-list-push-start-dark.png` and `recording__grouped-list-push-mid-dark.png` are frames 369 and 512 of
+`-Probe groupedpush -Record`, run `20261121-1754-dev11` (device 11, the 8.1 Update 1 1080p 5.5" profile, 2026-11-21; 540
+× 960 as above): the grouped ListView alone with its offset set from code, at 196 (header c's top meets pinned header
+a's bottom: the push starts) and at 215 (header a pushed up 19 px, cut by the list's top). See
+`tools/refapp/README.md`, "Grouped lists".
