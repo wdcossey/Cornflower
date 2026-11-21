@@ -180,5 +180,5 @@ Motion: the tilt under a finger, the turnstile between pages, the Pivot's slide,
 popups' swing and the wheel's coast run on the phone's own measured curves, which still pictures can't show. Each
 Hub picture is taken after the entrance's turn. An app can slow the motion, speed it up or turn it off
 (`CornflowerConfig`); the phone's is the default. The page moving up for the keyboard (#179, #201, #206) isn't shown
-either: the gallery has no keyboard. Nor are the FlipView's swipe and SemanticZoom's jump list: the gallery
-opens no jump list.
+either: the gallery has no keyboard. Nor are the FlipView's swipe, which is motion, and SemanticZoom's jump
+list, which the gallery doesn't open.

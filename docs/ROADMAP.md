@@ -247,7 +247,9 @@ they can't tell (`tools/refapp/README.md`, "Tier 4's reads"; `ref/wp81/FlipView/
 `SemanticZoom/` and `ListView/`). Before them, #209, the flaky MenuFlyout test, was a real bug: the first flyout a
 process opened by `IsOpen` wasn't bound (done 2026-11-18, #210).
 
-The runs, all on 2026-11-21: the real window (`drive.ps1`, Debug) passed on each of #218, #219, #221, #223 and #224. The
+The runs, all on 2026-11-21: the real window (`drive.ps1`, Debug) passed on each of #218, #219, #221, #223 and #224
+(#219's 204 of 205: 'Alt+Left goes back' stopped on a UI Automation COM error before it checked anything, and
+passed 4 of 4 run alone). The
 device runs of #218 and #219 were on the Pixel 8; #221's, #223's and #224's on the local Android emulator (AVD
 `cornflower_pixel8`, the Pixel 8 profile, API 35), as the Pixel 8 was unavailable, so **their Pixel run is still
 owed** (#223's and #224's for the feel and the timing).

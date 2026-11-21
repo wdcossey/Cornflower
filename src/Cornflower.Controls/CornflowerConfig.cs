@@ -81,7 +81,7 @@ public static class CornflowerConfig
     /// <summary>
     /// The popups' speed, or null, the default, for <see cref="MotionSpeed"/>: the open and close of the Flyout, the
     /// MenuFlyout, the pickers' flyouts (ListPickerFlyout, PickerFlyout, DatePickerFlyout, TimePickerFlyout), the
-    /// ContentDialog and the AutoSuggestBox's suggestion list, all on the popup host.
+    /// ContentDialog, the AutoSuggestBox's suggestion list and SemanticZoom's jump list, all on the popup host.
     /// </summary>
     /// <remarks>Read when a popup starts to open, and again when it starts to close.</remarks>
     /// <exception cref="ArgumentOutOfRangeException">Not null or a finite number above 0.</exception>

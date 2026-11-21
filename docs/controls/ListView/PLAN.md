@@ -654,7 +654,7 @@ _none_
 | [-] | `ListViewItemPlaceholderBackgroundThemeBrush` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FF000000` | `SolidColorBrush {ThemeResource PhonePageBackgroundColor} → #FFFFFFFF` | yes | not applicable: PlaceholderRect |
 | [x] | `ListViewItemSelectedBackgroundThemeBrush` | `SolidColorBrush {ThemeResource SystemColorControlAccentColor}` | same | yes | Used, by DynamicResource |
 | [x] | `GridViewItemMultiselectBorderThickness` | `2.5` | same | yes | Used, by DynamicResource |
-| [-] | `ListViewItemCheckThemeBrush` | `SolidColorBrush {ThemeResource PhoneTextOverAccentColor} → #FFFFFFFF` | same | yes | Used, by DynamicResource: SelectedGlyph's (#213) |
+| [x] | `ListViewItemCheckThemeBrush` | `SolidColorBrush {ThemeResource PhoneTextOverAccentColor} → #FFFFFFFF` | same | yes | Used, by DynamicResource: SelectedGlyph's (#213) |
 
 ### ListViewHeaderItem
 
