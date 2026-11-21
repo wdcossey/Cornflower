@@ -121,7 +121,8 @@ internal static class PhoneListMultiSelect
 
     /// <summary>
     /// A press on the item: on its box, in the check mode, by a touch, a pen or the left button, from inside the item's
-    /// own tree (not a popup it owns), and by the first pointer down on the item. Anything else is left to the item.
+    /// own tree (not a popup it owns), and by the first pointer down on the item. Anything else is left to the item, as
+    /// is a press where the box is hidden (a GridView item's, whose check mode has no box).
     /// </summary>
     private static void OnPressed(ListBoxItem item, PointerPressedEventArgs e)
     {
@@ -129,7 +130,7 @@ internal static class PhoneListMultiSelect
         // in a popup, or a second finger, stops here.
         if (!ReferenceEquals(item.GetValue(FirstProperty), e.Pointer) || !item.IsEffectivelyEnabled || item.IsSet(PressProperty) ||
             !e.GetCurrentPoint(item).Properties.IsLeftButtonPressed ||
-            BoxOf(item) is not { } box || box.GetVisualParent() is not { } parent ||
+            BoxOf(item) is not { IsEffectivelyVisible: true } box || box.GetVisualParent() is not { } parent ||
             box.Bounds is not { Width: > 0, Height: > 0 } bounds)
             return;
 

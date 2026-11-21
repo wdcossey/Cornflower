@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.GridViewPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The 8.1 GridView: Avalonia's ListBox in the keyed Wp81GridViewTheme, which gives its items Wp81GridViewItemTheme.
+    Grey 120 x 120 tiles, as the reference app's, three a row, abutting. Press a tile to see the ListView item's tilt; in
+    Single a selected tile draws nothing. The check mode (SelectionMode Multiple, Toggle): the accent border on every
+    tile, and the earmark with its tick on a selected one; tap to toggle. Below: the check mode in the light theme. The
+    two check-mode grids don't scroll to their selection, so the page opens at its top.
+  -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="Tile" x:DataType="x:String">
+      <Border Width="120" Height="120" Background="Gray">
+        <TextBlock Text="{Binding}" FontSize="20" Margin="6" />
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="single" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <ListBox x:Name="Single" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}" Height="300" />
+
+      <TextBlock Text="check mode" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ListBox x:Name="Check" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}"
+               SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" Height="240" />
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <ListBox x:Name="Light" Theme="{DynamicResource Wp81GridViewTheme}" ItemTemplate="{StaticResource Tile}"
+                     SelectionMode="Multiple,Toggle" AutoScrollToSelectedItem="False" Height="240" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
