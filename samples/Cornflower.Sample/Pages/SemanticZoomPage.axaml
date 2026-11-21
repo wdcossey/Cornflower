@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             xmlns:pages="using:Cornflower.Sample.Pages"
+             x:Class="Cornflower.Sample.Pages.SemanticZoomPage"
+             x:DataType="x:Object"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    SemanticZoom, as an 8.1 contacts app writes it: zoomed in, the contacts grouped a to z (a letter no one's name starts
+    with shows nothing); zoomed out, a GridView of every letter in the 8.1 docs' tile (99 x 99, a margin of 6, the letter
+    at 48 px padded 6 at its bottom left), coloured by the jump list's converters: the accent for a letter with contacts,
+    grey for an empty one. Tap a letter's header to open the tiles over the whole window; tap a tile to land the list on
+    that letter; an empty letter's tile does nothing; Back closes them.
+  -->
+  <UserControl.Resources>
+    <cf:JumpListItemBackgroundConverter x:Key="JumpListItemBackgroundConverter" />
+    <cf:JumpListItemForegroundConverter x:Key="JumpListItemForegroundConverter" />
+    <DataTemplate x:Key="LetterHeader" x:DataType="pages:ContactGroup">
+      <TextBlock Text="{Binding Key}" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+    </DataTemplate>
+    <DataTemplate x:Key="LetterTile" x:DataType="pages:ContactGroup">
+      <Border Width="99" Height="99" Margin="6"
+              Background="{Binding Converter={StaticResource JumpListItemBackgroundConverter}}">
+        <TextBlock Text="{Binding Key}" FontSize="48" Padding="6"
+                   HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                   Foreground="{Binding Converter={StaticResource JumpListItemForegroundConverter}}" />
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+  <Grid RowDefinitions="Auto,*" Margin="19,12,0,0">
+    <sample:SamplePageHeader x:Name="Header" Margin="0,0,19,0" />
+    <cf:SemanticZoom x:Name="Zoom" Grid.Row="1">
+      <cf:SemanticZoom.ZoomedInView>
+        <ListBox x:Name="List" AutoScrollToSelectedItem="False"
+                 cf:ListBoxOptions.GroupedItemsSource="{Binding}"
+                 cf:ListBoxOptions.GroupHeaderTemplate="{StaticResource LetterHeader}" />
+      </cf:SemanticZoom.ZoomedInView>
+      <cf:SemanticZoom.ZoomedOutView>
+        <ListBox x:Name="JumpList" AutoScrollToSelectedItem="False" Margin="19,0"
+                 Theme="{DynamicResource Wp81GridViewTheme}"
+                 ItemsSource="{Binding}" ItemTemplate="{StaticResource LetterTile}" />
+      </cf:SemanticZoom.ZoomedOutView>
+    </cf:SemanticZoom>
+  </Grid>
+</UserControl>

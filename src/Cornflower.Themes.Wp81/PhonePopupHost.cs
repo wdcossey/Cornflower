@@ -365,7 +365,7 @@ internal sealed class PhonePopupHost : IDisposable
         // Bands dropped by a resize mid-close are cut again on this frame, after this: the close waits for them, so it
         // keeps their number (none ever cut, it has none).
         if (_phase == Phase.Closing && (_bands is not null || _uncut >= 4)
-            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0) + Rows.ClosedLater)
+            && time >= PhonePopupMotion.ClosedAfter(_bands?.Bands.Count ?? 0, Rows.CloseRate, Rows.CloseStagger) + Rows.ClosedLater)
         {
             Finish();
             return;
@@ -415,7 +415,7 @@ internal sealed class PhonePopupHost : IDisposable
         for (var band = 0; band < bands.Angles.Length; band++)
         {
             bands.Angles[band] = _phase == Phase.Closing
-                ? PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time)
+                ? PhonePopupMotion.ClosingAngle(band, band < _closeFrom.Length ? _closeFrom[band] : 0, time, Rows.CloseRate, Rows.CloseStagger)
                 : _placement == PhonePopupPlacement.Full ? PhonePopupMotion.OpeningAngle(Rows, band, time)
                 : Swing.Angle(time);
         }
