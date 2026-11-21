@@ -29,6 +29,14 @@ phone's ListBox, name its theme; it gives its items theirs:
   inside a transparent 1.5 border; black text in both (`ListBoxForegroundThemeBrush`), `ContentControlThemeFontFamily` at
   `ControlContentThemeFontSize` (12); `IsTabStop` off, `TabNavigation` once; no horizontal scroll, the vertical
   indicator `Auto`; items in a `VirtualizingStackPanel`.
+- **The light theme is hard to read, as on the phone.** The same keys that give the dark theme its pale box give the light
+  theme black text on a 75% black box (about #404040 over the white page); only the selected item, white on the accent,
+  reads well. This is 8.1's own: the Update 1 image's `themeresources.xaml` (Light: `PhoneBaseMediumHighColor` #BF000000,
+  `PhoneBaseBlackColor` #FF000000) and the emulator's capture
+  ([`light__ListBox__three-items__base.png`](../../../ref/wp81/ListBox/light__ListBox__three-items__base.png)) agree.
+  The phone's ListBox was a WinRT list 8.1 kept for 8.0's apps and never given the phone's colours; most 8.1 apps used the
+  ListView. Cornflower keeps it faithful. An app that wants a readable light list sets the ListBox's `Background` or
+  `Foreground`, or uses the [ListView](../ListView/README.md).
 - **The item's style**: a transparent background, padding 6.5, 8, the content at the left and centred down; 32.08 tall
   for one line of text, in the phone's 1.33 em line.
 - **Selected**: the item in the accent, its text white, in both themes.
