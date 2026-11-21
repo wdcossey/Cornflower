@@ -29,6 +29,9 @@ phone's ListBox, name its theme; it gives its items theirs:
   inside a transparent 1.5 border; black text in both (`ListBoxForegroundThemeBrush`), `ContentControlThemeFontFamily` at
   `ControlContentThemeFontSize` (12); `IsTabStop` off, `TabNavigation` once; no horizontal scroll, the vertical
   indicator `Auto`; items in a `VirtualizingStackPanel`.
+- **The page round the list stays put**, as the ListView's (#220, [its behaviours](../ListView/README.md#behaviours)):
+  the selection and `ScrollIntoView` scroll the list alone. Read on the phone's ListView and GridView; the phone's
+  ListBox wasn't, and is taken to be the same.
 - **The light theme is hard to read, as on the phone.** The phone's palette keys that give the dark theme its pale box
   give the light theme black text on a 75% black box (about #404040 over the white page), and a press draws the same;
   only the selected item, white on the accent, reads well. This is 8.1's own: the Update 1 image's `themeresources.xaml`

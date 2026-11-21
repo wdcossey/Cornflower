@@ -47,6 +47,20 @@ public class ListViewPageTests
         Assert.Equal(0, page.GetVisualDescendants().OfType<ScrollViewer>().First().Offset.Y);
     }
 
+    // On Android the page is first laid out short, then at its size (#219, #220): the lists' scroll to their checked
+    // items stops at each list, so the page opens at its top all the same.
+    [AvaloniaFact]
+    public void The_Page_Opens_At_Its_Top_After_A_Short_First_Layout()
+    {
+        var page = new ListViewPage();
+        using var scene = new Scene(page, height: 60);
+        Dispatcher.UIThread.RunJobs();
+        scene.Window.Height = Scene.ReferenceHeight;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, page.GetVisualDescendants().OfType<ScrollViewer>().First().Offset.Y);
+    }
+
     [AvaloniaFact]
     public void The_Header_Shows_The_Pages_Title()
     {

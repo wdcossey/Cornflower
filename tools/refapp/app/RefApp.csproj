@@ -51,6 +51,7 @@
     <Compile Include="Probe.Motion.cs" />
     <Compile Include="Probe.Pickers.cs" />
     <Compile Include="Probe.Dismiss.cs" />
+    <Compile Include="Probe.IntoView.cs" />
     <Compile Include="Probe.Reads.cs" />
     <Compile Include="Probe.Scroll.cs" />
     <Compile Include="Probe.Shell.cs" />

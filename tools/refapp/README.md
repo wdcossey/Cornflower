@@ -30,6 +30,7 @@ pwsh -NoProfile -File tools/refapp/run.ps1 -Probe dismiss                     # 
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpan -Record         # the keyboard's pan, five times up and down (#179)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe keyboardpanboxes            # the pan for six boxes, read from the app (#179)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Probe flipview                     # FlipView's release, snap and ends (#211; also flipvertical, gridview, grouped, semanticzoom; #225 groupedpush -Record)
+pwsh -NoProfile -File tools/refapp/run.ps1 -Probe listintoview                 # a selected list low on a page: does the page move? (#220; also listintoviewfocus)
 pwsh -NoProfile -File tools/refapp/run.ps1 -Popups only -Grab -Only '^(AutoSuggestBox|ContentDialog/keyboard)$'   # popups by name, or name/variant
 pwsh -NoProfile -File tools/refapp/run.ps1 -Native -Device 13                 # what the phone computes, read through its API, in about 4 minutes (see Native readings)
 ```
@@ -440,7 +441,7 @@ Probes: `toggleswitch` (#25), `toggletap` and `togglehalf` (#33), `tilt`, `tilte
 [the size threshold and the clock](#progressring-the-size-threshold-and-the-clock)), and for #113 `scroll`, `scrollend` and
 `listpress` ([Scrolling](#scrolling-how-the-scroll-probes-run-2026-11-15-device-11-113)), and for #114 `turnstile`
 ([its forward start](#the-turnstiles-forward-start-2026-11-15-device-11-114)), `pivot`
-([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)), and for #150 `dismiss` ([how each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events)), and for #211 `flipview`, `flipvertical`, `gridview`, `grouped`, `semanticzoom` and `semanticzoomlocked` ([Tier 4's reads](#tier-4s-reads-flipview-gridview-grouped-lists-semanticzoom-listbox-2026-11-18-device-11-211)), and for #225 `groupedpush` ([Grouped lists](#grouped-lists-for-131)). Each frame's value is read on the UI thread in
+([Pivot's header strip](#pivots-header-strip-2026-11-15-device-11-114)) and `hub` ([Hub's header](#hubs-header-2026-11-15-device-11-114)), and for #136 `pivotwide` and `pivottwo` ([wide headers and two items](#pivot-wide-headers-two-items-and-a-tap-on-a-header-cut-by-the-edge-2026-11-15-device-11-136)), `hubimage` and `hubimage900` ([a background image](#hub-a-background-image-and-the-end-of-the-sections-2026-11-15-and-16-device-11-136)), `listcheck` ([the check mode](#listview-the-check-mode-extended-and-none-and-a-selection-set-from-code-2026-11-15-device-11-136)) and `appbar` ([the app bar under touches](#the-app-bar-under-touches-and-with-other-numbers-of-secondary-commands-2026-11-15-and-16-device-11-136)), and for #148 `pivotrelease` and `hubrelease` ([where a release goes](#pivot-and-hub-where-a-release-goes-a-press-while-they-move-and-the-pivots-item-events-2026-11-16-device-11-148)), `hubentrance` and `hubstretch` ([the entrance and the background](#hub-the-entrance-a-plain-colour-an-image-narrower-than-the-screen-and-stretch-2026-11-16-device-11-148)), `appbarlong` and `appbarlight` ([a long list and the light theme](#the-app-bar-a-long-list-of-secondary-commands-and-a-press-in-the-light-theme-2026-11-16-device-11-148)) and `listclick` ([`ItemClick` in each mode](#listview-itemclick-in-each-selectionmode-2026-11-16-device-11-148)), and for #149 `popupcurves` ([the popups' bands](#the-popups-bands-and-the-inline-combobox-2026-11-16-device-11-149)) and `looping` ([LoopingSelector](#loopingselector-and-a-press-on-a-closed-combobox-2026-11-16-device-11-149)), and for #150 `dismiss` ([how each popup is dismissed](#how-each-popup-is-dismissed-and-the-autosuggestboxs-events)), and for #211 `flipview`, `flipvertical`, `gridview`, `grouped`, `semanticzoom` and `semanticzoomlocked` ([Tier 4's reads](#tier-4s-reads-flipview-gridview-grouped-lists-semanticzoom-listbox-2026-11-18-device-11-211)), and for #225 `groupedpush` ([Grouped lists](#grouped-lists-for-131)), and for #220 `listintoview` and `listintoviewfocus` ([a selected list on a page](#a-selected-list-on-a-page-that-scrolls-2026-11-21-device-11-220)). Each frame's value is read on the UI thread in
 `CompositionTarget.Rendering`. That reads the animated values of the theme animations too: the
 tilt's `PlaneProjection` moves every 15 ms in the log.
 
@@ -1039,6 +1040,40 @@ The captures (`ref/wp81/ListBox/`), dark and light. All of this is in the file t
     (not probed by touch).
   - Disabled: the text #80FFFFFF; `SelectedDisabled`, #73FFFFFF on #66FFFFFF.
 - An item with `IsSelected` outside a list draws as an unselected one.
+
+### A selected list on a page that scrolls (2026-11-21, device 11, #220)
+
+`20261121-2058-dev11` (`-Probe listintoview`) and `20261121-2101-dev11` (`-Probe listintoviewfocus`), read from the app
+after a start tap, in `app\Probe.IntoView.cs`. A page `ScrollViewer` (the 450 × 800 view) holds a 900-tall spacer, the
+list, and 400 more. The list is a ListView of 30 strings (each 39.17 tall) or a GridView of 30 tiles of 120 (three a
+row), either 300 tall (its own ScrollViewer scrolls) or left free (its viewport is its extent, 1175 or 1200, so only the
+page can scroll), with item 20 selected before it loads. Offsets read 1.2 to 1.5 s after each step; before each step
+after a load, both put back to 0, but for the keyboard focus in `listintoviewfocus`, which comes straight after the
+code focus's step. The ListView and the GridView behave alike.
+
+| Step | 300 tall: page, list | Free: page |
+|---|---|---|
+| Load | 0, 0 (item 20 is out of the list's view, and stays so) | 0 |
+| Load, the page laid out 60 tall first, its full height 0.5 s later | 0, 0 | 0 |
+| `SelectedIndex` 25, no focus in the list | 0, 0 | 0 |
+| `ScrollIntoView` item 28 | 0; ListView 835.83, GridView 900 (the item's bottom on the list's) | 0 |
+| `ScrollIntoView` item 2 (already in view) | 0, 0 | 0 |
+| Item 0 focused from code (`Programmatic`), then `SelectedIndex` 25 | 0; ListView 718.33, GridView 780 (the least); the focus moves to item 25 | 0; the focus moves to 25 |
+| Item 0 focused as by the keyboard (`Keyboard`), the list left at 718.33 / 780 by the step before | ListView 147.5, GridView 228.33; the list back to 0 to show item 0 | the same |
+| ... then `SelectedIndex` 27 | 400 (the list's bottom on the page's), list 805 or 900; the focus moves to 27 | ListView 1205, GridView 1300 |
+| Item 25 focused from code, no selection change | not read (no container) | 0 |
+| Item 27 focused as by the keyboard | not read (no container) | ListView 1205, GridView 1300 |
+
+- **Neither the selection nor `ScrollIntoView` moves the page**, at load, after a short first layout, or set in code.
+  `ScrollIntoView` scrolls the list's own ScrollViewer by the least; for a free list, where only the page could, nothing
+  moves.
+- **At load the list doesn't scroll to its selection either**, and a `SelectedIndex` set with no focus in the list
+  moves nothing. With the focus on one of its items, a `SelectedIndex` set in code moves the focus to the new item and
+  scrolls the list to it (#136's reading, which came after taps, is this case).
+- **Only the keyboard's focus moves the page.** An item given `FocusState.Keyboard` is brought into view in the list
+  and in the page, with about 8.3 px to spare below a ListView item (147.5 puts item 0's bottom, 939.17, 8.33 above the
+  page's, 947.5; the grid's, 228.33, puts it on the page's bottom plus 8.33); `FocusState.Programmatic` brings nothing
+  into view.
 
 ## Motion (2026-11-10, device 11, #24)
 

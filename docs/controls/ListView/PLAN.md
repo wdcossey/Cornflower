@@ -170,7 +170,8 @@ TiltContainer, as in Single mode.
 | Single | tap selects one | `SelectionMode.Single` | 1 |
 | Multiple | the check boxes come in; every tap, on the box or off it, checks or unchecks, at the release (#136) | `Multiple` and `Toggle` together toggle on a tap (tested); the check mode `PhoneListMultiSelect.IsOn`, set on the list by its theme and inherited by its items | 1, the theme |
 | Extended | no check boxes; under a tap, Single: a tap replaces the selection, a tap on the selected item changes nothing (#136) | `SelectionMode.Multiple`: a tap replaces the selection (tested); Ctrl and Shift choose several, which draws nothing, as on the phone | 1 |
-| A `SelectedIndex` set from code | scrolls at once, in the same call, by the least that brings the item into view, with no animation (#136) | `AutoScrollToSelectedItem`, on by default: the same, before the next frame (tested) | 1 |
+| A `SelectedIndex` set from code | with the focus in the list (#136, after taps; #220: the focus moves to the item), scrolls at once, in the same call, by the least that brings the item into view, with no animation; with no focus in it, and at load, nothing moves (#220) | `AutoScrollToSelectedItem`, on by default: the same, before the next frame, focus or not, and at load (tested) | 1; the list's scroll with no focus a recorded departure (#220) |
+| The page round the list | never moved by the selection, at load (a short first layout too) or set in code, nor by `ScrollIntoView`; an item given the keyboard's focus is brought into view in the page as well (#220) | `ListBoxOptions.KeepsScrollInList`, set by the theme: a request for one of its items the list's own ScrollViewer didn't take stops at the list, unless the keyboard (Tab, a key in the list) has just focused the item; a focus from code or a press stays in the list (tested) | 1, `ListBoxOptions` (#220) |
 | None | no selection | no such mode | recorded gap |
 | `ItemClick`, `IsItemClickEnabled` | yes | none | `ListBoxOptions` (#132) |
 | `Header`, `Footer` | scroll with the items | none | recorded gap |
@@ -257,6 +258,11 @@ Each has a test in `tests/Cornflower.Tests/Controls/ListViewTests.cs` unless nam
 15c. **Extended under a tap is Single**, with no boxes, each press tilting the content. `Extended_Under_A_Tap_Is_Single`.
 15d. **A `SelectedIndex` set from code scrolls at once by the least**, the probe's 30, 5 and 39 to its offsets, and
     doesn't move on the frames after. `A_SelectedIndex_Set_From_Code_Scrolls_At_Once_By_The_Least`.
+15e. **The list's scroll to an item stays in the list** (#220), in the ListView, ListBox and GridView themes: a selected
+    list low on a page leaves the page at 0 after a short first layout, its selection in the list's view or below it,
+    and unconstrained; a selection or `ScrollIntoView` from code scrolls the list, not the page; an item focused from
+    code leaves the page; a Tab-focused item, the arrow keys' item (300 tall and free), the list itself and a control
+    inside an item are brought into view in the page. `ListIntoViewTests`.
 16. **Each probed press settles at the phone's tilt**, ten presses (centres, 5%, 25%, 75% and 95% across, 10% and
     90% down) within 0.1° and 0.15 of depth. `A_Held_Press_Settles_At_The_Probes_Reading`.
 17. **The press is at once, and a tap selects on its release.** `The_Press_Is_At_Once_And_A_Tap_Selects_On_Its_Release`.
