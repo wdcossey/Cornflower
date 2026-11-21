@@ -54,7 +54,7 @@ doesn't count as ours.
 | Control | 8.1 used | Size | Notes |
 |---|---|---|---|
 | `DropDownButton` | A `Button` with a `Flyout` or `MenuFlyout` | Medium | The Button's look plus a chevron |
-| `SplitButton` | Nothing (Windows 10's) | Medium | Two pressable parts, one border |
+| `SplitButton` | Nothing (Windows 10's) | Medium | Two pressable parts, one border. Avalonia's `ToggleSplitButton` isn't a hole of its own (a subclass themed as its base, as `Holes.cs` counts), so this theme needs its checked state too |
 | `ButtonSpinner` | Nothing | Medium | Two `RepeatButton`s; the shared parts (section 3) |
 | `NumericUpDown` | A `TextBox` with the number keyboard (`InputScope` Number) | Medium | Wp81's TextBox inside, with `ButtonSpinner` |
 | `DataValidationErrors` | Nothing: a pattern of a line of text under the field | Medium | Needs an error colour; a question ("For the user to pick") |
@@ -72,7 +72,7 @@ doesn't count as ours.
 | Control | 8.1 used | Size | Notes |
 |---|---|---|---|
 | `TabControl` | `Pivot` | Medium | A question: the Pivot's headers without its swipe, or a plain strip ("For the user to pick") |
-| `TabItem` | `PivotItem` and its header | Medium | Also inside `ColorView`'s template |
+| `TabItem` | `PivotItem` and its header | Medium | |
 | `TabStrip` | The Pivot's header row | Small | |
 | `TabStripItem` | `PivotHeaderItem` | Small | |
 | `TabbedPage` | `Pivot` | Medium | Avalonia 12's page; reuses the tab pieces |
@@ -114,7 +114,7 @@ doesn't count as ours.
 | Control | 8.1 used | Size | Notes |
 |---|---|---|---|
 | `ColorPicker` (package) | Nothing; the pattern is the phone's own accent picker, a grid of swatches | Medium | |
-| `ColorView` (package) | The same | Medium | Its template uses keyed `TabItem`, `RadioButton`, `ListBox` and `ListBoxItem` themes |
+| `ColorView` (package) | The same | Medium | Its template uses the package's own keyed `TabItem`, `RadioButton`, `ListBox` and `ListBoxItem` themes, which a plain `ColorView` must replace with keyed ones of its own |
 | `ColorSpectrum` (package) | Nothing | Small | |
 | `ColorSlider` (package) | `Slider` (Wp81 themes it) | Small | A `Thumb` inside |
 | `ColorPreviewer` (package) | Nothing | Small | |
@@ -153,7 +153,9 @@ measured. **Recommended** throughout; each rule that's open is in "For the user 
    says the same in its header comment. A new resource key a plain theme needs is prefixed **`CornflowerPlain`**
    (`CornflowerPlainErrorBrush`), never a WinRT-shaped name (`...ThemeBrush`, `...ThemeThickness`), which in this repo
    means "the phone's value". A keyed theme for a part is named **`Wp81Plain<Part>Theme`**, beside Wp81's
-   `Wp81<Part>Theme`s. The theme by type stays keyed by type, so it fills the hole and `HolesTests` sees it.
+   `Wp81<Part>Theme`s. The theme by type stays keyed by type, so it fills the hole and `HolesTests` sees it. This
+   departs from ADR 0001 item 6 ("Names follow WinRT ... for resource keys"), which assumes a WinRT name exists; a
+   plain control has none, so the prefix needs an amendment to ADR 0001 (see "For the user to pick").
 2. **Type ramp: existing keys only.** Content in `BodyTextBlockStyle`'s size and family (18.14, `PhoneFontFamilyNormal`);
    a control's own header in `ControlHeaderTextBlockStyle` (16, `PhoneMidBrush`); a group's heading (`GroupBox`,
    `Expander`'s header, a tree's or table's group) in `GroupHeaderTextBlockStyle` (23.73, SemiLight); small print (an
@@ -166,10 +168,14 @@ measured. **Recommended** throughout; each rule that's open is in "For the user 
    `PhoneAccentBrush`, which follows `SystemColorControlAccentColor`.
 4. **Borders: the phone's two thicknesses, square.** `PhoneBorderThickness` (2.5) round a box a finger presses or types in
    (spinner buttons, a split button, a field); 1.5 (the AppBar's and MenuFlyout's edge thickness) for a line that divides
-   or edges a surface (a separator, a table's rule, a pane's edge). Corner radius 0, no shadows, no gradients.
-5. **Backgrounds.** Transparent at rest, over the page's `PhonePageBackgroundBrush`. A surface that floats (a tooltip, a
-   menu, a notification) takes the flyout's (`FlyoutBackgroundThemeBrush`) or the chrome's (`PhoneChromeBrush`). Disabled
-   is `PhoneDisabledBrush`. Nothing translucent.
+   or edges a surface (a separator, a table's rule, a pane's edge). The existing 1.5 keys are one-sided
+   (`AppBarTopBorderThemeThickness` is `0,0,0,1.5`), so the line needs a key of its own (below). Corner radius 0, no
+   shadows, no gradients.
+5. **Backgrounds.** Transparent at rest, over the page's `ApplicationPageBackgroundThemeBrush` (`PhoneBackgroundColor`,
+   as Wp81's ContentPage, NavigationPage and ListView use). A menu takes the MenuFlyout's
+   `MenuFlyoutBackgroundThemeBrush` (also `PhoneBackgroundColor`), so a plain menu matches Wp81's MenuFlyout. Another
+   floating surface (a tooltip, a notification) takes the flyout's `FlyoutBackgroundThemeBrush` (`PhoneChromeColor`).
+   Disabled is `PhoneDisabledBrush`. Nothing translucent.
 6. **Touch sizes stay the phone's.** Anything pressed keeps the phone's minimums and overhang (`PhoneButtonMinHeight`,
    `PhoneTouchTargetOverhang`) unless it is a part inside a larger control (section 3). No phone width is written into a
    template (ADR 0004).
@@ -181,13 +187,18 @@ measured. **Recommended** throughout; each rule that's open is in "For the user 
    ADR 0006 area (popups, pages or controls), so `CornflowerConfig.Animated` stops it.
 9. **Dark and light.** Every brush from the `Dark` and `Light` dictionaries in `Tokens/Colors.axaml`; no colour written
    in a theme. `Holes.cs` already counts a theme in one variant only as a hole.
-10. **Glyphs.** Chevrons, arrows, checks and the sort mark from `LucideIcon` or the theme's `Glyphs`, our own drawings as
-    ADR 0001 item 3 asks. No new font.
+10. **Glyphs.** Chevrons, arrows, checks and the sort mark from the theme's `Glyphs` (our own drawings, ADR 0001 item 3),
+    or from `LucideIcon`, which is a third-party set (ISC, and MIT for Feather's) already in the repo. ADR 0001 item 3
+    speaks of template glyphs matched to captures; a plain theme has no capture, so Lucide in a plain theme is a new use,
+    recorded in each README. No new font.
 11. **Done, for a plain theme.** There is no reference to measure, so: the theme's tests (templated, both variants, the
     key prefix, HoleParts' list updated), a frame in the preview, and a look on the Pixel with no timings. Its line leaves
-    `Holes.txt`, as for any control.
+    `Holes.txt`, as for any control. This is an exception to CLAUDE.md rule 4 ("Tests assert the reference's
+    behaviour") and ADR 0001 item 2 (every number from the templates or a capture), so it needs an ADR of its own
+    before batch 1 (see "For the user to pick").
 
-**New tokens.** None for the rules above. One probably needed: an error colour for `DataValidationErrors` ("For the user to pick").
+**New tokens.** One for a line: a `CornflowerPlain` 1.5 thickness on all sides (rule 4), since the existing keys are
+one-sided. One probably needed: an error colour for `DataValidationErrors` ("For the user to pick").
 `MenuItem` in a menu bar and the denser controls may want a smaller row height; if so, each is a `CornflowerPlain` key
 with its reason in the batch's PR.
 
@@ -201,15 +212,21 @@ What several batches lean on, which is why the order below puts them early.
   dialogs hold such parts. Once a hole gets a Wp81 theme, its template is Wp81's, the fallback stops, and those parts take
   the phone's Button (109 by 57.5 at the least) unless the plain theme names its own. So the first batch with inner
   buttons makes `Wp81Plain` part themes (a borderless glyph button, a spinner `RepeatButton`, a header `ToggleButton`)
-  for the rest to reuse, and each batch's PR updates `HoleParts.cs`'s list and its tests.
-- **The tab pieces.** `TabItem` and `TabStripItem` serve `TabControl`, `TabStrip`, `TabbedPage` and `ColorView`.
+  for the rest to reuse, and each batch's PR updates `HoleParts.cs`'s list and its tests. `HoleParts.cs` is a shared
+  file, so under CLAUDE.md rule 7 each such change is the maintainer's to approve and the PR says so; batches 2, 4, 6, 7
+  and 8 would need it.
+- **The tab pieces.** `TabItem` and `TabStripItem` serve `TabControl`, `TabStrip` and `TabbedPage`. Not `ColorView`:
+  its template asks for the ColorPicker theme's own keyed `TabItem`, `RadioButton`, `ListBox` and `ListBoxItem` themes,
+  which a theme by type never reaches, so batch 11 writes keyed ones of its own (it may copy batch 5's setters).
 - **The menu item.** `MenuItem` serves `Menu` and `ContextMenu`; Wp81's keyed `Wp81MenuFlyoutItemTheme` is the start.
 - **The row.** A tree's, a table's and a grid's row share the selection, the press and the rule; `TreeViewItem` sets them
   first.
 
 ## 4. Batches
 
-Most used first, shared pieces first. Batch 1 is the **recommended first batch**.
+Most used first, shared pieces first. Batch 1 is the **recommended first batch**. A batch is one issue; several mix
+controls that aren't one family (batches 1, 3 and 8), so as one PR each they'd be an exception to CLAUDE.md rule 2
+("One control or family per PR"); otherwise a batch is a PR per family inside it (see "For the user to pick").
 
 | # | Batch | Controls | Why here |
 |---|---|---|---|
@@ -223,7 +240,7 @@ Most used first, shared pieces first. Batch 1 is the **recommended first batch**
 | 8 | Feedback | `DataValidationErrors`, `NotificationCard`, `WindowNotificationManager`, `RefreshContainer`, `RefreshVisualizer`, `PipsPager` | Pull-to-refresh is touch; the error colour is decided here |
 | 9 | Tables | `TableViewCell`, `TableViewColumnHeader`, `TableViewRow`, `TableView` | Avalonia's own table, on batch 6's row |
 | 10 | DataGrid (package) | `DataGridCell`, `DataGridColumnHeader`, `DataGridRowHeader`, `DataGridRowGroupHeader`, `DataGridRow`, `DataGrid` | Needs the package referenced, and a separate assembly (below); versioned apart from Avalonia |
-| 11 | ColorPicker (package) | `ColorPreviewer`, `ColorSlider`, `ColorSpectrum`, `ColorView`, `ColorPicker` | Needs batch 5's `TabItem`; a separate assembly |
+| 11 | ColorPicker (package) | `ColorPreviewer`, `ColorSlider`, `ColorSpectrum`, `ColorView`, `ColorPicker` | Replaces `ColorView`'s four keyed part themes too; a separate assembly. Reuses batch 5's look, not its themes |
 | — | Recommended to drop | `ManagedFileChooser`, `ManagedFileChooserOverwritePrompt` | Desktop-only, and the platforms' own pickers are what an 8.1 app used. They stay holes, listed |
 | — | Recommended out of this plan | `TextSelectionHandle` | A reproduction of the phone's grippers, after a capture: its own issue |
 
@@ -250,9 +267,19 @@ Each has a recommendation; none is decided.
 8. **`TabControl`.** The Pivot's headers without its swipe, or a plain strip? *Recommended: the Pivot's headers*, as the
    control an 8.1 app used.
 9. **An error colour.** A new `CornflowerPlainErrorBrush`, from the Red accent colour (`CornflowerAccentRedColor`), or
-   the foreground and the accent only? *Recommended: the new brush*, the only new token in the plan.
-10. **The label.** The README line and the `CornflowerPlain` and `Wp81Plain` prefixes (rule 1)? *Recommended: yes.*
+   the foreground and the accent only? *Recommended: the new brush*, beside the 1.5 line thickness, the two new tokens in the plan.
+10. **The label.** The README line and the `CornflowerPlain` and `Wp81Plain` prefixes (rule 1)? *Recommended: yes*, with
+    ADR 0001 item 6 amended to say a plain theme's new keys take the prefix, since there is no WinRT name to follow.
 11. **Done for a plain theme.** Tests, a preview frame and a look on the Pixel, with no measurement (rule 11)?
-    *Recommended: yes.*
+    *Recommended: yes*, recorded in a new ADR ("Plain themes") before batch 1, which also holds rules 1, 10 and the
+    answers here, so the exception to CLAUDE.md rule 4 and ADR 0001 item 2 lives in `docs/decisions/`, not in this draft.
 12. **The refresh sign.** `RefreshVisualizer` showing Wp81's `ProgressRing`, or the indeterminate ProgressBar's dots?
     *Recommended: the `ProgressRing`*, the phone's sign of work in one place, which a pull can turn as it grows.
+13. **A PR per batch, or per family.** One PR per batch, as an exception to CLAUDE.md rule 2 for the small mixed batches
+    (1 and 3), or one PR per family inside each batch? *Recommended: one PR per batch for batches 1 and 3*, where each
+    control is a few lines, *and per family elsewhere*; batch 8 splits into validation, notifications, refresh and
+    `PipsPager`.
+14. **Where this plan lives.** `docs/spikes/` holds test-backed answers about Avalonia, and CLAUDE.md puts plans in
+    `docs/ROADMAP.md`; this file is here because the brief asked for it. Keep it here with a line in
+    `docs/spikes/README.md`, or move it beside ROADMAP once the choices are made? *Recommended: move the decided parts
+    into the new ADR and ROADMAP's Tier 4 rows*, and keep this file as the record of the options.
