@@ -29,7 +29,7 @@
       BorderBrush and BorderThickness, and slides 40.5 to the right in the check mode.
     - SelectedBorder at nought opacity, round SelectedCheckMark, the earmark (Wp81.Glyph.SelectedEarmark) and its tick
       (Wp81.Glyph.CheckMark stretched to 17 x 14.5), which Selected shows: a ListView item never shows them, as
-      SelectedBorder shows only in GridMultiSelect, a GridView's state (Controls/GridView.axaml), but they make an item
+      SelectedBorder shows only in GridMultiSelect, a GridView's state (Wp81GridViewItemTheme, at the end of this file), but they make an item
       at least 2.5 + 34 + 2.5 tall, 39.17 once laid out at 2.4, as the phone's are.
     - Left out: the placeholder TextBlock and Rectangle (DataPlaceholder: Avalonia has no data virtualisation), the
       ScaleTransform and the reorder states (reorder is deferred).
@@ -277,8 +277,8 @@
     the content centred both ways (the phone's style sets neither alignment, so WinRT's Center stands, where the
     ListViewItem's sets Left and Top). Its check mode is GridMultiSelect, not ListMultiSelect: SelectedBorder, the 2.5
     accent border, on every item, and SelectedCheckMark, the earmark and its tick, on a selected one (the ListViewItem's
-    :selected). The check box never comes in and the content doesn't move, so the box is hidden, and an unseen box takes
-    no press (PhoneListMultiSelect): a press anywhere on the item is the item's, its content's tilt.
+    :selected). The check box never comes in and the content doesn't move, so the box is hidden: never laid out, it has no
+    bounds, so PhoneListMultiSelect finds no box to press, and a press anywhere on the item is its content's tilt.
   -->
 
   <ControlTheme x:Key="Wp81GridViewItemTheme" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">

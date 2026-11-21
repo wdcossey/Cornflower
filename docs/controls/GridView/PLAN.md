@@ -58,7 +58,7 @@ The ListViewItem's (docs/controls/ListView/PLAN.md, "The visual states"), but:
 |---|---|---|
 | `MultiSelectStates` `GridMultiSelect` | SelectedBorder at 1 (`ListViewItemSelectedBackgroundThemeBrush`, `GridViewItemMultiselectBorderThickness`) | `^[(wp81|PhoneListMultiSelect.IsOn)=True]` in the item's theme |
 | `ListMultiSelect` | never, in a GridView | the box hidden, ContentBorder not moved |
-| `CheckboxPressed` | never: no box | the hidden box takes no press (`PhoneListMultiSelect`) |
+| `CheckboxPressed` | never: no box | the hidden box, never laid out, has no bounds, so `PhoneListMultiSelect` takes no press on it |
 | `Selected`, `SelectedUnfocused` | the tick and SelectedCheckMark at 1: SelectedEarmark (`ListViewItemSelectedBackgroundThemeBrush`), SelectedGlyph (`ListViewItemCheckThemeBrush`) | `^:selected`, in the ListViewItem's theme |
 | `Disabled` | the content at `ListViewItemDisabledThemeOpacity`; SelectedBorder, SelectedEarmark and SelectedGlyph Transparent | `^:disabled`, in the ListViewItem's theme |
 
@@ -72,8 +72,8 @@ and `PhoneListMultiSelect`, the ListView's. No type is substituted.
   lay out the same. A gap, recorded in the README: a grid of mixed sizes, or of thousands of items, differs.
 - **What the ListView's files gained** (for reuse, not a copy): the template's `SelectedEarmark` and `SelectedGlyph`,
   left out by #130 as only GridMultiSelect draws them, now in `SelectedCheckMark`, which `:selected` shows (inside
-  SelectedBorder, which a ListView never shows), and `Disabled`'s three Transparent setters for them; and in
-  `PhoneListMultiSelect`, a hidden box takes no press.
+  SelectedBorder, which a ListView never shows), and `Disabled`'s three Transparent setters for them. `PhoneListMultiSelect` is
+  unchanged: a hidden box is never laid out, so it has no bounds and its press rule (bounds of a size) never fires.
 - **One raw pixel.** The item on its own is 147.92 tall; Avalonia rounds its tile one raw pixel lower than the phone
   (63, not 62), and the item one raw pixel narrower (ADR 0003), so the right border and the earmark sit one raw pixel to
   the left.
@@ -344,7 +344,7 @@ _none_
 | [x] | `OuterContainer` | `Border` | `Border#OuterContainer` | Themed: the root, untilted |
 | [-] | `ContentScaleTransform` | `ScaleTransform` | none | deferred: Reorderable's scale, with reorder |
 | [x] | `ReorderHintContent` | `Grid` | `Grid#ReorderHintContent` | Themed: transparent, takes the hits |
-| [x] | `CheckboxTiltContainer` | `Border` | `Border#CheckboxTiltContainer` | Themed (the ListViewItem's): hidden, as GridMultiSelect has no box; so it takes no press (`PhoneListMultiSelect`) |
+| [x] | `CheckboxTiltContainer` | `Border` | `Border#CheckboxTiltContainer` | Themed (the ListViewItem's): hidden, as GridMultiSelect has no box; never laid out, it has no bounds, so `PhoneListMultiSelect` takes no press on it |
 | [x] | `CheckboxOuterContainer` | `Border` | `Border#CheckboxOuterContainer` | Themed (the ListViewItem's), inside the hidden CheckboxTiltContainer |
 | [x] | `CheckboxContainer` | `Grid` | `Grid#CheckboxContainer` | Themed (the ListViewItem's), inside the hidden CheckboxTiltContainer |
 | [x] | `CheckboxContainerTranslateTransform` | `TranslateTransform` | CheckboxContainer's `RenderTransform` | Themed (the ListViewItem's), inside the hidden CheckboxTiltContainer |

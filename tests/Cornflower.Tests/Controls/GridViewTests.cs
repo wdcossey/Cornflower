@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -21,7 +22,7 @@ using Path = Avalonia.Controls.Shapes.Path;
 namespace Cornflower.Tests.Controls;
 
 /// <summary>
-/// The 8.1 GridView and GridViewItem (<c>Controls/GridView.axaml</c>), keyed themes based on the ListView's, against the
+/// The 8.1 GridView and GridViewItem (the keyed themes at the end of <c>Controls/ListView.axaml</c>), based on the ListView's, against the
 /// phone's styles, the reference app's captures and the probe (<see cref="GridViewReadings"/>). docs/controls/GridView
 /// has the plan and the comparison.
 /// </summary>
@@ -147,19 +148,27 @@ public class GridViewTests
     private static void AssertPixel(Color expected, WriteableBitmap frame, int x, int y, string what) =>
         Assert.True(expected == Frames.PixelAt(frame, x, y), $"{what}, raw ({x}, {y}): {Hex(Frames.PixelAt(frame, x, y))}, not {Hex(expected)}");
 
-    /// <summary>The grey's extent in a frame, in raw pixels.</summary>
+    /// <summary>The grey's extent in a frame, in raw pixels: the frame locked once and read by rows.</summary>
     private static PixelRect GreyOf(WriteableBitmap frame)
     {
+        using var buffer = frame.Lock();
+        // Opaque grey is the same four bytes in RGBA and BGRA.
+        Assert.True(buffer.Format == PixelFormat.Rgba8888 || buffer.Format == PixelFormat.Bgra8888, $"{buffer.Format}");
+        var grey = BitConverter.ToInt32([TileGrey.R, TileGrey.G, TileGrey.B, TileGrey.A]);
+        var row = new int[buffer.Size.Width];
         int x0 = int.MaxValue, y0 = int.MaxValue, x1 = -1, y1 = -1;
-        for (var y = 0; y < frame.PixelSize.Height; y++)
-        for (var x = 0; x < frame.PixelSize.Width; x++)
+        for (var y = 0; y < buffer.Size.Height; y++)
         {
-            if (Frames.PixelAt(frame, x, y) != TileGrey)
-                continue;
-            x0 = Math.Min(x0, x);
-            y0 = Math.Min(y0, y);
-            x1 = Math.Max(x1, x);
-            y1 = Math.Max(y1, y);
+            System.Runtime.InteropServices.Marshal.Copy(buffer.Address + y * buffer.RowBytes, row, 0, row.Length);
+            for (var x = 0; x < row.Length; x++)
+            {
+                if (row[x] != grey)
+                    continue;
+                x0 = Math.Min(x0, x);
+                y0 = Math.Min(y0, y);
+                x1 = Math.Max(x1, x);
+                y1 = Math.Max(y1, y);
+            }
         }
 
         return x1 < 0 ? default : new PixelRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
@@ -293,9 +302,7 @@ public class GridViewTests
         using var b = rest.Capture();
 
         Assert.Equal(0, Part<Border>(selected.Item, "SelectedBorder").Opacity);
-        for (var y = 0; y < a.PixelSize.Height; y += 3)
-        for (var x = 0; x < a.PixelSize.Width; x += 3)
-            Assert.True(Frames.PixelAt(a, x, y) == Frames.PixelAt(b, x, y), $"raw ({x}, {y})");
+        Assert.True(Frames.SameAs(a, b));
     }
 
     // Multiple, the check mode: GridMultiSelect on every item, the 2.5 accent border on each, selected or not, drawn
@@ -339,16 +346,19 @@ public class GridViewTests
         Dispatcher.UIThread.RunJobs();
         using var frame = stage.Capture();
         var (l, t, r, b) = RawEdges(stage.Item, stage.Window);
-        var midY = 200;
+        // Between the item's edges and the tile's: (l + r) / 2 runs through the tile, so the top and bottom are read
+        // on the page beside it, and the sides halfway down.
+        var midY = (t + b) / 2;
+        var besideX = l + (ItemTile.X - l) / 2;
 
         AssertPixel(LV.Accent, frame, l + BorderIn, midY, "the left border");
         AssertPixel(LV.Page(dark), frame, l + PastBorder, midY, "past the left border");
         AssertPixel(LV.Accent, frame, r - 1 - BorderIn, midY, "the right border");
         AssertPixel(LV.Page(dark), frame, r - PastBorder, midY, "past the right border");
-        AssertPixel(LV.Accent, frame, 540, t + BorderIn, "the top border");
-        AssertPixel(LV.Page(dark), frame, 540, t + PastBorder, "below the top border");
-        AssertPixel(LV.Accent, frame, 540, b - 1 - 2, "the bottom border");
-        AssertPixel(LV.Page(dark), frame, 540, b - PastBorder, "above the bottom border");
+        AssertPixel(LV.Accent, frame, besideX, t + BorderIn, "the top border");
+        AssertPixel(LV.Page(dark), frame, besideX, t + PastBorder, "below the top border");
+        AssertPixel(LV.Accent, frame, besideX, b - 1 - BorderIn, "the bottom border");
+        AssertPixel(LV.Page(dark), frame, besideX, b - PastBorder, "above the bottom border");
         // Unselected: no earmark.
         foreach (var (fromRight, fromTop) in EarmarkPoints.Concat(TickPoints))
             AssertPixel(LV.Page(dark), frame, r - fromRight, t + fromTop, "no earmark on an unselected item");
@@ -482,10 +492,10 @@ public class GridViewTests
         stage.Item.SetValue(PhoneListMultiSelect.IsOnProperty, true);
         Dispatcher.UIThread.RunJobs();
         using var frame = stage.Capture();
-        var (l, t, r, _) = RawEdges(stage.Item, stage.Window);
+        var (l, t, r, b) = RawEdges(stage.Item, stage.Window);
 
         Assert.Equal(LV.DisabledOpacity, Part<ContentPresenter>(stage.Item, "PART_ContentPresenter").Opacity);
-        AssertPixel(LV.Page(dark), frame, l + BorderIn, 200, "no border");
+        AssertPixel(LV.Page(dark), frame, l + BorderIn, (t + b) / 2, "no border");
         foreach (var (fromRight, fromTop) in EarmarkPoints.Concat(TickPoints))
             AssertPixel(LV.Page(dark), frame, r - fromRight, t + fromTop, "no earmark");
     }
