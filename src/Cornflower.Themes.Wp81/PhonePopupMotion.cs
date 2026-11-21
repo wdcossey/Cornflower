@@ -10,9 +10,12 @@ namespace Cornflower.Themes.Wp81;
 /// Flyout's (to y on the reference's 800, below its 400 still px), scaled to the rows' own still part
 /// (<see cref="PhonePopupMotion.RevealedTo"/>); a reveal read on another basis is given on that one. The Flyout's are
 /// <see cref="PhonePopupMotion.FlyoutRows"/>. Closing, it is closed as its last band goes
-/// (<see cref="PhonePopupMotion.ClosedAfter"/>), and <paramref name="ClosedLater"/> after that, if given.
+/// (<see cref="PhonePopupMotion.ClosedAfter"/>), and <paramref name="ClosedLater"/> after that, if given. Its closing
+/// bands turn at <paramref name="CloseRate"/> a tick, each <paramref name="CloseStagger"/> ticks after the one above:
+/// the Flyout's unless given (SemanticZoom's jump list is quicker).
 /// </summary>
-internal sealed record PhonePopupRows(double Height, double[] Rates, (TimeSpan At, double To)[] Reveal, TimeSpan ClosedLater = default);
+internal sealed record PhonePopupRows(double Height, double[] Rates, (TimeSpan At, double To)[] Reveal, TimeSpan ClosedLater = default,
+    double CloseRate = PhonePopupMotion.CloseRate, double CloseStagger = PhonePopupMotion.CloseStagger);
 
 /// <summary>
 /// A top popup's motion, its one band's: <paramref name="Angle"/>, the band's angle a time into the opening, at rest
@@ -161,8 +164,11 @@ internal static class PhonePopupMotion
     /// A full popup of <paramref name="bands"/> bands is closed (<c>Closed</c>) on the last whole tick before its last
     /// band is gone: 22 ticks for the reference's 8 (14 + 8.2), as read.
     /// </summary>
-    internal static TimeSpan ClosedAfter(int bands) =>
-        Tick * Math.Floor(CloseStagger * Math.Max(0, bands - 1) + CloseTo / CloseRate);
+    internal static TimeSpan ClosedAfter(int bands) => ClosedAfter(bands, CloseRate, CloseStagger);
+
+    /// <summary>As <see cref="ClosedAfter(int)"/>, for bands that close at <paramref name="rate"/>, <paramref name="stagger"/> ticks apart.</summary>
+    internal static TimeSpan ClosedAfter(int bands, double rate, double stagger) =>
+        Tick * Math.Floor(stagger * Math.Max(0, bands - 1) + CloseTo / rate);
 
     /// <summary>Ticks of the phone's clock in <paramref name="time"/>.</summary>
     internal static double Ticks(TimeSpan time) => time / Tick;
@@ -211,8 +217,11 @@ internal static class PhonePopupMotion
     /// <paramref name="from"/>, its angle when it was asked to close (0 at rest; mid-opening, wherever it had got to).
     /// At <see cref="CloseTo"/> back, it is gone.
     /// </summary>
-    internal static double ClosingAngle(int band, double from, TimeSpan time) =>
-        Math.Max(-CloseTo, from - CloseRate * Math.Max(0, Ticks(time) - CloseStagger * band));
+    internal static double ClosingAngle(int band, double from, TimeSpan time) => ClosingAngle(band, from, time, CloseRate, CloseStagger);
+
+    /// <summary>As <see cref="ClosingAngle(int, double, TimeSpan)"/>, for bands that close at <paramref name="rate"/>, <paramref name="stagger"/> ticks apart.</summary>
+    internal static double ClosingAngle(int band, double from, TimeSpan time, double rate, double stagger) =>
+        Math.Max(-CloseTo, from - rate * Math.Max(0, Ticks(time) - stagger * band));
 
     /// <summary>
     /// Where a point of a band is drawn, the band turned <paramref name="degrees"/> about its horizontal centre line at

@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 SemanticZoom: the SDK's generic.xaml default style, read as a specification and re-expressed as
+    an Avalonia ControlTheme for Cornflower's own SemanticZoom, and the phone's jump list round it (PhoneSemanticZoom,
+    PhonePopupHost). docs/controls/SemanticZoom/PLAN.md has the values and their sources.
+
+    The setters are the file's: a Transparent background, not a tab stop, its tab navigation Once; its Padding 0, no
+    border and the content stretched are Avalonia's defaults, so no setter says them. The template is the phone's, part for part: a Border of the control's background and border
+    round a panel at its Padding, with the zoomed-in view's presenter (PART_ZoomedInPresenter) and the popup (PART_Popup)
+    holding PopupBorder, which has no background (#211: no dim, the list showing between the tiles), round the zoomed-out
+    view's presenter. Between the popup and PopupBorder, AppTheme, the scope PhoneSemanticZoom gives the window's theme:
+    the jump list stays in the app's theme on a page of another (#211). The popup's place (the whole window), motion and
+    Back are PhoneSemanticZoom's, on PhonePopupHost. The phone draws no zoom-out button.
+  -->
+  <ControlTheme x:Key="{x:Type cf:SemanticZoom}" TargetType="cf:SemanticZoom">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
+    <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
+    <Setter Property="wp81:PhoneSemanticZoom.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Panel Margin="{TemplateBinding Padding}">
+            <ContentPresenter x:Name="PART_ZoomedInPresenter"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding ZoomedInView}" />
+            <Popup x:Name="PART_Popup" IsLightDismissEnabled="False">
+              <ThemeVariantScope x:Name="AppTheme">
+                <Border x:Name="PART_PopupBorder">
+                  <ContentPresenter x:Name="PART_ZoomedOutPresenter"
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    Content="{TemplateBinding ZoomedOutView}" />
+                </Border>
+              </ThemeVariantScope>
+            </Popup>
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
