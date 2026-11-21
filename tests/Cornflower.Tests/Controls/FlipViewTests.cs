@@ -398,7 +398,7 @@ public class FlipViewTests
         using var clock = Clock();
         var carousel = new Carousel { Height = 240, PageTransition = new PageSlide { Orientation = PageSlide.SlideAxis.Vertical } };
         for (var i = 0; i < 3; i++) carousel.Items.Add(new Border());
-        var page = new ScrollViewer { Content = new StackPanel { Children = { carousel, new Border { Height = 2000 } } } };
+        var page = new ScrollViewer { Height = 300, VerticalAlignment = VerticalAlignment.Top, Content = new StackPanel { Children = { carousel, new Border { Height = 2000 } } } };
         using var scene = new Scene(page);
         carousel.SelectedIndex = 1;
         clock.At(1000);
