@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             xmlns:pages="using:Cornflower.Sample.Pages"
+             x:Class="Cornflower.Sample.Pages.GroupedListsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    Grouped lists, as #211's probe: groups a to h of five items each, b and e empty and so hidden, each header the
+    letter in GroupHeaderTextBlockStyle (cf:ListBoxOptions.GroupedItemsSource and GroupHeaderTemplate). Above, a grouped
+    ListView: pan it, and the group's header sticks at the top until the next pushes it off. Below, a grouped GridView,
+    a group's five items in a row: its headers scroll away with their groups. Press a header to see it tilt; a tap on
+    one selects nothing.
+  -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="LetterHeader" x:DataType="pages:LetterGroup">
+      <TextBlock Text="{Binding Key}" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+    </DataTemplate>
+  </UserControl.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="list view" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+      <ListBox x:Name="List" Height="330"
+               cf:ListBoxOptions.GroupHeaderTemplate="{StaticResource LetterHeader}" />
+
+      <TextBlock Text="grid view" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ListBox x:Name="Grid" Height="330" Theme="{DynamicResource Wp81GridViewTheme}"
+               cf:ListBoxOptions.GroupHeaderTemplate="{StaticResource LetterHeader}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

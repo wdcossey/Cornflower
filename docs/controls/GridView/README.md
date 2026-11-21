@@ -68,7 +68,8 @@ wider window shows more columns with nothing set.
   gives each its own. Tiles of one size lay out the same.
 - **No virtualisation.** `WrapPanel` realises every item; the phone's `ItemsWrapGrid` virtualises.
 - **Item click** on a GridView wasn't read; it is assumed to be the ListView's (#148).
-- **No GridViewHeaderItem or grouping** (#131), and no add and delete transitions.
+- **Grouping** is `ListBoxOptions.GroupedItemsSource` (#131, [GroupedLists](../GroupedLists/README.md)): its headers are
+  `ListViewHeaderItem`s, as WinRT's GridViewHeaderItem adds nothing, and don't stick. No add and delete transitions.
 - **The scroll physics** are Avalonia's (the ScrollViewer's recorded deviation).
 - **One raw pixel** here and there (ADR 0003).
 

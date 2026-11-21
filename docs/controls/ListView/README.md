@@ -1,6 +1,6 @@
 # ListView and ListViewItem
 
-Status: done · [#119](https://github.com/wdcossey/Cornflower/issues/119) · press compared against [#113](https://github.com/wdcossey/Cornflower/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · the check mode's press, Extended and a `SelectedIndex` from code brought to [#136](https://github.com/wdcossey/Cornflower/issues/136)'s probe (runs `20261115-2352-dev11`, `20261116-0040-dev11`) in [#142](https://github.com/wdcossey/Cornflower/issues/142) · #142's device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 382 ms) · ListViewHeaderItem and GroupItem deferred with grouping · reorder deferred · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `fedf781`: cold 738 ms, the page opened in 315 ms, every specimen drawn, the check mode included) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the listview page opened in 37 ms with 287 elements) · owed: a real-window section driving its press, pan and check mode (#124's helpers)
+Status: done · [#119](https://github.com/wdcossey/Cornflower/issues/119) · press compared against [#113](https://github.com/wdcossey/Cornflower/issues/113)'s probes (runs `20261115-1941-dev11`, `-1948-`) · the check mode's press, Extended and a `SelectedIndex` from code brought to [#136](https://github.com/wdcossey/Cornflower/issues/136)'s probe (runs `20261115-2352-dev11`, `20261116-0040-dev11`) in [#142](https://github.com/wdcossey/Cornflower/issues/142) · #142's device run passed 2026-11-16 (Pixel 8, Android 17, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `ae652d3`, 22:48 to 22:50, cold starts 716 to 826 ms over the run's pages: the page opened in 382 ms) · grouping, ListViewHeaderItem and its pinned header in [#131](https://github.com/wdcossey/Cornflower/issues/131) ([GroupedLists](../GroupedLists/README.md)); no GroupItem, which the phone's panels don't make · reorder deferred · device run passed 2026-11-15 (Pixel 8, Release, over wireless adb, `run.ps1 -Page listview` on `main` at `fedf781`: cold 738 ms, the page opened in 315 ms, every specimen drawn, the check mode included) · real-window run passed 2026-11-15 (`tools/real-window/drive.ps1` under `pwsh` 7.7, Debug, on `main` at `fedf781`: 135 of 135, the listview page opened in 37 ms with 287 elements) · owed: a real-window section driving its press, pan and check mode (#124's helpers)
 
 The Windows Phone 8.1 ListView and ListViewItem: Avalonia's `ListBox` and `ListBoxItem`, themed by `Wp81Theme` with the
 phone's default styles and the item's template, in `src/Cornflower.Themes.Wp81/Controls/ListView.axaml`; the phone's
@@ -97,8 +97,8 @@ None.
 - **`ItemClick`** is `ListBoxOptions`' ([ItemClick](../ItemClick/README.md), #132).
 - **No `SelectionMode` None.**
 - **No `Header` or `Footer`** that scroll with the items.
-- **No grouping**: so no ListViewHeaderItem or GroupItem (Avalonia 12.1.4 has neither, nor `GroupStyle`). Deferred
-  with grouping, beside SemanticZoom.
+- **Grouping** is `ListBoxOptions.GroupedItemsSource`, with ListViewHeaderItem and the pinned header (#131,
+  [GroupedLists](../GroupedLists/README.md)); no GroupItem, which the phone's modern panels don't make.
 - **No reorder**, and no add and delete transitions.
 - **The box's press doesn't follow a move of the finger** (not read).
 - **A selection set in code scrolls the item into view**, as the phone's does (#136); Avalonia's request reaches a
