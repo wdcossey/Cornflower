@@ -1,0 +1,171 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    The Windows Phone 8.1 ListBox and ListBoxItem, the list kept for 8.0's apps: the SDK's generic.xaml default styles
+    (which the 8.1 Update 1 runtime's listbox.json and listboxitem.json match), re-expressed as Avalonia ControlThemes.
+    Every value is the phone's resource key, by DynamicResource, so it follows the theme variant and an app can override
+    it by its key. docs/controls/ListBox/PLAN.md has the values and their sources.
+
+    Keyed, not by type: Avalonia's ListBox already wears the 8.1 ListView's look (Controls/ListView.axaml), as an 8.1
+    app's list is a ListView. An app that wants the phone's ListBox names it; the list's theme gives its items theirs:
+
+      <ListBox Theme="{DynamicResource Wp81ListBoxTheme}" />
+      <ListBoxItem Theme="{DynamicResource Wp81ListBoxItemTheme}" />   (an item on its own)
+
+    The phone's ListBox has no check mode and no item click (both are ListViewBase's): its items have no check box, and
+    PhoneListMultiSelect.IsOn is held off on the list and the item, so neither is in the check mode inside a ListView
+    item, or as a ListView's own item, in the check mode.
+
+    ListBox: the phone's LayoutRoot Border round a ScrollViewer round an ItemsPresenter, as the ListView's. The
+    ScrollViewer is the phone's, with its thin indicators, named as Avalonia's ListBox looks for it, its values bound from
+    the ListBox's attached ones. Disabled clears the background and draws the border in ListBoxDisabledForegroundThemeBrush.
+
+    ListBoxItem, part for part, with Avalonia's PART_ContentPresenter for the phone's ContentPresenter: LayoutRoot,
+    untilted, Tilt's root; InnerGrid, the part the phone's PointerDownThemeAnimation targets, so it is marked
+    Tilt.IsTarget, draws the selection, and its Transparent background takes the hits across the item (Tilt's own hit
+    testing is the root's); PressedBackground, a Rectangle at nought opacity until Pressed.
+
+    The visual states: Pressed (Avalonia's :pressed) shows PressedBackground, turns the text to
+    ListBoxItemPressedForegroundThemeBrush and runs the Button's tilt on InnerGrid. Selected (and SelectedUnfocused,
+    SelectedPressed) fills InnerGrid with the accent and the text with ListBoxItemSelectedForegroundThemeBrush;
+    SelectedPointerOver takes its own background key; SelectedDisabled its two. Disabled clears LayoutRoot's background
+    and dims the text. Where a CommonStates state and a SelectionStates state set the text's colour, which the phone
+    wasn't read for: a press on a selected item draws the press's black text on the pale brush, legible, its style after
+    the selection's; Disabled on a selected item draws SelectedDisabled's. PointerOver and focus change nothing.
+  -->
+
+  <ControlTheme x:Key="Wp81ListBoxItemTheme" TargetType="ListBoxItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
+    <Setter Property="Padding" Value="6.5,8" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <!-- Not set by the phone's style: WinRT's own default, which Avalonia's ContentControl's (Stretch) is not. -->
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Not set by the phone's style: WinRT's own default. The tilted InnerGrid draws past the item's edges. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <!-- No check mode: set, not inherited, so an item of this theme as a ListView's own item in the check mode isn't in it. -->
+    <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid x:Name="InnerGrid" Background="Transparent" cf:Tilt.IsTarget="True">
+            <Rectangle x:Name="PressedBackground"
+                       Opacity="0"
+                       Fill="{DynamicResource ListBoxItemPressedBackgroundThemeBrush}" />
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              wp81:PhoneHeaderLine.IsEnabled="True" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- CommonStates' Disabled; Pressed comes after the selection. -->
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ Border#LayoutRoot">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ListBoxItemDisabledForegroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <!-- SelectionStates, after Disabled, so SelectedDisabled's text colour is drawn over Disabled's. -->
+    <Style Selector="^:selected">
+      <Style Selector="^ /template/ Grid#InnerGrid">
+        <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ListBoxItemSelectedForegroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:selected:pointerover /template/ Grid#InnerGrid">
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedPointerOverBackgroundThemeBrush}" />
+    </Style>
+
+    <!-- Pressed, after the selection, so a press on a selected item draws the press's black text on the pale brush. -->
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Rectangle#PressedBackground">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ListBoxItemPressedForegroundThemeBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:selected:disabled">
+      <Style Selector="^ /template/ Grid#InnerGrid">
+        <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedDisabledBackgroundThemeBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource ListBoxItemSelectedDisabledForegroundThemeBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="Wp81ListBoxTheme" TargetType="ListBox">
+    <!-- The phone's HorizontalScrollBarVisibility Disabled, VerticalScrollBarVisibility Auto, IsDeferredScrollingEnabled
+         False, BringIntoViewOnFocusChange True, TabNavigation Once and no focus visual are Avalonia's ListBox's defaults,
+         so not set here. -->
+    <Setter Property="Foreground" Value="{DynamicResource ListBoxForegroundThemeBrush}" />
+    <Setter Property="Background" Value="{DynamicResource ListBoxBackgroundThemeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ListBoxBorderThemeBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource ListBoxBorderThemeThickness}" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="ItemContainerTheme" Value="{DynamicResource Wp81ListBoxItemTheme}" />
+    <!-- No check mode: set, not inherited, so a ListBox in an item of a ListView in the check mode isn't in it. -->
+    <Setter Property="wp81:PhoneListMultiSelect.IsOn" Value="False" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <VirtualizingStackPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <!-- BackgroundSizing InnerBorderEdge, as WinRT's Border draws: the pale box inside the transparent 1.5 border, the
+             page showing in the border's band, as in the capture. -->
+        <Border x:Name="LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BackgroundSizing="InnerBorderEdge"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}">
+            <ItemsPresenter x:Name="PART_ItemsPresenter"
+                            ItemsPanel="{TemplateBinding ItemsPanel}"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top" />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:disabled /template/ Border#LayoutRoot">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ListBoxDisabledForegroundThemeBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
