@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 
 namespace Cornflower.Themes.Wp81;
@@ -12,15 +13,27 @@ namespace Cornflower.Themes.Wp81;
 /// the next item in beside the one going (#211).
 /// </summary>
 /// <remarks>
-/// Not virtualising: every item is made and laid out, as an <c>ItemsControl</c>'s plain panel's are. The phone's
+/// The items are laid out once, item k k pages along, and the strip is moved by the panel's own translate
+/// (<see cref="Place"/>), so a frame of the motion costs no layout, however many items there are. Not virtualising: every item is made and laid out, as an <c>ItemsControl</c>'s plain panel's are. The phone's
 /// FlipView virtualises (a <c>VirtualizingStackPanel</c>); <c>docs/controls/FlipView/README.md</c> has it as a gap.
 /// </remarks>
 internal sealed class PhoneFlipViewPanel : Panel
 {
+    private readonly TranslateTransform _shift = new();
     private Carousel? _owner;
 
-    /// <summary>The Carousel whose items these are, or null outside one.</summary>
-    internal Carousel? Owner => _owner;
+    public PhoneFlipViewPanel() => RenderTransform = _shift;
+
+    /// <summary>Moves the strip to where the motion has it, without a layout pass.</summary>
+    internal void Place() => Place(Bounds.Size);
+
+    private void Place(Size size)
+    {
+        var vertical = _owner is { } owner && PhoneFlipView.IsVertical(owner);
+        var along = -(_owner is null ? 0 : PhoneFlipView.PositionOf(_owner)) * (vertical ? size.Height : size.Width);
+        _shift.X = vertical ? 0 : along;
+        _shift.Y = vertical ? along : 0;
+    }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -49,16 +62,15 @@ internal sealed class PhoneFlipViewPanel : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         var vertical = _owner is { } owner && PhoneFlipView.IsVertical(owner);
-        var position = _owner is null ? 0 : PhoneFlipView.PositionOf(_owner);
         var page = vertical ? finalSize.Height : finalSize.Width;
         for (var i = 0; i < Children.Count; i++)
         {
-            var along = (i - position) * page;
             Children[i].Arrange(vertical
-                ? new Rect(0, along, finalSize.Width, finalSize.Height)
-                : new Rect(along, 0, finalSize.Width, finalSize.Height));
+                ? new Rect(0, i * page, finalSize.Width, finalSize.Height)
+                : new Rect(i * page, 0, finalSize.Width, finalSize.Height));
         }
 
+        Place(finalSize);
         return finalSize;
     }
 }

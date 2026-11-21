@@ -33,7 +33,9 @@ public partial class FlipViewPage : UserControl
 
     private void OnNext(object? sender, RoutedEventArgs e) => Across.SelectedIndex = Math.Min(Across.SelectedIndex + 1, Samples.Length - 1);
 
-    private void OnTwoOn(object? sender, RoutedEventArgs e) => Across.SelectedIndex = Math.Min(Across.SelectedIndex + 2, Samples.Length - 1);
+    // Two along, on or, near the end, back: always a jump.
+    private void OnTwoOn(object? sender, RoutedEventArgs e) =>
+        Across.SelectedIndex = Across.SelectedIndex + 2 < Samples.Length ? Across.SelectedIndex + 2 : Across.SelectedIndex - 2;
 
     private void OnFirst(object? sender, RoutedEventArgs e) => Across.SelectedIndex = 0;
 }

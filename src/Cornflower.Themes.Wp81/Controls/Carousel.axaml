@@ -17,6 +17,8 @@
 
     The swipe, the snap and a change of one to SelectedIndex animating are PhoneFlipView's, on CornflowerClock.
     IsSwipeEnabled, Avalonia's, is on, as the phone's FlipView always swipes; set it off and the finger drags nothing.
+    AutoScrollToSelectedItem is off: the selected item is laid out a page along before it slides in, and brought into
+    view there it would scroll the page round the FlipView. A mouse drags nothing (touch and pen, as the Pivot's).
     A vertical FlipView is Avalonia's: a PageSlide with Orientation Vertical as PageTransition. The PageTransition never
     runs (its panel, Avalonia's VirtualizingCarouselPanel, is replaced); only its axis is read.
 
@@ -31,6 +33,7 @@
     <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
     <Setter Property="IsTabStop" Value="False" />
     <Setter Property="IsSwipeEnabled" Value="True" />
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
     <Setter Property="wp81:PhoneFlipView.IsEnabled" Value="True" />
     <Setter Property="ItemsPanel">
       <ItemsPanelTemplate>

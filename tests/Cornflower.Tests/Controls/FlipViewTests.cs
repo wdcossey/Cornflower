@@ -5,6 +5,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
@@ -357,6 +358,96 @@ public class FlipViewTests
         stage.Window.TouchEnd(touch, stage.Point(-50), RawInputModifiers.None);
     }
 
+    // A tap while SelectedIndex's move from code runs doesn't hold it, and doesn't undo the selection (as the Pivot's).
+    [AvaloniaFact]
+    public void A_Tap_During_A_Move_From_Code_Lets_It_Run()
+    {
+        using var clock = Clock();
+        using var stage = new Stage(selected: 2);
+        clock.At(Frame * 4);
+        stage.Carousel.SelectedIndex = 3;
+        clock.At(Frame * 10);
+        var during = stage.P;
+        var touch = stage.Window.TouchBegin(stage.Point(0), RawInputModifiers.None);
+        clock.At(Frame * 20);
+        Assert.True(stage.P > during + 10, "it moves on under the finger");
+        stage.Window.TouchEnd(touch, stage.Point(0), RawInputModifiers.None);
+        clock.At(2000);
+        Assert.Equal(3, stage.Carousel.SelectedIndex);
+        Assert.Equal(3 * Page, stage.P, Rounding);
+    }
+
+    // An item removed before the selection shifts SelectedIndex by one: the same item, so nothing moves.
+    [AvaloniaFact]
+    public void An_Index_Shifted_By_The_Items_Doesnt_Animate()
+    {
+        using var clock = Clock();
+        using var stage = new Stage(selected: 2);
+        var shown = stage.Carousel.SelectedItem;
+        stage.Carousel.Items.RemoveAt(0);
+        Assert.Equal(1, stage.Carousel.SelectedIndex);
+        Assert.Same(shown, stage.Carousel.SelectedItem);
+        Assert.False(PhoneFlipView.MotionOf(stage.Carousel)!.IsMoving);
+        Assert.Equal(Page, stage.P, Rounding);
+    }
+
+    // The selected item is laid out a page along before it slides in: brought into view there, it would scroll the page.
+    [AvaloniaFact]
+    public void A_Move_From_Code_Doesnt_Scroll_The_Page_Round_It()
+    {
+        using var clock = Clock();
+        var carousel = new Carousel { Height = 240, PageTransition = new PageSlide { Orientation = PageSlide.SlideAxis.Vertical } };
+        for (var i = 0; i < 3; i++) carousel.Items.Add(new Border());
+        var page = new ScrollViewer { Content = new StackPanel { Children = { carousel, new Border { Height = 2000 } } } };
+        using var scene = new Scene(page);
+        carousel.SelectedIndex = 1;
+        clock.At(1000);
+        scene.Window.UpdateLayout();
+        Assert.Equal(0, page.Offset.Y);
+        Assert.Equal(1, carousel.SelectedIndex);
+    }
+
+    // With the motion off, the theme's panel still shows the selection at once.
+    [AvaloniaFact]
+    public void With_The_Motion_Off_The_Panel_Follows_The_Selection()
+    {
+        using var clock = Clock();
+        using var stage = new Stage();
+        PhoneFlipView.SetIsEnabled(stage.Carousel, false);
+        stage.Carousel.SelectedIndex = 2;
+        Assert.Equal(2 * Page, stage.P, Rounding);
+    }
+
+    // Under another panel (Avalonia's own, put back), the motion leaves the finger alone.
+    [AvaloniaFact]
+    public void Under_Another_Panel_The_Motion_Doesnt_Swipe()
+    {
+        using var clock = Clock();
+        using var stage = new Stage();
+        stage.Carousel.ItemsPanel = new FuncTemplate<Panel?>(() => new StackPanel());
+        stage.Window.UpdateLayout();
+        var touch = stage.Window.TouchBegin(stage.Point(0), RawInputModifiers.None);
+        clock.At(Frame);
+        stage.Window.TouchMove(touch, stage.Point(100), RawInputModifiers.None);
+        Assert.False(PhoneFlipView.MotionOf(stage.Carousel)!.IsDragging);
+        stage.Window.TouchEnd(touch, stage.Point(100), RawInputModifiers.None);
+    }
+
+    // A PageSlide turned vertical in place is read at the next press.
+    [AvaloniaFact]
+    public void A_PageSlide_Turned_In_Place_Is_Read_At_The_Next_Press()
+    {
+        using var clock = Clock();
+        using var stage = new Stage(vertical: true);
+        var slide = new PageSlide();
+        stage.Carousel.PageTransition = slide;           // sideways
+        slide.Orientation = PageSlide.SlideAxis.Vertical;
+        var release = stage.Swipe(clock, 247.3, steps: 12, hold: 100);
+        clock.At(release + 1000);
+        Assert.Equal(2, stage.Carousel.SelectedIndex);
+        Assert.Equal(new Point(2.5, 2.5), stage.ItemAt(2));
+    }
+
     // Vertical: a page is 395 px; held, 247.3 px up went on; a drag across doesn't move it.
     [AvaloniaFact]
     public void A_Vertical_FlipView_Flips_Up_And_Down()
@@ -406,6 +497,23 @@ public class FlipViewTests
         stage.Window.TouchEnd(touch, new Point(235, 200), RawInputModifiers.None);
         Assert.True(scroll!.Offset.Y > 100);
         Assert.Equal(445, stage.P, Rounding);
+    }
+
+    // A drag more up and down than across isn't a swipe, though it passes the 5 px sideways.
+    [AvaloniaFact]
+    public void A_Drag_More_Across_The_Axis_Than_Along_It_Isnt_A_Swipe()
+    {
+        using var clock = Clock();
+        using var stage = new Stage();
+        var touch = stage.Window.TouchBegin(new Point(225, 400), RawInputModifiers.None);
+        for (var i = 1; i <= 10; i++)
+        {
+            clock.At(i * Frame);
+            stage.Window.TouchMove(touch, new Point(225 - 4 * i, 400 - 10 * i), RawInputModifiers.None);
+        }
+
+        Assert.Equal(445, stage.P, Rounding);
+        stage.Window.TouchEnd(touch, new Point(185, 300), RawInputModifiers.None);
     }
 
     [AvaloniaFact]

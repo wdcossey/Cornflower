@@ -66,9 +66,11 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
     private TimeSpan _start;
     private double _speed = 1;
     private bool _selectAtEnd;
+    private bool _gesture;
 
     private double _dragFrom;
     private bool _selecting;
+    private object? _selectedItem;
 
     public PhoneFlipViewMotion(Carousel carousel)
     {
@@ -79,6 +81,7 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
         carousel.PropertyChanged += OnCarouselPropertyChanged;
         carousel.ItemsView.CollectionChanged += OnItemsChanged;
         Position = Math.Max(0, carousel.SelectedIndex);
+        _selectedItem = carousel.SelectedItem;
     }
 
     /// <summary>Where the strip is, in pages from item 0.</summary>
@@ -92,20 +95,40 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
 
     private bool On => PhoneFlipView.GetIsEnabled(_carousel);
 
-    /// <summary>A page, in view pixels: the items panel along the axis.</summary>
-    private double Page => _carousel.ItemsPanelRoot is { } panel ? (_recognizer.Vertical ? panel.Bounds.Height : panel.Bounds.Width) : 0;
+    /// <summary>A page, in view pixels: the theme's items panel along the axis; 0 under any other panel.</summary>
+    private double Page => _carousel.ItemsPanelRoot is PhoneFlipViewPanel panel ? (_recognizer.Vertical ? panel.Bounds.Height : panel.Bounds.Width) : 0;
 
     private int Selected => Math.Max(0, _carousel.SelectedIndex);
 
-    bool ISidewaysSwipeTarget.CanSwipe => On && _carousel.IsSwipeEnabled && _carousel.IsEffectivelyEnabled && _carousel.ItemCount > 0 && Page > 0;
+    bool ISidewaysSwipeTarget.CanSwipe
+    {
+        get
+        {
+            // The axis is read again at each press: a PageSlide's Orientation can change without the property changing.
+            var vertical = PhoneFlipView.IsVertical(_carousel);
+            if (vertical != _recognizer.Vertical)
+            {
+                _recognizer.Vertical = vertical;
+                _carousel.ItemsPanelRoot?.InvalidateArrange();
+            }
+
+            return On && _carousel.IsSwipeEnabled && _carousel.IsEffectivelyEnabled && _carousel.ItemCount > 0 && Page > 0;
+        }
+    }
 
     bool ISidewaysSwipeTarget.IsInSwipeArea(Point point) => true;
 
-    bool ISidewaysSwipeTarget.HoldsAPress => IsMoving;
+    /// <summary>A press holds a snap where it is (#211); a move from code, whose selection has changed, it doesn't.</summary>
+    bool ISidewaysSwipeTarget.HoldsAPress => IsMoving && _gesture;
 
     void ISidewaysSwipeTarget.BeginDrag()
     {
-        StopFrames();                                     // a press while it moves stops it dead (#211)
+        // A press while a snap moves stops it dead (#211); a drag during a move from code ends that move at its target,
+        // as the Pivot's does.
+        var finish = IsMoving && !_gesture;
+        StopFrames();
+        if (finish)
+            Position = _to;
         IsDragging = true;
         _dragFrom = Position;
     }
@@ -144,9 +167,9 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
             target = selected;
 
         if (target == selected)
-            Start(selected, BackCurve, BackDuration, selectAtEnd: false);
+            Start(selected, BackCurve, BackDuration, selectAtEnd: false, gesture: true);
         else
-            Start(target, PivotMotion.SwipeCurve, PivotMotion.SwipeDuration, selectAtEnd: true);
+            Start(target, PivotMotion.SwipeCurve, PivotMotion.SwipeDuration, selectAtEnd: true, gesture: true);
     }
 
     /// <summary>Puts the strip at rest at the selected item, stopping any move or drag.</summary>
@@ -165,13 +188,18 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
             _recognizer.Vertical = PhoneFlipView.IsVertical(_carousel);
             _carousel.ItemsPanelRoot?.InvalidateArrange();
         }
-        else if (change.Property == Carousel.SelectedIndexProperty && !_selecting && On)
+        else if (change.Property == Carousel.SelectedIndexProperty)
         {
             var (from, to) = change.GetOldAndNewValue<int>();
-            if (from >= 0 && to >= 0 && Math.Abs(to - from) == 1 && Page > 0)
+            var item = to >= 0 && to < _carousel.ItemCount ? _carousel.ItemsView[to] : null;
+            var moved = !ReferenceEquals(item, _selectedItem);  // an index shifted by a change to the items isn't a move
+            _selectedItem = item;
+            if (_selecting)
+                return;
+            if (On && moved && from >= 0 && to >= 0 && Math.Abs(to - from) == 1 && Page > 0)
             {
                 IsDragging = false;
-                Start(to, CodeCurve, CodeDuration, selectAtEnd: false);
+                Start(to, CodeCurve, CodeDuration, selectAtEnd: false, gesture: false);
             }
             else
             {
@@ -182,9 +210,10 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e) => Rest();
 
-    private void Start(int target, KeySplineCurve curve, TimeSpan duration, bool selectAtEnd)
+    private void Start(int target, KeySplineCurve curve, TimeSpan duration, bool selectAtEnd, bool gesture)
     {
         StopFrames();
+        _gesture = gesture;
         _from = Position;
         _to = target;
         _curve = curve;
@@ -226,5 +255,5 @@ internal sealed class PhoneFlipViewMotion : ISidewaysSwipeTarget
         _generation++;
     }
 
-    private void Arrange() => _carousel.ItemsPanelRoot?.InvalidateArrange();
+    private void Arrange() => (_carousel.ItemsPanelRoot as PhoneFlipViewPanel)?.Place();
 }

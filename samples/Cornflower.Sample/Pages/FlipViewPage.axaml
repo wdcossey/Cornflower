@@ -29,7 +29,7 @@
       <TextBlock x:Name="State" Margin="0,6,0,0" />
       <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,6,0,0">
         <Button Content="next" Click="OnNext" />
-        <Button Content="two on" Click="OnTwoOn" />
+        <Button Content="two along" Click="OnTwoOn" />
         <Button Content="first" Click="OnFirst" />
       </StackPanel>
 

@@ -22,7 +22,8 @@ Every `Carousel` is the 8.1 FlipView:
 </Carousel>
 ```
 
-- Give it a size: an item is the FlipView less 2.5 a side.
+- Give it a size: an item is the FlipView less 2.5 a side. The strip moves by the panel's translate, so a frame of the
+  motion costs no layout.
 - `IsSwipeEnabled` (Avalonia's) is on in the theme; set it off and a finger drags nothing.
 - `SelectedIndex` set from code moves one item by the phone's animation; two or more, it jumps. `Next()`, `Previous()`
   and the arrow keys (Avalonia's) are changes of one.
@@ -42,8 +43,12 @@ Every `Carousel` is the 8.1 FlipView:
 - **`SelectionChanged`** comes with the snap's last frame.
 - **The ends**: past the first item the items follow 139.7/150 of the finger, past the last 99.35/150, and come back by
   the snap back's curve. It never goes round.
-- **A press while it moves** stops it where it is. A drag goes on from there; let go without one, the rule is read from
-  where it stopped.
+- **A press while it snaps** stops it where it is. A drag goes on from there; let go without one, the rule is read from
+  where it stopped. A press during a move from code doesn't hold it; a drag then ends it at its target, as the Pivot's.
+- **The page round it doesn't scroll** to the selection: `AutoScrollToSelectedItem` is off in the theme, as the selected
+  item is laid out a page along before it slides in.
+- **A change to the items** puts the strip at rest at the selection; an index shifted by one with the same item selected
+  doesn't animate.
 
 ## Resource keys
 
@@ -76,6 +81,9 @@ None.
   Pivot's rule (the read had too few events to trust its speed).
 - **No scroll chaining**: a ScrollViewer in an item at its end doesn't hand the drag on to the FlipView.
 - **`ViewportFraction`** (Avalonia's, to show the neighbours) isn't read.
+- **A mouse drags nothing**, where Avalonia's own swipe takes a mouse too: touch and pen only, as the Pivot's and Hub's.
+  `IsSwiping` (Avalonia's) stays false while a finger drags: its setter isn't Avalonia's public API.
+- **An `Orientation` changed in place** on the `PageSlide` is read at the next press, not at once.
 
 ## The checklist
 

@@ -66,8 +66,15 @@ One test each, in `tests/Cornflower.Tests/Controls/FlipViewTests.cs`.
 | A change of two jumps | 1 to 3 and 3 to 1 | `A_Change_Of_Two_From_Code_Jumps` |
 | A press while it snaps stops it dead; let go, the rule from where it stopped (on, past half) | "A press while it snaps catches it" | `A_Press_While_It_Snaps_Stops_It_Dead_And_Let_Go_It_Goes_On` |
 | A drag after the press goes on from there | as above ("then a drag continues", #214) | `A_Drag_After_A_Press_Mid_Snap_Goes_On_From_There` |
+| A tap during a move from code lets it run to its target (the Pivot's rule for a move that isn't a swipe's) | the Pivot (#163); no read of the FlipView's | `A_Tap_During_A_Move_From_Code_Lets_It_Run` |
+| An index shifted by a change to the items doesn't animate | the same item stays selected | `An_Index_Shifted_By_The_Items_Doesnt_Animate` |
+| A move from code doesn't scroll the page round the FlipView | the phone's FlipView doesn't (`AutoScrollToSelectedItem` off) | `A_Move_From_Code_Doesnt_Scroll_The_Page_Round_It` |
+| With the motion off, the panel still shows the selection | the panel's own rule | `With_The_Motion_Off_The_Panel_Follows_The_Selection` |
+| Under an app's own panel the motion leaves the finger alone | so it can't fight Avalonia's swipe | `Under_Another_Panel_The_Motion_Doesnt_Swipe` |
+| A `PageSlide` turned in place is read at the next press | Avalonia reads the axis on demand | `A_PageSlide_Turned_In_Place_Is_Read_At_The_Next_Press` |
 | Vertical: the same along Y, a page 395; held, 247.3 up goes on; a drag across doesn't move it | "Vertical" | `A_Vertical_FlipView_Flips_Up_And_Down` |
 | A ScrollViewer in an item keeps a drag up and down | the Pivot's rule (#163), #214 | `A_ScrollViewer_In_An_Item_Keeps_Its_Drag` |
+| A drag more across the axis than along it isn't a swipe | the recogniser's rule (Pivot, Hub) | `A_Drag_More_Across_The_Axis_Than_Along_It_Isnt_A_Swipe` |
 | A part with `PhoneNoManipulation` keeps its drag | as above | `A_Part_With_No_Manipulation_Keeps_Its_Drag` |
 | `IsSwipeEnabled`, on in the theme; off, nothing drags | Avalonia's API | `IsSwipeEnabled_Off_Drags_Nothing` |
 | The motion runs at `ControlSpeed`, not `PivotAndHubSpeed` | ADR 0006 | `The_Snap_Runs_At_The_Control_Speed` |
