@@ -58,4 +58,35 @@
     below, the control header's gap (TextControlHeaderMarginThemeThickness), so a line of small print sits snug.
   -->
   <Thickness x:Key="CornflowerPlainToolTipPadding">9.5,4.8</Thickness>
+
+  <!--
+    A menu item's icon or check (MenuItem, #237): 20 square, LucideIcon's own size (Controls/LucideIcon.axaml), so a
+    Lucide icon fits it as drawn; the check is the theme's Wp81.Glyph.CheckMark, fitted to it. 9.5 after it, the phone's
+    PhoneButtonContentPadding's sides, before the header.
+  -->
+  <x:Double x:Key="CornflowerPlainMenuItemIconSize">20</x:Double>
+  <Thickness x:Key="CornflowerPlainMenuItemIconMargin">0,0,9.5,0</Thickness>
+
+  <!-- A radio item's dot (MenuItem, #237): the icon's 20 less 5 all round, a 10 dot, half the icon's size. -->
+  <Thickness x:Key="CornflowerPlainMenuItemRadioMargin">5</Thickness>
+
+  <!--
+    The room before a menu item's gesture text (MenuItem, #237): 19, the MenuFlyout's left padding
+    (MenuFlyoutPortraitThemePadding), so a shortcut stands as far from its header as the header from the menu's edge.
+  -->
+  <Thickness x:Key="CornflowerPlainMenuItemGestureMargin">19,0,0,0</Thickness>
+
+  <!--
+    A sub-menu's padding (MenuItem and Menu, #237): 19 at the sides, the MenuFlyout's left padding
+    (MenuFlyoutPortraitThemePadding), so its items' text sits as a MenuFlyout's does; 8.5 above and below, an item's own
+    (MenuFlyoutItemThemePadding). A sub-menu isn't the window's width, so it has a right side too. The 19 at the sides
+    also indents a Separator in it with the items' text, as Simple's indent does.
+  -->
+  <Thickness x:Key="CornflowerPlainSubMenuPadding">19,8.5</Thickness>
+
+  <!--
+    A menu bar's item (Menu, #237): 9.5 at the sides, the phone's PhoneButtonContentPadding's, and 8.5 above and below,
+    a MenuFlyout item's (MenuFlyoutItemThemePadding), round its header in the body's size.
+  -->
+  <Thickness x:Key="CornflowerPlainTopLevelMenuItemPadding">9.5,8.5</Thickness>
 </ResourceDictionary>

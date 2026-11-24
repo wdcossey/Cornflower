@@ -10,14 +10,11 @@ CalendarDatePicker
 CalendarDayButton
 CalendarItem
 CarouselPage
-ContextMenu
 DataValidationErrors
 DrawerPage
 Expander
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
-Menu
-MenuItem
 NotificationCard
 PipsPager
 RefreshContainer

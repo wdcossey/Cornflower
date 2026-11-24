@@ -1,0 +1,161 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:conv="using:Avalonia.Controls.Converters"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/MenuItem/README.md.
+
+    The phone had no MenuItem: its MenuFlyoutItem is Wp81's keyed Wp81MenuFlyoutItemTheme, which a MenuFlyout's own
+    items still wear. This is that item (plan section 3, "The menu item"), by type, for a ContextMenu's items and a
+    sub-menu's, with what a desktop menu has and the phone's didn't: an icon, a check, gesture text and a sub-menu.
+
+    As the MenuFlyout's item: LayoutRoot (the Background, Transparent) round ContentBorder (MenuFlyoutItemThemePadding,
+    the tilt's target: rule 7) round the header, left and centred, at the phone's line (PhoneContentLine), access keys
+    recognised; in the MenuFlyout's type, set on the item, as an item inherits from the item or menu above it, not from
+    the popup it is drawn in: PhoneFontFamilySemiLight at TextStyleExtraLargeFontSize (25.5), its -15 character spacing
+    (PhoneCharacterSpacing), the MenuFlyoutPresenter's. Before the header, an icon column (CornflowerPlainMenuItemIconSize,
+    20 square), shown for an Icon or a check, and as wide in every item of the menu (a shared size group): the Icon, or
+    for a ToggleType the theme's Wp81.Glyph.CheckMark (CheckBox) or a dot (Radio) in PhoneAccentBrush when checked (rule 3).
+    After it, the InputGesture's text in PhoneMidBrush, and Lucide's ChevronRight for a sub-menu (rule 10). The sub-menu
+    is a Popup to the right on the MenuFlyout's surface (Wp81PlainSubMenuTheme), its items in Wp81's ScrollViewer, with
+    no motion (rule 8).
+
+    Selected (a pointer over it, or the keyboard on it), and not pressed, its header, icon and chevron are the accent
+    (rule 3: a selected item's text); pressed is the tilt alone, as the MenuFlyout's. Disabled, they are
+    MenuFlyoutItemDisabledForegroundThemeBrush, as the MenuFlyout's. A MenuItem whose Header is "-" is a Separator (the
+    plain line), as Simple's is.
+  -->
+  <conv:PlatformKeyGestureConverter x:Key="CornflowerPlainKeyGestureConverter" />
+
+  <ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="{DynamicResource MenuFlyoutItemThemePadding}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilySemiLight}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleExtraLargeFontSize}" />
+    <Setter Property="wp81:PhoneCharacterSpacing.CharacterSpacing" Value="-15" />
+    <Setter Property="LetterSpacing">
+      <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
+        <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding>
+    </Setter>
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border x:Name="LayoutRoot"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}">
+            <Border x:Name="ContentBorder" Padding="{TemplateBinding Padding}" cf:Tilt.IsTarget="True">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="CornflowerPlainMenuItemIcon" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="CornflowerPlainMenuItemGesture" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Panel x:Name="PART_IconColumn"
+                       Width="{DynamicResource CornflowerPlainMenuItemIconSize}"
+                       Height="{DynamicResource CornflowerPlainMenuItemIconSize}"
+                       Margin="{DynamicResource CornflowerPlainMenuItemIconMargin}"
+                       VerticalAlignment="Center"
+                       IsVisible="False">
+                  <ContentPresenter x:Name="PART_IconPresenter"
+                                    Content="{TemplateBinding Icon}"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center" />
+                  <Path x:Name="PART_Check"
+                        Data="{DynamicResource Wp81.Glyph.CheckMark}"
+                        Fill="{DynamicResource PhoneAccentBrush}"
+                        Stretch="Uniform"
+                        IsVisible="False" />
+                  <Ellipse x:Name="PART_Radio"
+                           Margin="{DynamicResource CornflowerPlainMenuItemRadioMargin}"
+                           Fill="{DynamicResource PhoneAccentBrush}"
+                           IsVisible="False" />
+                </Panel>
+                <ContentPresenter x:Name="PART_HeaderPresenter"
+                                  Grid.Column="1"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding Header}"
+                                  ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                  RecognizesAccessKey="True"
+                                  wp81:PhoneContentLine.IsEnabled="True" />
+                <TextBlock x:Name="PART_InputGestureText"
+                           Grid.Column="2"
+                           Margin="{DynamicResource CornflowerPlainMenuItemGestureMargin}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource PhoneMidBrush}"
+                           IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           Text="{TemplateBinding InputGesture, Converter={StaticResource CornflowerPlainKeyGestureConverter}}" />
+                <cf:LucideIcon x:Name="PART_Chevron"
+                               Grid.Column="3"
+                               Margin="{DynamicResource CornflowerPlainChevronMargin}"
+                               VerticalAlignment="Center"
+                               Kind="ChevronRight" />
+              </Grid>
+            </Border>
+          </Border>
+          <Popup x:Name="PART_Popup"
+                 IsLightDismissEnabled="False"
+                 IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}"
+                 Placement="RightEdgeAlignedTop">
+            <Border x:Name="PART_SubMenu" Theme="{DynamicResource Wp81PlainSubMenuTheme}">
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                Grid.IsSharedSizeScope="True"
+                                ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:icon /template/ Panel#PART_IconColumn, ^:toggle /template/ Panel#PART_IconColumn, ^:radio /template/ Panel#PART_IconColumn">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:toggle /template/ ContentPresenter#PART_IconPresenter, ^:radio /template/ ContentPresenter#PART_IconPresenter">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:toggle:checked /template/ Path#PART_Check">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:radio:checked /template/ Ellipse#PART_Radio">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:empty /template/ cf|LucideIcon#PART_Chevron">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^:selected:not(:pressed) /template/ Border#ContentBorder">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneAccentBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#ContentBorder">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ TextBlock#PART_InputGestureText">
+      <Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Path#PART_Check">
+      <Setter Property="Fill" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Ellipse#PART_Radio">
+      <Setter Property="Fill" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+
+    <!-- Avalonia's other separator: the plain Separator's line, as Simple's template holds one. -->
+    <Style Selector="^:separator">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Separator />
+        </ControlTemplate>
+      </Setter>
+    </Style>  </ControlTheme>
+</ResourceDictionary>

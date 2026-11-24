@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md, answer 7); docs/controls/ContextMenu/README.md.
+
+    The phone had no ContextMenu: an 8.1 app showed a MenuFlyout on hold. So a ContextMenu takes the MenuFlyout's look
+    and motion, labelled plain, as ContextMenu isn't the phone's: the MenuFlyoutPresenter theme's setters, by the same
+    keys (its type is the items' own, the MenuItem theme's, the same), and its template's parts (Controls/MenuFlyoutPresenter.axaml), so the MenuFlyout's binder places and opens it
+    (PhoneContextMenu, on PhoneMenuFlyout's binder and the PhonePopupHost): the window's overlay layer and width, below
+    its target if it fits there, else above it, the opening storyboard on CornflowerClock, closed at once, Back. Its
+    items are the plain MenuItem's (MenuItem.axaml), in one icon column (a shared size group); its Separators are a
+    MenuFlyout's, nothing (Wp81MenuFlyoutSeparatorTheme, given by PhoneContextMenu). No ScrollViewer: a menu longer than the window is cut off, as a MenuFlyout.
+    Focusable, as Simple's, so the keys reach its items as it opens.
+  -->
+  <ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
+    <Setter Property="Background" Value="{DynamicResource MenuFlyoutBackgroundThemeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutBorderThemeBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPortraitBorderThemeThickness}" />
+    <Setter Property="Padding" Value="{DynamicResource MenuFlyoutPortraitThemePadding}" />
+    <Setter Property="MinHeight" Value="{DynamicResource FlyoutThemeMinHeight}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Focusable" Value="True" />
+    <Setter Property="wp81:PhoneContextMenu.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <wp81:PhoneMenuFlyoutRoot>
+          <Border x:Name="OuterBorder"
+                  FlowDirection="LeftToRight"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}">
+            <Border x:Name="CenterBorder"
+                    FlowDirection="LeftToRight"
+                    BorderBrush="{TemplateBinding Background}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+              <StackPanel x:Name="InnerBorder"
+                          FlowDirection="{TemplateBinding FlowDirection}"
+                          Background="{TemplateBinding Background}"
+                          ClipToBounds="True">
+                <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                Margin="{TemplateBinding Padding}"
+                                FlowDirection="{TemplateBinding FlowDirection}"
+                                Grid.IsSharedSizeScope="True"
+                                ItemsPanel="{TemplateBinding ItemsPanel}"
+                                KeyboardNavigation.TabNavigation="Continue" />
+              </StackPanel>
+            </Border>
+          </Border>
+        </wp81:PhoneMenuFlyoutRoot>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

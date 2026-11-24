@@ -15,9 +15,9 @@ namespace Cornflower.Tests.Completeness;
 /// The plain ContentControls in the templates of controls Wp81 doesn't theme yet (the holes) keep Avalonia's own, as
 /// <see cref="HolePartsTests"/> shows for Buttons. Simple has no ContentControl theme, so such a part falls back to an
 /// empty theme for its type (<c>HoleParts.FallBackToOwn</c>), which gives it Avalonia's own template and defaults, as
-/// under Simple alone. In Avalonia 12.1.4 Simple's templates for DataValidationErrors, MenuItem and the
-/// managed file dialog hold them (and ComboBox's did, until Wp81 themed it, #155: a hole's ComboBox is Wp81's, so its
-/// parts aren't counted). Without the fallback they would take Wp81's, which puts the content at the top left
+/// under Simple alone. In Avalonia 12.1.4 Simple's templates for DataValidationErrors and the
+/// managed file dialog hold them (and ComboBox's and MenuItem's did, until Wp81 themed them, #155 and #237: a hole's
+/// ComboBox is Wp81's, so its parts aren't counted). Without the fallback they would take Wp81's, which puts the content at the top left
 /// at its own size where Simple's template stretches it.
 /// </summary>
 public class HoleContentControlPartsTests
@@ -60,25 +60,7 @@ public class HoleContentControlPartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Contains(nameof(DataValidationErrors), fellBack);
-        Assert.Contains(nameof(MenuItem), fellBack);
         Assert.Contains("ManagedFileChooser", fellBack);
-    }
-
-    // A MenuItem's icon slot, Simple's ContentControl: as large and as placed as with Simple alone.
-    [AvaloniaFact]
-    public void A_MenuItems_Icon_Keeps_Simples_Layout()
-    {
-        var alone = new MenuItem { Header = "item", Icon = new Border { Width = 10, Height = 10 } };
-        using var only = new Scene(alone, themes: [new SimpleTheme()]);
-        var expected = Plain(alone).Select(c => (c.Name, c.Bounds)).ToList();
-
-        var item = new MenuItem { Header = "item", Icon = new Border { Width = 10, Height = 10 } };
-        using var scene = new Scene(item, themes: [new SimpleTheme(), new Wp81Theme()]);
-        var parts = Plain(item);
-
-        Assert.NotEmpty(parts);
-        Assert.Equal(expected, parts.Select(c => (c.Name, c.Bounds)).ToList());
-        Assert.All(parts, c => Assert.True(IsOwn(c.Theme)));
     }
 
     // The two flags in either order in the theme: whichever comes in last does the check, so the part falls back.

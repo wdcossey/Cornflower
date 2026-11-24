@@ -61,8 +61,14 @@ internal static class PhoneMenuFlyout
         AvaloniaProperty.RegisterAttached<MenuFlyoutPresenter, ControlTheme?>("SeparatorTheme", typeof(PhoneMenuFlyout));
 
     /// <summary>One binder a presenter, made and let go of as <see cref="PhoneFlyout"/>'s are.</summary>
-    private static readonly PhonePopupBinders<MenuFlyoutPresenter, MenuFlyout, Binder> Binders =
-        new(IsEnabledProperty, (presenter, popup) => new Binder(presenter, popup));
+    private static readonly PhonePopupBinders<MenuFlyoutPresenter, MenuFlyout, Binder<MenuFlyout>> Binders =
+        new(IsEnabledProperty, (presenter, popup) => new Binder<MenuFlyout>(presenter, popup, flyout => flyout?.Target,
+            container => container switch
+            {
+                MenuItem => GetItemTheme(presenter),
+                Separator => GetSeparatorTheme(presenter),
+                _ => null,
+            }));
 
     static PhoneMenuFlyout()
     {
@@ -93,16 +99,25 @@ internal static class PhoneMenuFlyout
 
     private static void Retheme(MenuFlyoutPresenter presenter) => Binders.Of(presenter)?.GiveThemes();
 
-    private sealed class Binder : IPhonePopupBinder<MenuFlyout>
+    /// <summary>
+    /// A menu's popup on the phone's host, placed against its target and opened by the template's storyboard: a
+    /// MenuFlyoutPresenter's, or a plain ContextMenu's, which takes the MenuFlyout's look and motion
+    /// (<see cref="PhoneContextMenu"/>). The menu is the presenter: its template has the MenuFlyoutPresenter's parts.
+    /// </summary>
+    /// <typeparam name="TFlyout">The flyout that opens the popup; for a ContextMenu, none ever does.</typeparam>
+    internal sealed class Binder<TFlyout> : IPhonePopupBinder<TFlyout> where TFlyout : PopupFlyoutBase
     {
-        private readonly MenuFlyoutPresenter _presenter;
+        private readonly MenuBase _presenter;
         private readonly Popup _popup;
+        private readonly Func<TFlyout?, Control?> _target;
+        private readonly Func<Control, ControlTheme?> _themeOf;
+        private readonly Action? _close;
         private readonly TemplateParts _parts;
         private readonly Dictionary<Control, (ControlTheme Theme, IDisposable Given)> _themed = [];
         private readonly ScaleTransform _outerScale = new();
         private readonly ScaleTransform _innerScale = new();
         private readonly List<IDisposable> _moving = [];
-        private MenuFlyout? _flyout;
+        private TFlyout? _flyout;
         private TopLevel? _top;
         private Border? _outer;
         private Border? _center;
@@ -114,10 +129,19 @@ internal static class PhoneMenuFlyout
         private bool _singleStep;
         private bool _above;
 
-        public Binder(MenuFlyoutPresenter presenter, Popup popup)
+        /// <param name="presenter">The menu: the popup's child, whose template has the MenuFlyoutPresenter's parts.</param>
+        /// <param name="popup">Its popup.</param>
+        /// <param name="target">What the menu is placed against, given the flyout that opened it (none for a ContextMenu).</param>
+        /// <param name="themeOf">The theme each of the menu's own containers gets, if any.</param>
+        /// <param name="close">How the menu closes when no flyout opened it; the popup's own close if none.</param>
+        public Binder(MenuBase presenter, Popup popup, Func<TFlyout?, Control?> target, Func<Control, ControlTheme?> themeOf,
+            Action? close = null)
         {
             _presenter = presenter;
             _popup = popup;
+            _target = target;
+            _themeOf = themeOf;
+            _close = close;
             // The menu's motion is its template's own: the host opens it at rest and closes it at once.
             Host = new PhonePopupHost(popup, presenter, Close, host => host.Moves = false);
             Host.Resized += OnResized;
@@ -136,7 +160,7 @@ internal static class PhoneMenuFlyout
 
         public bool IsOpening => _frame is not null;
 
-        public MenuFlyout? Flyout => _flyout;
+        public TFlyout? Flyout => _flyout;
 
         /// <summary>
         /// Lets go of the menu: the host given back, the motion stopped, the item themes taken off. One the host was
@@ -167,7 +191,7 @@ internal static class PhoneMenuFlyout
         /// <see cref="PhonePopupDismissal"/> has it: a flyout's popup is light-dismissed, and the closing tap passes
         /// through only if the app sets <c>OverlayDismissEventPassThrough</c>.
         /// </summary>
-        public void Bind(MenuFlyout flyout)
+        public void Bind(TFlyout flyout)
         {
             _flyout = flyout;
             if (_top is not null)
@@ -183,12 +207,7 @@ internal static class PhoneMenuFlyout
 
         private void GiveTheme(Control container)
         {
-            var theme = container switch
-            {
-                MenuItem => GetItemTheme(_presenter),
-                Separator => GetSeparatorTheme(_presenter),
-                _ => null,
-            };
+            var theme = _themeOf(container);
             // An app's ItemContainerTheme (the flyout's, given to the presenter) is set as the container is prepared, at
             // no priority of its own that a style's value wouldn't replace: it is left alone.
             var appTheme = _presenter.ItemContainerTheme is { TargetType: { } type } && type.IsAssignableFrom(container.StyleKey)
@@ -283,7 +302,7 @@ internal static class PhoneMenuFlyout
         /// </summary>
         private void Place(bool layout = true)
         {
-            if (_top is null || _flyout?.Target is not { } target)
+            if (_top is null || _target(_flyout) is not { } target)
                 return;
             var area = Host.Area;
             // Laid out at the size the host has just given the popup.
@@ -377,11 +396,13 @@ internal static class PhoneMenuFlyout
             _moving.Clear();
         }
 
-        /// <summary>The menu closes: the flyout, or the popup if no flyout opened it.</summary>
+        /// <summary>The menu closes: the flyout, or the menu's own close (else the popup's) if no flyout opened it.</summary>
         private void Close()
         {
             if (_flyout is not null)
                 _flyout.Hide();
+            else if (_close is not null)
+                _close();
             else
                 _popup.Close();
         }
