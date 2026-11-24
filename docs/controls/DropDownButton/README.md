@@ -25,8 +25,8 @@ content.
 
 Wp81's Button's setters, by the phone's keys: `PhoneForegroundBrush` border and text, `PhoneBorderThickness` (2.5),
 `PhoneFontFamilyNormal` at `TextStyleLargeFontSize`, `PhoneButtonContentPadding`, the phone's touch sizes
-(`PhoneButtonMinWidth` 109, `PhoneButtonMinHeight` 57.5, drawn inside `PhoneTouchTargetOverhang`), the tilt, no focus
-adorner. Pressed fills it with the accent (`ButtonPressedBackgroundThemeBrush`) and draws the content and chevron in
+(`PhoneButtonMinWidth` 109, `PhoneButtonMinHeight` 57.5, drawn inside `PhoneTouchTargetOverhang`), the tilt; no focus
+adorner (the theme sets none). Pressed fills it with the accent (`ButtonPressedBackgroundThemeBrush`) and draws the content and chevron in
 `ButtonPressedForegroundThemeBrush`; disabled dims the border, content and chevron as the Button's do. An open flyout
 changes nothing drawn: the accent isn't for open (ADR 0007, rule 3).
 

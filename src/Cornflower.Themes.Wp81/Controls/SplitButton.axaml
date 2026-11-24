@@ -33,7 +33,6 @@
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="cf:Tilt.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

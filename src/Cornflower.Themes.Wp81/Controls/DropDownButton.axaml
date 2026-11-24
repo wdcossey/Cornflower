@@ -28,7 +28,6 @@
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="cf:Tilt.IsEnabled" Value="True" />
     <!-- In the template of a control Wp81 doesn't theme yet, the theme under Wp81's DropDownButton instead (HoleParts). -->
     <Setter Property="wp81:HoleParts.FallBack" Value="True" />
