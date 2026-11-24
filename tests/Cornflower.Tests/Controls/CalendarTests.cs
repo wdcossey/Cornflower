@@ -339,12 +339,24 @@ public class CalendarTests
 
         Assert.True(picker.IsDropDownOpen);
         Assert.False(box.IsFocused);
-        Assert.False(box.IsKeyboardFocusWithin && TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement() is TextBox);
+        // What the platform's input method asks of the focused element (Avalonia's TextInputMethodManager): none, so
+        // Android doesn't raise the keyboard. The box would answer a request from the button inside it.
+        Assert.Null(TextClientOf(TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement()));
 
         picker.IsDropDownOpen = false;
         Dispatcher.UIThread.RunJobs();
         Release(scene, Press(scene, box));
         Assert.True(box.IsFocused, $"focused: {TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement()}, open {picker.IsDropDownOpen}");
+    }
+
+    /// <summary>The text client the platform's input method gets for the focused element, as Avalonia's manager asks.</summary>
+    private static Avalonia.Input.TextInput.TextInputMethodClient? TextClientOf(IInputElement? focused)
+    {
+        if (focused is not InputElement element || !InputMethod.GetIsInputMethodEnabled(element))
+            return null;
+        var query = new Avalonia.Input.TextInput.TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
+        element.RaiseEvent(query);
+        return query.Client;
     }
 
     // A selection at load or from code never moves the page (#220, #251, #252): a Calendar and a picker with a selected

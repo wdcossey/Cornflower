@@ -13,7 +13,9 @@
     plain NumericUpDown does. In the box, after the text (the TextBox's InnerRightContent), PART_Button, Lucide's
     Calendar (rule 10) in the borderless glyph button (Wp81PlainGlyphButtonTheme): nothing drawn at rest, the accent
     while pressed, with the tilt (rule 7). It is focusable and no tab stop: a press focuses the nearest focusable element,
-    and a button that isn't would hand the focus to the box it sits in, which raises the soft keyboard over the popup. A tap opens PART_Popup below the control, as wide as it at the least: a
+    and a button that isn't would hand the focus to the box it sits in, which raises the soft keyboard over the popup.
+    Its input method is off: focused inside the box, it would otherwise ask for a text client, the box would answer, and
+    Android would raise the keyboard anyway (the emulator). So focused, it gives the platform no text client. A tap opens PART_Popup below the control, as wide as it at the least: a
     floating surface in FlyoutBackgroundThemeBrush (rule 5), no border, square, holding PART_Calendar, the plain
     Calendar (Controls/Calendar.axaml). It is drawn in the window's overlay layer, as the phone has one window (as
     AutoCompleteBox's list is), and opens and closes at once, as Avalonia's Popup does (rule 8). It isn't one of Wp81's
@@ -33,6 +35,7 @@
                       Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
                       Focusable="True"
                       IsTabStop="False"
+                      InputMethod.IsInputMethodEnabled="False"
                       cf:Tilt.IsEnabled="True">
                 <cf:LucideIcon Kind="Calendar" />
               </Button>
