@@ -14,15 +14,11 @@ ContextMenu
 DataValidationErrors
 DrawerPage
 Expander
-GroupBox
-HeaderedContentControl
-Label
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
 Menu
 MenuItem
 NotificationCard
-PathIcon
 PipsPager
 RefreshContainer
 RefreshVisualizer
@@ -37,8 +33,6 @@ TableViewCell
 TableViewColumnHeader
 TableViewRow
 TextSelectionHandle
-ToolTip
-TransitioningContentControl
 TreeView
 TreeViewItem
 WindowNotificationManager

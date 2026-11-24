@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainTextPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The third plain themes (ADR 0007, #236): Cornflower's design, not the phone's. A Label naming a TextBox, a
+    HeaderedContentControl, a GroupBox of check boxes, PathIcons in buttons, a ToolTip (with a pointer), a
+    TransitioningContentControl whose content changes at once, and the light theme.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <Label x:Name="NameLabel" Content="_name" Target="NameBox" Margin="0,12,0,4.8" />
+      <TextBox x:Name="NameBox" />
+
+      <HeaderedContentControl x:Name="Headered" Header="ringtone">
+        <TextBlock Text="Nokia Tune" />
+      </HeaderedContentControl>
+
+      <GroupBox x:Name="Group" Header="notifications" Margin="0,12,0,0">
+        <StackPanel>
+          <CheckBox Content="sounds" IsChecked="True" />
+          <CheckBox Content="vibrate" />
+        </StackPanel>
+      </GroupBox>
+
+      <GroupBox Header="icons" Margin="0,12,0,0">
+        <StackPanel Orientation="Horizontal" Spacing="9.5">
+          <Button x:Name="IconButton" ToolTip.Tip="add (a tooltip shows with a pointer)">
+            <PathIcon x:Name="Icon" Data="M4,0 H6 V4 H10 V6 H6 V10 H4 V6 H0 V4 H4 Z" Width="20" Height="20" />
+          </Button>
+          <Button IsEnabled="False">
+            <PathIcon Data="M0,10 L4,14 L14,2 L12,0 L4,10 L2,8 Z" Width="20" Height="20" />
+          </Button>
+        </StackPanel>
+      </GroupBox>
+
+      <GroupBox Header="transitioning content" Margin="0,12,0,0">
+        <StackPanel>
+          <TransitioningContentControl x:Name="Transitioning" Content="the first page of content" />
+          <Button x:Name="Next" Content="next" Click="OnNext" />
+        </StackPanel>
+      </GroupBox>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <GroupBox Header="light">
+            <StackPanel>
+              <Label Content="_label" Target="LightBox" Margin="0,0,0,4.8" />
+              <TextBox x:Name="LightBox" />
+              <HeaderedContentControl Header="header">
+                <TextBlock Text="content" />
+              </HeaderedContentControl>
+            </StackPanel>
+          </GroupBox>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

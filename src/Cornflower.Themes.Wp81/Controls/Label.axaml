@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Label/README.md.
+
+    The phone had no Label: a TextBlock in ControlHeaderTextBlockStyle named a control. So a Label is that look: the
+    phone's family at TextStyleMediumFontSize (16), in PhoneMidBrush, set on the Label so its content inherits them and
+    an app's own values win. Its content recognises access keys (a Label's Target takes focus on its key), with the
+    phone's 1.33 em line for the text it makes (PhoneContentLine). Disabled, PhoneDisabledBrush (rule 5). It draws
+    nothing else at rest: the app's Background, BorderBrush, BorderThickness, CornerRadius and Padding, all unset.
+  -->
+  <ControlTheme x:Key="{x:Type Label}" TargetType="Label">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleMediumFontSize}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneMidBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}"
+                          CornerRadius="{TemplateBinding CornerRadius}"
+                          Padding="{TemplateBinding Padding}"
+                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                          Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                          RecognizesAccessKey="True"
+                          wp81:PhoneContentLine.IsEnabled="True" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

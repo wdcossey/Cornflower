@@ -46,4 +46,16 @@
     9.5), so a bar a finger can find, thin beside the panes. An app's own Width or Height wins.
   -->
   <x:Double x:Key="CornflowerPlainSplitterMinSize">9.5</x:Double>
+
+  <!--
+    The room under a group's heading (GroupBox, #236): 9.5, the phone's touch-target overhang (PhoneTouchTargetOverhang's
+    9.5), twice the control header's 4.8 (TextControlHeaderMarginThemeThickness), as a group heads more than one control.
+  -->
+  <Thickness x:Key="CornflowerPlainGroupHeaderMargin">0,0,0,9.5</Thickness>
+
+  <!--
+    A tooltip's padding (ToolTip, #236): 9.5 each side, the phone's PhoneButtonContentPadding's sides, and 4.8 above and
+    below, the control header's gap (TextControlHeaderMarginThemeThickness), so a line of small print sits snug.
+  -->
+  <Thickness x:Key="CornflowerPlainToolTipPadding">9.5,4.8</Thickness>
 </ResourceDictionary>
