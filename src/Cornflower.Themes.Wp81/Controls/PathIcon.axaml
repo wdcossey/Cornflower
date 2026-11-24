@@ -11,7 +11,8 @@
     DownOnly). Given a Width or a Height, the geometry is scaled to fit it, keeping its shape, as Simple's is. Its
     Background is Transparent, as Simple's, so the whole box takes the pointer; an app's is drawn behind it.
 
-    A PathIcon in a template written for the theme under Wp81 (Simple's DrawerPage's, with no size of its own) keeps
+    A PathIcon in a template written for the theme under Wp81 (Simple's DrawerPage's, with no size of its own, on a
+    DrawerPage given Simple's theme: Wp81 themes DrawerPage, #239) keeps
     that theme's instead (HoleParts.FallBack), so the hole's chrome keeps the icon size it was laid out for.
   -->
   <ControlTheme x:Key="{x:Type PathIcon}" TargetType="PathIcon">

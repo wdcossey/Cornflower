@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainDisclosurePage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The sixth plain themes (ADR 0007, #239): Cornflower's design, not the phone's. Two Expanders (one open), a TreeView
+    (one branch open, one item selected, a leaf disabled), a SplitView with its pane open beside the content, a
+    DrawerPage, and the light theme.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24">
+      <sample:SamplePageHeader x:Name="Header" Margin="19,0" />
+
+      <TextBlock Margin="19,0" Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <Expander x:Name="Shut" Margin="19,12,19,0" Header="notifications">
+        <CheckBox Content="sounds" />
+      </Expander>
+      <Expander x:Name="Open" Margin="19,0" Header="advanced" IsExpanded="True">
+        <TextBlock Text="tap the heading to shut it" TextWrapping="Wrap" />
+      </Expander>
+
+      <TreeView x:Name="Tree" Margin="0,12,0,0">
+        <TreeViewItem Header="music" IsExpanded="True">
+          <TreeViewItem Header="albums" IsSelected="True" />
+          <TreeViewItem Header="artists">
+            <TreeViewItem Header="a to z" />
+          </TreeViewItem>
+        </TreeViewItem>
+        <TreeViewItem Header="videos" />
+        <TreeViewItem Header="podcasts" IsEnabled="False" />
+      </TreeView>
+
+      <SplitView x:Name="Split" Height="140" Margin="0,12,0,0" DisplayMode="Inline" IsPaneOpen="True" OpenPaneLength="160">
+        <SplitView.Pane>
+          <TextBlock Margin="19,12" Text="the pane" />
+        </SplitView.Pane>
+        <TextBlock Margin="19,12" Text="the content" />
+      </SplitView>
+
+      <DrawerPage x:Name="Drawer" Height="220" Margin="0,12,0,0" Header="mail" DrawerLength="220">
+        <DrawerPage.Drawer>
+          <StackPanel Margin="19,12">
+            <TextBlock Text="inbox" />
+            <TextBlock Text="sent" />
+          </StackPanel>
+        </DrawerPage.Drawer>
+        <ContentPage>
+          <TextBlock Margin="19,12" Text="a DrawerPage: tap the menu" TextWrapping="Wrap" />
+        </ContentPage>
+      </DrawerPage>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="0,12,0,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="0,6,0,12">
+          <StackPanel>
+            <Expander Margin="19,0" Header="light" IsExpanded="True">
+              <TextBlock Text="the light theme" />
+            </Expander>
+            <TreeView>
+              <TreeViewItem Header="documents" IsExpanded="True">
+                <TreeViewItem Header="notes" IsSelected="True" />
+              </TreeViewItem>
+            </TreeView>
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
