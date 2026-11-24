@@ -99,7 +99,8 @@ None new. `Cornflower.Controls.ControlHeader` (#96) gives WinRT's `Header` and `
 - **No `SelectionChanged` event, `GetRectFromCharacterIndex`, `IsSpellCheckEnabled`, `IsColorFontEnabled` or
   `PreventKeyboardDisplayOnProgrammaticFocus`**: Avalonia has none.
 - **Data validation shows nothing**, as the phone has no such display; Simple's `DataValidationErrors` isn't in the
-  template.
+  template. An app wraps the box in a [`DataValidationErrors`](../DataValidationErrors/README.md) (plain, #241) to
+  show its errors under it.
 - **Unmeasured**: the caret, the selection's text colour and handles, the keyboard, and scrolling.
 - **The text is Selawik** (ADR 0001).
 
