@@ -1,7 +1,9 @@
 # Plain themes: the plan (#216)
 
-**Status:** a draft for the maintainer to pick from (2026-11-21). Nothing here is decided; the recommendations are marked
-as such. Each batch the maintainer picks gets its own issue.
+**Status:** decided 2026-11-24: the maintainer took every recommendation in "For the user to pick". What was decided
+lives in [ADR 0007](../decisions/0007-plain-themes.md) and `docs/ROADMAP.md`'s Tier 4 rows (the batches are #234 to #244,
+`TextSelectionHandle` is #245); where they differ from this draft, they win. This file stays as the record of the options.
+It was drafted on 2026-11-21 for the maintainer to pick from.
 
 **Question.** Avalonia has templated controls the phone never had, and today they fall back to Simple. Which are they, what
 would an 8.1 app have used instead, what does "plain, in the era's style, labelled as ours" mean, and in what order should

@@ -1,6 +1,7 @@
 # ADR 0001 — What "faithful" means here
 
-**Date:** 2026-11-08 · **Status:** Accepted 2026-11-08; item 1 amended 2026-11-08 and 2026-11-11
+**Date:** 2026-11-08 · **Status:** Accepted 2026-11-08; item 1 amended 2026-11-08 and 2026-11-11; items 2 and 6 amended 2026-11-24
+(ADR 0007)
 
 ## Context
 
@@ -78,6 +79,9 @@ contradicted "faithful" and were never revisited
 2. **Geometry, colour, motion and behaviour are reproduced and measured.** Every number in a
    control's plan comes from the templates or from a capture, with its source beside it.
 
+   **Amended 2026-11-24.** Plain themes, for the controls the phone never had, are the exception: they have no
+   reference to measure, and are done without measurement ([ADR 0007](0007-plain-themes.md)).
+
 3. **Fonts and icons are substituted, and that is a recorded deviation, not a gap.** Text is
    Selawik. Measured against Segoe WP, the phone's own font, it is exact at Light, within 0.3% on
    letters at Semilight, Regular and Bold, and 1.5 to 1.8% wide at Semibold; digits are 1.5 to
@@ -99,6 +103,10 @@ contradicted "faithful" and were never revisited
    or recorded as missing. Where a control must be a subclass of Avalonia's, it keeps the WinRT
    name ([ADR 0002](0002-decisions-of-2026-11-08.md#the-shape-of-a-control);
    [architecture](../ARCHITECTURE.md#the-limit-of-a-theme)).
+
+   **Amended 2026-11-24.** A plain theme has no WinRT name to follow, so a new resource key it needs takes the
+   `CornflowerPlain` prefix, and a keyed theme for one of its parts is `Wp81Plain<Part>Theme`
+   ([ADR 0007](0007-plain-themes.md), rule 1).
 
 ## Consequences
 

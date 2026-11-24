@@ -5,6 +5,9 @@ Questions about Avalonia 12.1.4 that decide how Cornflower is built. Each answer
 upgrade that changes the answer turns them red. All of it is headless, with Skia, on Windows and on Linux CI. None of it has been
 tried in a real window or on a device.
 
+Not a spike: [`plain-themes-plan.md`](plain-themes-plan.md), the plain themes' options (#216), kept here as their record;
+what was decided is [ADR 0007](../decisions/0007-plain-themes.md).
+
 ## 1. Swapping the theme at run time
 
 **Question.** With two `Styles`, each holding a `ControlTheme` for `Button` with its own template and its own value for one brush

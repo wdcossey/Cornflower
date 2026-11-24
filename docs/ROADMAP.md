@@ -240,7 +240,20 @@ emulator's, not copied. Next: Tier 4.
 | [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Carousel | Theme, with the phone's swipe, snap, ends and a change from code (`PhoneFlipView`, on the Pivot's recogniser and release rule), no buttons or indicator; up and down with a vertical `PageSlide`; done 2026-11-21 (#223), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 1, 2 |
 | [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | none | New control: the grouped list and its jump list, a popup over the whole window on `PhonePopupHost`, with the two converters; done 2026-11-21 (#224), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
 | — | RichEditBox, RichTextBlock | none in the free packages | Later, or out | — |
-| [#216](https://github.com/wdcossey/Cornflower/issues/216) | Controls Avalonia has and the phone never had: Calendar, TreeView, DataGrid, SplitView, Menu, TabControl, Expander, NumericUpDown, ColorPicker and more | — | A plain theme in the era's style, labelled as ours and not a reproduction; the plan is [#216](https://github.com/wdcossey/Cornflower/issues/216) | 1 |
+| [#216](https://github.com/wdcossey/Cornflower/issues/216) | Controls Avalonia has and the phone never had: Calendar, TreeView, DataGrid, SplitView, Menu, TabControl, Expander, NumericUpDown, ColorPicker and more | — | The plain themes' plan: 57 controls in 11 batches, decided 2026-11-24 (every recommendation taken); done 2026-11-24 (the plan, #233; [ADR 0007](decisions/0007-plain-themes.md), PR_LINK) | — |
+| [#234](https://github.com/wdcossey/Cornflower/issues/234) | Batch 1, hosts and small pieces: `Window`, `EmbeddableControlRoot`, `PopupRoot`, `OverlayPopupHost`, `ItemsControl`, `Separator` | exist; Simple's today | Plain theme (ADR 0007); one PR; sets the label, the `CornflowerPlain` prefix and its test, and adds the 1.5 line thickness; **next** | 1 |
+| [#235](https://github.com/wdcossey/Cornflower/issues/235) | Batch 2, buttons and the shared parts: `DropDownButton`, `SplitButton`, `ButtonSpinner`, `NumericUpDown`, `GridSplitter` | exist; Simple's today | Plain theme; a PR per family; the `Wp81Plain` part themes the later batches reuse; a `HoleParts.cs` edit (rule 7) | 1 |
+| [#236](https://github.com/wdcossey/Cornflower/issues/236) | Batch 3, text and content: `Label`, `HeaderedContentControl`, `GroupBox`, `PathIcon`, `ToolTip`, `TransitioningContentControl` | exist; Simple's today | Plain theme; one PR; `TransitioningContentControl` with no transition of its own | 1 |
+| [#237](https://github.com/wdcossey/Cornflower/issues/237) | Batch 4, menus: `MenuItem`, `ContextMenu`, `Menu` | exist; Simple's today | Plain theme; `ContextMenu` takes the MenuFlyout's look and motion, for the maintainer to review once done (perhaps a `CornflowerConfig` setting for a plain menu); a `HoleParts.cs` edit | 1 |
+| [#238](https://github.com/wdcossey/Cornflower/issues/238) | Batch 5, tabs and pages: `TabItem`, `TabStripItem`, `TabStrip`, `TabControl`, `TabbedPage`, `CarouselPage` | exist; Simple's today | Plain theme; `TabControl` as the Pivot's headers without its swipe | 1 |
+| [#239](https://github.com/wdcossey/Cornflower/issues/239) | Batch 6, disclosure and navigation: `Expander`, `TreeView`, `TreeViewItem`, `SplitView`, `DrawerPage` | exist; Simple's today | Plain theme; the row for batch 9; a `HoleParts.cs` edit | 1 |
+| [#240](https://github.com/wdcossey/Cornflower/issues/240) | Batch 7, dates: `CalendarDayButton`, `CalendarButton`, `CalendarItem`, `Calendar`, `CalendarDatePicker` | exist; Simple's today | Plain theme; a `HoleParts.cs` edit | 1 |
+| [#241](https://github.com/wdcossey/Cornflower/issues/241) | Batch 8, feedback: `DataValidationErrors`, `NotificationCard`, `WindowNotificationManager`, `RefreshContainer`, `RefreshVisualizer`, `PipsPager` | exist; Simple's today | Plain theme; four PRs (validation, notifications, refresh, `PipsPager`); adds `CornflowerPlainErrorBrush`; the refresh sign is the `ProgressRing`; a `HoleParts.cs` edit | 1 |
+| [#242](https://github.com/wdcossey/Cornflower/issues/242) | Batch 9, tables: `TableViewCell`, `TableViewColumnHeader`, `TableViewRow`, `TableView` | exist; Simple's today | Plain theme, on batch 6's row | 1 |
+| [#243](https://github.com/wdcossey/Cornflower/issues/243) | Batch 10, DataGrid (package): `DataGrid` and its five parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.DataGrid`, a working name) | 1 |
+| [#244](https://github.com/wdcossey/Cornflower/issues/244) | Batch 11, ColorPicker (package): `ColorPicker` and its four parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.ColorPicker`, a working name), with keyed part themes for `ColorView` | 1 |
+| [#245](https://github.com/wdcossey/Cornflower/issues/245) | The text selection grippers | `TextSelectionHandle` | A reproduction, not a plain theme, after a capture (moved out of #216's plan) | 1 |
+| — | The file chooser: `ManagedFileChooser`, `ManagedFileChooserOverwritePrompt` | exist; Simple's today | Dropped (#216, 2026-11-24): apps use the platform's picker. They stay holes in `Holes.txt` | — |
 
 The reads Tier 4 needs were [#211](https://github.com/wdcossey/Cornflower/issues/211), done 2026-11-18 (#217): the SDK's files first, then the emulator for what
 they can't tell (`tools/refapp/README.md`, "Tier 4's reads"; `ref/wp81/FlipView/`, `GridView/`, `ListBox/`,
@@ -263,13 +276,19 @@ nothing changed. [#220](https://github.com/wdcossey/Cornflower/issues/220)
 Its runs are owed: the Pixel (the gridview and listview pages open at their top) and the real window (arrow keys and
 Tab into a list low on a page).
 
-Open: [#216](https://github.com/wdcossey/Cornflower/issues/216), the plain themes' plan (next); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
-`SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure);
+The plain themes' plan ([#216](https://github.com/wdcossey/Cornflower/issues/216)) was decided on 2026-11-24: the user took
+every recommendation, and [ADR 0007](decisions/0007-plain-themes.md) holds the rules and the answers. Its batches are
+#234 to #244, batch 1 (#234) first; `TextSelectionHandle` is a reproduction of its own (#245); the file chooser and its
+overwrite prompt are dropped and stay holes.
+
+Open: the plain themes' batches, #234 (next) to #244, and #245; [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+`SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure, and
+confirmed the deferral on 2026-11-24);
 [#230](https://github.com/wdcossey/Cornflower/issues/230), the Hub listens with `handledEventsToo`, so a request a
 `KeepsScrollInList` list stopped can still move the Hub (#229's review); and #129, carried from Tier 2. Owed: the Pixel
 runs of #221, #223 and #224, and #229's runs. Owed besides the runs: the reads each README lists (the GridView's
 `ItemClick`, SemanticZoom's pinch). Tier 4's controls are done but RichEditBox and RichTextBlock (later, or out). Next:
-the plain themes (#216).
+the plain themes' batch 1 (#234).
 
 ### Out of scope
 
@@ -488,5 +507,5 @@ see the `Status:` line in each README under `docs/controls/`.
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
 reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Tier 4's controls are done (#131,
-#212 to #215, on #211's reads), three of them owed their Pixel run, and #220's fix (#229) its runs (above); the plain themes (#216) are next. Each row's device run on
+#212 to #215, on #211's reads), three of them owed their Pixel run, and #220's fix (#229) its runs (above); the plain themes' plan is decided (#216, ADR 0007) and their batch 1 (#234) is next. Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.
