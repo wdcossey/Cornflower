@@ -164,6 +164,22 @@ public class CalendarTests
         Assert.Equal(new DateTime(2026, 11, 12), calendar.SelectedDate);
     }
 
+    // The press is the accent on its own: with nothing to select (SelectionMode None), a pressed day still fills.
+    [AvaloniaFact]
+    public void A_Press_Is_The_Accent_Where_Nothing_Is_Selected()
+    {
+        var (calendar, scene) = OnAPage(new Calendar { DisplayDate = Shown, SelectionMode = CalendarSelectionMode.None });
+        using var _ = scene;
+        var day = Day(calendar, new DateTime(2026, 11, 12));
+
+        var at = Press(scene, day);
+        Assert.Null(calendar.SelectedDate);
+        Assert.Same(Resource<IBrush>(calendar, "PhoneAccentBrush"), Fill(day));
+        Assert.Same(Resource<IBrush>(calendar, "PhoneButtonBasePressedForegroundBrush"), Text(day));
+        Release(scene, at);
+        Assert.Equal(Colors.Transparent, ColorOf(Fill(day)));
+    }
+
     // The year's months: four across, the phone's height, tilted, the month shown in the accent.
     [AvaloniaFact]
     public void The_Year_Is_Four_Months_Across_With_The_Shown_One_In_The_Accent()
