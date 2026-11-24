@@ -10,10 +10,13 @@
 
     A Border (the app's Background, BorderBrush, BorderThickness and CornerRadius, all unset) round a DockPanel: the
     header row, PART_ItemsPresenter (a StackPanel) in Wp81's ScrollViewerScrollBarlessTheme (PART_ScrollViewer), which
-    a finger pans to reach a header past the edge and which brings the selected one into view, with no bar; and the
+    a finger pans to reach a header past the edge, with no bar; and the
     content in Avalonia's two hosts (PART_SelectedContentHost, and PART_SelectedContentHost2 for an app's
     PageTransition), clipped, inset by the Padding: PivotItemMargin (19,22.5,19,0), the Pivot's item's inset, so the
     content sits under the headers as a PivotItem does. Transparent at rest (rule 5).
+
+    AutoScrollToSelectedItem is off: bringing the selected header into view would pass the request on past the row and
+    scroll the page round the TabControl, at load and at every selection set from code.
 
     TabStripPlacement Top (the Pivot's) is the default; Bottom docks the row below; Left and Right stack the headers
     and pan them up and down.
@@ -25,6 +28,7 @@
   -->
   <ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl">
     <Setter Property="Padding" Value="{DynamicResource PivotItemMargin}" />
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Stretch" />
     <Setter Property="ItemsPanel">

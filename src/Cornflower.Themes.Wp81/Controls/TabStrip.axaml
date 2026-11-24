@@ -6,8 +6,10 @@
 
     The phone had no TabStrip. Here it is the Pivot's header row, as the plain TabControl's (Controls/TabControl.axaml):
     its items are the plain TabStripItem's headers (Controls/TabStripItem.axaml), in a StackPanel (PART_ItemsPresenter)
-    in Wp81's ScrollViewerScrollBarlessTheme (PART_ScrollViewer), which a finger pans to reach a header past the edge
-    and which brings the selected one into view, with no bar. Transparent at rest (rule 5); no motion (rule 8).
+    in Wp81's ScrollViewerScrollBarlessTheme (PART_ScrollViewer), which a finger pans to reach a header past the edge,
+    with no bar; its Background, Transparent, takes a finger in the Padding too. Transparent at rest (rule 5); no motion
+    (rule 8). AutoScrollToSelectedItem is off, as the TabControl's: bringing the selected header into view would scroll
+    the page round the strip.
 
       <TabStrip SelectedIndex="0">
         <TabStripItem Content="all" />
@@ -15,6 +17,8 @@
       </TabStrip>
   -->
   <ControlTheme x:Key="{x:Type TabStrip}" TargetType="TabStrip">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
     <Setter Property="ItemsPanel">
       <ItemsPanelTemplate>
         <StackPanel Orientation="Horizontal" />

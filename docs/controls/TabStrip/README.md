@@ -21,7 +21,9 @@ TabStrip: here it is the Pivot's header row without the Pivot, its items the pla
 
 | Property | Value |
 |---|---|
+| `Background` | `Transparent`, so a finger in the `Padding` pans the row too |
 | `ItemsPanel` | A horizontal `StackPanel`: each header at its own width, as the Pivot's |
+| `AutoScrollToSelectedItem` | `False`: bringing the selected header into view would scroll the page round the strip |
 | `Template` | The row in Wp81's `Wp81ScrollViewerScrollBarlessTheme` (below) |
 
 ## Resource keys
@@ -31,10 +33,10 @@ No new keys: the row is Wp81's scrollbar-less `ScrollViewer`, the one the Pivot'
 ## The template's parts
 
 - `PART_ScrollViewer`: Wp81's `ScrollViewerScrollBarlessTheme`, panning sideways (`Hidden`, no bar), with the app's
-  `Background` and `Padding` (both unset). A finger pans it to a header past the edge; the selected header is brought
-  into view.
+  `Background` and `Padding`. A finger pans it to a header past the edge; the selected header isn't brought into view.
 - `PART_ItemsPresenter`: the headers.
 
 ## Known gaps
 
+- A header selected from code past the edge stays there until the row is panned.
 - The row doesn't wrap round to put the selected header first, as the Pivot's does; it pans instead.

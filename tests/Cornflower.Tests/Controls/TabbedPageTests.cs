@@ -55,6 +55,9 @@ public class TabbedPageTests
         Assert.Null(tabs.Theme);
         Assert.Null(tabs.ItemContainerTheme);
         Assert.Equal(Dock.Top, tabs.TabStripPlacement);
+        // Each page a whole page: no PivotItem inset round it (the review of #251).
+        Assert.Equal(default, tabs.Padding);
+        Assert.Equal(page.Bounds.Width, mail.Bounds.Width, 3);
         Assert.Same(Resource<ControlTheme>(tabs, "Wp81ScrollViewerScrollBarlessTheme"), Part<ScrollViewer>(tabs, "PART_ScrollViewer").Theme);
         var first = (TabItem)tabs.ContainerFromIndex(0)!;
         var second = (TabItem)tabs.ContainerFromIndex(1)!;

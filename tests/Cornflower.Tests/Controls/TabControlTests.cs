@@ -129,23 +129,33 @@ public class TabControlTests
         Assert.Null(control.Background);
     }
 
-    // A header past the edge is brought into view when selected, and the row can pan to it.
+    // The row reaches past the edge, for a finger to pan; a selection, at load or from code, doesn't scroll the page
+    // round the TabControl or the TabStrip (the review of #251).
     [AvaloniaFact]
-    public void A_Header_Past_The_Edge_Comes_Into_View()
+    public void A_Selection_Leaves_The_Page_Where_It_Is()
     {
         var control = Tabs("mail", "calendar", "people", "photos", "music");
-        using var scene = new Scene(control);
+        control.Height = 200;
+        var strip = new TabStrip { Items = { new TabStripItem { Content = "all" }, new TabStripItem { Content = "unread" } }, SelectedIndex = 0 };
+        var page = new ScrollViewer
+        {
+            Content = new StackPanel { Children = { new Border { Height = 900 }, control, new Border { Height = 300 }, strip, new Border { Height = 2000 } } },
+        };
+        using var scene = new Scene(page);
+        Assert.False(control.AutoScrollToSelectedItem);
+        Assert.False(strip.AutoScrollToSelectedItem);
+        Assert.Equal(0, page.Offset.Y);
         var row = Part<ScrollViewer>(control, "PART_ScrollViewer");
         Assert.True(row.Extent.Width > row.Viewport.Width);
-        Assert.Equal(0, row.Offset.X);
 
+        page.Offset = new Vector(0, 2500);
+        Dispatcher.UIThread.RunJobs();
         control.SelectedIndex = 4;
+        strip.SelectedIndex = 1;
         Dispatcher.UIThread.RunJobs();
 
-        Assert.True(row.Offset.X > 0);
-        var last = control.ContainerFromIndex(4)!;
-        var right = last.TranslatePoint(new Point(last.Bounds.Width, 0), row)!.Value.X;
-        Assert.InRange(right, 0, row.Viewport.Width + 0.5);
+        Assert.Equal(2500, page.Offset.Y);
+        Assert.Equal(0, row.Offset.X);
     }
 
     [AvaloniaTheory]
@@ -250,5 +260,15 @@ public class TabControlTests
         var row = Part<ScrollViewer>(strip, "PART_ScrollViewer");
         Assert.Same(brush, row.Background);
         Assert.Equal(new Thickness(4), row.Padding);
+    }
+
+    // Transparent, so a finger in the Padding pans the row too (the review of #251).
+    [AvaloniaFact]
+    public void A_TabStrips_Padding_Takes_A_Finger()
+    {
+        var strip = new TabStrip { Padding = new Thickness(19, 0), Items = { new TabStripItem { Content = "all" } } };
+        using var scene = new Scene(new StackPanel { Children = { strip } });
+
+        Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(Part<ScrollViewer>(strip, "PART_ScrollViewer").Background).Color);
     }
 }

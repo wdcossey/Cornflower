@@ -37,7 +37,9 @@ No new keys.
 ## The template's parts
 
 - A `Panel` with the `Background`, round `PART_TabControl`: a `TabControl` with no theme of its own, so the plain one by
-  type, and its `TabItem`s the plain ones. Avalonia's TabbedPage puts the safe area on its `Margin` and on the page's.
+  type, and its `TabItem`s the plain ones, with `Padding` 0 rather than the TabControl's `PivotItemMargin`: each page is a
+  whole page, filling the space under the headers with its own background. Avalonia's TabbedPage puts the safe area on its
+  `Margin` and on the page's.
 
 ## Known gaps
 
