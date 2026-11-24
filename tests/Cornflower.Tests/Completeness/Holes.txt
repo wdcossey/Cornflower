@@ -15,12 +15,10 @@ ContextMenu
 DataValidationErrors
 DrawerPage
 DropDownButton
-EmbeddableControlRoot
 Expander
 GridSplitter
 GroupBox
 HeaderedContentControl
-ItemsControl
 Label
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
@@ -28,13 +26,10 @@ Menu
 MenuItem
 NotificationCard
 NumericUpDown
-OverlayPopupHost
 PathIcon
 PipsPager
-PopupRoot
 RefreshContainer
 RefreshVisualizer
-Separator
 SplitButton
 SplitView
 TabControl
@@ -51,5 +46,4 @@ ToolTip
 TransitioningContentControl
 TreeView
 TreeViewItem
-Window
 WindowNotificationManager

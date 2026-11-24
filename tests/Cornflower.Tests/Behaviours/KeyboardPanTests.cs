@@ -288,12 +288,14 @@ public class KeyboardPanTests
         Assert.Null(mover.Clip);
     }
 
-    // What the move leaves bare below the page shows the page's background, not the window's own (Simple's grey: a band
+    // What the move leaves bare below the page shows the page's background, not the window's own (Simple's grey, before #234: a band
     // the Pixel showed between the page's end and the keyboard); the window's own comes back with the page.
     [AvaloniaFact]
     public void What_The_Move_Leaves_Bare_Shows_The_Pages_Background()
     {
         using var page = new Page(tops: 600);
+        // Wp81's Window takes the page's background (#234), so the window's own is set apart here, as an app's may be.
+        page.Window.Background = Assert.IsAssignableFrom<IBrush>(page.Window.FindResource(page.Window.ActualThemeVariant, "ThemeBackgroundBrush"));
         var own = page.Window.Background;
         var pageBrush = Assert.IsAssignableFrom<ISolidColorBrush>(page.Window.FindResource(page.Window.ActualThemeVariant, PhoneKeyboardPan.PageBackground));
         Assert.NotEqual(pageBrush, own);

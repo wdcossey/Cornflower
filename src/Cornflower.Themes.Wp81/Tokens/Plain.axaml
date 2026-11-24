@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The plain themes' own tokens (ADR 0007, docs/decisions/0007-plain-themes.md): values for controls the phone never had,
+    Cornflower's design, not measured. Each key is prefixed CornflowerPlain, never a WinRT-shaped name (...ThemeBrush,
+    ...ThemeThickness), which in this repo means the phone's value. A batch that needs one adds it here, with its reason.
+  -->
+
+  <!--
+    A line that divides or edges a surface (a separator, a table's rule, a pane's edge): 1.5, the AppBar's and the
+    MenuFlyout's edge thickness, on all sides, as the phone's own 1.5 keys are one-sided (AppBarTopBorderThemeThickness is
+    0,0,0,1.5). A box a finger presses or types in takes PhoneBorderThickness (2.5) instead.
+  -->
+  <Thickness x:Key="CornflowerPlainLineThickness">1.5</Thickness>
+</ResourceDictionary>

@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Window/README.md.
+
+    The phone had no window: an 8.1 app's frame was its page's background and the phone's font. So a Window here is that,
+    each value by DynamicResource: the page's ApplicationPageBackgroundThemeBrush (PhoneBackgroundColor, as Wp81's
+    ContentPage and NavigationPage use), PhoneForegroundBrush, and the body text's family and size (PhoneFontFamilyNormal,
+    TextStyleLargeFontSize, 18.14, as BodyTextBlockStyle). The transparency fallback is the page's background too.
+
+    The template is the layout every Avalonia window needs, drawn plain: the transparency fallback, the background, the
+    title bar's hit area (WindowDecorationMargin), and the VisualLayerManager round the content, which holds the adorner
+    and overlay layers that popups and the keyboard pan use. No border, no motion.
+  -->
+  <ControlTheme x:Key="{x:Type Window}" TargetType="Window">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="TransparencyBackgroundFallback" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+          <Border Name="PART_Background" Background="{TemplateBinding Background}" IsHitTestVisible="False" />
+          <Panel Margin="{TemplateBinding WindowDecorationMargin}" Background="Transparent" />
+          <VisualLayerManager Name="PART_VisualLayerManager">
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </VisualLayerManager>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

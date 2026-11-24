@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/ItemsControl/README.md.
+
+    An 8.1 app used ItemsControl itself, which has no default style on the phone. So it is a bare ItemsPresenter, with
+    the ItemsControl's Padding as its margin: no Background, BorderBrush or BorderThickness is drawn, as Wp81's
+    ContentControl draws none, and the items are laid out by the ItemsPanel. Its items keep their own themes. Wp81's
+    keyed ItemsControl themes (Wp81CommandBarItemsTheme) are unchanged.
+  -->
+  <ControlTheme x:Key="{x:Type ItemsControl}" TargetType="ItemsControl">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ItemsPresenter Name="PART_ItemsPresenter"
+                        Margin="{TemplateBinding Padding}"
+                        ItemsPanel="{TemplateBinding ItemsPanel}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
