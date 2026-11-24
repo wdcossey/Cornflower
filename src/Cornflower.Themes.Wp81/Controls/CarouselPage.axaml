@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CarouselPage/README.md.
+
+    The phone had no CarouselPage. Here it is a FlipView of pages: Avalonia 12's CarouselPage drives a Carousel
+    (PART_Carousel), which Wp81 already themes by type as the phone's FlipView (Controls/Carousel.axaml), so the pages
+    swipe, snap and slide with the FlipView's own motion (PhoneFlipView, on CornflowerClock; none of this theme's own,
+    rule 8). A header-less Pivot would need a Pivot as the part, which the CarouselPage doesn't drive.
+
+    The CarouselPage hands the Carousel its own ItemsPanel, over the Carousel theme's, so its ItemsPanel here is the
+    FlipView's PhoneFlipViewPanel, which PhoneFlipView moves; an app's own panel wins, and drops the FlipView's
+    motion. IsGestureEnabled (on, Avalonia's) is the Carousel's IsSwipeEnabled. Under it, the page's background as
+    Wp81's ContentPage (ApplicationPageBackgroundThemeBrush, PhoneForegroundBrush, PhoneFontFamilyNormal), round the
+    FlipView's 2.5 inset.
+
+      <CarouselPage>
+        <ContentPage Header="one">...</ContentPage>
+        <ContentPage Header="two">...</ContentPage>
+      </CarouselPage>
+  -->
+  <ControlTheme x:Key="{x:Type CarouselPage}" TargetType="CarouselPage">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <wp81:PhoneFlipViewPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel Background="{TemplateBinding Background}">
+          <Carousel x:Name="PART_Carousel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

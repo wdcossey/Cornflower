@@ -22,6 +22,7 @@ public class PlainThemesTests
         "ButtonSpinner", "DropDownButton", "GridSplitter", "NumericUpDown", "SplitButton",                  // batch 2, #235
         "GroupBox", "HeaderedContentControl", "Label", "PathIcon", "ToolTip", "TransitioningContentControl", // batch 3, #236
         "ContextMenu", "Menu", "MenuItem",                                                                  // batch 4, #237
+        "CarouselPage", "TabControl", "TabItem", "TabStrip", "TabStripItem", "TabbedPage",                  // batch 5, #238
     ];
 
     /// <summary>
