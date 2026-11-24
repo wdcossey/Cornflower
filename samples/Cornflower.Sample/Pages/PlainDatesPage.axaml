@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainDatesPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The seventh plain themes (ADR 0007, #240): Cornflower's design, not the phone's. A Calendar (today outlined, a day
+    selected), a CalendarDatePicker with a date and one with a placeholder, a disabled Calendar in its year view, and the
+    light theme. Each control is low on the page with a date set, so a selection that scrolled the page would show.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24">
+      <sample:SamplePageHeader x:Name="Header" Margin="19,0" />
+
+      <TextBlock Margin="19,0" Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <Calendar x:Name="Month" Margin="19,12,19,0" />
+
+      <CalendarDatePicker x:Name="Picker" Margin="19,12,19,0" />
+      <CalendarDatePicker x:Name="Empty" Margin="19,12,19,0" PlaceholderText="pick a date" />
+
+      <Calendar x:Name="Year" Margin="19,12,19,0" DisplayMode="Year" IsEnabled="False" />
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="0,12,0,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="0,6,0,12">
+          <StackPanel>
+            <Calendar x:Name="Light" Margin="19,0" />
+            <CalendarDatePicker x:Name="LightPicker" Margin="19,0" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -16,8 +16,9 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The Buttons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme under Wp81: with
 /// Simple then Wp81, each is laid out as with Simple alone, and none is Wp81's Button. In Avalonia 12.1.4, Simple's
-/// templates for CalendarItem (in Calendar), CalendarDatePicker, PipsPager and the managed file dialogs hold plain
-/// Buttons with no theme of their own (read from each of Simple's templates, built on its own).
+/// templates for PipsPager and the managed file dialogs hold plain Buttons with no theme of their own (read from each
+/// of Simple's templates, built on its own). CalendarItem's (in Calendar) and CalendarDatePicker's did until Wp81 themed
+/// them (#240).
 /// </summary>
 public class HolePartsTests
 {
@@ -63,30 +64,28 @@ public class HolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.True(holes.Count == Holes.Listed().Count, $"{holes.Count} of {Holes.Listed().Count} holes shown");
-        Assert.True(withButtons >= 5, $"only {withButtons} holes showed plain Buttons");
-        // Calendar's three, CalendarDatePicker's, PipsPager's two, the dialogs'. (CommandBar's overflow left with #118 and
-        // NavigationPage's back with #120: Wp81 themes both.)
-        Assert.Contains("Calendar.PART_HeaderButton", fellBack);
+        Assert.True(withButtons >= 3, $"only {withButtons} holes showed plain Buttons");
+        // PipsPager's two, the dialogs'. (CommandBar's overflow left with #118, NavigationPage's back with #120, and
+        // Calendar's three and CalendarDatePicker's with #240: Wp81 themes them.)
         Assert.Contains("PipsPager.PART_NextButton", fellBack);
     }
 
-    // A Calendar's arrows as wide as with Simple alone, and its header, arrows and all narrower than the phone's
-    // minimum and in Simple's Button theme. (The header's width is its text's, in whichever font each scene has, so
-    // it isn't compared across scenes.)
+    // A PipsPager's arrows as large as with Simple alone, narrower than the phone's minimum and in Simple's Button
+    // theme. (Calendar's header and arrows were the model until Wp81 themed CalendarItem, #240.)
     [AvaloniaFact]
-    public void A_Calendars_Header_And_Arrows_Keep_Simples_Button()
+    public void A_PipsPagers_Arrows_Keep_Simples_Button()
     {
-        var alone = new Calendar();
+        var alone = new PipsPager();
         using var only = new Scene(alone, themes: [new SimpleTheme()]);
-        var arrows = PlainButtons(alone).Where(b => b.Name != "PART_HeaderButton").Select(b => (b.Name, b.Bounds.Size)).ToList();
+        var arrows = PlainButtons(alone).Select(b => (b.Name, b.Bounds.Size)).ToList();
 
         var simple = new SimpleTheme();
-        var calendar = new Calendar();
-        using var scene = new Scene(calendar, themes: [simple, new Wp81Theme()]);
-        var buttons = PlainButtons(calendar);
+        var pager = new PipsPager();
+        using var scene = new Scene(pager, themes: [simple, new Wp81Theme()]);
+        var buttons = PlainButtons(pager);
 
-        Assert.Equal(["PART_PreviousButton", "PART_HeaderButton", "PART_NextButton"], buttons.Select(b => b.Name));
-        Assert.Equal(arrows, buttons.Where(b => b.Name != "PART_HeaderButton").Select(b => (b.Name, b.Bounds.Size)).ToList());
+        Assert.Equal(["PART_PreviousButton", "PART_NextButton"], buttons.Select(b => b.Name));
+        Assert.Equal(arrows, buttons.Select(b => (b.Name, b.Bounds.Size)).ToList());
         Assert.All(buttons, b =>
         {
             Assert.Same(ButtonThemeOf(simple), b.Theme);

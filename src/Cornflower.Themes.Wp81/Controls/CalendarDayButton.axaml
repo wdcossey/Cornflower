@@ -1,0 +1,81 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarDayButton/README.md.
+
+    A day in a Calendar's month (CalendarItem makes 42 of them in its PART_MonthView). The phone had no calendar: 8.1's
+    DatePicker turned looping lists instead. The day's number in the body's type (PhoneFontFamilyNormal at
+    TextStyleLargeFontSize, 18.14, rule 2), centred, PhoneForegroundBrush, on a transparent cell that takes the finger
+    across it, at least PhoneButtonMinHeight (57.5) tall (rule 6: a day is pressed on its own); its width is the month
+    grid's seventh. The tilt is the press, with the accent behind the number (rule 7, and rule 3: what is pressed).
+    Selected, the accent fills the cell and the number is PhoneButtonBasePressedForegroundBrush (rule 3: what is
+    selected). Today, at rest, is no state for the accent (rule 3): it is marked by a square PhoneBorderThickness (2.5)
+    outline in PhoneForegroundBrush round the cell, the phone's own box (rule 4), kept when today is selected. A day of
+    another month (:inactive) is PhoneMidBrush; a blacked-out day, PhoneDisabledBrush. Disabled, the number and today's
+    outline are PhoneDisabledBrush and a selected day isn't filled. No pointer-over look
+    and no focus adorner (Simple's :dayfocused rectangle), as the phone's buttons have neither. No motion of its own.
+  -->
+  <ControlTheme x:Key="{x:Type CalendarDayButton}" TargetType="CalendarDayButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="{DynamicResource PhoneButtonMinHeight}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border x:Name="Border" Background="{TemplateBinding Background}" />
+          <Border x:Name="TodayMark"
+                  BorderBrush="{DynamicResource PhoneForegroundBrush}"
+                  BorderThickness="{DynamicResource PhoneBorderThickness}"
+                  IsVisible="False" />
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:today /template/ Border#TodayMark">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:inactive /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneMidBrush}" />
+    </Style>
+    <Style Selector="^:blackout /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+    <Style Selector="^:selected, ^:pressed">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="{DynamicResource PhoneAccentBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+      </Style>
+    </Style>
+    <!-- Disabled, nothing in the accent or the foreground: a selection's fill goes, and today's outline dims (review finding 2). -->
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ Border#TodayMark">
+        <Setter Property="BorderBrush" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

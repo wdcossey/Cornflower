@@ -10,9 +10,11 @@ namespace Cornflower.Themes.Wp81;
 
 /// <summary>
 /// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox, ContentControl, GridSplitter and PathIcon out of templates
-/// written for the theme under Wp81. Simple's templates for CalendarItem, CalendarDatePicker, PipsPager and the managed
+/// written for the theme under Wp81. Simple's templates for PipsPager and the managed
 /// file dialogs hold plain Buttons with no theme of their own, the managed file
-/// dialog's plain CheckBox, the plain TextBoxes of CalendarDatePicker and the managed file dialog, the plain
+/// dialog's plain CheckBox, the plain TextBoxes of the managed file dialog (CalendarItem's and CalendarDatePicker's
+/// Buttons and CalendarDatePicker's TextBox were such parts until Wp81 themed them, #240: a CalendarDatePicker given
+/// Simple's theme still holds its own, while a Calendar given Simple's theme gets Wp81's CalendarItem by type), the plain
 /// ContentControls of DataValidationErrors and the managed file dialog (the menus' RepeatButtons and MenuItem's
 /// ContentControls were such parts until Wp81 themed ContextMenu, Menu and MenuItem, #237, and DrawerPage's
 /// ToggleButtons and PathIcon until Wp81 themed DrawerPage, #239: a DrawerPage given Simple's theme still holds them), and

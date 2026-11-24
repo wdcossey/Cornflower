@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Calendar/README.md.
+
+    The phone had no calendar: 8.1 picked a date with DatePicker's looping lists (Controls/DatePicker.axaml, Wp81's).
+    This is a month on the page: PART_Root holds PART_CalendarItem (Controls/CalendarItem.axaml), stretched to the
+    Calendar's width (Simple centres it at its own), passed the app's Background, BorderBrush and BorderThickness, all
+    unset, so nothing is drawn at rest (rules 4 and 5: no box, transparent over the page), and its foreground,
+    PhoneForegroundBrush. No header band: HeaderBackground isn't passed or drawn (Simple draws its accent there at rest, rule 3).
+    Avalonia's keyboard and selection are the Calendar's own. A selection, at load or from code, never moves the page:
+    Avalonia's Calendar brings nothing into view, and takes the focus only from a press or a key.
+  -->
+  <ControlTheme x:Key="{x:Type Calendar}" TargetType="Calendar">
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel x:Name="PART_Root" ClipToBounds="True">
+          <CalendarItem x:Name="PART_CalendarItem"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
