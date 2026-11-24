@@ -32,7 +32,8 @@ Avalonia's `CalendarDatePicker`, themed by type in `src/Cornflower.Themes.Wp81/C
 - `PART_TextBox`: Wp81's TextBox by type: the phone's box, focus, placeholder and disabled looks. The picker's
   `PlaceholderText` and errors are passed to it; no brushes, so its box is the phone's (Simple's passes its own).
 - `PART_Button`: in the box after the text (the TextBox's `InnerRightContent`), Lucide's `Calendar` (rule 10), with the
-  tilt. Not a tab stop.
+  tilt. Focusable but no tab stop, so a press focuses the button, not the box it sits in: opening the calendar
+  doesn't raise the soft keyboard. A tap on the text still does.
 - `PART_Popup`: below the picker, light-dismissed, in the window's overlay layer (the phone has one window), opening
   and closing at once (rule 8).
 - `PART_PopupSurface`: the flyout's surface, no border, square, at least as wide as the picker, so on the phone the days

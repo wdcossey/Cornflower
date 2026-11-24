@@ -12,7 +12,8 @@
     (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none, as the
     plain NumericUpDown does. In the box, after the text (the TextBox's InnerRightContent), PART_Button, Lucide's
     Calendar (rule 10) in the borderless glyph button (Wp81PlainGlyphButtonTheme): nothing drawn at rest, the accent
-    while pressed, with the tilt (rule 7). A tap opens PART_Popup below the control, as wide as it at the least: a
+    while pressed, with the tilt (rule 7). It is focusable and no tab stop: a press focuses the nearest focusable element,
+    and a button that isn't would hand the focus to the box it sits in, which raises the soft keyboard over the popup. A tap opens PART_Popup below the control, as wide as it at the least: a
     floating surface in FlyoutBackgroundThemeBrush (rule 5), no border, square, holding PART_Calendar, the plain
     Calendar (Controls/Calendar.axaml). It is drawn in the window's overlay layer, as the phone has one window (as
     AutoCompleteBox's list is), and opens and closes at once, as Avalonia's Popup does (rule 8). It isn't one of Wp81's
@@ -30,7 +31,8 @@
             <TextBox.InnerRightContent>
               <Button x:Name="PART_Button"
                       Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
-                      Focusable="False"
+                      Focusable="True"
+                      IsTabStop="False"
                       cf:Tilt.IsEnabled="True">
                 <cf:LucideIcon Kind="Calendar" />
               </Button>

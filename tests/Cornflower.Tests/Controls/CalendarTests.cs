@@ -326,6 +326,27 @@ public class CalendarTests
         Assert.Same(Resource<IBrush>(picker, "PhoneAccentBrush"), Fill(Day(calendar, new DateTime(2026, 11, 24))));
     }
 
+    // A tap on the button opens the drop-down without focusing the box, so the phone's soft keyboard stays down and
+    // doesn't cover the popup (the emulator, before merge). A tap on the box itself still focuses it, for typing.
+    [AvaloniaFact]
+    public void The_Button_Opens_It_Without_Focusing_The_Box()
+    {
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24) };
+        using var scene = new Scene(new StackPanel { Width = 373, Children = { picker } });
+        var box = Part<TextBox>(picker, "PART_TextBox");
+
+        Release(scene, Press(scene, PickerButton(picker)));
+
+        Assert.True(picker.IsDropDownOpen);
+        Assert.False(box.IsFocused);
+        Assert.False(box.IsKeyboardFocusWithin && TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement() is TextBox);
+
+        picker.IsDropDownOpen = false;
+        Dispatcher.UIThread.RunJobs();
+        Release(scene, Press(scene, box));
+        Assert.True(box.IsFocused, $"focused: {TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement()}, open {picker.IsDropDownOpen}");
+    }
+
     // A selection at load or from code never moves the page (#220, #251, #252): a Calendar and a picker with a selected
     // date low down on a page that lays out short at first leave it at the top.
     [AvaloniaFact]

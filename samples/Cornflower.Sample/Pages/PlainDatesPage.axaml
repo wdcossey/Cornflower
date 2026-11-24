@@ -21,7 +21,7 @@
       <Calendar x:Name="Month" Margin="19,12,19,0" />
 
       <CalendarDatePicker x:Name="Picker" Margin="19,12,19,0" />
-      <CalendarDatePicker x:Name="Empty" Margin="19,0" PlaceholderText="pick a date" />
+      <CalendarDatePicker x:Name="Empty" Margin="19,12,19,0" PlaceholderText="pick a date" />
 
       <Calendar x:Name="Year" Margin="19,12,19,0" DisplayMode="Year" IsEnabled="False" />
 
