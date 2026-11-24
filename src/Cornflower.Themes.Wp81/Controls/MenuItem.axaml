@@ -41,7 +41,6 @@
         <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
       </MultiBinding>
     </Setter>
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="cf:Tilt.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
@@ -151,7 +150,6 @@
 
     <!-- Avalonia's other separator: the plain Separator's line, as Simple's template holds one. -->
     <Style Selector="^:separator">
-      <Setter Property="Focusable" Value="False" />
       <Setter Property="Template">
         <ControlTemplate>
           <Separator />

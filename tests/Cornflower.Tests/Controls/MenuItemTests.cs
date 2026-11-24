@@ -95,7 +95,6 @@ public class MenuItemTests
         Assert.Same(PlainParts.Resource<FontFamily>(item, "PhoneFontFamilySemiLight"), item.FontFamily);
         Assert.Equal(25.5, item.FontSize);
         Assert.Equal(-15 * 25.5 / 1000, item.LetterSpacing, 6);
-        Assert.Null(item.FocusAdorner);
         Assert.True(Tilt.GetIsEnabled(item));
         var content = Part<Border>(item, "ContentBorder");
         Assert.True(Tilt.GetIsTarget(content));
@@ -210,7 +209,26 @@ public class MenuItemTests
         parent.IsSubMenuOpen = false;
     }
 
-    // A sub-menu shares one icon column too: its own size scope, as its popup isn't under the menu's.
+    // A sub-menu's icon column is its own: an icon in it doesn't move the headers of the menu it opens from.
+    [AvaloniaFact]
+    public void A_Sub_Menus_Icon_Column_Is_Its_Own()
+    {
+        var parent = new MenuItem { Header = "parent", Items = { new MenuItem { Header = "icon", Icon = new LucideIcon { Kind = LucideIconKind.Copy } } } };
+        var leaf = new MenuItem { Header = "leaf" };
+        using var stage = new Stage(null, parent, leaf);
+        double X(MenuItem item) => Part<ContentPresenter>(item, "PART_HeaderPresenter").TranslatePoint(default, stage.Menu)!.Value.X;
+        var before = X(leaf);
+
+        parent.IsSubMenuOpen = true;
+        Dispatcher.UIThread.RunJobs();
+
+        Near(19, before);
+        Near(before, X(leaf));
+        Near(before, X(parent));
+        parent.IsSubMenuOpen = false;
+    }
+
+    // A sub-menu shares one icon column among its own items.
     [AvaloniaFact]
     public void A_Sub_Menus_Items_Have_Their_Headers_In_One_Place()
     {

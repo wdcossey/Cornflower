@@ -143,6 +143,9 @@ public class ContextMenuTests
         Assert.Equal(25.5, stage.Item(0).FontSize);
         Assert.Equal(-15 * 25.5 / 1000, stage.Item(0).LetterSpacing, 6);
         Assert.True(menu.Focusable);
+        // As tall as its items and padding, the borders taking from the bottom padding (PhoneMenuFlyoutRoot).
+        var tall = stage.Item(0).Bounds.Height + stage.Item(1).Bounds.Height + menu.Padding.Top + menu.Padding.Bottom;
+        Assert.InRange(menu.Bounds.Height, tall - 1 / Scene.ReferenceScaling, tall + 1 / Scene.ReferenceScaling);
         Assert.NotNull(stage.Part<Border>("OuterBorder"));
         Assert.NotNull(stage.Part<Border>("CenterBorder"));
         Assert.True(stage.Part<StackPanel>("InnerBorder").ClipToBounds);

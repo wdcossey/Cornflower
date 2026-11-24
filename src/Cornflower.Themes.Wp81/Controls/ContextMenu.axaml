@@ -7,7 +7,8 @@
 
     The phone had no ContextMenu: an 8.1 app showed a MenuFlyout on hold. So a ContextMenu takes the MenuFlyout's look
     and motion, labelled plain, as ContextMenu isn't the phone's: the MenuFlyoutPresenter theme's setters, by the same
-    keys (its type is the items' own, the MenuItem theme's, the same), and its template's parts (Controls/MenuFlyoutPresenter.axaml), so the MenuFlyout's binder places and opens it
+    keys (its type is the items' own, the MenuItem theme's, the same; its foreground the popup host's, Wp81's
+    PhoneForegroundBrush), and its template's parts (Controls/MenuFlyoutPresenter.axaml), so the MenuFlyout's binder places and opens it
     (PhoneContextMenu, on PhoneMenuFlyout's binder and the PhonePopupHost): the window's overlay layer and width, below
     its target if it fits there, else above it, the opening storyboard on CornflowerClock, closed at once, Back. Its
     items are the plain MenuItem's (MenuItem.axaml), in one icon column (a shared size group); its Separators are a
@@ -20,7 +21,6 @@
     <Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPortraitBorderThemeThickness}" />
     <Setter Property="Padding" Value="{DynamicResource MenuFlyoutPortraitThemePadding}" />
     <Setter Property="MinHeight" Value="{DynamicResource FlyoutThemeMinHeight}" />
-    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="Focusable" Value="True" />
     <Setter Property="wp81:PhoneContextMenu.IsEnabled" Value="True" />
     <Setter Property="Template">

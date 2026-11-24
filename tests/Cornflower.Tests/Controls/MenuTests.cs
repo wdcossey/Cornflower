@@ -36,7 +36,11 @@ public class MenuTests
             Menu = new Menu { Items = { File, Edit }, VerticalAlignment = VerticalAlignment.Top };
             try
             {
-                Scene = new Scene(new Panel { Children = { Menu } }, variant);
+                // An app's own type round the bar, so the bar's own is what the headers show.
+                var page = new Panel { Children = { Menu } };
+                page.SetValue(TextElement.FontFamilyProperty, new FontFamily("Courier New"));
+                page.SetValue(TextElement.FontSizeProperty, 11d);
+                Scene = new Scene(page, variant);
             }
             catch
             {
@@ -88,7 +92,6 @@ public class MenuTests
         Assert.Equal(18.14, stage.File.FontSize);
         Assert.Equal(PlainParts.Resource<Thickness>(menu, "CornflowerPlainTopLevelMenuItemPadding"), stage.File.Padding);
         Assert.Equal(Colors.Transparent, ((ISolidColorBrush)stage.File.Background!).Color);
-        Assert.Null(stage.File.FocusAdorner);
         Assert.True(Tilt.GetIsEnabled(stage.File));
         var content = PlainParts.Part<Border>(stage.File, "ContentBorder");
         Assert.True(Tilt.GetIsTarget(content));
