@@ -1,0 +1,252 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/DrawerPage/README.md.
+
+    The phone had no DrawerPage (the hamburger came with Windows 10). Simple's template, with the plain look: the page's
+    background, PhoneForegroundBrush and PhoneFontFamilyNormal, as Wp81's ContentPage; the drawer is the plain SplitView
+    (PART_SplitView, Controls/SplitView.axaml, by type) on FlyoutBackgroundThemeBrush (DrawerBackground, a floating
+    surface, rule 5), with no motion of its own (rule 8). The bar at the top (or the bottom, for a drawer placed there)
+    is Wp81's NavigationPage bar's look: PhoneChromeBrush, CornflowerPlainDrawerBarHeight (48, NavigationPage's own) tall,
+    the page's Header in PhoneFontFamilySemiBold at TextStyleLargeFontSize (18.14) after the drawer button.
+
+    The three drawer buttons (PART_PaneButton, PART_BottomPaneButton, PART_CompactPaneToggle) are plain ToggleButtons in
+    Simple's template, which took the theme under Wp81 (HoleParts); here they wear Wp81PlainHeaderToggleButtonTheme
+    (Controls/PlainHeaderToggleButton.axaml), a square as wide as the bar (the compact strip's is CompactDrawerLength),
+    with the tilt (rule 7: a button-sized press), and draw Lucide's Menu (rule 10), or the page's DrawerIcon, in place of
+    Simple's PathIcon geometry. Open is no state for the accent (rule 3). The backdrop is the app's BackdropBrush, unset,
+    so none (rule 5). Avalonia's own behaviour is kept: the edge swipe, the breakpoint, the bar hidden in a
+    NavigationPage.
+  -->
+  <ControlTheme x:Key="{x:Type DrawerPage}" TargetType="DrawerPage">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="DrawerBackground" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <SplitView Name="PART_SplitView"
+                   DisplayMode="{TemplateBinding DisplayMode}"
+                   OpenPaneLength="{TemplateBinding DrawerLength}"
+                   CompactPaneLength="{TemplateBinding CompactDrawerLength}"
+                   PaneBackground="{Binding DrawerBackground, RelativeSource={RelativeSource TemplatedParent}}"
+                   IsPaneOpen="{Binding IsOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+          <SplitView.Pane>
+            <DockPanel Background="{TemplateBinding DrawerBackground}">
+              <!-- Compact-mode toggle: visible only in CompactOverlay/CompactInline. -->
+              <ToggleButton Name="PART_CompactPaneToggle"
+                            Theme="{DynamicResource Wp81PlainHeaderToggleButtonTheme}"
+                            HorizontalContentAlignment="Center"
+                            cf:Tilt.IsEnabled="True"
+                            DockPanel.Dock="Top"
+                            IsChecked="{Binding #PART_SplitView.IsPaneOpen, Mode=TwoWay}"
+                            IsVisible="False"
+                            HorizontalAlignment="Left"
+                            Width="{TemplateBinding CompactDrawerLength}"
+                            Height="{TemplateBinding CompactDrawerLength}"
+                            AutomationProperties.Name="Toggle navigation drawer"
+                            ToolTip.Tip="Toggle navigation drawer">
+                <Panel>
+                  <cf:LucideIcon Kind="Menu"
+                    IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+                  <ContentPresenter
+                    Name="PART_CompactPaneIconPresenter"
+                    Content="{TemplateBinding DrawerIcon}"
+                    ContentTemplate="{TemplateBinding DrawerIconTemplate}"
+                    IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+                </Panel>
+              </ToggleButton>
+              <ContentPresenter Name="PART_DrawerHeader"
+                                DockPanel.Dock="Top"
+                                Content="{TemplateBinding DrawerHeader}"
+                                ContentTemplate="{TemplateBinding DrawerHeaderTemplate}"
+                                Background="{TemplateBinding DrawerHeaderBackground}"
+                                IsVisible="{TemplateBinding DrawerHeader, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <ContentPresenter Name="PART_DrawerFooter"
+                                DockPanel.Dock="Bottom"
+                                Content="{TemplateBinding DrawerFooter}"
+                                ContentTemplate="{TemplateBinding DrawerFooterTemplate}"
+                                Background="{TemplateBinding DrawerFooterBackground}"
+                                IsVisible="{TemplateBinding DrawerFooter, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <ContentPresenter Name="PART_DrawerPresenter"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"
+                                Content="{TemplateBinding Drawer}"
+                                ContentTemplate="{TemplateBinding DrawerTemplate}" />
+            </DockPanel>
+          </SplitView.Pane>
+          <Grid HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <DockPanel Name="PART_ContentDock">
+              <Border
+                Name="PART_TopBar"
+                Height="{DynamicResource CornflowerPlainDrawerBarHeight}"
+                Background="{DynamicResource PhoneChromeBrush}"
+                DockPanel.Dock="Top">
+                <DockPanel HorizontalAlignment="Stretch">
+                  <ToggleButton x:Name="PART_PaneButton"
+                                Theme="{DynamicResource Wp81PlainHeaderToggleButtonTheme}"
+                                HorizontalContentAlignment="Center"
+                                cf:Tilt.IsEnabled="True"
+                                Width="{DynamicResource CornflowerPlainDrawerBarHeight}"
+                                IsChecked="{Binding #PART_SplitView.IsPaneOpen, Mode=TwoWay}"
+                                DockPanel.Dock="Left"
+                                AutomationProperties.Name="Toggle navigation drawer"
+                                ToolTip.Tip="Toggle navigation drawer">
+                    <Panel>
+                      <cf:LucideIcon Kind="Menu"
+                    IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+                      <ContentPresenter
+                        Name="PART_PaneIconPresenter"
+                        Content="{TemplateBinding DrawerIcon}"
+                        ContentTemplate="{TemplateBinding DrawerIconTemplate}"
+                        IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+                    </Panel>
+                  </ToggleButton>
+                  <ContentPresenter x:Name="PART_TitlePresenter"
+                                    Content="{TemplateBinding Header}"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                    VerticalAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Foreground="{DynamicResource PhoneForegroundBrush}"
+                                    FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
+                                    FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                    IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </DockPanel>
+              </Border>
+              <Border
+                Name="PART_BottomBar"
+                Height="{DynamicResource CornflowerPlainDrawerBarHeight}"
+                Background="{DynamicResource PhoneChromeBrush}"
+                DockPanel.Dock="Bottom"
+                IsVisible="False">
+                <DockPanel HorizontalAlignment="Stretch">
+                  <ToggleButton x:Name="PART_BottomPaneButton"
+                                Theme="{DynamicResource Wp81PlainHeaderToggleButtonTheme}"
+                                HorizontalContentAlignment="Center"
+                                cf:Tilt.IsEnabled="True"
+                                Width="{DynamicResource CornflowerPlainDrawerBarHeight}"
+                                IsChecked="{Binding #PART_SplitView.IsPaneOpen, Mode=TwoWay}"
+                                DockPanel.Dock="Left"
+                                AutomationProperties.Name="Toggle navigation drawer"
+                                ToolTip.Tip="Toggle navigation drawer">
+                    <Panel>
+                      <cf:LucideIcon Kind="Menu"
+                    IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+                      <ContentPresenter
+                        Name="PART_BottomPaneIconPresenter"
+                        Content="{TemplateBinding DrawerIcon}"
+                        ContentTemplate="{TemplateBinding DrawerIconTemplate}"
+                        IsVisible="{Binding DrawerIcon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+                    </Panel>
+                  </ToggleButton>
+                  <ContentPresenter x:Name="PART_BottomTitlePresenter"
+                                    Content="{TemplateBinding Header}"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                    VerticalAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Foreground="{DynamicResource PhoneForegroundBrush}"
+                                    FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
+                                    FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                    IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </DockPanel>
+              </Border>
+              <ContentPresenter Name="PART_ContentPresenter"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                CornerRadius="{TemplateBinding CornerRadius}" />
+            </DockPanel>
+            <Border Name="PART_Backdrop"
+                    Background="{TemplateBinding BackdropBrush}"
+                    IsVisible="False"
+                    IsHitTestVisible="False" />
+          </Grid>
+        </SplitView>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:placement-right /template/ ToggleButton#PART_PaneButton">
+      <Setter Property="DockPanel.Dock" Value="Right" />
+    </Style>
+
+    <!-- Bottom placement: swap top bar for bottom bar -->
+    <Style Selector="^:placement-bottom /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:placement-bottom /template/ Border#PART_BottomBar">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <!-- Bottom placement + compact modes: pane compact strip provides toggle, hide bottom bar -->
+    <Style Selector="^:placement-bottom[DisplayMode=CompactOverlay] /template/ Border#PART_BottomBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:placement-bottom[DisplayMode=CompactInline] /template/ Border#PART_BottomBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- Horizontal pane (Bottom/Top): compact toggle must dock Left so drawer content can fill the rest -->
+    <Style Selector="^:placement-bottom /template/ ToggleButton#PART_CompactPaneToggle">
+      <Setter Property="DockPanel.Dock" Value="Left" />
+    </Style>
+    <Style Selector="^:placement-top /template/ ToggleButton#PART_CompactPaneToggle">
+      <Setter Property="DockPanel.Dock" Value="Left" />
+    </Style>
+
+    <Style Selector="^[DrawerBehavior=Locked] /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[DrawerBehavior=Disabled] /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^:detail-is-navpage /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[DisplayMode=CompactOverlay] /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[DisplayMode=CompactOverlay] /template/ ToggleButton#PART_CompactPaneToggle">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^[DisplayMode=CompactInline] /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^[DisplayMode=CompactInline] /template/ ToggleButton#PART_CompactPaneToggle">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^[IsInNavigationPage=True] /template/ Border#PART_TopBar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- NavigationPage already hosts a hamburger toggle — suppress the compact pane toggle. -->
+    <Style Selector="^:detail-is-navpage /template/ ToggleButton#PART_CompactPaneToggle">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -11,11 +11,12 @@ namespace Cornflower.Themes.Wp81;
 /// <summary>
 /// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox, ContentControl, GridSplitter and PathIcon out of templates
 /// written for the theme under Wp81. Simple's templates for CalendarItem, CalendarDatePicker, PipsPager and the managed
-/// file dialogs hold plain Buttons with no theme of their own, DrawerPage's plain ToggleButtons, the managed file
+/// file dialogs hold plain Buttons with no theme of their own, the managed file
 /// dialog's plain CheckBox, the plain TextBoxes of CalendarDatePicker and the managed file dialog, the plain
 /// ContentControls of DataValidationErrors and the managed file dialog (the menus' RepeatButtons and MenuItem's
-/// ContentControls were such parts until Wp81 themed ContextMenu, Menu and MenuItem, #237), and the
-/// managed file dialog's GridSplitters, and DrawerPage's PathIcon (with no size of its own), so they would take Wp81's,
+/// ContentControls were such parts until Wp81 themed ContextMenu, Menu and MenuItem, #237, and DrawerPage's
+/// ToggleButtons and PathIcon until Wp81 themed DrawerPage, #239: a DrawerPage given Simple's theme still holds them), and
+/// the managed file dialog's GridSplitters, so they would take Wp81's,
 /// keyed by type: the phone's sizes (a Button's 109 × 57.5 minimum), its overhang, the accent and, for a Button or a
 /// CheckBox, the tilt, in chrome laid out for Simple's; for a TextBox, the phone's black text and white box over the
 /// brushes those templates pass it; for a ContentControl, its content at the top left at its own size where Simple's

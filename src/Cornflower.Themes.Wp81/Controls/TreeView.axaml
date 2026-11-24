@@ -1,0 +1,43 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TreeView/README.md.
+
+    The phone had no tree: an 8.1 app showed one as a grouped ListView, a SemanticZoom or a page per level. This is a
+    list of plain TreeViewItems (Controls/TreeViewItem.axaml), each a row with the rule under it, in the body's type.
+    As Wp81's ListView: no box (rule 4: Simple's border is bound to the app's BorderBrush and BorderThickness, unset), a
+    Transparent background over the page (rule 5), PhoneForegroundBrush, which the items inherit, no padding of its own
+    (the page insets it), and the items in Wp81's ScrollViewer, which pans them up and down and sideways once a deep
+    tree is wider than its slot. No focus adorner, as the phone's lists have none.
+  -->
+  <ControlTheme x:Key="{x:Type TreeView}" TargetType="TreeView">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+                        Background="{TemplateBinding Background}"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
+            <ItemsPresenter x:Name="PART_ItemsPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            ItemsPanel="{TemplateBinding ItemsPanel}" />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

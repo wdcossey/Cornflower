@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Expander/README.md.
+
+    A part theme (plan section 3): the header ToggleButton inside a larger control, which a tap opens and closes: an
+    Expander's header, a TreeViewItem's chevron and a DrawerPage's drawer buttons (#239). Keyed, so it reaches only the
+    templates that name it, by DynamicResource (a StaticResource finds only its own file's).
+
+    Nothing drawn at rest and nothing drawn checked: a transparent background that takes the finger across the part, no
+    border, and the content its host's, which draws the open state itself (a chevron), as an open header is no state
+    for the accent (rule 3: never on a heading at rest). No size of its own: a part inside a larger control takes the
+    host's (rule 6). No tilt of its own: its host decides (an Expander's header tilts, a tree's row tilts as a whole).
+    No press fill: the tilt is the press (rule 7). Disabled draws the content in PhoneDisabledBrush. No focus adorner, as
+    the phone's buttons have none.
+  -->
+  <ControlTheme x:Key="Wp81PlainHeaderToggleButtonTheme" TargetType="ToggleButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Border" Background="{TemplateBinding Background}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

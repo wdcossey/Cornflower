@@ -12,9 +12,10 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The ToggleButtons and RepeatButtons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme
 /// under Wp81 for their own type, as <see cref="HolePartsTests"/> shows for Buttons. In Avalonia 12.1.4, Simple's
-/// templates for DrawerPage (three toggles) hold plain ToggleButtons with no theme
-/// of their own: read from Simple's sources at the 12.1.4 tag. Without HoleParts they would take Wp81's, with the
-/// phone's 109 × 57.5 minimum and overhang, in every DrawerPage. The menu ScrollViewer's two plain RepeatButtons were
+/// template for DrawerPage (three toggles) holds plain ToggleButtons with no theme of their own: read from Simple's
+/// sources at the 12.1.4 tag. Wp81 themes DrawerPage now (#239), with its own part theme for them, so no hole holds one;
+/// a DrawerPage given Simple's theme still does, and without HoleParts they would take Wp81's, with the phone's
+/// 109 × 57.5 minimum and overhang. The menu ScrollViewer's two plain RepeatButtons were
 /// in ContextMenu's, Menu's and MenuItem's until Wp81 themed them (#237): Wp81's ContextMenu has no ScrollViewer, and
 /// its sub-menus' is Wp81's. ComboBox was one until Wp81 themed it (#155); a hole's ComboBox (the managed file dialog's) is Wp81's, so its
 /// parts aren't counted. Simple's ScrollBar held eight more; Wp81 themes ScrollBar now (#116), and its template has none.
@@ -64,7 +65,19 @@ public class HoleTogglePartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
-        Assert.Contains(fellBack, part => part.StartsWith("DrawerPage.ToggleButton.", StringComparison.Ordinal));
+    }
+
+    // A DrawerPage given Simple's own theme (Wp81 themes it, #239) keeps Simple's ToggleButton for its three toggles.
+    [AvaloniaFact]
+    public void A_DrawerPage_In_Simples_Theme_Keeps_Simples_ToggleButtons()
+    {
+        var simple = new SimpleTheme();
+        var page = new DrawerPage { Theme = ThemeOf(simple, typeof(DrawerPage)) };
+        using var scene = new Scene(page, themes: [simple, new Wp81Theme()]);
+
+        var toggles = Plain(page).Where(b => b.GetType() == typeof(ToggleButton)).ToList();
+        Assert.Equal(3, toggles.Count);
+        Assert.All(toggles, b => Assert.Same(ThemeOf(simple, typeof(ToggleButton)), b.Theme));
     }
 
     // An app's own templated control isn't a hole: its ToggleButton and RepeatButton are the phone's.

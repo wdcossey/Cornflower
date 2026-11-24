@@ -1,0 +1,87 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:conv="using:Avalonia.Controls.Converters"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TreeViewItem/README.md.
+
+    The phone had no TreeViewItem: its nearest is a ListViewItem. This sets the row a tree's, a table's and a grid's rows
+    share (plan section 3, "The row"; batch 9 reuses it): PART_Row in Wp81PlainRowTheme (Controls/PlainRow.axaml, by
+    DynamicResource), the rule under it and the phone's touch height, round PART_Header, which the level indents by
+    CornflowerPlainTreeViewItemIndent (38.5) each, through Avalonia's TreeViewItemIndentConverter, as Simple's does.
+    In PART_Header, a column of that width holds the chevron, PART_ExpandCollapseChevron, a ToggleButton in
+    Wp81PlainHeaderToggleButtonTheme bound two ways to IsExpanded, filling the row's height: Lucide's ChevronRight, and
+    ChevronDown open (rule 10). A leaf (:empty) hides it and keeps the column, so its header lines up with its siblings'.
+    Then the Header in the body's type (rule 2: PhoneFontFamilyNormal at TextStyleLargeFontSize, 18.14, set on the item, as
+    an item inherits from the item above it), at the phone's line (PhoneContentLine), centred in the row. The children
+    are PART_ItemsPresenter, under the row, shown while IsExpanded, at once (rule 8).
+
+    The press is the tilt, on PART_Header (Tilt.IsTarget) inside PART_Row, which stays untilted and takes the finger
+    across the row (rule 7: a tree item is item-sized); only the nearest item tilts, so a child's press leaves its
+    parent still. Selected, the row's text and chevron are PhoneAccentBrush (rule 3: a selected item's text, as the
+    phone's list shows a selection in the accent; its ListViewItem's tick shows only in the check mode). Disabled,
+    PhoneDisabledBrush. No pointer-over look and no focus adorner, as the phone's list items have neither.
+  -->
+  <ControlTheme x:Key="{x:Type TreeViewItem}" TargetType="TreeViewItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel>
+          <Border x:Name="PART_Row"
+                  Theme="{DynamicResource Wp81PlainRowTheme}"
+                  Background="{TemplateBinding Background}"
+                  Focusable="True"
+                  TemplatedControl.IsTemplateFocusTarget="True">
+            <Grid x:Name="PART_Header" ColumnDefinitions="Auto,*" cf:Tilt.IsTarget="True">
+              <Grid.Margin>
+                <MultiBinding Converter="{x:Static conv:TreeViewItemIndentConverter.Instance}">
+                  <Binding Path="Level" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <DynamicResource ResourceKey="CornflowerPlainTreeViewItemIndent" />
+                </MultiBinding>
+              </Grid.Margin>
+              <Panel x:Name="PART_ChevronColumn" Width="{DynamicResource CornflowerPlainTreeViewItemIndent}">
+                <ToggleButton x:Name="PART_ExpandCollapseChevron"
+                              Theme="{DynamicResource Wp81PlainHeaderToggleButtonTheme}"
+                              HorizontalContentAlignment="Center"
+                              Focusable="False"
+                              IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}">
+                  <cf:LucideIcon x:Name="PART_Chevron" Kind="ChevronRight" />
+                </ToggleButton>
+              </Panel>
+              <ContentPresenter x:Name="PART_HeaderPresenter"
+                                Grid.Column="1"
+                                Margin="{TemplateBinding Padding}"
+                                VerticalAlignment="Center"
+                                Content="{TemplateBinding Header}"
+                                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                Focusable="False"
+                                wp81:PhoneContentLine.IsEnabled="True" />
+            </Grid>
+          </Border>
+          <ItemsPresenter x:Name="PART_ItemsPresenter"
+                          IsVisible="{TemplateBinding IsExpanded}"
+                          ItemsPanel="{TemplateBinding ItemsPanel}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[IsExpanded=True] /template/ cf|LucideIcon#PART_Chevron">
+      <Setter Property="Kind" Value="ChevronDown" />
+    </Style>
+    <Style Selector="^:empty /template/ ToggleButton#PART_ExpandCollapseChevron">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:selected /template/ Border#PART_Row">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneAccentBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#PART_Row">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

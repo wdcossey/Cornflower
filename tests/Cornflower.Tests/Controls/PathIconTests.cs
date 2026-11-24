@@ -91,12 +91,14 @@ public class PathIconTests
         Assert.Equal(blue, At(scene, 135, 120));
     }
 
-    // Simple's DrawerPage holds a PathIcon with no size of its own: it keeps Simple's (HoleParts).
+    // Simple's DrawerPage holds a PathIcon with no size of its own: given Simple's theme (Wp81 themes it, #239), it keeps
+    // Simple's PathIcon (HoleParts).
     [AvaloniaFact]
     public void In_A_Drawer_Page_It_Keeps_Simples()
     {
         var simple = new SimpleTheme();
-        var page = new DrawerPage();
+        Assert.True(simple.TryGetResource(typeof(DrawerPage), ThemeVariant.Dark, out var drawer));
+        var page = new DrawerPage { Theme = (ControlTheme)drawer! };
         using var scene = new Scene(page, themes: [simple, new Wp81Theme()]);
 
         Assert.True(simple.TryGetResource(typeof(PathIcon), ThemeVariant.Dark, out var simples));

@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TreeViewItem/README.md.
+
+    A part theme (plan section 3, "The row"): the row of a tree, and of batch 9's tables, a Border round the row's
+    header or cells. TreeViewItem wears it first (#239). Keyed, so it reaches only the templates that name it, by
+    DynamicResource.
+
+    The rule: a 1.5 line under the row (CornflowerPlainRuleThickness, rule 4) in PhoneLowBrush, a Separator's, quiet at
+    rest. A Transparent background, so the whole row takes the finger, and the phone's touch height as its least
+    (PhoneButtonMinHeight, 57.5, rule 6: a row is pressed on its own), which the Adaptive pack can make denser. What a
+    host binds (its Background, say) wins over these.
+
+    What a host adds, the same in each (the TreeViewItem's theme is the model): the press is the tilt on the row
+    (cf:Tilt.IsEnabled on the item, cf:Tilt.IsTarget inside this Border, rule 7), with no fill; selected, the row's text
+    and glyphs are PhoneAccentBrush (TextElement.Foreground on this Border, rule 3: a selected item's text); disabled,
+    PhoneDisabledBrush. No pointer-over look (the phone has none), and no motion (rule 8).
+  -->
+  <ControlTheme x:Key="Wp81PlainRowTheme" TargetType="Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PhoneLowBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource CornflowerPlainRuleThickness}" />
+    <Setter Property="MinHeight" Value="{DynamicResource PhoneButtonMinHeight}" />
+  </ControlTheme>
+</ResourceDictionary>

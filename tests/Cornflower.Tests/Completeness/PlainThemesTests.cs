@@ -23,6 +23,7 @@ public class PlainThemesTests
         "GroupBox", "HeaderedContentControl", "Label", "PathIcon", "ToolTip", "TransitioningContentControl", // batch 3, #236
         "ContextMenu", "Menu", "MenuItem",                                                                  // batch 4, #237
         "CarouselPage", "TabControl", "TabItem", "TabStrip", "TabStripItem", "TabbedPage",                  // batch 5, #238
+        "DrawerPage", "Expander", "SplitView", "TreeView", "TreeViewItem",                                  // batch 6, #239
     ];
 
     /// <summary>
@@ -34,6 +35,7 @@ public class PlainThemesTests
         "GlyphButton", "SpinnerButton",     // batch 2, #235
         "GroupHeader",                      // batch 3, #236
         "SubMenu",                          // batch 4, #237
+        "HeaderToggleButton", "Row",        // batch 6, #239
     ];
 
     public static TheoryData<string> Controls => new(Plain);

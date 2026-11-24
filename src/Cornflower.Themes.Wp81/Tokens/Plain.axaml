@@ -96,4 +96,23 @@
     strip has no title, and a header pulled 6.5 above the strip would be clipped by it.
   -->
   <Thickness x:Key="CornflowerPlainTabHeaderMargin">16,0,0,0</Thickness>
+
+  <!--
+    A row's rule (Wp81PlainRowTheme: a tree's row, #239, and batch 9's table rows): the 1.5 line (rule 4: a line that
+    divides), under the row only, so the rows of a list are divided once each, not twice.
+  -->
+  <Thickness x:Key="CornflowerPlainRuleThickness">0,0,0,1.5</Thickness>
+
+  <!--
+    A tree's indent per level, and its chevron's column (TreeViewItem, #239): 38.5, a phone Button's box
+    (PhoneButtonMinHeight's 57.5 less PhoneTouchTargetOverhang's 9.5 above and below), so the chevron takes a fingertip
+    across the row's height, and a child's chevron sits under its parent's header.
+  -->
+  <x:Double x:Key="CornflowerPlainTreeViewItemIndent">38.5</x:Double>
+
+  <!--
+    A DrawerPage's bar (#239): 48, Avalonia's NavigationPage.BarHeight default, which Wp81's NavigationPage bar keeps, so a
+    drawer's bar and a navigation bar are the same height. Its drawer button is as wide, a square.
+  -->
+  <x:Double x:Key="CornflowerPlainDrawerBarHeight">48</x:Double>
 </ResourceDictionary>

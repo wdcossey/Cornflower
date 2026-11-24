@@ -1,0 +1,115 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Expander/README.md.
+
+    A pattern on the phone, not a control: a heading a tap opens to show more. The header is PART_toggle, a ToggleButton
+    in Wp81PlainHeaderToggleButtonTheme (Controls/PlainHeaderToggleButton.axaml), bound two ways to IsExpanded, at least
+    PhoneButtonMinHeight (57.5) tall (rule 6: the header is pressed on its own), with the tilt (rule 7). In it, the
+    Header in Wp81PlainGroupHeaderTheme (a group's heading, rule 2: GroupHeaderTextBlockStyle's look) and Lucide's
+    chevron after it, CornflowerPlainChevronMargin away, in the heading's PhoneMidBrush (rule 10). The chevron points
+    where the content will come from, and back once open: down then up for ExpandDirection Down, and the same for Up,
+    Left and Right. Open is no state for the accent (rule 3): only the chevron changes. Disabled, the heading and the
+    chevron are PhoneDisabledBrush.
+
+    The content is PART_ContentPresenter, inside the Padding, shown while IsExpanded, placed as GroupBox's is, with the
+    phone's 1.33 em line for the text it makes (PhoneHeaderLine). It shows and hides at once: Simple's CrossFade is left
+    out (rule 8), and an app's ContentTransition still runs. No box and no corners (rule 4): a Border round both is
+    bound to the app's Background, BorderBrush, BorderThickness and CornerRadius, all unset, so nothing is drawn at rest.
+    The header's part is PART_HeaderPresenter, the name Avalonia looks for, so the Header is its logical child.
+  -->
+  <ControlTheme x:Key="{x:Type Expander}" TargetType="Expander">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <DockPanel>
+            <ToggleButton x:Name="PART_toggle"
+                          DockPanel.Dock="Top"
+                          Theme="{DynamicResource Wp81PlainHeaderToggleButtonTheme}"
+                          MinHeight="{DynamicResource PhoneButtonMinHeight}"
+                          IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+                          cf:Tilt.IsEnabled="True">
+              <Grid ColumnDefinitions="*,Auto">
+                <ContentPresenter x:Name="PART_HeaderPresenter"
+                                  Theme="{DynamicResource Wp81PlainGroupHeaderTheme}"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding Header}"
+                                  ContentTemplate="{TemplateBinding HeaderTemplate}" />
+                <cf:LucideIcon x:Name="PART_Chevron"
+                               Grid.Column="1"
+                               Margin="{DynamicResource CornflowerPlainChevronMargin}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource PhoneMidBrush}"
+                               Kind="ChevronDown" />
+              </Grid>
+            </ToggleButton>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              IsVisible="{TemplateBinding IsExpanded}"
+                              wp81:PhoneHeaderLine.IsEnabled="True" />
+          </DockPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Where the header sits, and which way its chevron points, shut and open. -->
+    <Style Selector="^:expanded /template/ cf|LucideIcon#PART_Chevron">
+      <Setter Property="Kind" Value="ChevronUp" />
+    </Style>
+    <Style Selector="^:up">
+      <Style Selector="^ /template/ ToggleButton#PART_toggle">
+        <Setter Property="DockPanel.Dock" Value="Bottom" />
+      </Style>
+      <Style Selector="^ /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronUp" />
+      </Style>
+      <Style Selector="^:expanded /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronDown" />
+      </Style>
+    </Style>
+    <Style Selector="^:right">
+      <Style Selector="^ /template/ ToggleButton#PART_toggle">
+        <Setter Property="DockPanel.Dock" Value="Left" />
+      </Style>
+      <Style Selector="^ /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronRight" />
+      </Style>
+      <Style Selector="^:expanded /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronLeft" />
+      </Style>
+    </Style>
+    <Style Selector="^:left">
+      <Style Selector="^ /template/ ToggleButton#PART_toggle">
+        <Setter Property="DockPanel.Dock" Value="Right" />
+      </Style>
+      <Style Selector="^ /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronLeft" />
+      </Style>
+      <Style Selector="^:expanded /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Kind" Value="ChevronRight" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+      <Style Selector="^ /template/ cf|LucideIcon#PART_Chevron">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
