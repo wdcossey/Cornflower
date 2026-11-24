@@ -12,8 +12,9 @@
     no box, no colour on the field itself, no motion. With no errors the line is collapsed, so the field is as it was.
 
     The errors shown are the Owner's (the templated parent, where the control sits in a template: Avalonia sets Owner)
-    and the content's, where an app wraps a field in one: <DataValidationErrors><TextBox ... /></DataValidationErrors>.
-    Each has its own line, shown only while it has errors; the Owner's comes first.
+    or, with no Owner, the content's, where an app wraps a field in one: <DataValidationErrors><TextBox ... />
+    </DataValidationErrors>. Never both, as a template often passes its errors on to the field it wraps (Avalonia's
+    and Wp81's AutoCompleteBox do), which would show each twice. The content must be the field itself, a Control.
     Wp81's own TextBox, PasswordBox and ComboBox hold none in their templates (the phone had none), so wrapping is how
     an app shows theirs.
 
@@ -41,16 +42,22 @@
       <ControlTemplate>
         <DockPanel LastChildFill="True">
           <!-- Each line's DataContext is the control whose errors it shows, so its Content can bind them, as Simple's
-               does (a ContentPresenter would set its own DataContext to its content). Docked last, the content's sits
-               lowest. Stretched, so a long error wraps at the field's width. -->
+               does (a ContentPresenter would set its own DataContext to its content). The content's shows only with no
+               Owner. Stretched, so a long error wraps at the field's width. -->
           <ContentControl x:Name="PART_ContentErrors"
                           x:DataType="Control"
                           DockPanel.Dock="Bottom"
                           HorizontalContentAlignment="Stretch"
                           DataContext="{TemplateBinding Content}"
                           ContentTemplate="{TemplateBinding ErrorTemplate}"
-                          Content="{Binding (DataValidationErrors.Errors)}"
-                          IsVisible="{Binding (DataValidationErrors.HasErrors), FallbackValue=False}" />
+                          Content="{Binding (DataValidationErrors.Errors)}">
+            <ContentControl.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="(DataValidationErrors.HasErrors)" FallbackValue="False" />
+                <Binding Path="Owner" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static ObjectConverters.IsNull}" />
+              </MultiBinding>
+            </ContentControl.IsVisible>
+          </ContentControl>
           <ContentControl x:Name="PART_OwnerErrors"
                           x:DataType="Control"
                           DockPanel.Dock="Bottom"
@@ -71,5 +78,6 @@
                             Content="{TemplateBinding Content}" />
         </DockPanel>
       </ControlTemplate>
-    </Setter>  </ControlTheme>
+    </Setter>
+  </ControlTheme>
 </ResourceDictionary>

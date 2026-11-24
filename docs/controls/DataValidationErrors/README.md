@@ -44,13 +44,17 @@ accent isn't used (rule 3), and nothing moves (rule 8). The line has no margin o
 
 - `PART_ContentPresenter`: the content (the field), at its own size.
 - `PART_OwnerErrors`: the `Owner`'s errors. In a control's template Avalonia sets `Owner` to the templated parent.
-- `PART_ContentErrors`: the content's errors, lowest: the wrapped field's. Each line's `DataContext` is the control
+- `PART_ContentErrors`: with no `Owner`, the content's errors: the wrapped field's. Not both, as a template often
+  passes its errors on to the field it wraps, which would show each twice. Each line's `DataContext` is the control
   whose errors it shows, as Simple's is; each shows only while that control has errors.
 
 ## Known gaps
 
 - **No error on Wp81's own fields without a wrapper**: the TextBox's, PasswordBox's and ComboBox's templates have no
   `DataValidationErrors`, as decided for the TextBox (its PLAN: "left out"). Proposed in #241's validation PR.
+- **The content must be the field itself**, a `Control`: a view model shown through a `ContentTemplate` shows
+  nothing, as the errors are on the field the template builds. Put the `DataValidationErrors` inside the template,
+  round the field, instead.
 - An error that is an exception other than a `DataValidationException` shows as its `ToString()` (its type and
   message), as Simple's does; an app's `DataValidationErrors.ErrorConverter` gives it a message.
 - `:error` is set on the field (Avalonia's), and nothing styles it: the field's box stays the phone's.

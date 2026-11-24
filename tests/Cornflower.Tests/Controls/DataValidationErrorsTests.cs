@@ -143,13 +143,14 @@ public class DataValidationErrorsTests
         public string Name
         {
             get => _name;
-            set => _name = value.Length > 0 ? value : throw new DataValidationException("Enter a name.");
+            set => _name = string.IsNullOrEmpty(value) ? throw new DataValidationException("Enter a name.") : value;
         }
     }
 
-    // In a template Avalonia sets the Owner, the templated parent; given one, it shows the Owner's errors above the content's.
+    // In a template Avalonia sets the Owner, the templated parent; given one, it shows the Owner's errors, and not the
+    // content's, which a template often passes the Owner's to (Wp81's AutoCompleteBox does): they'd show twice.
     [AvaloniaFact]
-    public void It_Shows_Its_Owners_Errors()
+    public void It_Shows_Its_Owners_Errors_And_Not_The_Contents_Too()
     {
         var owner = new TextBox();
         var field = new TextBox();
@@ -161,11 +162,10 @@ public class DataValidationErrorsTests
         Assert.Equal("The owner's.", Assert.Single(Lines(errors, "PART_OwnerErrors")).Text);
         Assert.False(Part<ContentControl>(errors, "PART_ContentErrors").IsVisible);
 
-        DataValidationErrors.SetErrors(field, ["The field's."]);
+        DataValidationErrors.SetErrors(field, DataValidationErrors.GetErrors(owner));
         Dispatcher.UIThread.RunJobs();
-        var content = Assert.Single(Lines(errors, "PART_ContentErrors"));
-        Assert.Equal("The field's.", content.Text);
-        Assert.True(Top(content, errors) >= Bottom(Lines(errors, "PART_OwnerErrors")[0], errors) - 0.01);
+        Assert.False(Part<ContentControl>(errors, "PART_ContentErrors").IsVisible);
+        Assert.Single(errors.GetVisualDescendants().OfType<TextBlock>(), line => line.Text == "The owner's.");
     }
 
     // Simple's TextBox (a hole's, or one given Simple's theme) holds one inside its box: it keeps Simple's there.
