@@ -21,6 +21,7 @@ public class PlainThemesTests
         "EmbeddableControlRoot", "ItemsControl", "OverlayPopupHost", "PopupRoot", "Separator", "Window",    // batch 1, #234
         "ButtonSpinner", "DropDownButton", "GridSplitter", "NumericUpDown", "SplitButton",                  // batch 2, #235
         "GroupBox", "HeaderedContentControl", "Label", "PathIcon", "ToolTip", "TransitioningContentControl", // batch 3, #236
+        "ContextMenu", "Menu", "MenuItem",                                                                  // batch 4, #237
     ];
 
     /// <summary>
@@ -31,6 +32,7 @@ public class PlainThemesTests
     [
         "GlyphButton", "SpinnerButton",     // batch 2, #235
         "GroupHeader",                      // batch 3, #236
+        "SubMenu",                          // batch 4, #237
     ];
 
     public static TheoryData<string> Controls => new(Plain);

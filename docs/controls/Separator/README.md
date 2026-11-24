@@ -40,5 +40,7 @@ line that divides or edges a surface. Later plain themes use it too.
 
 - **Across only**: no vertical line (an `AppBarSeparator`'s). In a horizontal panel it is 0 wide and draws nothing
   unless given a `Width`.
-- A `Separator` in a desktop `Menu` or `ContextMenu`, which Wp81 doesn't theme yet (Simple's `MenuItem` template
-  holds one), takes this line, not Simple's indented one, until the menus' batch.
+- In the plain menus (#237): in a sub-menu (a `MenuItem`'s, a desktop `Menu`'s drop-down included) it is this line,
+  indented with the items' text by the sub-menu's padding (`CornflowerPlainSubMenuPadding`), as Simple's is by its
+  margin; a `ContextMenu`'s own take the MenuFlyout's `Wp81MenuFlyoutSeparatorTheme` (nothing, 0 tall), as the
+  menu takes the MenuFlyout's look.

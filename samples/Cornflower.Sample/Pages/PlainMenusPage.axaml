@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainMenusPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The fourth plain themes (ADR 0007, #237): Cornflower's design, not the phone's. A desktop Menu bar with drop-downs
+    (an icon, gesture text, a check, radio items, a sub-menu, a separator, a disabled item), a ContextMenu with the
+    MenuFlyout's look and motion opened by a long press (or a right click), and the light theme.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <Menu x:Name="Bar" Margin="-9.5,12,0,0">
+        <MenuItem Header="_file">
+          <MenuItem Header="_new" InputGesture="Ctrl+N" Click="OnPicked">
+            <MenuItem.Icon>
+              <cf:LucideIcon Kind="FilePlus" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="_open" InputGesture="Ctrl+O" Click="OnPicked" />
+          <Separator />
+          <MenuItem Header="recent">
+            <MenuItem Header="notes" Click="OnPicked" />
+            <MenuItem Header="photos" Click="OnPicked" />
+          </MenuItem>
+          <MenuItem Header="print" IsEnabled="False" />
+        </MenuItem>
+        <MenuItem Header="_view">
+          <MenuItem x:Name="Wrap" Header="word wrap" ToggleType="CheckBox" IsChecked="True" Click="OnPicked" />
+          <MenuItem Header="by name" ToggleType="Radio" GroupName="sort" IsChecked="True" Click="OnPicked" />
+          <MenuItem Header="by date" ToggleType="Radio" GroupName="sort" Click="OnPicked" />
+        </MenuItem>
+      </Menu>
+
+      <Border x:Name="Held" Margin="0,24,0,0" Padding="0,19" Background="{DynamicResource PhoneChromeBrush}">
+        <TextBlock Text="hold here (or right click)" HorizontalAlignment="Center" />
+        <Border.ContextMenu>
+          <ContextMenu x:Name="Context">
+            <MenuItem Header="copy" Click="OnPicked" />
+            <MenuItem Header="share" Click="OnPicked" />
+            <Separator />
+            <MenuItem Header="delete" Click="OnPicked" />
+          </ContextMenu>
+        </Border.ContextMenu>
+      </Border>
+
+      <TextBlock x:Name="Picked" Margin="0,12,0,0" Text="nothing picked yet" />
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="9.5,6,19,12">
+          <Menu>
+            <MenuItem Header="light">
+              <MenuItem Header="one" Click="OnPicked" />
+              <MenuItem Header="two" ToggleType="CheckBox" IsChecked="True" Click="OnPicked" />
+            </MenuItem>
+          </Menu>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

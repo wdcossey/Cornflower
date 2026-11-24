@@ -1,0 +1,84 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Menu/README.md.
+
+    The phone had no menu bar (its CommandBar and secondary commands were the app's menu). A desktop Menu here is a row
+    of headers in the body's type (PhoneFontFamilyNormal at TextStyleLargeFontSize, 18.14: rule 2), on the page's
+    background (none of its own: rule 5), each header an item-sized press (the tilt: rule 7) in
+    CornflowerPlainTopLevelMenuItemPadding. A header is the accent while selected (a pointer over it, the keyboard on
+    it) and not pressed, which it is while its drop-down is open (rule 3); disabled, MenuFlyoutItemDisabledForegroundThemeBrush.
+    Its drop-down opens below it on the MenuFlyout's surface (Wp81PlainSubMenuTheme), in the MenuFlyout's type, with the
+    plain MenuItem's items (MenuItem.axaml), and no motion (rule 8).
+
+    The headers wear Wp81PlainTopLevelMenuItemTheme, keyed, through the Menu's ItemContainerTheme, as Simple's do;
+    Avalonia clears it from the items below them, which keep the MenuItem theme by type.
+  -->
+  <ControlTheme x:Key="Wp81PlainTopLevelMenuItemTheme" TargetType="MenuItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="{DynamicResource CornflowerPlainTopLevelMenuItemPadding}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border x:Name="LayoutRoot"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}">
+            <Border x:Name="ContentBorder" Padding="{TemplateBinding Padding}" cf:Tilt.IsTarget="True">
+              <ContentPresenter x:Name="PART_HeaderPresenter"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Content="{TemplateBinding Header}"
+                                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                RecognizesAccessKey="True"
+                                wp81:PhoneContentLine.IsEnabled="True" />
+            </Border>
+          </Border>
+          <Popup x:Name="PART_Popup"
+                 IsLightDismissEnabled="True"
+                 IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}"
+                 Placement="BottomEdgeAlignedLeft"
+                 OverlayInputPassThroughElement="{Binding $parent[Menu]}">
+            <Border x:Name="PART_SubMenu" Theme="{DynamicResource Wp81PlainSubMenuTheme}">
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                Grid.IsSharedSizeScope="True"
+                                ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <!-- Open, a header is selected too (Avalonia selects an item as its drop-down opens). -->
+    <Style Selector="^:selected:not(:pressed) /template/ Border#ContentBorder">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneAccentBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#ContentBorder">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource MenuFlyoutItemDisabledForegroundThemeBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type Menu}" TargetType="Menu">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="ItemContainerTheme" Value="{StaticResource Wp81PlainTopLevelMenuItemTheme}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ItemsPresenter x:Name="PART_ItemsPresenter"
+                          ItemsPanel="{TemplateBinding ItemsPanel}"
+                          KeyboardNavigation.TabNavigation="Continue" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
