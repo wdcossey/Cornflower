@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/OverlayPopupHost/README.md.
+
+    The host of a popup in the window's overlay layer: where every popup opens on Android, and where a popup set to
+    ShouldUseOverlayLayer opens anywhere, as Wp81's own popups are. As PopupRoot (Controls/PopupRoot.axaml): transparent,
+    with the phone's foreground, PhoneFontFamilyNormal and the control-content size (ControlContentThemeFontSize, 12),
+    by DynamicResource, and the weight, style and decorations reset. The template applies the popup's transform round the VisualLayerManager and the content.
+    No motion of its own.
+  -->
+  <ControlTheme x:Key="{x:Type OverlayPopupHost}" TargetType="OverlayPopupHost">
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="FontStyle" Value="Normal" />
+    <Setter Property="Inline.TextDecorations" Value="" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <LayoutTransformControl LayoutTransform="{TemplateBinding Transform}">
+          <VisualLayerManager Name="PART_VisualLayerManager">
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Padding="{TemplateBinding Padding}"
+                              Background="{TemplateBinding Background}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </VisualLayerManager>
+        </LayoutTransformControl>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

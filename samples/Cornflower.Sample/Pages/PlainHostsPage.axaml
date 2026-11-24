@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="using:System"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainHostsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The first plain themes (ADR 0007, #234): Cornflower's design, not the phone's. The page sits in the app's Window (on
+    the desktop) or EmbeddableControlRoot (on Android), each the page's background and the phone's font. An
+    ItemsControl, a bare presenter of its items; Separators, the plain line; a Popup, whose host (OverlayPopupHost or
+    PopupRoot) gives its unstyled text the phone's foreground and font; and the light theme. The section headings are
+    the type ramp's, by their keys.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's. This page's host is the plain Window, or EmbeddableControlRoot on Android."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <TextBlock Text="items control" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ItemsControl x:Name="Items">
+        <sys:String>first item</sys:String>
+        <sys:String>second item</sys:String>
+        <sys:String>third item</sys:String>
+      </ItemsControl>
+
+      <TextBlock Text="separator" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <TextBlock Text="above the line" Theme="{DynamicResource BodyTextBlockStyle}" />
+      <Separator x:Name="Line" Margin="0,9.5" />
+      <TextBlock Text="below the line" Theme="{DynamicResource BodyTextBlockStyle}" />
+
+      <TextBlock Text="popup host" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ToggleButton x:Name="OpenPopup" Content="popup" />
+      <Popup x:Name="Popup"
+             IsOpen="{Binding #OpenPopup.IsChecked, Mode=TwoWay}"
+             PlacementTarget="{Binding #OpenPopup}"
+             Placement="Bottom"
+             IsLightDismissEnabled="True">
+        <Border Background="{DynamicResource PhoneChromeBrush}" Padding="19,12">
+          <TextBlock Text="the host's text: no style of its own" />
+        </Border>
+      </Popup>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <ItemsControl x:Name="LightItems" Foreground="{DynamicResource PhoneForegroundBrush}">
+              <sys:String>first item</sys:String>
+              <sys:String>second item</sys:String>
+            </ItemsControl>
+            <Separator x:Name="LightLine" Margin="0,9.5" />
+            <TextBlock Text="below the line" Theme="{DynamicResource BodyTextBlockStyle}" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
