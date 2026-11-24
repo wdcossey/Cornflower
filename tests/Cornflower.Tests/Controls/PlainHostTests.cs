@@ -150,7 +150,8 @@ public class PlainHostTests
         }
     }
 
-    // A popup in the window's overlay layer, as on Android and as Wp81's own popups: the same.
+    // A popup in the window's overlay layer, as on Android and as Wp81's own popups: the same, in a window of an app's
+    // own font and foreground, which the host doesn't pass on.
     [AvaloniaTheory]
     [InlineData("dark")]
     [InlineData("light")]
@@ -159,6 +160,11 @@ public class PlainHostTests
         var text = new TextBlock { Text = "in a popup" };
         var popup = new Popup { ShouldUseOverlayLayer = true, Child = text };
         using var scene = new Scene(new Panel { Children = { popup } }, Variant(variant));
+        scene.Window.FontFamily = FontFamily.Default;
+        scene.Window.FontSize = 30;
+        scene.Window.FontWeight = FontWeight.Bold;
+        scene.Window.Foreground = new SolidColorBrush(Color.FromUInt32(0xFFFF0000u));
+        Assert.NotEqual(Resource<FontFamily>(scene.Window, "PhoneFontFamilyNormal"), scene.Window.FontFamily);
 
         popup.IsOpen = true;
         Dispatcher.UIThread.RunJobs();
