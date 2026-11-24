@@ -1,0 +1,29 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/GroupBox/README.md.
+
+    The group heading's part theme, Wp81PlainGroupHeaderTheme (ContentPresenter): GroupHeaderTextBlockStyle's look for
+    a heading a template shows as content, not as a TextBlock: PhoneFontFamilySemiLight at
+    GroupHeaderTextBlockStyleFontSize (23.73), PhoneMidBrush, its character spacing (-3, through PhoneCharacterSpacing),
+    and the phone's 1.33 em line for the text it makes (PhoneHeaderLine), as the control header's part theme gives its
+    own. GroupBox's heading wears it; Expander's header and a tree's or table's group are to (plan section 2, rule 2).
+    By DynamicResource from another file. What shows and where are each template's own, and a template's /template/
+    style for the part (a disabled heading) wins over a value here.
+  -->
+  <ControlTheme x:Key="Wp81PlainGroupHeaderTheme" TargetType="ContentPresenter">
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilySemiLight}" />
+    <Setter Property="FontSize" Value="{DynamicResource GroupHeaderTextBlockStyleFontSize}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneMidBrush}" />
+    <Setter Property="wp81:PhoneCharacterSpacing.CharacterSpacing" Value="{DynamicResource GroupHeaderTextBlockStyleCharacterSpacing}" />
+    <Setter Property="LetterSpacing">
+      <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
+        <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding>
+    </Setter>
+    <Setter Property="wp81:PhoneHeaderLine.IsEnabled" Value="True" />
+  </ControlTheme>
+</ResourceDictionary>

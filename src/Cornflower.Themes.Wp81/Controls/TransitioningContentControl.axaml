@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TransitioningContentControl/README.md.
+
+    The phone's nearest is a Frame's page transitions. The template is the two presenters Avalonia's control swaps the
+    content between (PART_ContentPresenter, PART_ContentPresenter2), each bound to the app's Background, BorderBrush,
+    BorderThickness, CornerRadius, Padding, content alignments and ContentTemplate, all unset, with the phone's 1.33 em
+    line for the text it makes (PhoneHeaderLine).
+
+    No motion of its own (rule 8, ADR 0007's answer 6): PageTransition is null, where Avalonia's default is a 125 ms
+    cross-fade, so new content shows at once. An app that wants one sets it, and its value wins: Wp81's
+    TurnstileTransition, SlideTransition or ContinuumTransition, which read their time through CornflowerClock.
+  -->
+  <ControlTheme x:Key="{x:Type TransitioningContentControl}" TargetType="TransitioningContentControl">
+    <Setter Property="PageTransition" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+          <ContentPresenter x:Name="PART_ContentPresenter2"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

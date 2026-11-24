@@ -1,0 +1,31 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/PathIcon/README.md.
+
+    The phone's PathIcon was an untemplated icon element. Here its Data is drawn in its Foreground and nothing else: no
+    brush of its own, so it inherits its host's (a pressed button's), and no size of its own (Simple's fixes one), so it
+    is its geometry's size unless the app or its slot sizes it, when the geometry is scaled to fit, keeping its shape.
+    The app's Background, unset, is drawn behind it.
+
+    A PathIcon in a template written for the theme under Wp81 (Simple's DrawerPage's, with no size of its own) keeps
+    that theme's instead (HoleParts.FallBack), so the hole's chrome keeps the icon size it was laid out for.
+  -->
+  <ControlTheme x:Key="{x:Type PathIcon}" TargetType="PathIcon">
+    <Setter Property="wp81:HoleParts.FallBack" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border" Background="{TemplateBinding Background}">
+          <Viewbox>
+            <Path x:Name="PART_Path"
+                  Data="{TemplateBinding Data}"
+                  Fill="{TemplateBinding Foreground}"
+                  Stretch="Uniform" />
+          </Viewbox>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

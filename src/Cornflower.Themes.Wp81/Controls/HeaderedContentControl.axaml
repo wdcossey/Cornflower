@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/HeaderedContentControl/README.md.
+
+    The phone's control header, reused: the Header in Wp81HeaderContentPresenterTheme (the phone's
+    HeaderContentPresenterStyle, Controls/HeaderContentPresenter.axaml, by DynamicResource), TextControlHeaderMarginThemeThickness
+    (4.8) above the content, as the TextBox's header. With no Header it is collapsed, margin and all, as the phone's code
+    collapses it. Disabled, the header is PhoneDisabledBrush (rule 5). The header part is PART_HeaderPresenter, the name
+    Avalonia's HeaderedContentControl looks for, so the Header is its logical child.
+
+    The content is placed as Wp81's ContentControl places it, with the phone's 1.33 em line for the text it makes
+    (PhoneHeaderLine): it doesn't recognise access keys. A Border round both is bound to the app's Background,
+    BorderBrush, BorderThickness, CornerRadius and Padding, all unset, so nothing is drawn at rest.
+  -->
+  <ControlTheme x:Key="{x:Type HeaderedContentControl}" TargetType="HeaderedContentControl">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <Grid RowDefinitions="Auto,*">
+            <ContentPresenter x:Name="PART_HeaderPresenter"
+                              Grid.Row="0"
+                              Theme="{DynamicResource Wp81HeaderContentPresenterTheme}"
+                              Margin="{DynamicResource TextControlHeaderMarginThemeThickness}"
+                              IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}"
+                              Content="{TemplateBinding Header}"
+                              ContentTemplate="{TemplateBinding HeaderTemplate}" />
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Grid.Row="1"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              wp81:PhoneHeaderLine.IsEnabled="True" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_HeaderPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
