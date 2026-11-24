@@ -23,8 +23,8 @@ year and the decade.
 | `Foreground` | `PhoneForegroundBrush`, which the days inherit |
 | `Template` | `PART_Root` holding `PART_CalendarItem`, stretched to the Calendar's width |
 
-No `Background`, `BorderBrush`, `BorderThickness` or `HeaderBackground` of its own (Simple's are a box and its accent
-as a header band, at rest): the app's, passed to the item, unset. Avalonia's keyboard, selection modes and blackout dates
+No `Background`, `BorderBrush` or `BorderThickness` of its own (Simple's are a box): the app's, passed to the item,
+unset. `HeaderBackground` isn't passed or drawn: Simple draws its accent there at rest (rule 3). Avalonia's keyboard, selection modes and blackout dates
 are the Calendar's own.
 
 ## The template's parts
@@ -44,3 +44,8 @@ a key. `CalendarTests.A_Selection_Doesnt_Scroll_The_Page` holds it to that.
   (rule 8). Simple 12.1.4 has none either.
 - No swipe between months: the arrows and the keyboard only.
 - No focus adorner on the day the keyboard is on (Simple's `:dayfocused` rectangle), as the phone's buttons have none.
+  As in Simple's, neither the days nor (by Avalonia's default) the Calendar are focusable. A Calendar an app makes
+  `Focusable` takes the focus from a press, and the arrow keys move the day.
+- `HeaderBackground` is ignored.
+- A Calendar given Simple's theme under Wp81 still gets Wp81's plain `CalendarItem` by type, as only the Button family's
+  parts fall back (`HoleParts`): Simple's root round the plain page.

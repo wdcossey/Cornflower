@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -222,6 +224,45 @@ public class CalendarTests
         Assert.Same(Resource<IBrush>(open, "PhoneDisabledBrush"), Text(Day(open, new DateTime(2026, 11, 20))));
     }
 
+    // Disabled, nothing is in the accent or the foreground: a selected day and the shown month aren't filled, and today's
+    // outline is PhoneDisabledBrush.
+    [AvaloniaFact]
+    public void Disabled_A_Selection_Isnt_Filled_And_Today_Is_Dimmed()
+    {
+        var today = DateTime.Today;
+        var other = today.Day == 15 ? today.AddDays(1) : new DateTime(today.Year, today.Month, 15);
+        var calendar = new Calendar { DisplayDate = today, SelectedDate = other, IsEnabled = false };
+        var year = new Calendar { DisplayDate = Shown, DisplayMode = CalendarMode.Year, IsEnabled = false };
+        using var scene = new Scene(new StackPanel { Width = 373, Children = { calendar, year } });
+        var disabled = Resource<IBrush>(calendar, "PhoneDisabledBrush");
+
+        Assert.Equal(Colors.Transparent, ColorOf(Fill(Day(calendar, other))));
+        Assert.Same(disabled, Text(Day(calendar, other)));
+        Assert.Same(disabled, Part<Border>(Day(calendar, today), "TodayMark").BorderBrush);
+        var november = year.GetVisualDescendants().OfType<CalendarButton>().Single(m => m.Classes.Contains(":selected"));
+        Assert.Equal(Colors.Transparent, ColorOf(Fill(november)));
+        Assert.Same(disabled, Text(november));
+    }
+
+    // The days aren't focusable, as in Simple's, so a press leaves the focus off them. Avalonia's Calendar isn't focusable
+    // by default either; one an app makes focusable takes the focus from a press, and the arrow keys move the day.
+    [AvaloniaFact]
+    public void The_Days_Take_No_Focus_And_A_Focusable_Calendar_Takes_The_Arrows()
+    {
+        var (calendar, scene) = OnAPage(new Calendar { DisplayDate = Shown, Focusable = true });
+        using var _ = scene;
+        var day = Day(calendar, new DateTime(2026, 11, 12));
+
+        Assert.False(day.Focusable);
+        Release(scene, Press(scene, day));
+        Assert.False(day.IsFocused);
+        Assert.True(calendar.IsFocused);
+
+        scene.Window.KeyPressQwerty(PhysicalKey.ArrowRight, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new DateTime(2026, 11, 13), calendar.SelectedDate);
+    }
+
     // In a host with an app's own font, a day keeps the phone's family and size.
     [AvaloniaFact]
     public void A_Day_Keeps_The_Phones_Type_In_An_Apps_Font()
@@ -275,6 +316,7 @@ public class CalendarTests
         var popup = Part<Popup>(picker, "PART_Popup");
         Assert.True(popup.IsOpen);
         Assert.Equal(PlacementMode.Bottom, popup.Placement);
+        Assert.True(popup.ShouldUseOverlayLayer);
         var surface = Assert.IsType<Border>(popup.Child);
         Assert.Same(Resource<IBrush>(picker, "FlyoutBackgroundThemeBrush"), surface.Background);
         Assert.Equal(picker.Bounds.Width, surface.MinWidth);

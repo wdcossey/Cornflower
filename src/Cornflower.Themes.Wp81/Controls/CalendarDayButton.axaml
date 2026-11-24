@@ -13,7 +13,8 @@
     Selected, the accent fills the cell and the number is PhoneButtonBasePressedForegroundBrush (rule 3: what is
     selected). Today, at rest, is no state for the accent (rule 3): it is marked by a square PhoneBorderThickness (2.5)
     outline in PhoneForegroundBrush round the cell, the phone's own box (rule 4), kept when today is selected. A day of
-    another month (:inactive) is PhoneMidBrush; a blacked-out or disabled day, PhoneDisabledBrush. No pointer-over look
+    another month (:inactive) is PhoneMidBrush; a blacked-out day, PhoneDisabledBrush. Disabled, the number and today's
+    outline are PhoneDisabledBrush and a selected day isn't filled. No pointer-over look
     and no focus adorner (Simple's :dayfocused rectangle), as the phone's buttons have neither. No motion of its own.
   -->
   <ControlTheme x:Key="{x:Type CalendarDayButton}" TargetType="CalendarDayButton">
@@ -64,8 +65,17 @@
         <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
       </Style>
     </Style>
-    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    <!-- Disabled, nothing in the accent or the foreground: a selection's fill goes, and today's outline dims (review finding 2). -->
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ Border#TodayMark">
+        <Setter Property="BorderBrush" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
     </Style>
   </ControlTheme>
 </ResourceDictionary>

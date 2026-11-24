@@ -18,6 +18,7 @@ the finger across it, with the tilt.
 | `MinHeight` | `PhoneButtonMinHeight` (57.5): a day is pressed on its own (rule 6). Its width is the month's seventh |
 | `HorizontalAlignment`, `VerticalAlignment` | `Stretch`, so the whole cell takes the finger |
 | `Tilt.IsEnabled` | `True` (rule 7) |
+| `Focusable` | `False`, as in Simple's: a Calendar an app makes `Focusable` takes the focus, and its arrow keys move the day |
 | `FocusAdorner` | none |
 
 ## The states
@@ -29,7 +30,8 @@ the finger across it, with the tilt.
 | `:selected` | the same fill and number (rule 3: what is selected) |
 | `:today` | a square `PhoneBorderThickness` (2.5) outline in `PhoneForegroundBrush` round the cell: no accent at rest (rule 3). Kept when today is selected |
 | `:inactive` (another month's day) | the number `PhoneMidBrush` |
-| `:blackout`, `:disabled` | the number `PhoneDisabledBrush` |
+| `:blackout` | the number `PhoneDisabledBrush` |
+| `:disabled` | the number and today's outline `PhoneDisabledBrush`, and no fill when selected |
 
 No pointer-over look and no `:dayfocused` rectangle, as the phone's buttons have neither.
 

@@ -6,14 +6,17 @@
     ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarDatePicker/README.md.
 
     8.1 picked a date with DatePicker (Wp81 themes it). A CalendarDatePicker here is Wp81's TextBox, by type
-    (PART_TextBox), with the phone's box, focus, placeholder and disabled looks, its PlaceholderText, UseFloatingPlaceholder
-    and errors the control's, and no brushes passed to it (Simple passes its own). The control takes the TextBox's margin
+    (PART_TextBox), with the phone's box, focus, placeholder and disabled looks, its PlaceholderText and errors the
+    control's, and no brushes passed to it (Simple passes its own). Wp81's TextBox has no floating placeholder and places
+    its own text, so the picker's UseFloatingPlaceholder and content alignments aren't passed (review finding 3). The control takes the TextBox's margin
     (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none, as the
     plain NumericUpDown does. In the box, after the text (the TextBox's InnerRightContent), PART_Button, Lucide's
     Calendar (rule 10) in the borderless glyph button (Wp81PlainGlyphButtonTheme): nothing drawn at rest, the accent
     while pressed, with the tilt (rule 7). A tap opens PART_Popup below the control, as wide as it at the least: a
     floating surface in FlyoutBackgroundThemeBrush (rule 5), no border, square, holding PART_Calendar, the plain
-    Calendar (Controls/Calendar.axaml). The popup opens and closes as Wp81's popup host does with it (rule 8).
+    Calendar (Controls/Calendar.axaml). It is drawn in the window's overlay layer, as the phone has one window (as
+    AutoCompleteBox's list is), and opens and closes at once, as Avalonia's Popup does (rule 8). It isn't one of Wp81's
+    PhonePopupHosts, so Back doesn't shut it (review finding 1: a gap, in the README).
   -->
   <ControlTheme x:Key="{x:Type CalendarDatePicker}" TargetType="CalendarDatePicker">
     <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
@@ -22,10 +25,7 @@
         <Panel>
           <TextBox x:Name="PART_TextBox"
                    Margin="0"
-                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                    DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}"
-                   UseFloatingPlaceholder="{TemplateBinding UseFloatingPlaceholder}"
                    PlaceholderText="{TemplateBinding PlaceholderText}">
             <TextBox.InnerRightContent>
               <Button x:Name="PART_Button"
@@ -39,6 +39,7 @@
           <Popup x:Name="PART_Popup"
                  PlacementTarget="{TemplateBinding}"
                  Placement="Bottom"
+                 ShouldUseOverlayLayer="True"
                  IsLightDismissEnabled="True">
             <Border x:Name="PART_PopupSurface"
                     Background="{DynamicResource FlyoutBackgroundThemeBrush}"

@@ -18,6 +18,7 @@ by type in `src/Cornflower.Themes.Wp81/Controls/CalendarButton.axaml`. The day's
 | `MinHeight` | `PhoneButtonMinHeight` (57.5). Its width is the year's quarter |
 | `HorizontalAlignment`, `VerticalAlignment` | `Stretch` |
 | `Tilt.IsEnabled` | `True` (rule 7) |
+| `Focusable` | `False`, as in Simple's: a Calendar an app makes `Focusable` takes the focus, and its arrow keys move the month |
 | `FocusAdorner` | none |
 
 ## The states
@@ -27,7 +28,7 @@ by type in `src/Cornflower.Themes.Wp81/Controls/CalendarButton.axaml`. The day's
 | At rest | the name in `PhoneForegroundBrush`, nothing behind it |
 | `:pressed`, `:selected` (the month or year shown) | `PhoneAccentBrush` behind it, the name `PhoneButtonBasePressedForegroundBrush` |
 | `:inactive` (a year outside the decade) | `PhoneMidBrush` |
-| `:disabled` | `PhoneDisabledBrush` |
+| `:disabled` | `PhoneDisabledBrush`, and no fill when selected |
 
 No pointer-over look and no `:btnfocused` rectangle.
 

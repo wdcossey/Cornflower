@@ -8,7 +8,7 @@
     This is a month on the page: PART_Root holds PART_CalendarItem (Controls/CalendarItem.axaml), stretched to the
     Calendar's width (Simple centres it at its own), passed the app's Background, BorderBrush and BorderThickness, all
     unset, so nothing is drawn at rest (rules 4 and 5: no box, transparent over the page), and its foreground,
-    PhoneForegroundBrush. No header band: Simple's HeaderBackground (its accent at rest) is left unset (rule 3).
+    PhoneForegroundBrush. No header band: HeaderBackground isn't passed or drawn (Simple draws its accent there at rest, rule 3).
     Avalonia's keyboard and selection are the Calendar's own. A selection, at load or from code, never moves the page:
     Avalonia's Calendar brings nothing into view, and takes the focus only from a press or a key.
   -->
@@ -20,8 +20,7 @@
           <CalendarItem x:Name="PART_CalendarItem"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        HeaderBackground="{TemplateBinding HeaderBackground}" />
+                        BorderThickness="{TemplateBinding BorderThickness}" />
         </StackPanel>
       </ControlTemplate>
     </Setter>

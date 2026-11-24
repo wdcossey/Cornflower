@@ -34,10 +34,13 @@ No header band: Simple draws `HeaderBackground` (its accent) behind the header a
   less a page's 19 margins) a day is 53.3 by 57.5.
 - `PART_YearView`: four star columns, three rows of `CalendarButton`s, 93.25 by 57.5 at 373.
 
-Disabled (`:calendardisabled`), the days' names are `PhoneDisabledBrush`, as the days and the buttons are.
+Disabled (`:disabled`), `PART_MonthView`'s brush, and so the days' names, is `PhoneDisabledBrush`, as the days and the
+buttons are. Avalonia adds the names in code, so no style in the theme reaches them: they bind to the view's brush.
 
 ## Known gaps
 
 - The heading has the group heading's family, size and brush, not its -3 character spacing: it is a `Button`'s content,
   whose presenter Wp81PlainGlyphButtonTheme owns.
+- In the decade view the heading is `PhoneDisabledBrush`: Avalonia disables `PART_HeaderButton` there, as there is no
+  level above, and the glyph button dims its content disabled.
 - Lucide in a plain theme is a new use of a third-party set (ADR 0007, rule 10).

@@ -11,7 +11,7 @@
     across it, at least PhoneButtonMinHeight (57.5) tall (rule 6); its width is the year grid's quarter. The tilt is the
     press, with the accent behind the name (rule 7, and rule 3). Selected (the month or year shown), the accent fills the
     cell and the name is PhoneButtonBasePressedForegroundBrush (rule 3). A year outside the decade (:inactive) is
-    PhoneMidBrush; disabled, PhoneDisabledBrush. No pointer-over look and no focus adorner (Simple's :btnfocused
+    PhoneMidBrush; disabled, PhoneDisabledBrush, with no fill. No pointer-over look and no focus adorner (Simple's :btnfocused
     rectangle). No motion of its own.
   -->
   <ControlTheme x:Key="{x:Type CalendarButton}" TargetType="CalendarButton">
@@ -51,8 +51,14 @@
         <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
       </Style>
     </Style>
-    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    <!-- Disabled, nothing in the accent or the foreground: a selection's fill goes, and today's outline dims (review finding 2). -->
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
     </Style>
   </ControlTheme>
 </ResourceDictionary>
