@@ -13,7 +13,6 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornflower.Controls;
 using Cornflower.Themes.Wp81;
-using System.Diagnostics;
 using static Cornflower.Tests.Controls.MenuFlyoutReadings;
 
 namespace Cornflower.Tests.Controls;
@@ -30,7 +29,7 @@ public class ContextMenuTests
     private static ThemeVariant VariantOf(string name) => name == "light" ? ThemeVariant.Light : ThemeVariant.Dark;
 
     /// <summary>A page with a Button that owns the menu, at <paramref name="targetTop"/>.</summary>
-    private sealed class Stage : IDisposable
+    internal sealed class Stage : IDisposable
     {
         public Stage(double targetTop = 200, ThemeVariant? variant = null, IEnumerable<IStyle>? themes = null, params object[] items)
         {
@@ -103,21 +102,6 @@ public class ContextMenuTests
             Scene.Dispose();
             Clock.Dispose();
         }
-    }
-
-    /// <summary>Runs the dispatcher's loop on real time until <paramref name="done"/> or <paramref name="limitMs"/>: a hold's timer.</summary>
-    private static void RunFor(double limitMs, Func<bool> done)
-    {
-        var frame = new DispatcherFrame();
-        var watch = Stopwatch.StartNew();
-        var poll = new DispatcherTimer(TimeSpan.FromMilliseconds(1), DispatcherPriority.Background, (_, _) =>
-        {
-            if (watch.Elapsed.TotalMilliseconds >= limitMs || done())
-                frame.Continue = false;
-        });
-        poll.Start();
-        Dispatcher.UIThread.PushFrame(frame);
-        poll.Stop();
     }
 
     // The MenuFlyout's setters, by the same keys, and its template's parts, in both variants; no ScrollViewer.
@@ -212,59 +196,13 @@ public class ContextMenuTests
     [AvaloniaFact]
     public void With_Animated_Off_It_Opens_At_Rest()
     {
-        try
-        {
-            CornflowerConfig.Animated = false;
-            using var stage = new Stage();
-            stage.Open();
+        using var config = new ConfigScope();
+        CornflowerConfig.Animated = false;
+        using var stage = new Stage();
+        stage.Open();
 
-            Assert.False(PhoneContextMenu.IsOpening(stage.Menu));
-            Assert.Null(stage.Part<Border>("OuterBorder").RenderTransform);
-        }
-        finally
-        {
-            CornflowerConfig.Reset();
-        }
-    }
-
-    // Avalonia opens a ContextMenu on a long press (a touch hold, as on Android): it opens on the MenuFlyout's binder,
-    // below the held control, with the MenuFlyout's motion.
-    [AvaloniaFact]
-    public void A_Long_Press_Opens_It_Below_The_Held_Control()
-    {
-        using var stage = new Stage(targetTop: 200);
-        var at = PlainParts.Centre(stage.Scene, stage.Button);
-
-        var touch = stage.Scene.Window.TouchBegin(at);
-        RunFor(3000, () => stage.Menu.IsOpen);
-        try
-        {
-            Assert.True(stage.Menu.IsOpen);
-            Assert.True(PhoneContextMenu.IsOpening(stage.Menu));
-            Assert.True(stage.Popup.IsUsingOverlayLayer);
-            stage.At(stage.Clock.Now.TotalMilliseconds + 600);
-            var bounds = stage.Bounds();
-            Assert.Equal(0, bounds.X);
-            Assert.Equal(Scene.ReferenceWidth, bounds.Width);
-            var targetBottom = stage.Button.TranslatePoint(new Point(0, stage.Button.Bounds.Height), stage.Scene.Window)!.Value.Y;
-            Assert.Equal(targetBottom, bounds.Y, 3);
-        }
-        finally
-        {
-            stage.Scene.Window.TouchEnd(touch, at);
-            Dispatcher.UIThread.RunJobs();
-        }
-
-        // Let go, the menu stays open; a tap on an item clicks it and closes the menu at once.
-        Assert.True(stage.Menu.IsOpen);
-        var clicked = 0;
-        stage.Item(1).Click += (_, _) => clicked++;
-        var item = PlainParts.Centre(stage.Scene, stage.Item(1));
-        var tap = stage.Scene.Window.TouchBegin(item);
-        stage.Scene.Window.TouchEnd(tap, item);
-        Dispatcher.UIThread.RunJobs();
-        Assert.Equal(1, clicked);
-        Assert.False(stage.Menu.IsOpen);
+        Assert.False(PhoneContextMenu.IsOpening(stage.Menu));
+        Assert.Null(stage.Part<Border>("OuterBorder").RenderTransform);
     }
 
     [AvaloniaFact]
