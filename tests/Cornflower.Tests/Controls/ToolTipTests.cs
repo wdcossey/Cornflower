@@ -27,6 +27,17 @@ public class ToolTipTests
         var target = new Border { Width = 100, Height = 40, Background = Brushes.Transparent };
         ToolTip.SetTip(target, tip);
         var scene = new Scene(new Canvas { Children = { target } }, variant);
+        // The popup hosts in an app's own font and brush, so what the ToolTip shows is its own, not its host's.
+        var mine = new SolidColorBrush(Color.FromUInt32(0xFFFF0000u));
+        foreach (var host in new[] { typeof(PopupRoot), typeof(OverlayPopupHost) })
+            scene.Window.Styles.Add(new Style(x => x.OfType(host))
+            {
+                Setters =
+                {
+                    new Setter(TemplatedControl.ForegroundProperty, mine),
+                    new Setter(TemplatedControl.FontFamilyProperty, new FontFamily("Courier New")),
+                },
+            });
         ToolTip.SetIsOpen(target, true);
         Dispatcher.UIThread.RunJobs();
         return (scene, target);

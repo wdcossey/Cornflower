@@ -41,3 +41,5 @@ header's. Disabled, the header is `PhoneDisabledBrush`.
 - The header's font and brush are the part theme's, not the control's own: an app's `Foreground` on the control colours
   the content only. A `HeaderTemplate` sets its own.
 - `Expander` and `TabItem` are `HeaderedContentControl`s with themes of their own: this one reaches neither.
+- The header doesn't recognise access keys (`_Advanced` shows its underscore), as the phone's control header doesn't;
+  Simple's does. A `HeaderTemplate` with an `AccessText` gives one.

@@ -27,8 +27,11 @@ public class LabelTests
     [InlineData("light")]
     public void A_Label_Is_A_Control_Header(string variant)
     {
+        // In an app's own font, so the family is the Label's, not the window's.
         var label = new Label { Content = "_name" };
-        using var scene = new Scene(new StackPanel { Children = { label } }, variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
+        var host = new StackPanel { Children = { label } };
+        host.SetValue(TextElement.FontFamilyProperty, new FontFamily("Courier New"));
+        using var scene = new Scene(host, variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
 
         Assert.Equal(Resource<FontFamily>(label, "PhoneFontFamilyNormal"), label.FontFamily);
         Assert.Equal(16, Resource<double>(label, "TextStyleMediumFontSize"));

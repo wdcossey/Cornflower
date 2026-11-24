@@ -48,3 +48,5 @@ draws.
 - The heading's line is the phone's 1.33 em (31.6 at 23.73), not `GroupHeaderTextBlockStyle`'s 23 baseline-to-baseline:
   it is a presenter's text, not a `TextBlock` in that style.
 - The heading's font and brush are the part theme's: an app's `Foreground` on the control colours the content only.
+- The header doesn't recognise access keys (`_Advanced` shows its underscore), as the phone's control header doesn't;
+  Simple's does. A `HeaderTemplate` with an `AccessText` gives one.

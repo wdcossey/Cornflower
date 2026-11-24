@@ -33,20 +33,44 @@ public class PathIconTests
         return Frames.PixelAt(frame, (int)(x * Scene.ReferenceScaling), (int)(y * Scene.ReferenceScaling));
     }
 
-    // Its geometry's size, in the foreground it inherits.
+    // Its geometry's size, not grown to fill the 200 its panel offers, in the foreground it inherits; Transparent behind it.
     [AvaloniaTheory]
     [InlineData("dark")]
     [InlineData("light")]
     public void It_Is_Its_Datas_Size_In_Its_Foreground(string variant)
     {
         var icon = Bar();
-        var host = new StackPanel { Children = { icon } };
+        icon.HorizontalAlignment = HorizontalAlignment.Left;
+        var host = new StackPanel { Width = 200, Children = { icon } };
         host.SetValue(TextElement.ForegroundProperty, new SolidColorBrush(Red));
         using var scene = new Scene(new Canvas { Children = { new Border { Margin = new Thickness(100), Child = host } } }, variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
 
         Assert.Equal(new Size(10, 20), icon.Bounds.Size);
+        Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(icon.Background).Color);
         Assert.Equal(Red, At(scene, 105, 110));
         Assert.Equal(Resource<ISolidColorBrush>(icon, "ApplicationPageBackgroundThemeBrush").Color, At(scene, 112, 110));
+    }
+
+    // In a button, the usual place, it stays its geometry's size too.
+    [AvaloniaFact]
+    public void In_A_Button_It_Is_Its_Datas_Size()
+    {
+        var icon = Bar();
+        using var scene = new Scene(new StackPanel { Width = 200, Children = { new Button { Content = icon } } });
+
+        Assert.Equal(new Size(10, 20), icon.DesiredSize);
+    }
+
+    // Given only a width, the geometry is scaled to it, its shape kept.
+    [AvaloniaFact]
+    public void An_Apps_Width_Alone_Scales_It()
+    {
+        var icon = Bar();
+        icon.Width = 20;
+        icon.HorizontalAlignment = HorizontalAlignment.Left;
+        using var scene = new Scene(new StackPanel { Width = 200, Children = { icon } });
+
+        Assert.Equal(new Size(20, 40), icon.Bounds.Size);
     }
 
     // Given a size, the geometry is scaled to fit it, its shape kept, in the middle; the app's Background behind it.
