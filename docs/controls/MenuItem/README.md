@@ -33,10 +33,11 @@ own headers wear `Wp81PlainTopLevelMenuItemTheme` instead ([Menu](../Menu/README
 | `Padding` | `MenuFlyoutItemThemePadding` (0,8.5), the MenuFlyout item's, by `DynamicResource` |
 | `FontFamily`, `FontSize` | `PhoneFontFamilySemiLight` at `TextStyleExtraLargeFontSize` (25.5), the MenuFlyout's, by `DynamicResource` |
 | `LetterSpacing` | the MenuFlyout's -15 character spacing, through `PhoneCharacterSpacing` |
+| `Foreground` | `PhoneForegroundBrush`, by `DynamicResource` |
 | `Tilt.IsEnabled` | true: the tilt on `ContentBorder` (rule 7) |
-| `FocusAdorner` | none |
 
-The type is set on the item, as an item inherits from the item or menu above it, not from the popup it is drawn in.
+The type and the foreground are set on the item: an item is always drawn on the MenuFlyout's surface, and it inherits
+from the item or menu above it (and a menu from the control that owns it), not from the popup it is drawn in.
 
 | State | Look |
 |---|---|

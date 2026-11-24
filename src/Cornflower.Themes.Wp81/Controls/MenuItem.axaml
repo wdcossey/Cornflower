@@ -15,7 +15,8 @@
     the tilt's target: rule 7) round the header, left and centred, at the phone's line (PhoneContentLine), access keys
     recognised; in the MenuFlyout's type, set on the item, as an item inherits from the item or menu above it, not from
     the popup it is drawn in: PhoneFontFamilySemiLight at TextStyleExtraLargeFontSize (25.5), its -15 character spacing
-    (PhoneCharacterSpacing), the MenuFlyoutPresenter's. Before the header, an icon column (CornflowerPlainMenuItemIconSize,
+    (PhoneCharacterSpacing), the MenuFlyoutPresenter's; and PhoneForegroundBrush, as every such item is drawn on the
+    MenuFlyout's surface, whatever the colour of the control that owns the menu (a popup's child inherits from it). Before the header, an icon column (CornflowerPlainMenuItemIconSize,
     20 square), shown for an Icon or a check, and as wide in every item of the menu (a shared size group): the Icon, or
     for a ToggleType the theme's Wp81.Glyph.CheckMark (CheckBox) or a dot (Radio) in PhoneAccentBrush when checked (rule 3).
     After it, the InputGesture's text in PhoneMidBrush, and Lucide's ChevronRight for a sub-menu (rule 10). The sub-menu
@@ -31,6 +32,7 @@
 
   <ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
     <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="Padding" Value="{DynamicResource MenuFlyoutItemThemePadding}" />
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilySemiLight}" />
     <Setter Property="FontSize" Value="{DynamicResource TextStyleExtraLargeFontSize}" />

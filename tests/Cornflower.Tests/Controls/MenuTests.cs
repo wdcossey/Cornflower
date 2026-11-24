@@ -40,6 +40,7 @@ public class MenuTests
                 var page = new Panel { Children = { Menu } };
                 page.SetValue(TextElement.FontFamilyProperty, new FontFamily("Courier New"));
                 page.SetValue(TextElement.FontSizeProperty, 11d);
+                page.SetValue(TextElement.ForegroundProperty, Brushes.Orange);
                 Scene = new Scene(page, variant);
             }
             catch
@@ -123,6 +124,9 @@ public class MenuTests
         // Avalonia clears the bar's item theme from the items below: they are the plain MenuItem's, by type.
         Assert.Null(stage.Open.Theme);
         Assert.Equal(25.5, stage.Open.FontSize);
+        // On the MenuFlyout's surface, the phone's foreground, not the bar's (the page's orange, which a header keeps).
+        Assert.Same(PlainParts.Resource<IBrush>(stage.Open, "PhoneForegroundBrush"), stage.Open.Foreground);
+        Assert.Same(Brushes.Orange, stage.Edit.Foreground);
         Assert.NotNull(PlainParts.Part<Border>(stage.Open, "ContentBorder"));
         // Open, the header is the accent (rule 3).
         Assert.Same(PlainParts.Resource<IBrush>(stage.File, "PhoneAccentBrush"), ForegroundOf(stage.File));

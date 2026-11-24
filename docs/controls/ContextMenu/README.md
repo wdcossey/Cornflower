@@ -25,9 +25,9 @@ context-menu key, and a long press (a touch hold), so a phone app on Android mee
 ## What it sets
 
 The MenuFlyoutPresenter theme's setters, by the same keys: `MenuFlyoutBackgroundThemeBrush`,
-`MenuFlyoutBorderThemeBrush`, `MenuFlyoutPortraitBorderThemeThickness`, `MenuFlyoutPortraitThemePadding`,
-`FlyoutThemeMinHeight` and `PhoneForegroundBrush`; the type is its items' own (the [MenuItem](../MenuItem/README.md)
-theme's, the MenuFlyout's). `Focusable`, as Simple's, so the keys reach its items as it opens.
+`MenuFlyoutBorderThemeBrush`, `MenuFlyoutPortraitBorderThemeThickness`, `MenuFlyoutPortraitThemePadding` and
+`FlyoutThemeMinHeight`; the type and `PhoneForegroundBrush` are its items' own (the
+[MenuItem](../MenuItem/README.md) theme's, the MenuFlyout's), so they don't take the owning control's colour. `Focusable`, as Simple's, so the keys reach its items as it opens.
 
 ## How it opens and closes
 

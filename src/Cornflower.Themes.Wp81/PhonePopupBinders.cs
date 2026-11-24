@@ -36,6 +36,7 @@ internal static class PhonePopupBinders
         RuntimeHelpers.RunClassConstructor(typeof(PhoneFlyout).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(PhoneMenuFlyout).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(PhonePickerFlyout).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PhoneContextMenu).TypeHandle);
     }
 }
 

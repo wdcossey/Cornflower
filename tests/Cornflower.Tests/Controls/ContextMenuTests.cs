@@ -119,7 +119,6 @@ public class ContextMenuTests
         Assert.True(PhoneContextMenu.GetIsEnabled(menu));
         Assert.Same(PlainParts.Resource<IBrush>(menu, "MenuFlyoutBackgroundThemeBrush"), menu.Background);
         Assert.Same(PlainParts.Resource<IBrush>(menu, "MenuFlyoutBorderThemeBrush"), menu.BorderBrush);
-        Assert.Same(PlainParts.Resource<IBrush>(menu, "PhoneForegroundBrush"), menu.Foreground);
         Assert.Equal(PlainParts.Resource<Thickness>(menu, "MenuFlyoutPortraitBorderThemeThickness"), menu.BorderThickness);
         Assert.Equal(PlainParts.Resource<Thickness>(menu, "MenuFlyoutPortraitThemePadding"), menu.Padding);
         Assert.Equal(PlainParts.Resource<double>(menu, "FlyoutThemeMinHeight"), menu.MinHeight);
@@ -138,6 +137,21 @@ public class ContextMenuTests
         Assert.Null(stage.Item(0).Theme);
         var itemTheme = Assert.IsType<ControlTheme>(stage.Scene.Window.FindResource(typeof(MenuItem)));
         Assert.Same(itemTheme.Setters.OfType<Setter>().Single(s => s.Property == TemplatedControl.TemplateProperty).Value, stage.Item(0).Template);
+    }
+
+    // Its items are the phone's foreground on the MenuFlyout's surface, whatever the owner's: a popup's child inherits
+    // from the control that owns it.
+    [AvaloniaTheory]
+    [MemberData(nameof(Variants))]
+    public void Its_Items_Keep_The_Phones_Foreground_Under_An_Owners_Own(string variant)
+    {
+        using var stage = new Stage(variant: VariantOf(variant));
+        stage.Button.Foreground = Brushes.Orange;
+        stage.OpenAtRest();
+
+        Assert.Same(PlainParts.Resource<IBrush>(stage.Item(0), "PhoneForegroundBrush"), stage.Item(0).Foreground);
+        var header = PlainParts.Part<Avalonia.Controls.Presenters.ContentPresenter>(stage.Item(0), "PART_HeaderPresenter");
+        Assert.Same(PlainParts.Resource<IBrush>(stage.Item(0), "PhoneForegroundBrush"), header.Foreground);
     }
 
     // As a MenuFlyout: the window's own overlay layer, the window's width, below its target if it fits there.
