@@ -46,6 +46,7 @@ public class NumericUpDownTests
         Assert.Equal(default, spinner.BorderThickness);
         Assert.Equal(default, spinner.Padding);
         Assert.Equal(Brushes.Transparent, spinner.Background);
+        Assert.False(spinner.IsTabStop);
         var increase = Part<RepeatButton>(spinner, "PART_IncreaseButton");
         var drawn = Part<Border>(box, "BorderElement");
         Assert.True(Math.Abs(drawn.Bounds.Height - increase.Bounds.Height) < 0.5, $"box {drawn.Bounds.Height}, button {increase.Bounds.Height}");
@@ -91,6 +92,8 @@ public class NumericUpDownTests
         control.PlaceholderText = "copies";
         control.IsReadOnly = true;
         control.TextAlignment = TextAlignment.Right;
+        control.InnerLeftContent = "about";
+        control.InnerRightContent = "kg";
         using var scene = new Scene(new StackPanel { Children = { control } });
 
         var spinner = Spinner(control);
@@ -101,6 +104,8 @@ public class NumericUpDownTests
         Assert.Equal("copies", box.PlaceholderText);
         Assert.True(box.IsReadOnly);
         Assert.Equal(TextAlignment.Right, box.TextAlignment);
+        Assert.Equal("about", box.InnerLeftContent);
+        Assert.Equal("kg", box.InnerRightContent);
     }
 
     // Disabled, the box is Wp81's disabled TextBox and the spin buttons' glyphs PhoneDisabledBrush.

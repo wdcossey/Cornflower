@@ -23,7 +23,8 @@ none: here it is a bar the size of its slot.
 |---|---|
 | `Background` | `PhoneLowBrush`: quiet at rest, as the Separator's line (rule 3) |
 | `MinWidth`, `MinHeight` | `CornflowerPlainSplitterMinSize` (9.5), so a finger can find it |
-| `FocusAdorner` | none (the theme sets none) |
+| `Focusable` | true, as Simple's: the arrow keys move a focused splitter |
+| `PreviewContent` | a `Rectangle` in `PhoneAccentBrush`, shown with `ShowsPreview` where the bar will land |
 
 Held and dragged (Thumb's `:pressed`), the bar is `PhoneAccentBrush`; disabled, `PhoneDisabledBrush`. No tilt (rule 7:
 not on what is dragged), no motion of its own.

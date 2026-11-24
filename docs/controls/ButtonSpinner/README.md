@@ -25,11 +25,11 @@ no spinner: here it is a box with its content and two spin buttons in it.
 | `Padding` | `TextControlThemePadding` |
 | `MinHeight` | `TextControlThemeMinHeight` (34), the phone's text box |
 | `VerticalContentAlignment` | Center |
-| `FocusAdorner` | none (the theme sets none) |
+| `Focusable` | true, as Simple's: the arrow keys and the wheel spin a focused spinner |
 
 `PART_DecreaseButton` (minus) and `PART_IncreaseButton` (plus) sit side by side after the content (`:right`,
 Avalonia's default) or before it (`:left`), and go with `ShowButtonSpinner`. Avalonia enables each from `AllowSpin`
-and `ValidSpinDirection`. Disabled draws the box in `PhoneDisabledBrush`. No tilt: a box, not a button (rule 7).
+and `ValidSpinDirection`. Disabled draws the box and the content in `PhoneDisabledBrush`. No tilt: a box, not a button (rule 7).
 
 ## The part theme
 

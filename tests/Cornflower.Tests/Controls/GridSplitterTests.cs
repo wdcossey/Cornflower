@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Dialogs;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -42,6 +43,7 @@ public class GridSplitterTests
         Assert.Equal(9.5, splitter.Bounds.Width, 0.5);
         Assert.Equal(100, splitter.Bounds.Height, 0.5);
         Assert.Null(splitter.FocusAdorner);
+        Assert.True(splitter.Focusable);
         Assert.False(Tilt.GetIsEnabled(splitter));
     }
 
@@ -55,6 +57,25 @@ public class GridSplitterTests
         Assert.Same(Resource<IBrush>(splitter, "PhoneAccentBrush"), Part<Border>(splitter, "Bar").Background);
         Release(scene, at);
         Assert.Same(Resource<IBrush>(splitter, "PhoneLowBrush"), Part<Border>(splitter, "Bar").Background);
+    }
+
+    // With ShowsPreview, the preview drawn while it is dragged is the accent.
+    [AvaloniaFact]
+    public void Its_Preview_Is_The_Accent()
+    {
+        var (grid, splitter) = Panes();
+        splitter.ShowsPreview = true;
+        using var scene = new Scene(new Canvas { Children = { grid } });
+
+        var at = Press(scene, splitter);
+        scene.Window.MouseMove(at + new Point(20, 0));
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var layer = Avalonia.Controls.Primitives.AdornerLayer.GetAdornerLayer(splitter);
+        Assert.NotNull(layer);
+        var preview = Assert.Single(layer.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Rectangle>());
+        Assert.Same(Resource<IBrush>(splitter, "PhoneAccentBrush"), preview.Fill);
+        Release(scene, at);
     }
 
     [AvaloniaFact]

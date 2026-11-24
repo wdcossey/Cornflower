@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -45,6 +46,7 @@ public class ButtonSpinnerTests
         Assert.Equal(Resource<Thickness>(spinner, "TextControlThemePadding"), spinner.Padding);
         Assert.Equal(VerticalAlignment.Center, spinner.VerticalContentAlignment);
         Assert.Null(spinner.FocusAdorner);
+        Assert.True(spinner.Focusable);
         Assert.False(Tilt.GetIsEnabled(spinner));
         Assert.Equal(Resource<double>(spinner, "TextControlThemeMinHeight"), spinner.MinHeight);
         Assert.Equal(34, spinner.Bounds.Height, 0.5);
@@ -139,5 +141,22 @@ public class ButtonSpinnerTests
         var dim = Resource<IBrush>(spinner, "PhoneDisabledBrush");
         Assert.Same(dim, Part<Border>(spinner, "Border").BorderBrush);
         Assert.Same(dim, Part<ContentPresenter>(Increase(spinner), "PART_ContentPresenter").Foreground);
+        Assert.Same(dim, Part<ContentPresenter>(spinner, "PART_ContentPresenter").Foreground);
+    }
+
+    // Focused, it spins on the arrow keys, Avalonia's Spinner's, as Simple's does: the theme makes it focusable.
+    [AvaloniaFact]
+    public void Focused_It_Spins_On_The_Arrow_Keys()
+    {
+        var spinner = Specimen();
+        var spins = new List<SpinDirection>();
+        spinner.Spin += (_, e) => spins.Add(e.Direction);
+        using var scene = new Scene(new StackPanel { Children = { spinner } });
+
+        Assert.True(spinner.Focus());
+        scene.Window.KeyPressQwerty(Avalonia.Input.PhysicalKey.ArrowUp, Avalonia.Input.RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal([SpinDirection.Increase], spins);
     }
 }

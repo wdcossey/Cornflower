@@ -7,7 +7,8 @@
 
     The phone had no splitter. Here a GridSplitter is a bar the size of its slot, at least CornflowerPlainSplitterMinSize
     (9.5) each way, so a finger can find it: PhoneLowBrush at rest, quiet as the Separator's line (rule 3), the accent
-    while it is held and dragged (Thumb's :pressed), PhoneDisabledBrush disabled. No tilt (rule 7: not on what is
+    while it is held and dragged (Thumb's :pressed), PhoneDisabledBrush disabled. With ShowsPreview, the preview of where it
+    will land is the accent too. Focusable, as Simple's is, so the arrow keys move it. No tilt (rule 7: not on what is
     dragged), no motion, no focus adorner (the theme sets none). In the template of a control Wp81 doesn't theme yet (the managed file
     dialog's), the theme under Wp81's GridSplitter instead (HoleParts).
   -->
@@ -15,7 +16,15 @@
     <Setter Property="Background" Value="{DynamicResource PhoneLowBrush}" />
     <Setter Property="MinWidth" Value="{DynamicResource CornflowerPlainSplitterMinSize}" />
     <Setter Property="MinHeight" Value="{DynamicResource CornflowerPlainSplitterMinSize}" />
+    <!-- Focusable, as Simple's is: the arrow keys move a focused splitter. -->
+    <Setter Property="Focusable" Value="True" />
     <Setter Property="wp81:HoleParts.FallBack" Value="True" />
+    <!-- With ShowsPreview, the bar's place while dragged: the accent, as the held bar is. -->
+    <Setter Property="PreviewContent">
+      <Template>
+        <Rectangle Fill="{DynamicResource PhoneAccentBrush}" />
+      </Template>
+    </Setter>
     <Setter Property="Template">
       <ControlTemplate>
         <Border x:Name="Bar" Background="{TemplateBinding Background}" />

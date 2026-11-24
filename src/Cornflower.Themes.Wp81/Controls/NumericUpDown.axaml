@@ -9,8 +9,9 @@
     (TextInputOptions.ContentType Number), inside a ButtonSpinner, by type (Controls/ButtonSpinner.axaml), whose own box
     is cleared, so its spin buttons sit beside the TextBox's box, as tall as it. The control takes the TextBox's margin
     (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none. The
-    spinner's AllowSpin, ShowButtonSpinner and ButtonSpinnerLocation, and the box's PlaceholderText and IsReadOnly, are
-    the control's; its TextAlignment inherits. Avalonia's NumericUpDown keeps the box's text and its value in step.
+    spinner's AllowSpin, ShowButtonSpinner and ButtonSpinnerLocation, and the box's PlaceholderText, IsReadOnly,
+    InnerLeftContent and InnerRightContent, are the control's; its TextAlignment inherits. The spinner is no tab stop of
+    its own (as in Simple's): Tab goes to the box, and the arrow keys there spin it. Avalonia's NumericUpDown keeps the box's text and its value in step.
   -->
   <ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown">
     <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
@@ -20,6 +21,7 @@
                        Background="Transparent"
                        BorderThickness="0"
                        Padding="0"
+                       IsTabStop="False"
                        AllowSpin="{TemplateBinding AllowSpin}"
                        ShowButtonSpinner="{TemplateBinding ShowButtonSpinner}"
                        ButtonSpinnerLocation="{TemplateBinding ButtonSpinnerLocation}">
@@ -27,6 +29,8 @@
                    Margin="0"
                    PlaceholderText="{TemplateBinding PlaceholderText}"
                    IsReadOnly="{TemplateBinding IsReadOnly}"
+                   InnerLeftContent="{TemplateBinding InnerLeftContent}"
+                   InnerRightContent="{TemplateBinding InnerRightContent}"
                    AcceptsReturn="False"
                    TextWrapping="NoWrap"
                    TextInputOptions.ContentType="Number" />
