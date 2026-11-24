@@ -25,6 +25,7 @@ public class PlainThemesTests
         "CarouselPage", "TabControl", "TabItem", "TabStrip", "TabStripItem", "TabbedPage",                  // batch 5, #238
         "DrawerPage", "Expander", "SplitView", "TreeView", "TreeViewItem",                                  // batch 6, #239
         "Calendar", "CalendarButton", "CalendarDatePicker", "CalendarDayButton", "CalendarItem",            // batch 7, #240
+        "DataValidationErrors",                                                                             // batch 8a, #241
     ];
 
     /// <summary>

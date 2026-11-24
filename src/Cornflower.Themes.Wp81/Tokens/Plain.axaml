@@ -121,4 +121,11 @@
     (PART_Header's 0,0,12,0), on both sides, so a title stands off the bar's edge with the drawer on either side.
   -->
   <Thickness x:Key="CornflowerPlainDrawerTitleMargin">12,0</Thickness>
+
+  <!--
+    A validation error's text (DataValidationErrors, #241): the Red accent (CornflowerAccentRedColor, the phone's own
+    Red), the same in dark and light (ADR 0007), as red reads as an error on either page. Red is a fixed colour, not the
+    user's accent, so an error never takes the accent's place.
+  -->
+  <SolidColorBrush x:Key="CornflowerPlainErrorBrush" Color="{DynamicResource CornflowerAccentRedColor}" />
 </ResourceDictionary>
