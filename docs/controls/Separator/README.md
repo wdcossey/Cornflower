@@ -20,10 +20,11 @@ In a `MenuFlyout`, the phone's keyed `Wp81MenuFlyoutSeparatorTheme` (nothing dra
 | Property | Value |
 |---|---|
 | `BorderThickness` | `CornflowerPlainLineThickness` (1.5 on all sides, new: the plain themes' line), by `DynamicResource` |
-| `BorderBrush` | `PhoneLowBrush`, by `DynamicResource`: quiet at rest, no accent |
+| `Background` | `PhoneLowBrush`, by `DynamicResource`: quiet at rest, no accent |
 | `Focusable` | false |
 
-The line is the `BorderBrush`, as tall as the top of the `BorderThickness`, across the slot. It has no margin of its
+The line is the `Background`, as Simple's and Fluent's are, as tall as the top of the `BorderThickness`, across the
+slot. It has no margin of its
 own: the page spaces it.
 
 ## Resource keys
@@ -33,11 +34,11 @@ line that divides or edges a surface. Later plain themes use it too.
 
 ## The template's parts
 
-`PART_Line`, a `Border` filled with the `BorderBrush`.
+`PART_Line`, a `Border` filled with the `Background`.
 
 ## Known gaps
 
-- **Across only**: no vertical line (an `AppBarSeparator`'s). In a horizontal panel it is still a horizontal line,
-  as Simple's is.
+- **Across only**: no vertical line (an `AppBarSeparator`'s). In a horizontal panel it is 0 wide and draws nothing
+  unless given a `Width`.
 - A `Separator` in a desktop `Menu` or `ContextMenu`, which Wp81 doesn't theme yet (Simple's `MenuItem` template
   holds one), takes this line, not Simple's indented one, until the menus' batch.

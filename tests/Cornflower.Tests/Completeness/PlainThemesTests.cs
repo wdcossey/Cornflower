@@ -44,9 +44,12 @@ public class PlainThemesTests
     internal static bool IsToken(string key) =>
         key.StartsWith("CornflowerPlain", StringComparison.Ordinal) && !key.Contains("Theme", StringComparison.Ordinal);
 
-    /// <summary>A key a plain theme may declare: a type, a <c>Wp81Plain&lt;Part&gt;Theme</c>, or a token.</summary>
-    internal static bool IsPlainKey(string key) =>
-        key.StartsWith("{x:Type ", StringComparison.Ordinal)
+    /// <summary>
+    /// A key the plain theme of <paramref name="control"/> may declare: its own type (its theme by type, never another
+    /// control's), a <c>Wp81Plain&lt;Part&gt;Theme</c>, or a token.
+    /// </summary>
+    internal static bool IsPlainKey(string key, string control) =>
+        key == "{x:Type " + control + "}"
         || Regex.IsMatch(key, "^Wp81Plain[A-Z][A-Za-z0-9]*Theme$")
         || IsToken(key);
 
@@ -71,7 +74,7 @@ public class PlainThemesTests
         Assert.Contains(Label, Regex.Replace(header.Groups[1].Value, "\\s+", " "));
         var keys = Keys(xaml);
         Assert.Contains("{x:Type " + control + "}", keys);
-        Assert.All(keys, key => Assert.True(IsPlainKey(key), $"{key} in {control}.axaml: a plain theme's keys are a type, Wp81Plain<Part>Theme or CornflowerPlain..."));
+        Assert.All(keys, key => Assert.True(IsPlainKey(key, control), $"{key} in {control}.axaml: a plain theme's keys are its own type, Wp81Plain<Part>Theme or CornflowerPlain..."));
     }
 
     [Fact]
@@ -86,6 +89,7 @@ public class PlainThemesTests
     // The rule itself, on keys made here.
     [Theory]
     [InlineData("{x:Type Separator}", true)]
+    [InlineData("{x:Type Button}", false)]                      // another control's theme by type: Wp81's Button replaced
     [InlineData("Wp81PlainGlyphButtonTheme", true)]
     [InlineData("CornflowerPlainErrorBrush", true)]
     [InlineData("Wp81SeparatorTheme", false)]                   // Wp81's own name: a reproduction's
@@ -93,5 +97,5 @@ public class PlainThemesTests
     [InlineData("SeparatorLineThickness", false)]               // no prefix
     [InlineData("CornflowerPlainLineThemeThickness", false)]    // prefixed, but WinRT-shaped
     public void A_Key_Is_Plain_By_Its_Name(string key, bool plain) =>
-        Assert.Equal(plain, IsPlainKey(key));
+        Assert.Equal(plain, IsPlainKey(key, "Separator"));
 }

@@ -6,8 +6,10 @@
 
     The phone had no window: an 8.1 app's frame was its page's background and the phone's font. So a Window here is that,
     each value by DynamicResource: the page's ApplicationPageBackgroundThemeBrush (PhoneBackgroundColor, as Wp81's
-    ContentPage and NavigationPage use), PhoneForegroundBrush, and the body text's family and size (PhoneFontFamilyNormal,
-    TextStyleLargeFontSize, 18.14, as BodyTextBlockStyle). The transparency fallback is the page's background too.
+    ContentPage and NavigationPage use), PhoneForegroundBrush, PhoneFontFamilyNormal, and the phone's control-content size
+    (ControlContentThemeFontSize, 12), not the body text's 18.14: a host's size reaches every control that sets none, and
+    the controls Wp81 doesn't theme yet are laid out for Simple's 12. A page sets the body size, as the sample's do. The
+    transparency fallback is the page's background too.
 
     The template is the layout every Avalonia window needs, drawn plain: the transparency fallback, the background, the
     title bar's hit area (WindowDecorationMargin), and the VisualLayerManager round the content, which holds the adorner
@@ -17,7 +19,7 @@
     <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
-    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
     <Setter Property="TransparencyBackgroundFallback" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
     <Setter Property="Template">
       <ControlTemplate>

@@ -8,7 +8,7 @@ namespace Cornflower.Tests.Controls;
 
 /// <summary>
 /// The plain Separator (ADR 0007, #234): themed by type in <c>Wp81Theme</c>, a line across its slot in the line
-/// thickness (<c>CornflowerPlainLineThickness</c>, 1.5) and <c>PhoneLowBrush</c>, with no margin of its own.
+/// thickness (<c>CornflowerPlainLineThickness</c>, 1.5) and <c>PhoneLowBrush</c>, its Background, with no margin of its own.
 /// Simple's is 1 tall, indented 29, in its own brush, so these fail without the theme. Inside a MenuFlyout the phone's
 /// keyed <c>Wp81MenuFlyoutSeparatorTheme</c> still applies (<c>MenuFlyoutTests</c>).
 /// </summary>
@@ -21,7 +21,7 @@ public class SeparatorTests
     private static void AssertRounded(double expected, double actual) =>
         Assert.InRange(actual, expected - 1 / Scene.ReferenceScaling, expected + 1 / Scene.ReferenceScaling);
 
-    // The line: across the slot, 1.5 tall, the token's thickness and PhoneLowBrush, no margin, not focusable; drawn in
+    // The line: across the slot, 1.5 tall, the token's thickness and PhoneLowBrush as its background, no margin, not focusable; drawn in
     // PhoneLowBrush over the page, dark and light.
     [AvaloniaTheory]
     [InlineData("dark")]
@@ -36,7 +36,7 @@ public class SeparatorTests
         Assert.Equal(new Thickness(1.5), thickness);
         Assert.Equal(thickness, separator.BorderThickness);
         var brush = Resource<ISolidColorBrush>(separator, "PhoneLowBrush");
-        Assert.Same(brush, separator.BorderBrush);
+        Assert.Same(brush, separator.Background);
         Assert.Equal(default, separator.Margin);
         Assert.False(separator.Focusable);
         Assert.Equal(200, separator.Bounds.Width);
@@ -54,12 +54,13 @@ public class SeparatorTests
         Assert.Equal(page, Frames.PixelAt(frame, (int)(200 * Scene.ReferenceScaling), (int)(104 * Scene.ReferenceScaling)));
     }
 
-    // The line is the separator's BorderBrush, as tall as its BorderThickness's top: an app's change of either draws.
+    // The line is the separator's Background, as Simple's and Fluent's are, as tall as its BorderThickness's top: an app's
+    // change of either draws.
     [AvaloniaFact]
-    public void An_Apps_BorderThickness_And_BorderBrush_Change_The_Line()
+    public void An_Apps_BorderThickness_And_Background_Change_The_Line()
     {
         var mine = new SolidColorBrush(Color.FromUInt32(0xFFFF0000u));
-        var separator = new Separator { BorderThickness = new Thickness(0, 6, 0, 0), BorderBrush = mine };
+        var separator = new Separator { BorderThickness = new Thickness(0, 6, 0, 0), Background = mine };
         using var scene = new Scene(new StackPanel { Width = 200, Children = { separator } });
 
         AssertRounded(6, separator.Bounds.Height);

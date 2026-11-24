@@ -8,7 +8,7 @@
     draw their own surface. So the host is transparent and gives what it holds the phone's foreground, PhoneFontFamilyNormal
     and the phone's control-content size (ControlContentThemeFontSize, 12), by DynamicResource, with the weight, style
     and decorations reset, as a popup's text doesn't inherit from the control it opens from. The size is the control
-    content's, not the body text's 18.14, so a popup's unstyled text is as it was before the host had a theme of Wp81's. The template applies the popup's transform round the fallback and the
+    content's, as the window's is, so a popup's unstyled text is as it was before the host had a theme of Wp81's. The template applies the popup's transform round the fallback and the
     VisualLayerManager round the content. No motion of its own: a popup's motion is its theme's.
   -->
   <ControlTheme x:Key="{x:Type PopupRoot}" TargetType="PopupRoot">

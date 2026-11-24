@@ -22,7 +22,7 @@ Each by `DynamicResource`:
 | `Background` | `ApplicationPageBackgroundThemeBrush` (`PhoneBackgroundColor`: black dark, white light) |
 | `Foreground` | `PhoneForegroundBrush` |
 | `FontFamily` | `PhoneFontFamilyNormal` (Selawik) |
-| `FontSize` | `TextStyleLargeFontSize` (18.14, `BodyTextBlockStyle`'s) |
+| `FontSize` | `ControlContentThemeFontSize` (12, the phone's control content): a page sets the body's 18.14, as the sample's do |
 
 ## The template's parts
 

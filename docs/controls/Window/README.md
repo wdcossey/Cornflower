@@ -21,7 +21,7 @@ Each by `DynamicResource`, so the Adaptive pack can change it (ADR 0004):
 | `Background` | `ApplicationPageBackgroundThemeBrush` (`PhoneBackgroundColor`: black dark, white light) |
 | `Foreground` | `PhoneForegroundBrush` |
 | `FontFamily` | `PhoneFontFamilyNormal` (Selawik) |
-| `FontSize` | `TextStyleLargeFontSize` (18.14, `BodyTextBlockStyle`'s) |
+| `FontSize` | `ControlContentThemeFontSize` (12, the phone's control content): a page sets the body's 18.14, as the sample's do |
 | `TransparencyBackgroundFallback` | `ApplicationPageBackgroundThemeBrush` |
 
 ## The template's parts
@@ -33,4 +33,6 @@ overlay layers, which popups and the keyboard pan use. No border, no motion.
 ## Known gaps
 
 - What it changes for an app: a window with no background of its own is the page's colour, not Simple's grey, and text
-  with no font of its own is Selawik at 18.14. The sample's `MainWindow` already set the page's background.
+  with no font of its own is Selawik. The size stays 12, as Simple's, because it reaches every control that sets none,
+  and the controls Wp81 doesn't theme yet are laid out for 12. The sample's `MainWindow` already set the page's
+  background.

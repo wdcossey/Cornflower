@@ -42,14 +42,14 @@ public class PlainHostTests
     private static T Part<T>(TemplatedControl host, string name) where T : Control =>
         Assert.IsType<T>(host.GetVisualDescendants().OfType<Control>().Single(c => c.Name == name && c.TemplatedParent == host));
 
-    /// <summary>A window's or a view's root: the page's background, the phone's foreground, the body text's family and size.</summary>
+    /// <summary>A window's or a view's root: the page's background, the phone's foreground and family, the control content's size.</summary>
     private static void AssertPage(TemplatedControl host)
     {
         Assert.Same(Resource<IBrush>(host, "ApplicationPageBackgroundThemeBrush"), host.Background);
         Assert.Same(Resource<IBrush>(host, "PhoneForegroundBrush"), host.Foreground);
         Assert.Equal(Resource<FontFamily>(host, "PhoneFontFamilyNormal"), host.FontFamily);
-        Assert.Equal(Resource<double>(host, "TextStyleLargeFontSize"), host.FontSize);
-        Assert.Equal(18.14, host.FontSize);
+        Assert.Equal(Resource<double>(host, "ControlContentThemeFontSize"), host.FontSize);
+        Assert.Equal(12, host.FontSize);
     }
 
     /// <summary>A popup's host: transparent, the phone's foreground and family, the control content's size, the rest reset.</summary>
@@ -69,7 +69,8 @@ public class PlainHostTests
     }
 
     // The window is the page: its background (black dark, white light) drawn behind the content, the phone's foreground
-    // and the body text's family and size, which content with none of its own inherits. The layer manager holds the
+    // and family and the control content's size (12, not the body's 18.14: the controls Wp81 doesn't theme yet are laid
+    // out for Simple's 12), which content with none of its own inherits. The layer manager holds the
     // presenter, so the overlay and adorner layers are there.
     [AvaloniaTheory]
     [InlineData("dark")]
@@ -91,7 +92,7 @@ public class PlainHostTests
 
         using var frame = scene.Capture();
         var page = Assert.IsAssignableFrom<ISolidColorBrush>(window.Background).Color;
-        Assert.Equal(variant == "dark" ? Colors.Black : Colors.White, page);
+        Assert.Equal(variant == "dark" ? Colors.Black : Colors.White, page);       // the variant's own colour
         Assert.Equal(page, Frames.PixelAt(frame, frame.PixelSize.Width - 2, frame.PixelSize.Height - 2));
     }
 
@@ -166,11 +167,17 @@ public class PlainHostTests
         scene.Window.Foreground = new SolidColorBrush(Color.FromUInt32(0xFFFF0000u));
         Assert.NotEqual(Resource<FontFamily>(scene.Window, "PhoneFontFamilyNormal"), scene.Window.FontFamily);
 
-        popup.IsOpen = true;
-        Dispatcher.UIThread.RunJobs();
+        try
+        {
+            popup.IsOpen = true;
+            Dispatcher.UIThread.RunJobs();
 
-        var host = text.GetVisualAncestors().OfType<OverlayPopupHost>().Single();
-        AssertPopupHost(host, text);
-        popup.IsOpen = false;
+            var host = text.GetVisualAncestors().OfType<OverlayPopupHost>().Single();
+            AssertPopupHost(host, text);
+        }
+        finally
+        {
+            popup.IsOpen = false;
+        }
     }
 }

@@ -294,8 +294,13 @@ public class KeyboardPanTests
     public void What_The_Move_Leaves_Bare_Shows_The_Pages_Background()
     {
         using var page = new Page(tops: 600);
-        // Wp81's Window takes the page's background (#234), so the window's own is set apart here, as an app's may be.
-        page.Window.Background = Assert.IsAssignableFrom<IBrush>(page.Window.FindResource(page.Window.ActualThemeVariant, "ThemeBackgroundBrush"));
+        // Wp81's Window takes the page's background (#234), so the window's own is set apart here by a style, as an app's
+        // theme may set it.
+        page.Window.Styles.Add(new Style(x => x.OfType<Window>())
+        {
+            Setters = { new Setter(TemplatedControl.BackgroundProperty, page.Window.FindResource(page.Window.ActualThemeVariant, "ThemeBackgroundBrush")) },
+        });
+        Dispatcher.UIThread.RunJobs();
         var own = page.Window.Background;
         var pageBrush = Assert.IsAssignableFrom<ISolidColorBrush>(page.Window.FindResource(page.Window.ActualThemeVariant, PhoneKeyboardPan.PageBackground));
         Assert.NotEqual(pageBrush, own);

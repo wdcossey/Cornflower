@@ -30,7 +30,8 @@ A `LayoutTransformControl` (the popup's `Transform`) round `PART_VisualLayerMana
 
 ## Known gaps
 
-- **The size is the control content's, 12, not the body text's 18.14.** It keeps a popup's unstyled text as it was
-  under Simple (the preview's Flyout and PickerFlyout pictures are unchanged); a popup's own theme sets its text. Wp81's
+- **The size is the control content's, 12, as the window's is, not the body text's 18.14.** It keeps a popup's unstyled
+  text as it was under Simple (the preview's Flyout and PickerFlyout pictures are unchanged); a popup's own theme sets
+  its text. Wp81's
   Flyout README says its content "inherits the page's text"; it inherits this host's.
 - No motion of its own: a popup's motion is its theme's (Wp81's `PhonePopupHost`).

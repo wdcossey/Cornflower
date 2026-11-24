@@ -6,14 +6,14 @@
 
     Avalonia's root for a view embedded in another toolkit's: on Android, the root of Avalonia.Android's AvaloniaView, so
     the host every page of an Android app sits in. As Window (Controls/Window.axaml), the page's background, the phone's
-    foreground and the body text's family and size, by DynamicResource; the template the fallback, the background and
-    the VisualLayerManager round the content.
+    foreground, PhoneFontFamilyNormal and the control-content size (ControlContentThemeFontSize, 12), by DynamicResource;
+    the template the fallback, the background and the VisualLayerManager round the content.
   -->
   <ControlTheme x:Key="{x:Type EmbeddableControlRoot}" TargetType="EmbeddableControlRoot">
     <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
-    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
     <Setter Property="Template">
       <ControlTemplate>
         <Panel>
