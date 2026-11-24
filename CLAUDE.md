@@ -48,7 +48,7 @@ measure the reference before writing a line, and you build and test before every
 | `docs/ARCHITECTURE.md` | Eras, layout, the ladder, theming, platform features, metrics and testing; the draft mapping rules |
 | `docs/performance/` | What the theme costs: the style budget, the benchmark's trend table, the Debug line, breakage runs |
 | `docs/spikes/` | Questions about Avalonia 12.1.4 answered by tests in `tests/Cornflower.Tests/Spikes/` |
-| `docs/decisions/` | ADR 0001, what "faithful" means; ADR 0002, the decisions of 2026-11-08; ADR 0003, the decisions on the Tier 0 infrastructure (rounding, transitions, line height, variant, licence); ADR 0004, larger screens as an extension pack over the core theme; ADR 0005, the decisions on the tilt and the motion; ADR 0006, faithful by default, departures through `CornflowerConfig` |
+| `docs/decisions/` | ADR 0001, what "faithful" means; ADR 0002, the decisions of 2026-11-08; ADR 0003, the decisions on the Tier 0 infrastructure (rounding, transitions, line height, variant, licence); ADR 0004, larger screens as an extension pack over the core theme; ADR 0005, the decisions on the tilt and the motion; ADR 0006, faithful by default, departures through `CornflowerConfig`; ADR 0007, plain themes for the controls the phone never had |
 
 ## Build
 
@@ -154,9 +154,10 @@ runtime templates and theme resources equal the SDK's design files.
 ## Rules
 
 1. **Build gate.** `dotnet build` with 0 warnings and `dotnet test` green before every commit.
-2. **One control or family per PR.**
+2. **One control or family per PR.** One exception: plain-theme batches 1 and 3 are one PR each (ADR 0007).
 3. **No dead props.** Declared ⇒ works ⇒ has a test that fails without it.
-4. **Tests assert the reference's behaviour**, from a capture or measurement named in the PR.
+4. **Tests assert the reference's behaviour**, from a capture or measurement named in the PR. Plain themes, for
+   controls the phone never had, are the exception: their tests assert ADR 0007's rules, with no measurement.
 5. **No literal colours outside a theme's `Tokens/`.** No visual opinion in `Cornflower.Controls`.
    `LiteralColourGuardTests` fails on a literal colour in any file under `src/` outside a `Tokens/`
    folder: in XAML, a value Avalonia parses as a colour, outside comments; in C#, a hex string,
@@ -176,8 +177,10 @@ runtime templates and theme resources equal the SDK's design files.
    timelines (today `CornflowerClock` and `MotionArea`, `KeySplineCurve` and `PhoneEase`, `TiltModel` and `TiltState` for the ListView's check box, #142, `ContentDialog`'s popup and close, #157, `SidewaysSwipeGestureRecognizer`, `ISidewaysSwipeTarget` and `PivotMotion` for the FlipView, #214, and `SemanticZoom`'s `Popup`, `OpenMotion`, `CloseMotion` and `ZoomInByBack`, #215), accepted on the maintainer's behalf on
    2026-11-12 (#88): the two packages ship together, and the alternative is a public timing API
    apps would come to depend on. Any other change to a shared file in a control's PR (as #93's to
-   `HoleParts.cs`; and Tier 4's, each said in its PR: #213's and #221's to `ListView.axaml`, #213's approved 2026-11-21,
-   #223's `Vertical` in `SidewaysSwipeGestureRecognizer.cs`, #224's to `PhonePopupMotion.cs` and `PhonePopupHost.cs`; and #229's `KeepsScrollInList` setters in `ListView.axaml` and `ListBox.axaml`, a fix's, for #220, no approval recorded) is the maintainer's to approve, case by case, and its PR says so.
+   `HoleParts.cs`; and Tier 4's, each said in its PR: #213's and #221's to `ListView.axaml`,
+   #223's `Vertical` in `SidewaysSwipeGestureRecognizer.cs`, #224's to `PhonePopupMotion.cs` and `PhonePopupHost.cs`; and #229's `KeepsScrollInList` setters in `ListView.axaml` and `ListBox.axaml`, a fix's, for #220) is the maintainer's to approve, case by case, and its PR says so.
+   Approved so far: #213's (2026-11-21); #221's, #223's, #224's and #229's (2026-11-24). A plain theme's `HoleParts.cs` edit
+   is approved the same way, case by case, not in advance; ADR 0007 approves only its two new tokens.
 8. **Style budget.** `StyleBudgetTests` fails when `Wp81Theme`'s global rules pass their limits. A
    PR that needs more, a control's included, raises the limit in `StyleBudgetTests` on purpose and
    says so in its description, with the new total; past the checkpoint, measure on the phone first
