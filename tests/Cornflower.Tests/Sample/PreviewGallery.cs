@@ -71,6 +71,14 @@ public class PreviewGallery
         new("combobox", "inline", Tap<ComboBox>("Inline"), Popups: 1),
         new("combobox", "full", Tap<ComboBox>("Full"), Popups: 2),
         new("datetimepicker", "date", Tap<DatePicker>("Date")),
+        new("plain hosts", "popup", Tap<ToggleButton>("OpenPopup")),
+        new("plain buttons", "menu", Tap<DropDownButton>("DropDown")),
+        new("plain menus", "file", (_, shell) => Named<Menu>(shell, "Bar").Items.OfType<MenuItem>().First().Open()),
+        new("plain menus", "context", (_, shell) =>
+        {
+            var held = Named<Border>(shell, "Held");
+            held.ContextMenu!.Open(held);
+        }),
     ];
 
     /// <summary>

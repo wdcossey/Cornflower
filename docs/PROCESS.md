@@ -182,6 +182,10 @@ exists, the two images sit next to each other in the comparison.*
   [docs/performance](performance/README.md)).
 - A review finding can be wrong. Check it against the reference.
 
+Before merging, a control or plain-theme PR gets screenshots from the emulator in a comment from the coordinator. They
+live on the orphan branch `pr-screens`, one folder per PR, which is never merged, and the comment embeds them by their
+`raw.githubusercontent.com` URL.
+
 ## 5. Document
 
 `docs/controls/<Name>/README.md`: usage, the final ticked checklist, the behaviours, extensions,

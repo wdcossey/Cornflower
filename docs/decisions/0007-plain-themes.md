@@ -85,6 +85,8 @@ done without measurement.**
 - **ADR 0001 item 6 is amended**: a plain theme's new keys take the `CornflowerPlain` prefix, as there is no WinRT name
   to follow.
 - **An exception to CLAUDE.md rule 2** for batches 1 and 3, each one PR of mixed small controls.
+  *2026-11-24:* batches 1-7 merged as one PR each, by decision (#247 to #252 and #254): the user named 1 and 3, and
+  2, 4, 5, 6 and 7 were decided on the user's behalf.
 - **Shared files stay rule 7's.** A batch that changes `HoleParts.cs` (batches 2, 4, 6, 7 and 8, as their themes replace
   Simple's templates and its inner parts with Wp81's) says so in its PR, and the maintainer approves it case by case.
   The two tokens above are the only shared edit this ADR approves in advance.

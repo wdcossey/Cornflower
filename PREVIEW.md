@@ -1,8 +1,8 @@
 # Preview
 
 What Cornflower looks like today: the pages of the sample app, drawn by the Windows Phone 8.1 theme at the phone's
-own size (450 × 800 view pixels), dark and light, the popups open and at rest. Each control is measured against the Windows Phone 8.1 emulator;
-its comparison is in [`docs/controls/`](docs/controls/).
+own size (450 × 800 view pixels), dark and light, the popups open and at rest. Each control the phone had is measured against the Windows Phone 8.1 emulator;
+its comparison is in [`docs/controls/`](docs/controls/). The plain themes, for controls it never had, are Cornflower's own design.
 
 The pictures are drawn headless, with Skia, by
 [`PreviewGallery`](tests/Cornflower.Tests/Sample/PreviewGallery.cs), so they are the theme's own pixels and can be
@@ -172,6 +172,44 @@ indicator; above, sideways, and below, up and down.
 <p>
 <img src="docs/preview/dark__flipview.png" width="270" alt="FlipView, sideways and up and down, dark">
 <img src="docs/preview/light__flipview.png" width="270" alt="FlipView, light">
+</p>
+
+## Plain themes
+
+For the controls Avalonia has and the phone never had, Cornflower's own design in the era's style
+([ADR 0007](docs/decisions/0007-plain-themes.md)): not measured, and labelled so in each README. Batches 1 to 7, 36
+controls: the hosts and small pieces, with a popup open in the overlay host's text at size 12; the buttons, with the
+DropDownButton's menu open; text and content; the menus, with the menu bar's `file` open and the ContextMenu in the
+MenuFlyout's look; the tabs, as the Pivot's headers without its swipe; disclosure and navigation; and the dates. The
+dates page follows the day it is drawn (today outlined, a day beside it selected), so its pictures change by the day.
+
+<p>
+<img src="docs/preview/dark__plain-hosts.png" width="270" alt="Plain hosts: ItemsControl, Separator, dark">
+<img src="docs/preview/light__plain-hosts__popup.png" width="270" alt="Plain hosts, the popup open, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-buttons.png" width="270" alt="Plain buttons: DropDownButton, SplitButton, ButtonSpinner, NumericUpDown, dark">
+<img src="docs/preview/light__plain-buttons__menu.png" width="270" alt="Plain buttons, the DropDownButton open, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-text.png" width="270" alt="Plain text: Label, HeaderedContentControl, GroupBox, PathIcon, TransitioningContentControl, dark">
+<img src="docs/preview/light__plain-text.png" width="270" alt="Plain text, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-menus__file.png" width="270" alt="Plain menus: the menu bar with file open, dark">
+<img src="docs/preview/light__plain-menus__context.png" width="270" alt="Plain menus: the ContextMenu, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-tabs.png" width="270" alt="Plain tabs: TabControl, TabStrip, TabbedPage, CarouselPage, dark">
+<img src="docs/preview/light__plain-tabs.png" width="270" alt="Plain tabs, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-disclosure.png" width="270" alt="Plain disclosure: Expander, TreeView, SplitView, DrawerPage, dark">
+<img src="docs/preview/light__plain-disclosure.png" width="270" alt="Plain disclosure, light">
+</p>
+<p>
+<img src="docs/preview/dark__plain-dates.png" width="270" alt="Plain dates: Calendar and CalendarDatePicker, dark">
+<img src="docs/preview/light__plain-dates.png" width="270" alt="Plain dates, light">
 </p>
 
 ## Not shown

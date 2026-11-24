@@ -49,7 +49,8 @@ window, or filling it, turning in and out in bands on `CornflowerClock`, closed 
 - **Events:** `Opening` and `Opened` as it opens, `Closed` when it has gone. 8.1's flyout has no `Closing`; Avalonia's
   is raised when the flyout is asked to close and again as its motion ends, and an app may cancel at either.
 
-The content inherits the page's text, as Avalonia's popups do (the phone's falls back to XAML's 11 px font). Pad it
+The content's text is the overlay host's, not the page's: Selawik at 12 (the plain `OverlayPopupHost` theme, batch 1,
+#247), unless the content's own theme sets more (the phone's falls back to XAML's 11 px font). Pad it
 yourself: the phone's flyout puts its content at the left edge, 25.5 down.
 
 ## What the popups share
