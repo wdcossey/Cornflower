@@ -50,7 +50,9 @@ press, so the manager's tap (the notification's `OnClick`) doesn't run; a tap on
 closes the card, as Avalonia's manager does.
 
 **No motion** (rule 8). Simple's and Fluent's cards fly in and out and set `IsClosed` when their closing animation
-ends; here `IsClosed` follows `IsClosing` at once, so a closed card goes at once.
+ends; here `PlainNotificationClose` (internal) sets it at once, or, when the press that closed it (a manager closes a card
+on its press) is still down, as that press ends (its capture lost: released or cancelled), so the release isn't the
+page's under it. A card in a manager then leaves; a closed card on its own is hidden.
 
 ## Resource keys
 
@@ -72,5 +74,6 @@ Lucide's `X` (ISC), through `LucideIcon`: a plain theme's use of the third-party
 ## Known gaps
 
 - No motion in or out, and no swipe to dismiss (the phone's toast went with a swipe to the right).
+- A closed card on its own stays closed: `Close()` can't be undone (Avalonia's), so make a new card to show it again.
 - An app's own `DataTemplate` for `INotification` higher in the tree is behind the card's own, as it is behind
   Simple's manager's; an app's template for its own notification type set as the card's `ContentTemplate` wins.

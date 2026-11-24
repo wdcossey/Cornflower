@@ -1,7 +1,7 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
-using Avalonia.Controls.Primitives;
 
 namespace Cornflower.Sample.Pages;
 
@@ -9,7 +9,9 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("plain notifications", Order = 242)]
 public partial class PlainNotificationsPage : UserControl
 {
-    private WindowNotificationManager? _notifications;
+    /// <summary>One manager per window, made on the first show: Avalonia's puts itself back in the window's adorner layer whenever the window's template is applied again, so one taken out would come back.</summary>
+    private static readonly ConditionalWeakTable<TopLevel, WindowNotificationManager> Managers = new();
+
     private int _shown;
 
     public PlainNotificationsPage()
@@ -27,18 +29,24 @@ public partial class PlainNotificationsPage : UserControl
         ShowError.Click += (_, _) => Show(new Notification("Not sent", "The message couldn't be sent.", NotificationType.Error, TimeSpan.Zero));
     }
 
-    private void Show(Notification notification)
-    {
-        _notifications ??= new WindowNotificationManager(TopLevel.GetTopLevel(this)) { MaxItems = 3 };
-        _notifications.Show(notification);
-    }
+    private WindowNotificationManager? Manager() =>
+        TopLevel.GetTopLevel(this) is { } top
+            ? Managers.GetValue(top, window =>
+            {
+                var manager = new WindowNotificationManager(window) { MaxItems = 3 };
+                // Avalonia's manager drops a card shown before its template is applied.
+                manager.ApplyTemplate();
+                return manager;
+            })
+            : null;
 
-    // The manager lives in the window's adorner layer: take it out as the page goes.
+    private void Show(Notification notification) => Manager()?.Show(notification);
+
+    // The banners are this page's: they go with it.
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        if (_notifications?.Parent is AdornerLayer layer)
-            layer.Children.Remove(_notifications);
-        _notifications = null;
+        if (e.RootVisual is TopLevel top && Managers.TryGetValue(top, out var manager))
+            manager.CloseAll();
     }
 }

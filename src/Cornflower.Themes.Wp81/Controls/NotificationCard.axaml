@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:cf="using:Cornflower.Controls">
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
   <!--
     Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
     ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/NotificationCard/README.md.
@@ -22,9 +23,11 @@
     OnClick) doesn't run. A tap on the rest of a manager's banner runs it and closes the card, as Avalonia's manager does.
 
     No motion (rule 8): Simple's and Fluent's cards fly in and out, and set IsClosed at the end of their closing
-    animation. Here closing is IsClosed at once, so a card goes as soon as it closes.
+    animation. Here PlainNotificationClose sets it at once, or, when the press that closed it is still down, as that
+    press ends, so a card goes as soon as it closes; a closed card on its own, with no manager to take it out, is hidden.
   -->
   <ControlTheme x:Key="{x:Type NotificationCard}" TargetType="NotificationCard">
+    <Setter Property="wp81:PlainNotificationClose.IsEnabled" Value="True" />
     <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
@@ -82,8 +85,8 @@
       </ControlTemplate>
     </Setter>
 
-    <Style Selector="^[IsClosing=true]">
-      <Setter Property="IsClosed" Value="True" />
+    <Style Selector="^[IsClosed=true]">
+      <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="^:success">
       <Setter Property="BorderBrush" Value="{DynamicResource CornflowerPlainSuccessBrush}" />

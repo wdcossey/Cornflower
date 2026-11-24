@@ -15,6 +15,10 @@ var notifications = new WindowNotificationManager(TopLevel.GetTopLevel(this)) { 
 notifications.Show(new Notification("Saved", "Your changes are in."));
 ```
 
+Make one per window and keep it: Avalonia's manager puts itself back in the window's adorner layer whenever the
+window's template is applied again. And it drops a notification shown before its template is applied, so show the
+first after a layout pass, or call `ApplyTemplate()` on it first, as the sample does.
+
 ## What it sets
 
 | Property | Value |

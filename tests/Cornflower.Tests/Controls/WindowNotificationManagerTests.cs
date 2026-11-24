@@ -82,6 +82,46 @@ public class WindowNotificationManagerTests
         Assert.Empty(Cards(manager));
     }
 
+    // Avalonia's CloseAll and Close(content) walk the cards, and a card leaves as it closes: not while they walk.
+    [AvaloniaFact]
+    public void CloseAll_Closes_Every_Card()
+    {
+        var manager = new WindowNotificationManager();
+        using var scene = new Scene(new Panel { Children = { manager } });
+        manager.Show(new Notification("One", "The first."));
+        manager.Show(new Notification("Two", "The second."));
+        manager.Show("Three");
+        Dispatcher.UIThread.RunJobs();
+
+        manager.Close("Three");
+        manager.CloseAll();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Empty(Cards(manager));
+    }
+
+    // The manager closes a card on its press: the card stays until the press ends, so the release isn't the page's.
+    [AvaloniaFact]
+    public void A_Tap_That_Closes_A_Banner_Ends_On_It()
+    {
+        var under = new Border { Background = Avalonia.Media.Brushes.Transparent };
+        var manager = new WindowNotificationManager();
+        using var scene = new Scene(new Panel { Children = { under, manager } });
+        var released = 0;
+        under.PointerReleased += (_, _) => released++;
+        manager.Show(new Notification("One", "Tap me."));
+        Dispatcher.UIThread.RunJobs();
+        var card = Cards(manager)[0];
+
+        var at = Press(scene, Text(card));
+        Assert.True(card.IsClosing);
+        Assert.Equal([card], Cards(manager));
+        Release(scene, at);
+
+        Assert.Empty(Cards(manager));
+        Assert.Equal(0, released);
+    }
+
     private static TextBlock Text(NotificationCard card) => card.GetVisualDescendants().OfType<TextBlock>().First();
 
     [AvaloniaFact]

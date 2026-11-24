@@ -129,8 +129,22 @@ public class NotificationCardTests
         Assert.Equal(1, card.Opacity);
         Assert.Null(card.RenderTransform);
         card.Close();
+        Dispatcher.UIThread.RunJobs();
         Assert.True(card.IsClosed);
         Assert.Equal(1, card.Opacity);
+    }
+
+    // On its own, with no manager to take it out, a closed card is hidden: its close button does what it says.
+    [AvaloniaFact]
+    public void A_Closed_Card_On_Its_Own_Is_Hidden()
+    {
+        var card = Card();
+        using var scene = new Scene(new StackPanel { Children = { card } }, width: 411);
+
+        Release(scene, Press(scene, Part<Button>(card, "PART_CloseButton")));
+
+        Assert.True(card.IsClosed);
+        Assert.False(card.IsVisible);
     }
 
     [AvaloniaFact]
