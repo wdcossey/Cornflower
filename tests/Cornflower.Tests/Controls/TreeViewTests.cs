@@ -72,7 +72,8 @@ public class TreeViewTests
         Assert.Equal(Resource<FontFamily>(parent, "PhoneFontFamilyNormal"), header.FontFamily);
         Assert.Same(Resource<IBrush>(parent, "PhoneForegroundBrush"), header.Foreground);
         Assert.Equal(VerticalAlignment.Center, header.VerticalAlignment);
-        Assert.True(PhoneContentLine.GetIsEnabled(header));
+        Assert.True(PhoneHeaderLine.GetIsEnabled(header));
+        Assert.True(Assert.IsAssignableFrom<TextBlock>(header.Child).IsSet(PhoneTextLine.MaxHeightLineHeightProperty));
 
         Assert.True(Tilt.GetIsEnabled(parent));
         Assert.Same(Part<Grid>(parent, "PART_Header"), Tilt.TargetOf(parent));

@@ -64,7 +64,20 @@ public class DrawerPageTests
         Assert.Equal(18.14, title.FontSize);
         Assert.Equal(Resource<FontFamily>(page, "PhoneFontFamilySemiBold"), title.FontFamily);
         Assert.Same(Resource<IBrush>(page, "PhoneForegroundBrush"), title.Foreground);
-        Near(48, title.TranslatePoint(default, bar)!.Value.X);
+        Near(button.Bounds.Width + 12, title.TranslatePoint(default, bar)!.Value.X);
+    }
+
+    // With the drawer on the right, the title still stands 12 off the bar's left edge.
+    [AvaloniaFact]
+    public void With_The_Drawer_On_The_Right_Its_Title_Stands_Off_The_Edge()
+    {
+        var page = new DrawerPage { Header = "title", DrawerPlacement = DrawerPlacement.Right, Content = new TextBlock { Text = "content" } };
+        using var scene = new Scene(page);
+
+        var bar = Part<Border>(page, "PART_TopBar");
+        Assert.Equal(new Thickness(12, 0), Resource<Thickness>(page, "CornflowerPlainDrawerTitleMargin"));
+        Near(12, Part<ContentPresenter>(page, "PART_TitlePresenter").TranslatePoint(default, bar)!.Value.X);
+        Near(bar.Bounds.Width - 48, Part<ToggleButton>(page, "PART_PaneButton").TranslatePoint(default, bar)!.Value.X);
     }
 
     private static void Near(double expected, double actual) =>

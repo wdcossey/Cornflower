@@ -40,7 +40,6 @@ public class HoleTogglePartsTests
     public void Every_Holes_ToggleButtons_And_RepeatButtons_Keep_The_Theme_Under_Wp81()
     {
         var problems = new List<string>();
-        var fellBack = new List<string>();
 
         foreach (var type in Holes.Showable())
         {
@@ -60,8 +59,6 @@ public class HoleTogglePartsTests
                 problems.Add($"{type.Name}: {part.GetType().Name} {part.Name} has Wp81's theme");
             foreach (var part in parts.Where(b => b.Theme is { } theme && theme.TargetType != b.GetType() && Kinds.Contains(theme.TargetType)))
                 problems.Add($"{type.Name}: {part.GetType().Name} {part.Name} has the {part.Theme!.TargetType!.Name} theme");
-            foreach (var part in parts.Where(b => ReferenceEquals(b.Theme, ThemeOf(simple, b.GetType()))))
-                fellBack.Add($"{type.Name}.{part.GetType().Name}.{part.Name}");
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));

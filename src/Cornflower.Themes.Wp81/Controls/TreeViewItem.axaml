@@ -15,7 +15,7 @@
     Wp81PlainHeaderToggleButtonTheme bound two ways to IsExpanded, filling the row's height: Lucide's ChevronRight, and
     ChevronDown open (rule 10). A leaf (:empty) hides it and keeps the column, so its header lines up with its siblings'.
     Then the Header in the body's type (rule 2: PhoneFontFamilyNormal at TextStyleLargeFontSize, 18.14, set on the item, as
-    an item inherits from the item above it), at the phone's line (PhoneContentLine), centred in the row. The children
+    an item inherits from the item above it), at the phone's 1.33 em line (PhoneHeaderLine: it recognises no access keys), centred in the row. The children
     are PART_ItemsPresenter, under the row, shown while IsExpanded, at once (rule 8).
 
     The press is the tilt, on PART_Header (Tilt.IsTarget) inside PART_Row, which stays untilted and takes the finger
@@ -61,7 +61,7 @@
                                 Content="{TemplateBinding Header}"
                                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                                 Focusable="False"
-                                wp81:PhoneContentLine.IsEnabled="True" />
+                                wp81:PhoneHeaderLine.IsEnabled="True" />
             </Grid>
           </Border>
           <ItemsPresenter x:Name="PART_ItemsPresenter"

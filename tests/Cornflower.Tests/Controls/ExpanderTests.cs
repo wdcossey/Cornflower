@@ -38,6 +38,7 @@ public class ExpanderTests
         Assert.Equal(57.5, toggle.Bounds.Height);
         Assert.Equal(300, toggle.Bounds.Width);
         Assert.True(Tilt.GetIsEnabled(toggle));
+        Assert.Same(Part<Panel>(toggle, "PART_TiltTarget"), Tilt.TargetOf(toggle));
         Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(toggle.Background).Color);
         Assert.Equal(new Thickness(0), toggle.BorderThickness);
 

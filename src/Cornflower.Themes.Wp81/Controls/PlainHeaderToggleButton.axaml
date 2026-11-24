@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
   <!--
     Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
     ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/Expander/README.md.
@@ -11,7 +12,9 @@
     Nothing drawn at rest and nothing drawn checked: a transparent background that takes the finger across the part, no
     border, and the content its host's, which draws the open state itself (a chevron), as an open header is no state
     for the accent (rule 3: never on a heading at rest). No size of its own: a part inside a larger control takes the
-    host's (rule 6). No tilt of its own: its host decides (an Expander's header tilts, a tree's row tilts as a whole).
+    host's (rule 6). No tilt of its own: its host decides (an Expander's header tilts, a tree's row tilts as a whole). When it does,
+    the tilt is drawn on PART_TiltTarget (Tilt.IsTarget) inside the root, which stays untilted and takes the finger
+    across the part, so a press near its edge still toggles it.
     No press fill: the tilt is the press (rule 7). Disabled draws the content in PhoneDisabledBrush. No focus adorner, as
     the phone's buttons have none.
   -->
@@ -27,12 +30,14 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Border x:Name="Border" Background="{TemplateBinding Background}">
-          <ContentPresenter x:Name="PART_ContentPresenter"
-                            Margin="{TemplateBinding Padding}"
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+          <Panel x:Name="PART_TiltTarget" cf:Tilt.IsTarget="True">
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Panel>
         </Border>
       </ControlTemplate>
     </Setter>

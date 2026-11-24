@@ -115,4 +115,10 @@
     drawer's bar and a navigation bar are the same height. Its drawer button is as wide, a square.
   -->
   <x:Double x:Key="CornflowerPlainDrawerBarHeight">48</x:Double>
+
+  <!--
+    A DrawerPage's title in its bar (#239): 12 each side, the room Wp81's NavigationPage leaves after its header
+    (PART_Header's 0,0,12,0), on both sides, so a title stands off the bar's edge with the drawer on either side.
+  -->
+  <Thickness x:Key="CornflowerPlainDrawerTitleMargin">12,0</Thickness>
 </ResourceDictionary>

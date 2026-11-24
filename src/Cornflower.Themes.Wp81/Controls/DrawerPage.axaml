@@ -10,7 +10,8 @@
     (PART_SplitView, Controls/SplitView.axaml, by type) on FlyoutBackgroundThemeBrush (DrawerBackground, a floating
     surface, rule 5), with no motion of its own (rule 8). The bar at the top (or the bottom, for a drawer placed there)
     is Wp81's NavigationPage bar's look: PhoneChromeBrush, CornflowerPlainDrawerBarHeight (48, NavigationPage's own) tall,
-    the page's Header in PhoneFontFamilySemiBold at TextStyleLargeFontSize (18.14) after the drawer button.
+    the page's Header in PhoneFontFamilySemiBold at TextStyleLargeFontSize (18.14) after the drawer button,
+    CornflowerPlainDrawerTitleMargin (12) from it and from the bar's far edge.
 
     The three drawer buttons (PART_PaneButton, PART_BottomPaneButton, PART_CompactPaneToggle) are plain ToggleButtons in
     Simple's template, which took the theme under Wp81 (HoleParts); here they wear Wp81PlainHeaderToggleButtonTheme
@@ -121,6 +122,7 @@
                                     Foreground="{DynamicResource PhoneForegroundBrush}"
                                     FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
                                     FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                    Margin="{DynamicResource CornflowerPlainDrawerTitleMargin}"
                                     IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 </DockPanel>
               </Border>
@@ -162,6 +164,7 @@
                                     Foreground="{DynamicResource PhoneForegroundBrush}"
                                     FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
                                     FontSize="{DynamicResource TextStyleLargeFontSize}"
+                                    Margin="{DynamicResource CornflowerPlainDrawerTitleMargin}"
                                     IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 </DockPanel>
               </Border>
