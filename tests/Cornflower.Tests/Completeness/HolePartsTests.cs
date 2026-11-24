@@ -62,7 +62,7 @@ public class HolePartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
-        Assert.True(holes.Count > 40, $"only {holes.Count} holes shown");
+        Assert.True(holes.Count > 30, $"only {holes.Count} holes shown");
         Assert.True(withButtons >= 5, $"only {withButtons} holes showed plain Buttons");
         // Calendar's three, CalendarDatePicker's, PipsPager's two, the dialogs'. (CommandBar's overflow left with #118 and
         // NavigationPage's back with #120: Wp81 themes both.)

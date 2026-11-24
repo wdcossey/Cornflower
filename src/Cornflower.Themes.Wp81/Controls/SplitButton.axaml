@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/SplitButton/README.md.
+
+    The phone had no SplitButton (it came with Windows 10). Here it is Wp81's Button with two pressable parts in its one
+    border: the same setters, by the phone's keys (PhoneBorderThickness, the Button's font, padding and touch sizes), the
+    same untilted Root and tilted Grid, the Border inside PhoneTouchTargetOverhang; the whole control tilts (rule 7),
+    whichever part is pressed. Inside the border, PART_PrimaryButton holds the content and PART_SecondaryButton Lucide's
+    ChevronDown (rule 10), both in the borderless part theme (Wp81PlainGlyphButtonTheme), which fills the part pressed
+    with the accent. Between them a divider in the border's brush, CornflowerPlainLineWidth (1.5) wide (rule 4: a line
+    that divides).
+
+    ToggleSplitButton is themed as its base (its style key is SplitButton's), so its checked state is here: :checked
+    fills both parts with the accent and draws their content in PhoneButtonBasePressedForegroundBrush, as a checked
+    ToggleButton is drawn; the divider and border stay. Disabled draws the border and the divider in PhoneDisabledBrush,
+    and each part its content in it. An open flyout changes nothing drawn (rule 3).
+  -->
+  <ControlTheme x:Key="{x:Type SplitButton}" TargetType="SplitButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource PhoneBorderThickness}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontWeight" Value="{DynamicResource PhoneButtonFontWeight}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="Padding" Value="{DynamicResource PhoneButtonContentPadding}" />
+    <Setter Property="MinHeight" Value="{DynamicResource PhoneButtonMinHeight}" />
+    <Setter Property="MinWidth" Value="{DynamicResource PhoneButtonMinWidth}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel x:Name="Root" Background="Transparent">
+          <Panel x:Name="Grid" cf:Tilt.IsTarget="True">
+            <Border x:Name="Border"
+                    Margin="{DynamicResource PhoneTouchTargetOverhang}"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+              <Grid ColumnDefinitions="*,Auto,Auto">
+                <Button x:Name="PART_PrimaryButton"
+                        Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                <Border x:Name="Divider"
+                        Grid.Column="1"
+                        Width="{DynamicResource CornflowerPlainLineWidth}"
+                        Background="{TemplateBinding BorderBrush}" />
+                <Button x:Name="PART_SecondaryButton"
+                        Grid.Column="2"
+                        Theme="{DynamicResource Wp81PlainGlyphButtonTheme}">
+                  <cf:LucideIcon Kind="ChevronDown" />
+                </Button>
+              </Grid>
+            </Border>
+          </Panel>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- ToggleSplitButton's Checked: both parts on the accent, their content over it. -->
+    <Style Selector="^:checked /template/ Button">
+      <Setter Property="Background" Value="{DynamicResource PhoneAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+    </Style>
+
+    <Style Selector="^:disabled">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+      <Style Selector="^ /template/ Border#Divider">
+        <Setter Property="Background" Value="{DynamicResource PhoneDisabledBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

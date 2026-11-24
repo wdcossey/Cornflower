@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainButtonsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The second plain themes (ADR 0007, #235): Cornflower's design, not the phone's. A DropDownButton and a SplitButton
+    with flyouts, a ToggleSplitButton, a ButtonSpinner whose spins change its text, a NumericUpDown, a GridSplitter
+    between two panes, and the light theme. The section headings are the type ramp's, by their keys.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <TextBlock Text="drop down button" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <DropDownButton x:Name="DropDown" Content="sort by">
+        <DropDownButton.Flyout>
+          <MenuFlyout>
+            <MenuItem Header="name" />
+            <MenuItem Header="date" />
+          </MenuFlyout>
+        </DropDownButton.Flyout>
+      </DropDownButton>
+      <DropDownButton Content="disabled" IsEnabled="False" />
+
+      <TextBlock Text="split button" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <SplitButton x:Name="Split" Content="reply" Click="OnReply">
+        <SplitButton.Flyout>
+          <MenuFlyout>
+            <MenuItem Header="reply all" />
+            <MenuItem Header="forward" />
+          </MenuFlyout>
+        </SplitButton.Flyout>
+      </SplitButton>
+      <ToggleSplitButton x:Name="ToggleSplit" Content="bold" IsChecked="True">
+        <ToggleSplitButton.Flyout>
+          <MenuFlyout>
+            <MenuItem Header="italic" />
+          </MenuFlyout>
+        </ToggleSplitButton.Flyout>
+      </ToggleSplitButton>
+      <TextBlock x:Name="Replies" Text="replied 0 times" Theme="{DynamicResource BodyTextBlockStyle}" />
+
+      <TextBlock Text="button spinner" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <ButtonSpinner x:Name="Spinner" Content="3 copies" Spin="OnSpin" Margin="0,9.5" />
+      <ButtonSpinner Content="buttons on the left" ButtonSpinnerLocation="Left" Margin="0,9.5" />
+
+      <TextBlock Text="numeric up down" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <NumericUpDown x:Name="Number" Value="3" Minimum="0" Maximum="10" />
+      <NumericUpDown PlaceholderText="no value" />
+
+      <TextBlock Text="grid splitter" Theme="{DynamicResource GroupHeaderTextBlockStyle}" Margin="0,12,0,0" />
+      <Grid x:Name="Panes" ColumnDefinitions="*,Auto,*" Height="120">
+        <Border Grid.Column="0" Background="{DynamicResource PhoneChromeBrush}">
+          <TextBlock Text="left" Margin="9.5" />
+        </Border>
+        <GridSplitter x:Name="Splitter" Grid.Column="1" ResizeDirection="Columns" />
+        <Border Grid.Column="2" Background="{DynamicResource PhoneChromeBrush}">
+          <TextBlock Text="right" Margin="9.5" />
+        </Border>
+      </Grid>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="19,6,19,12">
+          <StackPanel>
+            <TextBlock Text="light" Theme="{DynamicResource GroupHeaderTextBlockStyle}" />
+            <DropDownButton Content="sort by" />
+            <ToggleSplitButton Content="bold" IsChecked="True" />
+            <NumericUpDown Value="7" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

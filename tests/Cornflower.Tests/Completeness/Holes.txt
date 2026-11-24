@@ -4,7 +4,6 @@
 # this list to the theme: a control's PR deletes its own line here, and an Avalonia upgrade adds
 # the lines it has to. One name per line, in ordinal order.
 
-ButtonSpinner
 Calendar
 CalendarButton
 CalendarDatePicker
@@ -14,9 +13,7 @@ CarouselPage
 ContextMenu
 DataValidationErrors
 DrawerPage
-DropDownButton
 Expander
-GridSplitter
 GroupBox
 HeaderedContentControl
 Label
@@ -25,12 +22,10 @@ ManagedFileChooserOverwritePrompt
 Menu
 MenuItem
 NotificationCard
-NumericUpDown
 PathIcon
 PipsPager
 RefreshContainer
 RefreshVisualizer
-SplitButton
 SplitView
 TabControl
 TabItem
