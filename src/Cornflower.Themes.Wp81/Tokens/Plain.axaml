@@ -12,4 +12,38 @@
     0,0,0,1.5). A box a finger presses or types in takes PhoneBorderThickness (2.5) instead.
   -->
   <Thickness x:Key="CornflowerPlainLineThickness">1.5</Thickness>
+
+  <!--
+    The same 1.5 line as a length, for a line drawn across a box rather than round it: the divider between a
+    SplitButton's two parts (#235), where an all-sides Thickness would draw it twice as wide.
+  -->
+  <x:Double x:Key="CornflowerPlainLineWidth">1.5</x:Double>
+
+  <!--
+    A borderless button part's padding (Wp81PlainGlyphButtonTheme, #235): 9.5 each side of its glyph, the phone's
+    PhoneButtonContentPadding's sides, with none above or below, as a glyph needs no room for a text line's descent.
+  -->
+  <Thickness x:Key="CornflowerPlainGlyphButtonPadding">9.5,0</Thickness>
+
+  <!-- The room between a button's content and the chevron after it (DropDownButton, #235): the same 9.5. -->
+  <Thickness x:Key="CornflowerPlainChevronMargin">9.5,0,0,0</Thickness>
+
+  <!--
+    A spin button's least width (Wp81PlainSpinnerButtonTheme, #235): a part inside a larger control (rule 6), as tall as
+    the box beside it (TextControlThemeMinHeight, 34), and a little wider, so each of the two takes a fingertip.
+  -->
+  <x:Double x:Key="CornflowerPlainSpinnerButtonMinWidth">40</x:Double>
+
+  <!--
+    A spin button's repeat (Wp81PlainSpinnerButtonTheme, #235): the phone's own RepeatButton's Delay and Interval
+    (Controls/RepeatButton.axaml), so a held spin button repeats as a held RepeatButton does on the phone.
+  -->
+  <x:Int32 x:Key="CornflowerPlainSpinnerButtonDelay">500</x:Int32>
+  <x:Int32 x:Key="CornflowerPlainSpinnerButtonInterval">33</x:Int32>
+
+  <!--
+    A GridSplitter's least width and height (#235): 9.5, the phone's touch-target overhang (PhoneTouchTargetOverhang's
+    9.5), so a bar a finger can find, thin beside the panes. An app's own Width or Height wins.
+  -->
+  <x:Double x:Key="CornflowerPlainSplitterMinSize">9.5</x:Double>
 </ResourceDictionary>

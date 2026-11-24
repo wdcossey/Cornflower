@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/NumericUpDown/README.md.
+
+    An 8.1 app used a TextBox with the number keyboard (InputScope Number). So a NumericUpDown here is Wp81's TextBox,
+    by type, with the phone's box, focus, placeholder and disabled looks, and the number keyboard
+    (TextInputOptions.ContentType Number), inside a ButtonSpinner, by type (Controls/ButtonSpinner.axaml), whose own box
+    is cleared, so its spin buttons sit beside the TextBox's box, as tall as it. The control takes the TextBox's margin
+    (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none. The
+    spinner's AllowSpin, ShowButtonSpinner and ButtonSpinnerLocation, and the box's PlaceholderText, IsReadOnly,
+    InnerLeftContent and InnerRightContent, are the control's; its TextAlignment inherits. The spinner is no tab stop of
+    its own (as in Simple's): Tab goes to the box, and the arrow keys there spin it. Avalonia's NumericUpDown keeps the box's text and its value in step.
+  -->
+  <ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown">
+    <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ButtonSpinner x:Name="PART_Spinner"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       Padding="0"
+                       IsTabStop="False"
+                       AllowSpin="{TemplateBinding AllowSpin}"
+                       ShowButtonSpinner="{TemplateBinding ShowButtonSpinner}"
+                       ButtonSpinnerLocation="{TemplateBinding ButtonSpinnerLocation}">
+          <TextBox x:Name="PART_TextBox"
+                   Margin="0"
+                   PlaceholderText="{TemplateBinding PlaceholderText}"
+                   IsReadOnly="{TemplateBinding IsReadOnly}"
+                   InnerLeftContent="{TemplateBinding InnerLeftContent}"
+                   InnerRightContent="{TemplateBinding InnerRightContent}"
+                   AcceptsReturn="False"
+                   TextWrapping="NoWrap"
+                   TextInputOptions.ContentType="Number" />
+        </ButtonSpinner>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

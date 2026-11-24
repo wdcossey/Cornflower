@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/ButtonSpinner/README.md.
+
+    A part theme (plan section 3): the spin button, a RepeatButton inside a larger control, for ButtonSpinner's two
+    (#235), and so NumericUpDown's; later batches reuse it. Keyed, so it reaches only the templates that name it, by
+    DynamicResource.
+
+    The glyph button's look (Wp81PlainGlyphButtonTheme): nothing drawn at rest, the accent behind its glyph while
+    pressed, PhoneDisabledBrush when disabled, its host's foreground. A part inside a larger control (rule 6): it fills
+    its slot's height, at least CornflowerPlainSpinnerButtonMinWidth wide. It repeats as the phone's RepeatButton does
+    (ClickMode Press, its Delay and Interval, as CornflowerPlain tokens), and PhonePress stops the repeats while the
+    finger is off it. No tilt, as the phone's RepeatButton has none; no focus adorner (the theme sets none).
+  -->
+  <ControlTheme x:Key="Wp81PlainSpinnerButtonTheme" TargetType="RepeatButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="MinWidth" Value="{DynamicResource CornflowerPlainSpinnerButtonMinWidth}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="ClickMode" Value="Press" />
+    <Setter Property="Delay" Value="{DynamicResource CornflowerPlainSpinnerButtonDelay}" />
+    <Setter Property="Interval" Value="{DynamicResource CornflowerPlainSpinnerButtonInterval}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="wp81:PhonePress.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Border" Background="{TemplateBinding Background}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pressed">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="{DynamicResource PhoneAccentBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+      </Style>
+    </Style>
+
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -15,11 +15,11 @@ namespace Cornflower.Tests.Controls;
 /// <summary>
 /// A plain TextBox in the template of a control Wp81 doesn't theme yet (a hole) keeps the theme under Wp81 for TextBox,
 /// through <c>HoleParts</c>, as <c>CheckBoxHolePartsTests</c> shows for the file dialog's CheckBox. In Avalonia 12.1.4,
-/// Simple's templates for CalendarDatePicker, the managed file dialog and
-/// NumericUpDown hold one or more, and pass them Simple's brushes, or none: with the phone's theme they would draw the
-/// phone's black text and white box in chrome laid out for Simple's (CalendarDatePicker's and NumericUpDown's text
-/// black on Simple's dark background). ComboBox's editable box was one until Wp81 themed ComboBox (#155); a hole's
-/// ComboBox is Wp81's, so its parts aren't counted.
+/// Simple's templates for CalendarDatePicker and the managed file dialog hold one or more, and pass them Simple's
+/// brushes, or none: with the phone's theme they would draw the phone's black text and white box in chrome laid out for
+/// Simple's (CalendarDatePicker's text black on Simple's dark background). ComboBox's editable box was one until Wp81
+/// themed ComboBox (#155), and NumericUpDown's until its plain theme (#235); a hole's ComboBox or NumericUpDown is
+/// Wp81's, so its parts aren't counted.
 /// </summary>
 public class TextBoxHolePartsTests
 {
@@ -61,19 +61,19 @@ public class TextBoxHolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Equal(
-            [nameof(CalendarDatePicker), nameof(ManagedFileChooser), nameof(NumericUpDown)],
+            [nameof(CalendarDatePicker), nameof(ManagedFileChooser)],
             found);
     }
 
-    // NumericUpDown's TextBox with Simple then Wp81: Simple's theme, so its text is Simple's foreground, not the phone's
-    // black on Simple's dark spinner, and it has none of the phone's 9.5 margins or header row.
+    // CalendarDatePicker's TextBox with Simple then Wp81: Simple's theme, so its text is Simple's foreground, not the
+    // phone's black on Simple's dark box, and it has none of the phone's 9.5 margins or header row.
     [AvaloniaFact]
-    public void NumericUpDowns_TextBox_Keeps_Simples_Look()
+    public void CalendarDatePickers_TextBox_Keeps_Simples_Look()
     {
         var simple = new SimpleTheme();
-        var spinner = new NumericUpDown { Value = 3 };
-        using var scene = new Scene(spinner, themes: [simple, new Wp81Theme()]);
-        var box = Plain(spinner).Single();
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24) };
+        using var scene = new Scene(picker, themes: [simple, new Wp81Theme()]);
+        var box = Plain(picker).Single();
 
         Assert.Same(ThemeOf(simple, typeof(TextBox)), box.Theme);
         Assert.NotEqual(TextBoxReadings.Black, ((ISolidColorBrush)box.Foreground!).Color);
@@ -106,18 +106,18 @@ public class TextBoxHolePartsTests
     [AvaloniaFact]
     public void An_Apps_Theme_Above_Wp81_For_A_Hole_Keeps_Wp81s_TextBox()
     {
-        var spinner = new NumericUpDown();
-        var template = new FuncControlTemplate<NumericUpDown>((_, _) => new TextBox { Name = "Inner" });
+        var picker = new CalendarDatePicker();
+        var template = new FuncControlTemplate<CalendarDatePicker>((_, _) => new TextBox { Name = "Inner" });
         var app = new Styles
         {
             Resources =
             {
-                [typeof(NumericUpDown)] = new ControlTheme(typeof(NumericUpDown)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } },
+                [typeof(CalendarDatePicker)] = new ControlTheme(typeof(CalendarDatePicker)) { Setters = { new Setter(TemplatedControl.TemplateProperty, template) } },
             },
         };
-        using var scene = new Scene(spinner, themes: [new SimpleTheme(), new Wp81Theme(), app]);
+        using var scene = new Scene(picker, themes: [new SimpleTheme(), new Wp81Theme(), app]);
 
-        var inner = Plain(spinner).Single();
+        var inner = Plain(picker).Single();
         Assert.Null(inner.Theme);
         Assert.Contains(inner.GetVisualDescendants(), v => v is Control { Name: "BorderElement" });
     }

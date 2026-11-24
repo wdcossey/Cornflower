@@ -9,16 +9,16 @@ using Avalonia.Styling;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox and ContentControl out of templates written for
-/// the theme under Wp81. Simple's templates for CalendarItem, CalendarDatePicker, PipsPager and the managed file dialogs
-/// hold plain Buttons with no theme of their own, DrawerPage's plain ToggleButtons, the menu ScrollViewer's plain
-/// RepeatButtons, the managed file dialog's plain CheckBox, the plain TextBoxes of CalendarDatePicker, the managed
-/// file dialog and NumericUpDown, and the plain ContentControls of DataValidationErrors, MenuItem and the managed file
-/// dialog, so they would take Wp81's,
+/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox, ContentControl and GridSplitter out of templates
+/// written for the theme under Wp81. Simple's templates for CalendarItem, CalendarDatePicker, PipsPager and the managed
+/// file dialogs hold plain Buttons with no theme of their own, DrawerPage's plain ToggleButtons, the menu ScrollViewer's
+/// plain RepeatButtons, the managed file dialog's plain CheckBox, the plain TextBoxes of CalendarDatePicker and the
+/// managed file dialog, the plain ContentControls of DataValidationErrors, MenuItem and the managed file dialog, and the
+/// managed file dialog's GridSplitters, so they would take Wp81's,
 /// keyed by type: the phone's sizes (a Button's 109 × 57.5 minimum), its overhang, the accent and, for a Button or a
 /// CheckBox, the tilt, in chrome laid out for Simple's; for a TextBox, the phone's black text and white box over the
 /// brushes those templates pass it; for a ContentControl, its content at the top left at its own size where Simple's
-/// stretches it. Such a control takes the theme under Wp81 for its own style key instead: a ToggleButton the
+/// stretches it; for a GridSplitter, the plain theme's bar (#235). Such a control takes the theme under Wp81 for its own style key instead: a ToggleButton the
 /// ToggleButton theme, not the Button theme. A ContentControl, for which Simple has no theme, takes Avalonia's own
 /// (<see cref="FallBackToOwnProperty"/>).
 /// </summary>
@@ -35,12 +35,12 @@ namespace Cornflower.Themes.Wp81;
 /// Button in a template Wp81 sets goes no further. The templates each theme (a <see cref="Styles"/> subclass) sets
 /// are read once and kept beside it; a plain group of styles and a host's own resources, which an app can change as
 /// it runs, are read each time.</para>
-/// <para><b>On and off.</b> Only Wp81's themes set <see cref="FallBackProperty"/> (Button's, ToggleButton's,
-/// RepeatButton's, CheckBox's, TextBox's and ContentControl's) and <see cref="FallBackToOwnProperty"/>
+/// <para><b>On and off.</b> Only Wp81's themes set <see cref="FallBackProperty"/> (Button's, DropDownButton's,
+/// ToggleButton's, RepeatButton's, CheckBox's, TextBox's, ContentControl's and GridSplitter's) and <see cref="FallBackToOwnProperty"/>
 /// (ContentControl's): they are internal, with no accessors. It goes false when that theme leaves
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
 /// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>): every Wp81
-/// Button, CheckBox, TextBox and plain ContentControl, in any template, an app's included. One with no templated parent
+/// Button, CheckBox, TextBox, plain ContentControl and GridSplitter, in any template, an app's included. One with no templated parent
 /// returns at once, and so does one with nothing under Wp81; one in a template of Wp81's, after one walk up its styling
 /// parents, and the first in each template newly built also a read of the themes Wp81 has built; one in any other
 /// template also reads all of Wp81's templates (once) and those under Wp81 (a theme's once, a plain group's each
@@ -56,7 +56,7 @@ namespace Cornflower.Themes.Wp81;
 internal static class HoleParts
 {
     /// <summary>
-    /// Set by Wp81's themes for a Button and its subclasses, a CheckBox, a TextBox and a ContentControl: whether the
+    /// Set by Wp81's themes for a Button and its subclasses, a CheckBox, a TextBox, a ContentControl and a GridSplitter: whether the
     /// control is in a template written for the theme under Wp81.
     /// </summary>
     public static readonly AttachedProperty<bool> FallBackProperty =

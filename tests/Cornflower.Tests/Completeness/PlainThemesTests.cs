@@ -19,9 +19,21 @@ public class PlainThemesTests
     public static readonly string[] Plain =
     [
         "EmbeddableControlRoot", "ItemsControl", "OverlayPopupHost", "PopupRoot", "Separator", "Window",    // batch 1, #234
+        "ButtonSpinner", "DropDownButton", "GridSplitter", "NumericUpDown", "SplitButton",                  // batch 2, #235
+    ];
+
+    /// <summary>
+    /// Every plain part theme, the ones later batches reuse (plan section 3): its theme is
+    /// <c>Controls/Plain&amp;lt;Part&amp;gt;.axaml</c>, keyed <c>Wp81Plain&amp;lt;Part&amp;gt;Theme</c>. Its README is its first host's.
+    /// </summary>
+    public static readonly string[] Parts =
+    [
+        "GlyphButton", "SpinnerButton",     // batch 2, #235
     ];
 
     public static TheoryData<string> Controls => new(Plain);
+
+    public static TheoryData<string> PartThemes => new(Parts);
 
     private static readonly string Root = FindRoot();
 
@@ -75,6 +87,18 @@ public class PlainThemesTests
         var keys = Keys(xaml);
         Assert.Contains("{x:Type " + control + "}", keys);
         Assert.All(keys, key => Assert.True(IsPlainKey(key, control), $"{key} in {control}.axaml: a plain theme's keys are its own type, Wp81Plain<Part>Theme or CornflowerPlain..."));
+    }
+
+    [Theory]
+    [MemberData(nameof(PartThemes))]
+    public void A_Part_Themes_File_Says_It_And_Declares_Only_Its_Part_Theme(string part)
+    {
+        var xaml = File.ReadAllText(ThemeFile("Plain" + part));
+
+        var header = Regex.Match(xaml, "<!--(.*?)-->", RegexOptions.Singleline);
+        Assert.True(header.Success, $"Plain{part}.axaml has no header comment.");
+        Assert.Contains(Label, Regex.Replace(header.Groups[1].Value, "\\s+", " "));
+        Assert.Equal(["Wp81Plain" + part + "Theme"], Keys(xaml));
     }
 
     [Fact]
