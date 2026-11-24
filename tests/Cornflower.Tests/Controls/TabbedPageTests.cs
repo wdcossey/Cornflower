@@ -26,6 +26,14 @@ public class TabbedPageTests
 
     private static ThemeVariant VariantOf(string name) => name == "light" ? ThemeVariant.Light : ThemeVariant.Dark;
 
+    /// <summary>The page in a host with an app's own font, so the page's family is its own, not the window's.</summary>
+    private static Panel InAnAppsFont(Control page)
+    {
+        var host = new Panel { Children = { page } };
+        host.SetValue(Avalonia.Controls.Documents.TextElement.FontFamilyProperty, new FontFamily("Courier New"));
+        return host;
+    }
+
     private static ContentPage Page(string header) => new() { Header = header, Content = new TextBlock { Text = header + " page" } };
 
     [AvaloniaTheory]
@@ -35,7 +43,7 @@ public class TabbedPageTests
         var mail = Page("mail");
         var calendar = Page("calendar");
         var page = new TabbedPage { Pages = new Avalonia.Collections.AvaloniaList<Page> { mail, calendar } };
-        using var scene = new Scene(page, VariantOf(variant));
+        using var scene = new Scene(InAnAppsFont(page), VariantOf(variant));
 
         Assert.Same(Resource<IBrush>(page, "ApplicationPageBackgroundThemeBrush"), page.Background);
         Assert.Same(Resource<IBrush>(page, "PhoneForegroundBrush"), page.Foreground);
@@ -91,7 +99,7 @@ public class TabbedPageTests
     {
         var one = Page("one");
         var page = new CarouselPage { Pages = new Avalonia.Collections.AvaloniaList<Page> { one, Page("two") } };
-        using var scene = new Scene(page, VariantOf(variant));
+        using var scene = new Scene(InAnAppsFont(page), VariantOf(variant));
 
         Assert.Same(Resource<IBrush>(page, "ApplicationPageBackgroundThemeBrush"), page.Background);
         Assert.Same(Resource<IBrush>(page, "PhoneForegroundBrush"), page.Foreground);
