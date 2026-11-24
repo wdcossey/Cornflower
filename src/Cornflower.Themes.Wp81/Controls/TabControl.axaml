@@ -1,0 +1,89 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TabControl/README.md.
+
+    The phone had no TabControl. Here it takes the Pivot's headers without its swipe (ADR 0007, answer 8): its tabs are
+    the plain TabItem's headers (Controls/TabItem.axaml), the Pivot header's look, in a row; a tap on one selects it
+    and its content shows at once, with no motion of its own (rule 8), and a swipe on the content does nothing.
+
+    A Border (the app's Background, BorderBrush, BorderThickness and CornerRadius, all unset) round a DockPanel: the
+    header row, PART_ItemsPresenter (a StackPanel) in Wp81's ScrollViewerScrollBarlessTheme (PART_ScrollViewer), which
+    a finger pans to reach a header past the edge, with no bar; and the
+    content in Avalonia's two hosts (PART_SelectedContentHost, and PART_SelectedContentHost2 for an app's
+    PageTransition), clipped, inset by the Padding: PivotItemMargin (19,22.5,19,0), the Pivot's item's inset, so the
+    content sits under the headers as a PivotItem does. Transparent at rest (rule 5).
+
+    AutoScrollToSelectedItem is off: bringing the selected header into view would pass the request on past the row and
+    scroll the page round the TabControl, at load and at every selection set from code.
+
+    TabStripPlacement Top (the Pivot's) is the default; Bottom docks the row below; Left and Right stack the headers
+    and pan them up and down.
+
+      <TabControl>
+        <TabItem Header="mail"><TextBlock Text="..." /></TabItem>
+        <TabItem Header="calendar"><TextBlock Text="..." /></TabItem>
+      </TabControl>
+  -->
+  <ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl">
+    <Setter Property="Padding" Value="{DynamicResource PivotItemMargin}" />
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <DockPanel>
+            <ScrollViewer x:Name="PART_ScrollViewer"
+                          DockPanel.Dock="Top"
+                          Theme="{DynamicResource Wp81ScrollViewerScrollBarlessTheme}"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled">
+              <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+            </ScrollViewer>
+            <Panel ClipToBounds="True">
+              <ContentPresenter x:Name="PART_SelectedContentHost2"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                IsVisible="False" />
+              <ContentPresenter x:Name="PART_SelectedContentHost"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Panel>
+          </DockPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[TabStripPlacement=Bottom] /template/ ScrollViewer#PART_ScrollViewer">
+      <Setter Property="DockPanel.Dock" Value="Bottom" />
+    </Style>
+    <Style Selector="^[TabStripPlacement=Left] /template/ ScrollViewer#PART_ScrollViewer">
+      <Setter Property="DockPanel.Dock" Value="Left" />
+      <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+      <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+    </Style>
+    <Style Selector="^[TabStripPlacement=Left] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+      <Setter Property="Orientation" Value="Vertical" />
+    </Style>
+    <Style Selector="^[TabStripPlacement=Right] /template/ ScrollViewer#PART_ScrollViewer">
+      <Setter Property="DockPanel.Dock" Value="Right" />
+      <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+      <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+    </Style>
+    <Style Selector="^[TabStripPlacement=Right] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+      <Setter Property="Orientation" Value="Vertical" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

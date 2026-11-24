@@ -1,0 +1,65 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TabItem/README.md.
+
+    The phone had no TabItem: a TabControl here takes the Pivot's headers without its swipe (ADR 0007, answer 8), and
+    this is one of them, the tab's Header in a Border (PART_LayoutRoot, the Background).
+    As the Pivot's PivotHeaderItem (Controls/Pivot.axaml), by the same keys, so nothing is copied: the Header at
+    PivotHeaderItemFontSize (57) in PivotHeaderItemFontFamily, its characters PivotHeaderItemCharacterSpacing (-25) apart
+    (PhoneCharacterSpacing), with the phone's header line (PhoneHeaderLine), PivotHeaderItemPadding below; unselected in
+    PivotHeaderForegroundUnselectedBrush (dimmed), selected in PivotHeaderForegroundSelectedBrush (the foreground) on
+    PivotHeaderBackgroundSelectedBrush, set as its Background, so an app's own Background wins. Before it CornflowerPlainTabHeaderMargin (16 to the left): the Pivot header's 16
+    from the one before, without its -6.5 tuck up under the Pivot's title, which a tab strip doesn't have. Disabled, the
+    text is PhoneDisabledBrush. The tilt on a press (rule 7: a tab header is item-sized); no pointer-over look (the phone
+    has none), and none of the Pivot header's motion (rule 8): the selection changes at once.
+    The TabItem's Icon (which a TabbedPage copies from its page) isn't drawn: the Pivot's headers are text.
+  -->
+  <ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
+    <Setter Property="Background" Value="{DynamicResource PivotHeaderBackgroundUnselectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PivotHeaderForegroundUnselectedBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource PivotHeaderItemFontSize}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PivotHeaderItemFontFamily}" />
+    <Setter Property="Margin" Value="{DynamicResource CornflowerPlainTabHeaderMargin}" />
+    <Setter Property="Padding" Value="{DynamicResource PivotHeaderItemPadding}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="wp81:PhoneCharacterSpacing.CharacterSpacing" Value="{DynamicResource PivotHeaderItemCharacterSpacing}" />
+    <Setter Property="LetterSpacing">
+      <MultiBinding Converter="{x:Static wp81:PhoneCharacterSpacing.LetterSpacing}">
+        <Binding Path="FontSize" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="(wp81:PhoneCharacterSpacing.CharacterSpacing)" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding>
+    </Setter>
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Header}"
+                            ContentTemplate="{TemplateBinding HeaderTemplate}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PivotHeaderForegroundSelectedBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Background" Value="{DynamicResource PivotHeaderBackgroundSelectedBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

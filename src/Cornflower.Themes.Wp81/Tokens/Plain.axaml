@@ -89,4 +89,11 @@
     a MenuFlyout item's (MenuFlyoutItemThemePadding), round its header in the body's size.
   -->
   <Thickness x:Key="CornflowerPlainTopLevelMenuItemPadding">9.5,8.5</Thickness>
+
+  <!--
+    A tab's header before it (TabItem and TabStripItem, #238): 16 to the left, the Pivot header's room before it
+    (PivotHeaderItemMargin's 16), without the Pivot's -6.5 above, which tucks a header up under the Pivot's title. A tab
+    strip has no title, and a header pulled 6.5 above the strip would be clipped by it.
+  -->
+  <Thickness x:Key="CornflowerPlainTabHeaderMargin">16,0,0,0</Thickness>
 </ResourceDictionary>

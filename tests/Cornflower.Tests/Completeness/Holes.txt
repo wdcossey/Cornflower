@@ -9,7 +9,6 @@ CalendarButton
 CalendarDatePicker
 CalendarDayButton
 CalendarItem
-CarouselPage
 DataValidationErrors
 DrawerPage
 Expander
@@ -20,11 +19,6 @@ PipsPager
 RefreshContainer
 RefreshVisualizer
 SplitView
-TabControl
-TabItem
-TabStrip
-TabStripItem
-TabbedPage
 TableView
 TableViewCell
 TableViewColumnHeader

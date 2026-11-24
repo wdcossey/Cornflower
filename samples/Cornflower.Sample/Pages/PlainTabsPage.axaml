@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainTabsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The fifth plain themes (ADR 0007, #238): Cornflower's design, not the phone's. A TabControl with the Pivot's
+    headers and no swipe (five tabs, so the row pans past the edge), a TabStrip, a TabbedPage, a CarouselPage that
+    swipes as the FlipView, and the light theme.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24">
+      <sample:SamplePageHeader x:Name="Header" Margin="19,0" />
+
+      <TextBlock Margin="19,0" Text="Plain themes: Cornflower's design, not the phone's."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <TabControl x:Name="Tabs" Height="200" Margin="0,12,0,0">
+        <TabItem Header="mail"><TextBlock Text="the mail tab: tap a header, no swipe" TextWrapping="Wrap" /></TabItem>
+        <TabItem Header="calendar"><TextBlock Text="the calendar tab" /></TabItem>
+        <TabItem Header="people"><TextBlock Text="the people tab" /></TabItem>
+        <TabItem Header="photos" IsEnabled="False"><TextBlock Text="the photos tab" /></TabItem>
+        <TabItem Header="music"><TextBlock Text="the music tab" /></TabItem>
+      </TabControl>
+
+      <TabStrip x:Name="Strip" Margin="0,12,0,0" SelectedIndex="0">
+        <TabStripItem Content="all" />
+        <TabStripItem Content="unread" />
+        <TabStripItem Content="flagged" />
+      </TabStrip>
+
+      <TabbedPage x:Name="Tabbed" Height="220" Margin="0,12,0,0">
+        <ContentPage Header="home">
+          <TextBlock Text="a TabbedPage: the home page" TextWrapping="Wrap" />
+        </ContentPage>
+        <ContentPage Header="saved">
+          <TextBlock Text="the saved page" />
+        </ContentPage>
+      </TabbedPage>
+
+      <CarouselPage x:Name="Carousel" Height="160" Margin="0,12,0,0">
+        <ContentPage Header="one">
+          <Border Background="{DynamicResource PhoneChromeBrush}" Padding="19">
+            <TextBlock Text="a CarouselPage: swipe left" />
+          </Border>
+        </ContentPage>
+        <ContentPage Header="two">
+          <Border Background="{DynamicResource PhoneChromeBrush}" Padding="19">
+            <TextBlock Text="the second page" />
+          </Border>
+        </ContentPage>
+      </CarouselPage>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="0,12,0,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="0,6,0,12">
+          <TabControl Height="150">
+            <TabItem Header="light"><TextBlock Text="the light theme" /></TabItem>
+            <TabItem Header="two"><TextBlock Text="the second tab" /></TabItem>
+          </TabControl>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

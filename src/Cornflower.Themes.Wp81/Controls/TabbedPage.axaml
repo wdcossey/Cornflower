@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TabbedPage/README.md.
+
+    The phone had no TabbedPage: its Pivot was the page of tabs. Avalonia 12's TabbedPage drives a TabControl
+    (PART_TabControl) with one TabItem per page, so here it is the plain TabControl and TabItem by type
+    (Controls/TabControl.axaml, Controls/TabItem.axaml), the Pivot's headers without its swipe, over the page's
+    background as Wp81's ContentPage (ApplicationPageBackgroundThemeBrush, PhoneForegroundBrush,
+    PhoneFontFamilyNormal). Simple's keyed tab bar (a uniform row of icons and 12 text, an accent pipe) is left out.
+
+    PART_TabControl's Padding is 0, not the plain TabControl's PivotItemMargin: each page is a whole page, which fills
+    the space under the headers with its own background and insets its own content.
+
+    TabPlacement is Top, the Pivot's, where Avalonia's Auto puts the bar at the bottom on a phone; an app's own
+    TabPlacement wins. IsGestureEnabled stays Avalonia's off: no swipe between pages (ADR 0007, answer 8). The
+    TabbedPage's IndicatorTemplate isn't drawn (the Pivot has no pipe). Its own safe area still applies: Avalonia's
+    TabbedPage sets it on PART_TabControl's Margin and the page's.
+
+      <TabbedPage>
+        <ContentPage Header="mail">...</ContentPage>
+        <ContentPage Header="calendar">...</ContentPage>
+      </TabbedPage>
+  -->
+  <ControlTheme x:Key="{x:Type TabbedPage}" TargetType="TabbedPage">
+    <Setter Property="Background" Value="{DynamicResource ApplicationPageBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="TabPlacement" Value="Top" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel Background="{TemplateBinding Background}">
+          <TabControl x:Name="PART_TabControl" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
