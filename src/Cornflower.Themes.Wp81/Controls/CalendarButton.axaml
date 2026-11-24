@@ -1,0 +1,58 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarButton/README.md.
+
+    A month in a Calendar's year, or a year in its decade (CalendarItem makes 12 of them in its PART_YearView). The
+    day's look (Controls/CalendarDayButton.axaml): the name in the body's type (PhoneFontFamilyNormal at
+    TextStyleLargeFontSize, 18.14, rule 2), centred, PhoneForegroundBrush, on a transparent cell that takes the finger
+    across it, at least PhoneButtonMinHeight (57.5) tall (rule 6); its width is the year grid's quarter. The tilt is the
+    press, with the accent behind the name (rule 7, and rule 3). Selected (the month or year shown), the accent fills the
+    cell and the name is PhoneButtonBasePressedForegroundBrush (rule 3). A year outside the decade (:inactive) is
+    PhoneMidBrush; disabled, PhoneDisabledBrush. No pointer-over look and no focus adorner (Simple's :btnfocused
+    rectangle). No motion of its own.
+  -->
+  <ControlTheme x:Key="{x:Type CalendarButton}" TargetType="CalendarButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="{DynamicResource PhoneButtonMinHeight}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="Border" Background="{TemplateBinding Background}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:inactive /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneMidBrush}" />
+    </Style>
+    <Style Selector="^:selected, ^:pressed">
+      <Style Selector="^ /template/ Border#Border">
+        <Setter Property="Background" Value="{DynamicResource PhoneAccentBrush}" />
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PhoneButtonBasePressedForegroundBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

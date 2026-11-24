@@ -63,13 +63,15 @@ public class HolePartsFirstCheckTests
         Assert.False(reveal.IsSet(Avalonia.StyledElement.ThemeProperty));
     }
 
-    // A Button in Simple's CalendarDatePicker template isn't in any theme Wp81 has built, so the check goes on to read
-    // all of Wp81's templates, finds it in none, and the Button falls back to Simple's theme, as before #194.
+    // A Button in Simple's CalendarDatePicker template (the picker given Simple's theme: Wp81 themes it, #240) isn't in
+    // any theme Wp81 has built, so the check goes on to read all of Wp81's templates, finds it in none, and the Button
+    // falls back to Simple's theme, as before #194.
     [AvaloniaFact]
     public void A_Part_In_Another_Template_Still_Reads_Them_All_And_Falls_Back()
     {
         var simple = new SimpleTheme();
-        var picker = new CalendarDatePicker();
+        Assert.True(simple.TryGetResource(typeof(CalendarDatePicker), ThemeVariant.Dark, out var simplesPicker));
+        var picker = new CalendarDatePicker { Theme = (ControlTheme)simplesPicker! };
         using var scene = new Scene(picker, themes: [simple, new Wp81Theme()]);
         var wp81 = scene.Window.Styles.OfType<Wp81Theme>().Single();
 

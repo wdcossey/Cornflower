@@ -1,0 +1,94 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarItem/README.md.
+
+    A Calendar's page: the header, then the month's days or the year's months. No box and no corners (rule 4): a Border
+    bound to the app's Background, BorderBrush and BorderThickness, all unset, so nothing is drawn at rest, and no header
+    band (Simple's HeaderBackground rectangle: decoration at rest, rule 3).
+
+    The header row, at least PhoneButtonMinHeight (57.5) tall: PART_PreviousButton and PART_NextButton, Lucide's
+    ChevronLeft and ChevronRight (rule 10), each a 57.5 square, and PART_HeaderButton between them, the month and year,
+    in the group heading's type (PhoneFontFamilySemiLight at GroupHeaderTextBlockStyleFontSize, 23.73, PhoneMidBrush,
+    rule 2), which a tap turns to the year and then the decade. All three are the borderless glyph button
+    (Wp81PlainGlyphButtonTheme, Controls/PlainGlyphButton.axaml, by DynamicResource): nothing drawn at rest, the accent
+    while pressed, PhoneDisabledBrush disabled, with the tilt (rule 7: a button-like part). Named, they keep Wp81's own
+    parts, not the phone's 109 by 57.5 Button.
+
+    PART_MonthView: the days' names in the first row, in the small print's look (ControlContextualInfoTextBlockStyle, 16,
+    rule 2: a column header) in the month view's PhoneMidBrush (Avalonia adds them in code, so a style here can't reach
+    them; they take the view's brush by a binding), then six rows of CalendarDayButtons (Controls/CalendarDayButton.axaml);
+    PART_YearView: three rows of four CalendarButtons (Controls/CalendarButton.axaml). Their columns share the width
+    (seven, or four, star columns), so at 373 wide (a 411 screen less a page's 19 margins) a day is 53.3 by 57.5. Avalonia
+    shows one view or the other at once: no transition (rule 8). Disabled, the month view's brush, and so the days'
+    names, is PhoneDisabledBrush, as the days and buttons are.
+  -->
+  <ControlTheme x:Key="{x:Type CalendarItem}" TargetType="CalendarItem">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid RowDefinitions="Auto,*" ColumnDefinitions="Auto,*,Auto">
+            <Button x:Name="PART_PreviousButton"
+                    Grid.Column="0"
+                    Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                    MinWidth="{DynamicResource PhoneButtonMinHeight}"
+                    MinHeight="{DynamicResource PhoneButtonMinHeight}"
+                    HorizontalAlignment="Left"
+                    cf:Tilt.IsEnabled="True">
+              <cf:LucideIcon Kind="ChevronLeft" />
+            </Button>
+            <Button x:Name="PART_HeaderButton"
+                    Grid.Column="1"
+                    Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                    MinHeight="{DynamicResource PhoneButtonMinHeight}"
+                    HorizontalAlignment="Center"
+                    FontFamily="{DynamicResource PhoneFontFamilySemiLight}"
+                    FontSize="{DynamicResource GroupHeaderTextBlockStyleFontSize}"
+                    Foreground="{DynamicResource PhoneMidBrush}"
+                    cf:Tilt.IsEnabled="True" />
+            <Button x:Name="PART_NextButton"
+                    Grid.Column="2"
+                    Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                    MinWidth="{DynamicResource PhoneButtonMinHeight}"
+                    MinHeight="{DynamicResource PhoneButtonMinHeight}"
+                    HorizontalAlignment="Right"
+                    cf:Tilt.IsEnabled="True">
+              <cf:LucideIcon Kind="ChevronRight" />
+            </Button>
+            <Grid x:Name="PART_MonthView"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="3"
+                  IsVisible="False"
+                  TextElement.Foreground="{DynamicResource PhoneMidBrush}"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  ColumnDefinitions="*,*,*,*,*,*,*" />
+            <Grid x:Name="PART_YearView"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="3"
+                  IsVisible="False"
+                  RowDefinitions="Auto,Auto,Auto"
+                  ColumnDefinitions="*,*,*,*" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="DayTitleTemplate">
+      <Template x:DataType="x:String">
+        <TextBlock Theme="{DynamicResource ControlContextualInfoTextBlockStyle}"
+                   Foreground="{Binding $parent[Grid].(TextElement.Foreground)}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Text="{Binding}" />
+      </Template>
+    </Setter>
+
+    <Style Selector="^:disabled /template/ Grid#PART_MonthView">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

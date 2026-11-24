@@ -24,6 +24,7 @@ public class PlainThemesTests
         "ContextMenu", "Menu", "MenuItem",                                                                  // batch 4, #237
         "CarouselPage", "TabControl", "TabItem", "TabStrip", "TabStripItem", "TabbedPage",                  // batch 5, #238
         "DrawerPage", "Expander", "SplitView", "TreeView", "TreeViewItem",                                  // batch 6, #239
+        "Calendar", "CalendarButton", "CalendarDatePicker", "CalendarDayButton", "CalendarItem",            // batch 7, #240
     ];
 
     /// <summary>

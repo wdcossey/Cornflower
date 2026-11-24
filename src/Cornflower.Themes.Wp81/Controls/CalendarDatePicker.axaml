@@ -1,0 +1,59 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarDatePicker/README.md.
+
+    8.1 picked a date with DatePicker (Wp81 themes it). A CalendarDatePicker here is Wp81's TextBox, by type
+    (PART_TextBox), with the phone's box, focus, placeholder and disabled looks, its PlaceholderText, UseFloatingPlaceholder
+    and errors the control's, and no brushes passed to it (Simple passes its own). The control takes the TextBox's margin
+    (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none, as the
+    plain NumericUpDown does. In the box, after the text (the TextBox's InnerRightContent), PART_Button, Lucide's
+    Calendar (rule 10) in the borderless glyph button (Wp81PlainGlyphButtonTheme): nothing drawn at rest, the accent
+    while pressed, with the tilt (rule 7). A tap opens PART_Popup below the control, as wide as it at the least: a
+    floating surface in FlyoutBackgroundThemeBrush (rule 5), no border, square, holding PART_Calendar, the plain
+    Calendar (Controls/Calendar.axaml). The popup opens and closes as Wp81's popup host does with it (rule 8).
+  -->
+  <ControlTheme x:Key="{x:Type CalendarDatePicker}" TargetType="CalendarDatePicker">
+    <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <TextBox x:Name="PART_TextBox"
+                   Margin="0"
+                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                   DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}"
+                   UseFloatingPlaceholder="{TemplateBinding UseFloatingPlaceholder}"
+                   PlaceholderText="{TemplateBinding PlaceholderText}">
+            <TextBox.InnerRightContent>
+              <Button x:Name="PART_Button"
+                      Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                      Focusable="False"
+                      cf:Tilt.IsEnabled="True">
+                <cf:LucideIcon Kind="Calendar" />
+              </Button>
+            </TextBox.InnerRightContent>
+          </TextBox>
+          <Popup x:Name="PART_Popup"
+                 PlacementTarget="{TemplateBinding}"
+                 Placement="Bottom"
+                 IsLightDismissEnabled="True">
+            <Border x:Name="PART_PopupSurface"
+                    Background="{DynamicResource FlyoutBackgroundThemeBrush}"
+                    MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}">
+              <Calendar x:Name="PART_Calendar"
+                        DisplayDate="{TemplateBinding DisplayDate}"
+                        DisplayDateEnd="{TemplateBinding DisplayDateEnd}"
+                        DisplayDateStart="{TemplateBinding DisplayDateStart}"
+                        FirstDayOfWeek="{TemplateBinding FirstDayOfWeek}"
+                        IsTodayHighlighted="{TemplateBinding IsTodayHighlighted}"
+                        SelectedDate="{Binding SelectedDate, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+            </Border>
+          </Popup>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

@@ -15,11 +15,12 @@ namespace Cornflower.Tests.Controls;
 /// <summary>
 /// A plain TextBox in the template of a control Wp81 doesn't theme yet (a hole) keeps the theme under Wp81 for TextBox,
 /// through <c>HoleParts</c>, as <c>CheckBoxHolePartsTests</c> shows for the file dialog's CheckBox. In Avalonia 12.1.4,
-/// Simple's templates for CalendarDatePicker and the managed file dialog hold one or more, and pass them Simple's
-/// brushes, or none: with the phone's theme they would draw the phone's black text and white box in chrome laid out for
-/// Simple's (CalendarDatePicker's text black on Simple's dark background). ComboBox's editable box was one until Wp81
-/// themed ComboBox (#155), and NumericUpDown's until its plain theme (#235); a hole's ComboBox or NumericUpDown is
-/// Wp81's, so its parts aren't counted.
+/// Simple's template for the managed file dialog holds one or more, and Simple's CalendarDatePicker's one, and pass them
+/// Simple's brushes, or none: with the phone's theme they would draw the phone's black text and white box in chrome laid
+/// out for Simple's (CalendarDatePicker's text black on Simple's dark background). ComboBox's editable box was one until
+/// Wp81 themed ComboBox (#155), NumericUpDown's until its plain theme (#235), and CalendarDatePicker's until its plain
+/// theme (#240: a picker given Simple's theme still holds it); a hole's ComboBox or NumericUpDown is Wp81's, so its parts
+/// aren't counted.
 /// </summary>
 public class TextBoxHolePartsTests
 {
@@ -61,17 +62,18 @@ public class TextBoxHolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.Equal(
-            [nameof(CalendarDatePicker), nameof(ManagedFileChooser)],
+            [nameof(ManagedFileChooser)],
             found);
     }
 
-    // CalendarDatePicker's TextBox with Simple then Wp81: Simple's theme, so its text is Simple's foreground, not the
-    // phone's black on Simple's dark box, and it has none of the phone's 9.5 margins or header row.
+    // The TextBox of a CalendarDatePicker given Simple's theme, with Simple then Wp81: Simple's theme, so its text is
+    // Simple's foreground, not the phone's black on Simple's dark box, and it has none of the phone's 9.5 margins or
+    // header row. (Wp81 themes CalendarDatePicker, #240: given that theme, its TextBox is Wp81's.)
     [AvaloniaFact]
     public void CalendarDatePickers_TextBox_Keeps_Simples_Look()
     {
         var simple = new SimpleTheme();
-        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24) };
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24), Theme = ThemeOf(simple, typeof(CalendarDatePicker)) };
         using var scene = new Scene(picker, themes: [simple, new Wp81Theme()]);
         var box = Plain(picker).Single();
 
