@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/WindowNotificationManager/README.md.
+
+    The host the plain NotificationCards stack in: banners across the window's whole width, at the top, as 8.1's toast
+    was, the newest last, each divided from the next by the 1.5 line (CornflowerPlainLineWidth, rule 4). A bottom
+    Position (BottomLeft, BottomRight, BottomCenter) stacks them up from the bottom instead, the first at the edge, as
+    Simple's does; left, right and centre all take the full width. Installed in a window's adorner layer, it keeps
+    inside the window's safe area (PlainNotificationArea), so the banners sit under a phone's status bar. No motion of
+    its own (rule 8), no background: the page between the banners takes its own presses.
+  -->
+  <ControlTheme x:Key="{x:Type WindowNotificationManager}" TargetType="WindowNotificationManager">
+    <Setter Property="wp81:PlainNotificationArea.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ReversibleStackPanel Name="PART_Items"
+                              Margin="{TemplateBinding Padding}"
+                              VerticalAlignment="Top"
+                              Spacing="{DynamicResource CornflowerPlainLineWidth}" />
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:bottomleft /template/ ReversibleStackPanel#PART_Items">
+      <Setter Property="ReverseOrder" Value="True" />
+      <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+    <Style Selector="^:bottomright /template/ ReversibleStackPanel#PART_Items">
+      <Setter Property="ReverseOrder" Value="True" />
+      <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+    <Style Selector="^:bottomcenter /template/ ReversibleStackPanel#PART_Items">
+      <Setter Property="ReverseOrder" Value="True" />
+      <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

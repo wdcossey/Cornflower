@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainNotificationsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The eighth plain themes, part b (ADR 0007, #241): Cornflower's design, not the phone's. A NotificationCard of each
+    type, a card with only text, and the light theme, on the page; the buttons show real banners at the window's top,
+    through a WindowNotificationManager, which stay until closed. Nothing is focused or shown at load, so the page stays
+    at the top.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24" Spacing="12">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's. The buttons show banners at the top."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button x:Name="ShowOne" Content="show one" />
+        <Button x:Name="ShowError" Content="show an error" />
+      </StackPanel>
+
+      <StackPanel Margin="-19,0" Spacing="1.5">
+        <NotificationCard x:Name="Information" />
+        <NotificationCard x:Name="Success" />
+        <NotificationCard x:Name="Warning" />
+        <NotificationCard x:Name="Error" />
+        <NotificationCard Content="Copied to the clipboard." />
+      </StackPanel>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}" Padding="0,12">
+          <StackPanel Spacing="1.5">
+            <NotificationCard x:Name="LightInformation" />
+            <NotificationCard x:Name="LightError" />
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
