@@ -177,8 +177,8 @@ indicator; above, sideways, and below, up and down.
 ## Plain themes
 
 For the controls Avalonia has and the phone never had, Cornflower's own design in the era's style
-([ADR 0007](docs/decisions/0007-plain-themes.md)): not measured, and labelled so in each README. Batches 1 to 7, 39
-controls: the hosts and small pieces, with a popup open in the overlay host's 12-point text; the buttons, with the
+([ADR 0007](docs/decisions/0007-plain-themes.md)): not measured, and labelled so in each README. Batches 1 to 7, 36
+controls: the hosts and small pieces, with a popup open in the overlay host's text at size 12; the buttons, with the
 DropDownButton's menu open; text and content; the menus, with the menu bar's `file` open and the ContextMenu in the
 MenuFlyout's look; the tabs, as the Pivot's headers without its swipe; disclosure and navigation; and the dates. The
 dates page follows the day it is drawn (today outlined, a day beside it selected), so its pictures change by the day.

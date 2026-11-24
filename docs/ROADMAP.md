@@ -280,7 +280,7 @@ The plain themes' plan ([#216](https://github.com/wdcossey/Cornflower/issues/216
 every recommendation, and [ADR 0007](decisions/0007-plain-themes.md) holds the rules and the answers. Its batches are
 #234 to #244, batch 1 (#234) first; `TextSelectionHandle` is a reproduction of its own (#245); the file chooser and its
 overwrite prompt are dropped and stay holes. Batches 1 to 7 (#234 to #240) are done, all on 2026-11-24, one PR each
-(#247 to #252 and #254; rule 2's exception, by decision): 39 controls and seven part themes, each PR with the
+(#247 to #252 and #254; rule 2's exception, by decision): 36 controls and seven part themes, each PR with the
 emulator's screenshots; the plain pages' look on the Pixel is owed. Also done that day: CI's token is read-only by
 default (#253).
 
