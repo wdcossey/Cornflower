@@ -30,7 +30,8 @@ public class MenuTests
         {
             Clock = new TestClock();
             Open = new MenuItem { Header = "open" };
-            File = new MenuItem { Header = "_file", Items = { Open, new Separator(), new MenuItem { Header = "exit" } } };
+            Recent = new MenuItem { Header = "recent", Items = { new MenuItem { Header = "notes" } } };
+            File = new MenuItem { Header = "_file", Items = { Open, Recent, new Separator(), new MenuItem { Header = "exit" } } };
             Edit = new MenuItem { Header = "edit", Items = { new MenuItem { Header = "copy" } } };
             Menu = new Menu { Items = { File, Edit }, VerticalAlignment = VerticalAlignment.Top };
             try
@@ -51,6 +52,8 @@ public class MenuTests
         public MenuItem File { get; }
 
         public MenuItem Open { get; }
+
+        public MenuItem Recent { get; }
 
         public MenuItem Edit { get; }
 
@@ -120,6 +123,23 @@ public class MenuTests
         Assert.NotNull(PlainParts.Part<Border>(stage.Open, "ContentBorder"));
         // Open, the header is the accent (rule 3).
         Assert.Same(PlainParts.Resource<IBrush>(stage.File, "PhoneAccentBrush"), ForegroundOf(stage.File));
+    }
+
+    // A sub-menu of the drop-down opens to the right of its item, its top at the item's.
+    [AvaloniaFact]
+    public void A_Sub_Menu_Opens_To_The_Right_Of_Its_Item()
+    {
+        using var stage = new Stage();
+        var at = PlainParts.Press(stage.Scene, stage.File);
+        PlainParts.Release(stage.Scene, at);
+        stage.Recent.IsSubMenuOpen = true;
+        Dispatcher.UIThread.RunJobs();
+
+        var surface = (Border)PlainParts.Part<Popup>(stage.Recent, "PART_Popup").Child!;
+        var item = stage.Recent.TranslatePoint(new Point(stage.Recent.Bounds.Width, 0), stage.Scene.Window)!.Value;
+        var top = surface.TranslatePoint(default, stage.Scene.Window)!.Value;
+        Assert.Equal(item.X, top.X, 1);
+        Assert.Equal(item.Y, top.Y, 1);
     }
 
     // Selected and not pressed (a pointer over it, the keyboard on it): the accent. Disabled: the disabled brush.

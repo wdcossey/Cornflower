@@ -17,7 +17,7 @@ namespace Cornflower.Themes.Wp81;
 /// MenuFlyout is placed against the element it is shown at: not the element a press or a hold came from, which Avalonia
 /// places it by (a Button's text, say), so the menu is below or above the whole control.</para>
 /// <para>Its items keep their own themes (the plain MenuItem's, by type); its Separators get the MenuFlyout's. Closing is the
-/// ContextMenu's own <c>Close()</c>, at once, as the MenuFlyout closes; a tap outside is Avalonia's light dismiss with
+/// popup's, at once, as the MenuFlyout closes (the ContextMenu's own <c>Close()</c> does the same); a tap outside is Avalonia's light dismiss with
 /// the ContextMenu's own pass-through.</para>
 /// </remarks>
 internal static class PhoneContextMenu
@@ -29,7 +29,7 @@ internal static class PhoneContextMenu
     /// <summary>One binder a menu, made and let go of as the MenuFlyout's are; no flyout ever opens one.</summary>
     private static readonly PhonePopupBinders<ContextMenu, NoFlyout, PhoneMenuFlyout.Binder<NoFlyout>> Binders =
         new(IsEnabledProperty, (menu, popup) => new PhoneMenuFlyout.Binder<NoFlyout>(menu, popup,
-            _ => menu.PlacementTarget ?? popup.Parent as Control, SeparatorTheme, menu.Close));
+            _ => menu.PlacementTarget ?? popup.Parent as Control, SeparatorTheme));
 
     /// <summary>
     /// A Separator of the menu's own gets the MenuFlyout's, which draws nothing and is 0 tall (#150), as the menu takes the

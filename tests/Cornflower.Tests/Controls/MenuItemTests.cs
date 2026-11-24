@@ -210,6 +210,24 @@ public class MenuItemTests
         parent.IsSubMenuOpen = false;
     }
 
+    // A sub-menu shares one icon column too: its own size scope, as its popup isn't under the menu's.
+    [AvaloniaFact]
+    public void A_Sub_Menus_Items_Have_Their_Headers_In_One_Place()
+    {
+        var plain = new MenuItem { Header = "plain" };
+        var icon = new MenuItem { Header = "icon", Icon = new LucideIcon { Kind = LucideIconKind.Copy } };
+        var parent = new MenuItem { Header = "parent", Items = { plain, icon } };
+        using var stage = new Stage(null, parent);
+        parent.IsSubMenuOpen = true;
+        Dispatcher.UIThread.RunJobs();
+
+        var surface = (Border)Part<Popup>(parent, "PART_Popup").Child!;
+        double X(MenuItem item) => Part<ContentPresenter>(item, "PART_HeaderPresenter").TranslatePoint(default, surface)!.Value.X;
+        Near(X(icon), X(plain));
+        Assert.True(X(plain) >= 19 + 1.5 + 20 + 9.5 - 0.5);
+        parent.IsSubMenuOpen = false;
+    }
+
     // In a sub-menu, a Separator is the plain line, indented with the items' text by the sub-menu's 19 sides.
     [AvaloniaFact]
     public void A_Separator_In_A_Sub_Menu_Is_Indented_With_The_Items_Text()

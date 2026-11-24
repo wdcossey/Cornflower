@@ -30,8 +30,8 @@ none: its `CommandBar` and secondary commands were the app's menu.
 
 The headers, `Wp81PlainTopLevelMenuItemTheme` (in the same file): `Transparent`, in
 `CornflowerPlainTopLevelMenuItemPadding` (9.5,8.5), the tilt on `ContentBorder` (rule 7). A header is
-`PhoneAccentBrush` while selected (a pointer over it, the keyboard on it) and not pressed, and while its drop-down is
-open (rule 3); disabled, `MenuFlyoutItemDisabledForegroundThemeBrush`. Avalonia clears the item theme from the items
+`PhoneAccentBrush` while selected (a pointer over it, the keyboard on it) and not pressed, as it is while its
+drop-down is open (rule 3); disabled, `MenuFlyoutItemDisabledForegroundThemeBrush`. Avalonia clears the item theme from the items
 below the headers, which are the plain [MenuItem](../MenuItem/README.md)'s.
 
 ## Resource keys

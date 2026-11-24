@@ -111,7 +111,6 @@ internal static class PhoneMenuFlyout
         private readonly Popup _popup;
         private readonly Func<TFlyout?, Control?> _target;
         private readonly Func<Control, ControlTheme?> _themeOf;
-        private readonly Action? _close;
         private readonly TemplateParts _parts;
         private readonly Dictionary<Control, (ControlTheme Theme, IDisposable Given)> _themed = [];
         private readonly ScaleTransform _outerScale = new();
@@ -133,15 +132,12 @@ internal static class PhoneMenuFlyout
         /// <param name="popup">Its popup.</param>
         /// <param name="target">What the menu is placed against, given the flyout that opened it (none for a ContextMenu).</param>
         /// <param name="themeOf">The theme each of the menu's own containers gets, if any.</param>
-        /// <param name="close">How the menu closes when no flyout opened it; the popup's own close if none.</param>
-        public Binder(MenuBase presenter, Popup popup, Func<TFlyout?, Control?> target, Func<Control, ControlTheme?> themeOf,
-            Action? close = null)
+        public Binder(MenuBase presenter, Popup popup, Func<TFlyout?, Control?> target, Func<Control, ControlTheme?> themeOf)
         {
             _presenter = presenter;
             _popup = popup;
             _target = target;
             _themeOf = themeOf;
-            _close = close;
             // The menu's motion is its template's own: the host opens it at rest and closes it at once.
             Host = new PhonePopupHost(popup, presenter, Close, host => host.Moves = false);
             Host.Resized += OnResized;
@@ -396,13 +392,11 @@ internal static class PhoneMenuFlyout
             _moving.Clear();
         }
 
-        /// <summary>The menu closes: the flyout, or the menu's own close (else the popup's) if no flyout opened it.</summary>
+        /// <summary>The menu closes: the flyout, or the popup if no flyout opened it (a ContextMenu's own close is the same).</summary>
         private void Close()
         {
             if (_flyout is not null)
                 _flyout.Hide();
-            else if (_close is not null)
-                _close();
             else
                 _popup.Close();
         }

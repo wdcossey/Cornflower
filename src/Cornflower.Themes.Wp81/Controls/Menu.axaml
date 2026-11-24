@@ -10,7 +10,7 @@
     of headers in the body's type (PhoneFontFamilyNormal at TextStyleLargeFontSize, 18.14: rule 2), on the page's
     background (none of its own: rule 5), each header an item-sized press (the tilt: rule 7) in
     CornflowerPlainTopLevelMenuItemPadding. A header is the accent while selected (a pointer over it, the keyboard on
-    it) and not pressed, and while its drop-down is open (rule 3); disabled, MenuFlyoutItemDisabledForegroundThemeBrush.
+    it) and not pressed, which it is while its drop-down is open (rule 3); disabled, MenuFlyoutItemDisabledForegroundThemeBrush.
     Its drop-down opens below it on the MenuFlyout's surface (Wp81PlainSubMenuTheme), in the MenuFlyout's type, with the
     plain MenuItem's items (MenuItem.axaml), and no motion (rule 8).
 
@@ -55,7 +55,8 @@
         </Panel>
       </ControlTemplate>
     </Setter>
-    <Style Selector="^:selected:not(:pressed) /template/ Border#ContentBorder, ^:open /template/ Border#ContentBorder">
+    <!-- Open, a header is selected too (Avalonia selects an item as its drop-down opens). -->
+    <Style Selector="^:selected:not(:pressed) /template/ Border#ContentBorder">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneAccentBrush}" />
     </Style>
     <Style Selector="^:disabled /template/ Border#ContentBorder">
