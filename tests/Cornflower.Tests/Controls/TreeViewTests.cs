@@ -178,4 +178,47 @@ public class TreeViewTests
         Assert.Equal(TiltState.Rest, Tilt.Current(parent));
         Release(scene, at);
     }
+
+    // The phone's lists never move the page for a selection: a TreeView with a selected item low down on a page doesn't
+    // scroll the page to it at load, nor when an item is selected from code. Keyboard focus still brings an item into
+    // view (the ScrollViewer's BringIntoViewOnFocusChange). Avalonia's TreeView does it on AutoScrollToSelectedItem.
+    [AvaloniaFact]
+    public void A_Selection_Doesnt_Scroll_The_Page()
+    {
+        var (tree, parent, child, leaf) = Tree();
+        child.IsSelected = true;
+        var page = new ScrollViewer { Height = 200, Content = new StackPanel { Children = { new Border { Height = 600 }, tree } } };
+        using var scene = new Scene(new StackPanel { Children = { page } });
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.False(tree.AutoScrollToSelectedItem);
+        Assert.Equal(0, page.Offset.Y);
+
+        leaf.IsSelected = true;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(0, page.Offset.Y);
+    }
+
+    // The Expander and the DrawerPage, low down on a page and open, don't scroll it either.
+    [AvaloniaFact]
+    public void An_Open_Expander_Or_A_DrawerPage_Doesnt_Scroll_The_Page()
+    {
+        var page = new ScrollViewer
+        {
+            Height = 200,
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    new Border { Height = 600 },
+                    new Expander { Header = "header", Content = "content", IsExpanded = true },
+                    new DrawerPage { Height = 200, Header = "title", Content = new TextBlock { Text = "content" } },
+                },
+            },
+        };
+        using var scene = new Scene(new StackPanel { Children = { page } });
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, page.Offset.Y);
+    }
 }
