@@ -128,4 +128,19 @@
     user's accent, so an error never takes the accent's place.
   -->
   <SolidColorBrush x:Key="CornflowerPlainErrorBrush" Color="{DynamicResource CornflowerAccentRedColor}" />
+
+  <!--
+    A notification's type (NotificationCard, #241), as the line under its banner: Success the Green accent
+    (CornflowerAccentGreenColor), Warning the Amber (CornflowerAccentAmberColor), Error the error's red above;
+    Information none. Fixed colours, the same in dark and light, as the error's, so a type never takes the accent's place.
+  -->
+  <SolidColorBrush x:Key="CornflowerPlainSuccessBrush" Color="{DynamicResource CornflowerAccentGreenColor}" />
+  <SolidColorBrush x:Key="CornflowerPlainWarningBrush" Color="{DynamicResource CornflowerAccentAmberColor}" />
+
+  <!--
+    A notification banner's text inside it (NotificationCard, #241): 19 before it, the MenuFlyout's left padding
+    (MenuFlyoutPortraitThemePadding), so its text lines up with a page's; 9.5 above and below, the phone's touch-target
+    overhang (PhoneTouchTargetOverhang). None after it: the close button follows, a fingertip wide.
+  -->
+  <Thickness x:Key="CornflowerPlainNotificationPadding">19,9.5,0,9.5</Thickness>
 </ResourceDictionary>

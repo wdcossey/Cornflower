@@ -6,7 +6,6 @@
 
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
-NotificationCard
 PipsPager
 RefreshContainer
 RefreshVisualizer
@@ -15,4 +14,3 @@ TableViewCell
 TableViewColumnHeader
 TableViewRow
 TextSelectionHandle
-WindowNotificationManager

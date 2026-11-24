@@ -1,0 +1,101 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/NotificationCard/README.md.
+
+    8.1 showed the system's toast, a banner across the top (its look unmeasured), so a card here is a banner in its
+    spirit: as wide as its host, on the flyout's floating surface (FlyoutBackgroundThemeBrush, PhoneChromeColor, rule 5),
+    square, no shadow. Its text is the phone's family at TextStyleMediumFontSize (16, the small print's size, rule 2), in
+    PhoneForegroundBrush: a notification's title in PhoneFontFamilySemiBold on one line, its message under it in two
+    lines at most, inside CornflowerPlainNotificationPadding. The notification's template is the card's own, so a card
+    shown on its own looks as one in the manager does.
+
+    The type shows as the line under the banner (CornflowerPlainRuleThickness, the 1.5 line, rule 4): Success in
+    CornflowerPlainSuccessBrush, Warning in CornflowerPlainWarningBrush, Error in CornflowerPlainErrorBrush; Information's
+    is the surface's own, so every banner is the same height. No accent at rest (rule 3).
+
+    The close button (PART_CloseButton, NotificationCard.CloseOnClick) is a fingertip wide and tall (PhoneButtonMinHeight,
+    57.5) at the banner's right, Wp81PlainGlyphButtonTheme round Lucide's X; it takes no focus and no keyboard
+    (InputMethod.IsInputMethodEnabled off, #254), and as it takes the press, the manager's tap (the notification's
+    OnClick) doesn't run. A tap on the rest of a manager's banner runs it and closes the card, as Avalonia's manager does.
+
+    No motion (rule 8): Simple's and Fluent's cards fly in and out, and set IsClosed at the end of their closing
+    animation. Here PlainNotificationClose sets it at once, or, when the press that closed it is still down, as that
+    press ends, so a card goes as soon as it closes; a closed card on its own, with no manager to take it out, is hidden.
+  -->
+  <ControlTheme x:Key="{x:Type NotificationCard}" TargetType="NotificationCard">
+    <Setter Property="wp81:PlainNotificationClose.IsEnabled" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FlyoutBackgroundThemeBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource CornflowerPlainRuleThickness}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleMediumFontSize}" />
+    <Setter Property="Padding" Value="{DynamicResource CornflowerPlainNotificationPadding}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Border.DataTemplates>
+            <DataTemplate x:DataType="INotification">
+              <StackPanel>
+                <TextBlock x:Name="PART_Title"
+                           FontFamily="{DynamicResource PhoneFontFamilySemiBold}"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Title}"
+                           IsVisible="{Binding Title, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock x:Name="PART_Message"
+                           TextWrapping="Wrap"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="2"
+                           Text="{Binding Message}"
+                           IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DataTemplate>
+          </Border.DataTemplates>
+          <DockPanel>
+            <Button x:Name="PART_CloseButton"
+                    DockPanel.Dock="Right"
+                    Theme="{DynamicResource Wp81PlainGlyphButtonTheme}"
+                    MinWidth="{DynamicResource PhoneButtonMinHeight}"
+                    MinHeight="{DynamicResource PhoneButtonMinHeight}"
+                    Padding="0"
+                    Focusable="False"
+                    IsTabStop="False"
+                    InputMethod.IsInputMethodEnabled="False"
+                    NotificationCard.CloseOnClick="True">
+              <cf:LucideIcon Kind="X" />
+            </Button>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </DockPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[IsClosed=true]">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:success">
+      <Setter Property="BorderBrush" Value="{DynamicResource CornflowerPlainSuccessBrush}" />
+    </Style>
+    <Style Selector="^:warning">
+      <Setter Property="BorderBrush" Value="{DynamicResource CornflowerPlainWarningBrush}" />
+    </Style>
+    <Style Selector="^:error">
+      <Setter Property="BorderBrush" Value="{DynamicResource CornflowerPlainErrorBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

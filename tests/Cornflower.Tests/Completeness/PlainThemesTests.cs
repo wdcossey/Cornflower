@@ -26,6 +26,7 @@ public class PlainThemesTests
         "DrawerPage", "Expander", "SplitView", "TreeView", "TreeViewItem",                                  // batch 6, #239
         "Calendar", "CalendarButton", "CalendarDatePicker", "CalendarDayButton", "CalendarItem",            // batch 7, #240
         "DataValidationErrors",                                                                             // batch 8a, #241
+        "NotificationCard", "WindowNotificationManager",                                                    // batch 8b, #241
     ];
 
     /// <summary>
