@@ -79,6 +79,20 @@ public class TreeViewTests
         Assert.Null(parent.FocusAdorner);
     }
 
+    // The row part on its own, with nothing bound over it (a table's row may bind less): it takes the finger across the row.
+    [AvaloniaFact]
+    public void The_Row_Part_Alone_Is_Transparent_With_The_Rule()
+    {
+        var row = new Border { Child = new TextBlock { Text = "row" } };
+        using var scene = new Scene(new StackPanel { Children = { row } });
+        row.Theme = Resource<ControlTheme>(row, "Wp81PlainRowTheme");
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(row.Background).Color);
+        Assert.Equal(new Thickness(0, 0, 0, 1.5), row.BorderThickness);
+        Assert.Equal(57.5, row.MinHeight);
+    }
+
     // Each level indents by the chevron's column, 38.5, so a child's chevron sits under its parent's header; a leaf
     // hides its chevron and keeps the column, so its header lines up with its siblings'.
     [AvaloniaFact]

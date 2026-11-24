@@ -31,7 +31,10 @@ public class DrawerPageTests
     public void It_Is_A_Page_With_The_Drawer_On_The_Flyouts_Surface(string variant)
     {
         var page = new DrawerPage { Header = "title", Drawer = new TextBlock { Text = "drawer" }, Content = new TextBlock { Text = "content" } };
-        using var scene = new Scene(page, variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
+        // In a host with an app's own font, so the page's family is its theme's, not the window's.
+        var host = new Border { Child = page };
+        host.SetValue(Avalonia.Controls.Documents.TextElement.FontFamilyProperty, new FontFamily("Courier New"));
+        using var scene = new Scene(host, variant == "dark" ? ThemeVariant.Dark : ThemeVariant.Light);
 
         Assert.Same(Resource<IBrush>(page, "ApplicationPageBackgroundThemeBrush"), page.Background);
         Assert.Same(Resource<IBrush>(page, "PhoneForegroundBrush"), page.Foreground);
