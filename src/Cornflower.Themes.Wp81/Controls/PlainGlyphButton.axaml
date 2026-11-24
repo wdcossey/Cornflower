@@ -13,7 +13,7 @@
     inherits). Pressed fills it with the accent and draws its content over it in PhoneButtonBasePressedForegroundBrush,
     as a checked ToggleButton's; disabled draws the content in PhoneDisabledBrush. No size of its own: a part inside a
     larger control takes the host's (rule 6), and fills its slot. No tilt of its own: its host decides (SplitButton tilts
-    as a whole). No focus adorner, as the phone's buttons have none.
+    as a whole). No focus adorner: the theme sets none, as the phone's buttons have none.
   -->
   <ControlTheme x:Key="Wp81PlainGlyphButtonTheme" TargetType="Button">
     <Setter Property="Background" Value="Transparent" />
@@ -23,7 +23,6 @@
     <Setter Property="VerticalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Template">
       <ControlTemplate>
         <Border x:Name="Border" Background="{TemplateBinding Background}">

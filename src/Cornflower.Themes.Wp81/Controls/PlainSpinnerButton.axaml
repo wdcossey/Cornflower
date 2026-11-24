@@ -13,12 +13,11 @@
     pressed, PhoneDisabledBrush when disabled, its host's foreground. A part inside a larger control (rule 6): it fills
     its slot's height, at least CornflowerPlainSpinnerButtonMinWidth wide. It repeats as the phone's RepeatButton does
     (ClickMode Press, its Delay and Interval, as CornflowerPlain tokens), and PhonePress stops the repeats while the
-    finger is off it. No tilt, as the phone's RepeatButton has none; no focus adorner.
+    finger is off it. No tilt, as the phone's RepeatButton has none; no focus adorner (the theme sets none).
   -->
   <ControlTheme x:Key="Wp81PlainSpinnerButtonTheme" TargetType="RepeatButton">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="0" />
     <Setter Property="MinWidth" Value="{DynamicResource CornflowerPlainSpinnerButtonMinWidth}" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -28,7 +27,6 @@
     <Setter Property="Delay" Value="{DynamicResource CornflowerPlainSpinnerButtonDelay}" />
     <Setter Property="Interval" Value="{DynamicResource CornflowerPlainSpinnerButtonInterval}" />
     <Setter Property="Focusable" Value="False" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="wp81:PhonePress.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

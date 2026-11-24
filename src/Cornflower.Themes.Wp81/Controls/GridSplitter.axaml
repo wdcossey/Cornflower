@@ -8,14 +8,13 @@
     The phone had no splitter. Here a GridSplitter is a bar the size of its slot, at least CornflowerPlainSplitterMinSize
     (9.5) each way, so a finger can find it: PhoneLowBrush at rest, quiet as the Separator's line (rule 3), the accent
     while it is held and dragged (Thumb's :pressed), PhoneDisabledBrush disabled. No tilt (rule 7: not on what is
-    dragged), no motion, no focus adorner. In the template of a control Wp81 doesn't theme yet (the managed file
+    dragged), no motion, no focus adorner (the theme sets none). In the template of a control Wp81 doesn't theme yet (the managed file
     dialog's), the theme under Wp81's GridSplitter instead (HoleParts).
   -->
   <ControlTheme x:Key="{x:Type GridSplitter}" TargetType="GridSplitter">
     <Setter Property="Background" Value="{DynamicResource PhoneLowBrush}" />
     <Setter Property="MinWidth" Value="{DynamicResource CornflowerPlainSplitterMinSize}" />
     <Setter Property="MinHeight" Value="{DynamicResource CornflowerPlainSplitterMinSize}" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="wp81:HoleParts.FallBack" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

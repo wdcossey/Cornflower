@@ -25,7 +25,6 @@
     <Setter Property="Padding" Value="{DynamicResource TextControlThemePadding}" />
     <Setter Property="MinHeight" Value="{DynamicResource TextControlThemeMinHeight}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Template">
       <ControlTemplate>
         <Border x:Name="Border"

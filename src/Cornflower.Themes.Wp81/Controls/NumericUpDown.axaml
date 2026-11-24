@@ -9,8 +9,8 @@
     (TextInputOptions.ContentType Number), inside a ButtonSpinner, by type (Controls/ButtonSpinner.axaml), whose own box
     is cleared, so its spin buttons sit beside the TextBox's box, as tall as it. The control takes the TextBox's margin
     (TextControlMarginThemeThickness), so it sits on a page as a TextBox does, and the TextBox inside has none. The
-    spinner's AllowSpin, ShowButtonSpinner and ButtonSpinnerLocation, and the box's Text (both ways), PlaceholderText,
-    IsReadOnly and TextAlignment, are the control's; Avalonia's NumericUpDown keeps its Text and Value in step.
+    spinner's AllowSpin, ShowButtonSpinner and ButtonSpinnerLocation, and the box's PlaceholderText and IsReadOnly, are
+    the control's; its TextAlignment inherits. Avalonia's NumericUpDown keeps the box's text and its value in step.
   -->
   <ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown">
     <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
@@ -25,10 +25,8 @@
                        ButtonSpinnerLocation="{TemplateBinding ButtonSpinnerLocation}">
           <TextBox x:Name="PART_TextBox"
                    Margin="0"
-                   Text="{TemplateBinding Text, Mode=TwoWay}"
                    PlaceholderText="{TemplateBinding PlaceholderText}"
                    IsReadOnly="{TemplateBinding IsReadOnly}"
-                   TextAlignment="{TemplateBinding TextAlignment}"
                    AcceptsReturn="False"
                    TextWrapping="NoWrap"
                    TextInputOptions.ContentType="Number" />

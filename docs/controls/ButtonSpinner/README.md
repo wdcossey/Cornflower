@@ -25,6 +25,7 @@ no spinner: here it is a box with its content and two spin buttons in it.
 | `Padding` | `TextControlThemePadding` |
 | `MinHeight` | `TextControlThemeMinHeight` (34), the phone's text box |
 | `VerticalContentAlignment` | Center |
+| `FocusAdorner` | none (the theme sets none) |
 
 `PART_DecreaseButton` (minus) and `PART_IncreaseButton` (plus) sit side by side after the content (`:right`,
 Avalonia's default) or before it (`:left`), and go with `ShowButtonSpinner`. Avalonia enables each from `AllowSpin`
