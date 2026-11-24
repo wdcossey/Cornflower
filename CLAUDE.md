@@ -177,8 +177,10 @@ runtime templates and theme resources equal the SDK's design files.
    timelines (today `CornflowerClock` and `MotionArea`, `KeySplineCurve` and `PhoneEase`, `TiltModel` and `TiltState` for the ListView's check box, #142, `ContentDialog`'s popup and close, #157, `SidewaysSwipeGestureRecognizer`, `ISidewaysSwipeTarget` and `PivotMotion` for the FlipView, #214, and `SemanticZoom`'s `Popup`, `OpenMotion`, `CloseMotion` and `ZoomInByBack`, #215), accepted on the maintainer's behalf on
    2026-11-12 (#88): the two packages ship together, and the alternative is a public timing API
    apps would come to depend on. Any other change to a shared file in a control's PR (as #93's to
-   `HoleParts.cs`; and Tier 4's, each said in its PR: #213's and #221's to `ListView.axaml`, #213's approved 2026-11-21,
-   #223's `Vertical` in `SidewaysSwipeGestureRecognizer.cs`, #224's to `PhonePopupMotion.cs` and `PhonePopupHost.cs`; and #229's `KeepsScrollInList` setters in `ListView.axaml` and `ListBox.axaml`, a fix's, for #220; #221's, #223's, #224's and #229's approved 2026-11-24; a plain theme's `HoleParts.cs` edits, ADR 0007) is the maintainer's to approve, case by case, and its PR says so.
+   `HoleParts.cs`; and Tier 4's, each said in its PR: #213's and #221's to `ListView.axaml`,
+   #223's `Vertical` in `SidewaysSwipeGestureRecognizer.cs`, #224's to `PhonePopupMotion.cs` and `PhonePopupHost.cs`; and #229's `KeepsScrollInList` setters in `ListView.axaml` and `ListBox.axaml`, a fix's, for #220) is the maintainer's to approve, case by case, and its PR says so.
+   Approved so far: #213's (2026-11-21); #221's, #223's, #224's and #229's (2026-11-24). A plain theme's `HoleParts.cs` edit
+   is approved the same way, case by case, not in advance; ADR 0007 approves only its two new tokens.
 8. **Style budget.** `StyleBudgetTests` fails when `Wp81Theme`'s global rules pass their limits. A
    PR that needs more, a control's included, raises the limit in `StyleBudgetTests` on purpose and
    says so in its description, with the new total; past the checkpoint, measure on the phone first

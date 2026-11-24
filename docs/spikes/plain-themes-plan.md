@@ -248,7 +248,7 @@ controls that aren't one family (batches 1, 3 and 8), so as one PR each they'd b
 
 ## For the user to pick
 
-Each has a recommendation; none is decided.
+Each had a recommendation; all were taken on 2026-11-24 ([ADR 0007](../decisions/0007-plain-themes.md)).
 
 1. **Which controls.** Include the 57 above, drop the two file-chooser themes, and move `TextSelectionHandle` to a
    reproduction issue of its own? *Recommended: yes.*

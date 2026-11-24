@@ -110,7 +110,8 @@ contradicted "faithful" and were never revisited
 
 ## Consequences
 
-- Nothing is "done" without a capture from the emulator beside it.
+- Nothing is "done" without a capture from the emulator beside it. (Amended 2026-11-24: a plain theme has no
+  reference, so it is done without one; [ADR 0007](0007-plain-themes.md).)
 - A pixel comparison will never be exact where text is involved. Comparisons state the font used
   on each side.
 - Captures that are compared against our frames come from the profile in item 1. A capture from

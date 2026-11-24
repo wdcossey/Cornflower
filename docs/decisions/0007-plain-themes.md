@@ -1,9 +1,8 @@
 # ADR 0007 — Plain themes
 
-**Date:** 2026-11-24 · **Status:** Proposed in [#246](https://github.com/wdcossey/Cornflower/pull/246), for [#216](https://github.com/wdcossey/Cornflower/issues/216). The maintainer took every recommendation of the
+**Date:** 2026-11-24 · **Status:** Accepted 2026-11-24, in [#246](https://github.com/wdcossey/Cornflower/pull/246), for [#216](https://github.com/wdcossey/Cornflower/issues/216). The maintainer took every recommendation of the
 plan ([`docs/spikes/plain-themes-plan.md`](../spikes/plain-themes-plan.md)) on 2026-11-24 (the issue's last comment); the
-details the plan left open were decided on the maintainer's behalf (the PR lists them), and are accepted when the PR is
-merged.
+details the plan left open were decided on the maintainer's behalf (the PR lists them), accepted with the merge.
 
 ## Context
 
