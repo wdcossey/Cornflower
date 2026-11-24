@@ -9,20 +9,22 @@ using Avalonia.Styling;
 namespace Cornflower.Themes.Wp81;
 
 /// <summary>
-/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox, ContentControl, GridSplitter and PathIcon out of templates
+/// Keeps Wp81's Button, ToggleButton, RepeatButton, CheckBox, TextBox, ContentControl, GridSplitter, PathIcon and DataValidationErrors out of templates
 /// written for the theme under Wp81. Simple's templates for PipsPager and the managed
 /// file dialogs hold plain Buttons with no theme of their own, the managed file
 /// dialog's plain CheckBox, the plain TextBoxes of the managed file dialog (CalendarItem's and CalendarDatePicker's
 /// Buttons and CalendarDatePicker's TextBox were such parts until Wp81 themed them, #240: a CalendarDatePicker given
 /// Simple's theme still holds its own, while a Calendar given Simple's theme gets Wp81's CalendarItem by type), the plain
-/// ContentControls of DataValidationErrors and the managed file dialog (the menus' RepeatButtons and MenuItem's
+/// ContentControls of the managed file dialog and of Simple's DataValidationErrors in its Simple TextBoxes (Wp81's
+/// DataValidationErrors, #241, falls back itself there, so no plain line is drawn inside Simple's box; a
+/// DataValidationErrors given Simple's theme still holds them; the menus' RepeatButtons and MenuItem's
 /// ContentControls were such parts until Wp81 themed ContextMenu, Menu and MenuItem, #237, and DrawerPage's
 /// ToggleButtons and PathIcon until Wp81 themed DrawerPage, #239: a DrawerPage given Simple's theme still holds them), and
 /// the managed file dialog's GridSplitters, so they would take Wp81's,
 /// keyed by type: the phone's sizes (a Button's 109 × 57.5 minimum), its overhang, the accent and, for a Button or a
 /// CheckBox, the tilt, in chrome laid out for Simple's; for a TextBox, the phone's black text and white box over the
 /// brushes those templates pass it; for a ContentControl, its content at the top left at its own size where Simple's
-/// stretches it; for a GridSplitter, the plain theme's bar (#235); for a PathIcon, the plain theme's, with no size of its own (#236). Such a control takes the theme under Wp81 for its own style key instead: a ToggleButton the
+/// stretches it; for a GridSplitter, the plain theme's bar (#235); for a PathIcon, the plain theme's, with no size of its own (#236); for a DataValidationErrors, the plain line of small print under its content, inside Simple's TextBox's box (#241). Such a control takes the theme under Wp81 for its own style key instead: a ToggleButton the
 /// ToggleButton theme, not the Button theme. A ContentControl, for which Simple has no theme, takes Avalonia's own
 /// (<see cref="FallBackToOwnProperty"/>).
 /// </summary>
@@ -40,7 +42,7 @@ namespace Cornflower.Themes.Wp81;
 /// are read once and kept beside it; a plain group of styles and a host's own resources, which an app can change as
 /// it runs, are read each time.</para>
 /// <para><b>On and off.</b> Only Wp81's themes set <see cref="FallBackProperty"/> (Button's, DropDownButton's,
-/// ToggleButton's, RepeatButton's, CheckBox's, TextBox's, ContentControl's, GridSplitter's and PathIcon's) and <see cref="FallBackToOwnProperty"/>
+/// ToggleButton's, RepeatButton's, CheckBox's, TextBox's, ContentControl's, GridSplitter's, PathIcon's and DataValidationErrors') and <see cref="FallBackToOwnProperty"/>
 /// (ContentControl's): they are internal, with no accessors. It goes false when that theme leaves
 /// the control, which is what falling back does itself, so false undoes nothing; the control keeps the theme it was
 /// given. It costs only the controls whose theme sets it, and no global rule (<c>StyleBudgetTests</c>): every Wp81
@@ -60,7 +62,7 @@ namespace Cornflower.Themes.Wp81;
 internal static class HoleParts
 {
     /// <summary>
-    /// Set by Wp81's themes for a Button and its subclasses, a CheckBox, a TextBox, a ContentControl, a GridSplitter and a PathIcon: whether the
+    /// Set by Wp81's themes for a Button and its subclasses, a CheckBox, a TextBox, a ContentControl, a GridSplitter, a PathIcon and a DataValidationErrors: whether the
     /// control is in a template written for the theme under Wp81.
     /// </summary>
     public static readonly AttachedProperty<bool> FallBackProperty =

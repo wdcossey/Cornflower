@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cf="using:Cornflower.Controls"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainValidationPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The eighth plain themes, part a (ADR 0007, #241): Cornflower's design, not the phone's. DataValidationErrors round
+    Wp81's TextBox (an error that comes and goes as you type, and two errors, one long), PasswordBox and ComboBox, a
+    field with no error, and the light theme. The errors are set at load; nothing is focused, so the page stays at the
+    top.
+  -->
+  <ScrollViewer>
+    <StackPanel Margin="19,12,19,24">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's. Clear the name to see its error."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <DataValidationErrors>
+        <TextBox x:Name="NameBox" cf:ControlHeader.Header="name" />
+      </DataValidationErrors>
+
+      <DataValidationErrors>
+        <TextBox x:Name="Code" cf:ControlHeader.Header="code" Text="12" />
+      </DataValidationErrors>
+
+      <DataValidationErrors>
+        <TextBox x:Name="Password" Theme="{DynamicResource PasswordBox}" cf:ControlHeader.Header="password" Text="abc" />
+      </DataValidationErrors>
+
+      <DataValidationErrors>
+        <ComboBox x:Name="Size" cf:ControlHeader.Header="size" SelectedIndex="0">
+          <ComboBoxItem Content="choose one" />
+          <ComboBoxItem Content="small" />
+          <ComboBoxItem Content="large" />
+        </ComboBox>
+      </DataValidationErrors>
+
+      <DataValidationErrors>
+        <TextBox cf:ControlHeader.Header="no error" Text="Ada" />
+      </DataValidationErrors>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="19,6,19,12">
+          <StackPanel>
+            <DataValidationErrors>
+              <TextBox x:Name="LightName" cf:ControlHeader.Header="name" />
+            </DataValidationErrors>
+            <DataValidationErrors>
+              <ComboBox x:Name="LightSize" cf:ControlHeader.Header="size" SelectedIndex="0">
+                <ComboBoxItem Content="choose one" />
+                <ComboBoxItem Content="small" />
+              </ComboBox>
+            </DataValidationErrors>
+          </StackPanel>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

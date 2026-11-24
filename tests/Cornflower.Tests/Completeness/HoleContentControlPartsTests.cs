@@ -15,9 +15,10 @@ namespace Cornflower.Tests.Completeness;
 /// The plain ContentControls in the templates of controls Wp81 doesn't theme yet (the holes) keep Avalonia's own, as
 /// <see cref="HolePartsTests"/> shows for Buttons. Simple has no ContentControl theme, so such a part falls back to an
 /// empty theme for its type (<c>HoleParts.FallBackToOwn</c>), which gives it Avalonia's own template and defaults, as
-/// under Simple alone. In Avalonia 12.1.4 Simple's templates for DataValidationErrors and the
-/// managed file dialog hold them (and ComboBox's and MenuItem's did, until Wp81 themed them, #155 and #237: a hole's
-/// ComboBox is Wp81's, so its parts aren't counted). Without the fallback they would take Wp81's, which puts the content at the top left
+/// under Simple alone. In Avalonia 12.1.4 Simple's template for the managed file dialog holds them, and
+/// Simple's DataValidationErrors (in each of that dialog's Simple TextBoxes) holds them too (ComboBox's, MenuItem's and
+/// DataValidationErrors' own did, until Wp81 themed them, #155, #237 and #241: a hole's ComboBox is Wp81's, so its parts
+/// aren't counted, and a DataValidationErrors given Simple's theme still holds them). Without the fallback they would take Wp81's, which puts the content at the top left
 /// at its own size where Simple's template stretches it.
 /// </summary>
 public class HoleContentControlPartsTests
@@ -59,7 +60,6 @@ public class HoleContentControlPartsTests
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
-        Assert.Contains(nameof(DataValidationErrors), fellBack);
         Assert.Contains("ManagedFileChooser", fellBack);
     }
 
@@ -77,8 +77,10 @@ public class HoleContentControlPartsTests
         theme.Setters.Add(fallBackFirst ? own : fallBack);
         wp81.Resources[typeof(ContentControl)] = theme;
 
-        var errors = new DataValidationErrors { Content = "content" };
-        using var scene = new Scene(errors, themes: [new SimpleTheme(), wp81]);
+        // Given Simple's theme, as Wp81 themes DataValidationErrors (#241).
+        var simple = new SimpleTheme();
+        var errors = new DataValidationErrors { Content = "content", Theme = SimplesErrors(simple) };
+        using var scene = new Scene(errors, themes: [simple, wp81]);
 
         var parts = Plain(errors);
         Assert.NotEmpty(parts);
@@ -147,6 +149,13 @@ public class HoleContentControlPartsTests
         Assert.True(IsOwn(Plain(pager).Single().Theme));
     }
 
+    /// <summary>Simple's own DataValidationErrors theme, which holds plain ContentControls (Wp81's has none of Simple's).</summary>
+    private static ControlTheme SimplesErrors(SimpleTheme simple)
+    {
+        Assert.True(simple.TryGetResource(typeof(DataValidationErrors), ThemeVariant.Dark, out var theme));
+        return (ControlTheme)theme!;
+    }
+
     /// <summary>A file of this assembly, brought in with StyleInclude, as an app's App.axaml brings in its themes.</summary>
     private static StyleInclude Include(string file)
     {
@@ -159,8 +168,9 @@ public class HoleContentControlPartsTests
     public void Wp81_In_An_Included_File_Finds_The_Theme_Under_It()
     {
         var pager = new PipsPager();
-        var errors = new DataValidationErrors { Content = "content" };
-        using var scene = new Scene(new StackPanel { Children = { pager, errors } }, themes: [Include("SimpleThenWp81.axaml")]);
+        var include = Include("SimpleThenWp81.axaml");
+        var errors = new DataValidationErrors { Content = "content", Theme = SimplesErrors(((Styles)include.Loaded).OfType<SimpleTheme>().Single()) };
+        using var scene = new Scene(new StackPanel { Children = { pager, errors } }, themes: [include]);
 
         var buttons = pager.GetVisualDescendants().OfType<Button>().Where(b => b.GetType() == typeof(Button)).ToList();
         Assert.NotEmpty(buttons);

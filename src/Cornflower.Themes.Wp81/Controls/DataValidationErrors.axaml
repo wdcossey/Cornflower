@@ -1,0 +1,75 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81"
+                    xmlns:sys="using:System">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/DataValidationErrors/README.md.
+
+    The phone had no validation display. Here an error is a line of small print under the field: the content first, at
+    its own size, then each error on a line of its own in the small print's look (ControlContextualInfoTextBlockStyle,
+    16), in CornflowerPlainErrorBrush (the Red accent, the same in dark and light), wrapped to the field's width. No icon,
+    no box, no colour on the field itself, no motion. With no errors the line is collapsed, so the field is as it was.
+
+    The errors shown are the Owner's (the templated parent, where the control sits in a template: Avalonia sets Owner)
+    and the content's, where an app wraps a field in one: <DataValidationErrors><TextBox ... /></DataValidationErrors>.
+    Each has its own line, shown only while it has errors; the Owner's comes first.
+    Wp81's own TextBox, PasswordBox and ComboBox hold none in their templates (the phone had none), so wrapping is how
+    an app shows theirs.
+
+    In a template written for the theme under Wp81 (Simple's TextBox, which a hole still holds, holds one inside its
+    box) it takes that theme's instead (HoleParts.FallBack), so no line is drawn inside a box laid out for Simple's.
+  -->
+  <ControlTheme x:Key="{x:Type DataValidationErrors}" TargetType="DataValidationErrors">
+    <Setter Property="wp81:HoleParts.FallBack" Value="True" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ErrorTemplate">
+      <DataTemplate x:DataType="sys:Object">
+        <ItemsControl x:Name="PART_ErrorList" ItemsSource="{Binding}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="sys:Object">
+              <TextBlock Theme="{DynamicResource ControlContextualInfoTextBlockStyle}"
+                         Foreground="{DynamicResource CornflowerPlainErrorBrush}"
+                         TextWrapping="Wrap"
+                         Text="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </DataTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DockPanel LastChildFill="True">
+          <!-- Each line's DataContext is the control whose errors it shows, so its Content can bind them, as Simple's
+               does (a ContentPresenter would set its own DataContext to its content). Docked last, the content's sits
+               lowest. Stretched, so a long error wraps at the field's width. -->
+          <ContentControl x:Name="PART_ContentErrors"
+                          x:DataType="Control"
+                          DockPanel.Dock="Bottom"
+                          HorizontalContentAlignment="Stretch"
+                          DataContext="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ErrorTemplate}"
+                          Content="{Binding (DataValidationErrors.Errors)}"
+                          IsVisible="{Binding (DataValidationErrors.HasErrors), FallbackValue=False}" />
+          <ContentControl x:Name="PART_OwnerErrors"
+                          x:DataType="Control"
+                          DockPanel.Dock="Bottom"
+                          HorizontalContentAlignment="Stretch"
+                          DataContext="{TemplateBinding Owner}"
+                          ContentTemplate="{TemplateBinding ErrorTemplate}"
+                          Content="{Binding (DataValidationErrors.Errors)}"
+                          IsVisible="{Binding (DataValidationErrors.HasErrors), FallbackValue=False}" />
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Content="{TemplateBinding Content}" />
+        </DockPanel>
+      </ControlTemplate>
+    </Setter>  </ControlTheme>
+</ResourceDictionary>
