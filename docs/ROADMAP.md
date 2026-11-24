@@ -234,21 +234,21 @@ emulator's, not copied. Next: Tier 4.
 
 | Issue | Windows Phone 8.1 | Avalonia 12.1.4 | Work | Rung |
 |---|---|---|---|---|
-| [#212](https://github.com/wdcossey/Cornflower/issues/212) | ListBox, ListBoxItem | ListBox, ListBoxItem | Theme, keyed (`Wp81ListBoxTheme`, which gives its items `Wp81ListBoxItemTheme`), as `ListBox` by type is the ListView: the pale box, 12 px text, the tilt; no check mode; done 2026-11-21 (#218), device run passed 2026-11-21 (Pixel 8), real-window run passed 2026-11-21; #220's fix in the theme (#229), its runs owed | 1 |
+| [#212](https://github.com/wdcossey/Cornflower/issues/212) | ListBox, ListBoxItem | ListBox, ListBoxItem | Theme, keyed (`Wp81ListBoxTheme`, which gives its items `Wp81ListBoxItemTheme`), as `ListBox` by type is the ListView: the pale box, 12 px text, the tilt; no check mode; done 2026-11-21 (#218), device run passed 2026-11-21 (Pixel 8), real-window run passed 2026-11-21; #220's fix in the theme (#229), its Pixel run passed 2026-11-24, its real-window run owed | 1 |
 | [#213](https://github.com/wdcossey/Cornflower/issues/213) | GridView, GridViewItem | ListBox with a wrapping panel | Theme, keyed (`Wp81GridViewTheme`, `Wp81GridViewItemTheme`), on the ListView's; the check mode is GridMultiSelect's border and earmark, never the box; the earmark's paths went into the ListViewItem's template, a rule-7 edit to `ListView.axaml` the user approved; done 2026-11-21 (#219), device run passed 2026-11-21 (Pixel 8; the page opened scrolled down, fixed in the PR, the cause [#220](https://github.com/wdcossey/Cornflower/issues/220), fixed in the themes by #229), real-window run passed 2026-11-21 | 1, 2 |
-| [#131](https://github.com/wdcossey/Cornflower/issues/131) | ListViewHeaderItem, GridViewHeaderItem, GroupItem (grouped lists) | none: Avalonia has no grouping | Cornflower's own: `ListBoxOptions.GroupedItemsSource` and `GroupHeaderTemplate`, and `ListViewHeaderItem`, themed; the ListView's header pinned, the GridView's not; no GroupItem (the phone's panels make none); `SelectedIndex` counts the headers ([#222](https://github.com/wdcossey/Cornflower/issues/222), accepted); done 2026-11-21 (#221), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
-| [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Carousel | Theme, with the phone's swipe, snap, ends and a change from code (`PhoneFlipView`, on the Pivot's recogniser and release rule), no buttons or indicator; up and down with a vertical `PageSlide`; done 2026-11-21 (#223), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 1, 2 |
-| [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | none | New control: the grouped list and its jump list, a popup over the whole window on `PhonePopupHost`, with the two converters; done 2026-11-21 (#224), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), the Pixel run still owed; real-window run passed 2026-11-21 | 5 |
+| [#131](https://github.com/wdcossey/Cornflower/issues/131) | ListViewHeaderItem, GridViewHeaderItem, GroupItem (grouped lists) | none: Avalonia has no grouping | Cornflower's own: `ListBoxOptions.GroupedItemsSource` and `GroupHeaderTemplate`, and `ListViewHeaderItem`, themed; the ListView's header pinned, the GridView's not; no GroupItem (the phone's panels make none); `SelectedIndex` counts the headers ([#222](https://github.com/wdcossey/Cornflower/issues/222), accepted); done 2026-11-21 (#221), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), Pixel run passed 2026-11-24; real-window run passed 2026-11-21 | 5 |
+| [#214](https://github.com/wdcossey/Cornflower/issues/214) | FlipView, FlipViewItem | Carousel | Theme, with the phone's swipe, snap, ends and a change from code (`PhoneFlipView`, on the Pivot's recogniser and release rule), no buttons or indicator; up and down with a vertical `PageSlide`; done 2026-11-21 (#223), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), Pixel run passed 2026-11-24; real-window run passed 2026-11-21 | 1, 2 |
+| [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | none | New control: the grouped list and its jump list, a popup over the whole window on `PhonePopupHost`, with the two converters; done 2026-11-21 (#224), device run passed 2026-11-21 on the local Android emulator (AVD Pixel 8 profile, API 35), Pixel run passed 2026-11-24; real-window run passed 2026-11-21 | 5 |
 | — | RichEditBox, RichTextBlock | none in the free packages | Later, or out | — |
 | [#216](https://github.com/wdcossey/Cornflower/issues/216) | Controls Avalonia has and the phone never had: Calendar, TreeView, DataGrid, SplitView, Menu, TabControl, Expander, NumericUpDown, ColorPicker and more | — | The plain themes' plan: 57 controls in 11 batches, decided 2026-11-24 (every recommendation taken); done 2026-11-24 (the plan, #233; [ADR 0007](decisions/0007-plain-themes.md), [#246](https://github.com/wdcossey/Cornflower/pull/246)) | 1 |
-| [#234](https://github.com/wdcossey/Cornflower/issues/234) | Batch 1, hosts and small pieces: `Window`, `EmbeddableControlRoot`, `PopupRoot`, `OverlayPopupHost`, `ItemsControl`, `Separator` | exist; Simple's today | Plain theme (ADR 0007); one PR; sets the label, the `CornflowerPlain` prefix and its test, and adds the 1.5 line thickness; **next** | 1 |
-| [#235](https://github.com/wdcossey/Cornflower/issues/235) | Batch 2, buttons and the shared parts: `DropDownButton`, `SplitButton`, `ButtonSpinner`, `NumericUpDown`, `GridSplitter` | exist; Simple's today | Plain theme; a PR per family; the `Wp81Plain` part themes the later batches reuse; a `HoleParts.cs` edit (rule 7) | 1 |
-| [#236](https://github.com/wdcossey/Cornflower/issues/236) | Batch 3, text and content: `Label`, `HeaderedContentControl`, `GroupBox`, `PathIcon`, `ToolTip`, `TransitioningContentControl` | exist; Simple's today | Plain theme; one PR; `TransitioningContentControl` with no transition of its own | 1 |
-| [#237](https://github.com/wdcossey/Cornflower/issues/237) | Batch 4, menus: `MenuItem`, `ContextMenu`, `Menu` | exist; Simple's today | Plain theme; `ContextMenu` takes the MenuFlyout's look and motion, for the maintainer to review once done (perhaps a `CornflowerConfig` setting for a plain menu); a `HoleParts.cs` edit | 1 |
-| [#238](https://github.com/wdcossey/Cornflower/issues/238) | Batch 5, tabs and pages: `TabItem`, `TabStripItem`, `TabStrip`, `TabControl`, `TabbedPage`, `CarouselPage` | exist; Simple's today | Plain theme; `TabControl` as the Pivot's headers without its swipe | 1 |
-| [#239](https://github.com/wdcossey/Cornflower/issues/239) | Batch 6, disclosure and navigation: `Expander`, `TreeView`, `TreeViewItem`, `SplitView`, `DrawerPage` | exist; Simple's today | Plain theme; the row for batch 9; a `HoleParts.cs` edit | 1 |
-| [#240](https://github.com/wdcossey/Cornflower/issues/240) | Batch 7, dates: `CalendarDayButton`, `CalendarButton`, `CalendarItem`, `Calendar`, `CalendarDatePicker` | exist; Simple's today | Plain theme; a `HoleParts.cs` edit | 1 |
-| [#241](https://github.com/wdcossey/Cornflower/issues/241) | Batch 8, feedback: `DataValidationErrors`, `NotificationCard`, `WindowNotificationManager`, `RefreshContainer`, `RefreshVisualizer`, `PipsPager` | exist; Simple's today | Plain theme; four PRs (validation, notifications, refresh, `PipsPager`); adds `CornflowerPlainErrorBrush`; the refresh sign is the `ProgressRing`; a `HoleParts.cs` edit | 1 |
+| [#234](https://github.com/wdcossey/Cornflower/issues/234) | Batch 1, hosts and small pieces: `Window`, `EmbeddableControlRoot`, `PopupRoot`, `OverlayPopupHost`, `ItemsControl`, `Separator` | exist; Simple's today | Plain theme (ADR 0007); one PR; sets the label, the `CornflowerPlain` prefix and its test, and adds the 1.5 line thickness; done 2026-11-24 (#247) | 1 |
+| [#235](https://github.com/wdcossey/Cornflower/issues/235) | Batch 2, buttons and the shared parts: `DropDownButton`, `SplitButton`, `ButtonSpinner`, `NumericUpDown`, `GridSplitter` | exist; Simple's today | Plain theme; a PR per family; the `Wp81Plain` part themes the later batches reuse; a `HoleParts.cs` edit (rule 7); done 2026-11-24 (#248) | 1 |
+| [#236](https://github.com/wdcossey/Cornflower/issues/236) | Batch 3, text and content: `Label`, `HeaderedContentControl`, `GroupBox`, `PathIcon`, `ToolTip`, `TransitioningContentControl` | exist; Simple's today | Plain theme; one PR; `TransitioningContentControl` with no transition of its own; done 2026-11-24 (#249) | 1 |
+| [#237](https://github.com/wdcossey/Cornflower/issues/237) | Batch 4, menus: `MenuItem`, `ContextMenu`, `Menu` | exist; Simple's today | Plain theme; `ContextMenu` takes the MenuFlyout's look and motion, for the maintainer to review once done (perhaps a `CornflowerConfig` setting for a plain menu); a `HoleParts.cs` edit; done 2026-11-24 (#250) | 1 |
+| [#238](https://github.com/wdcossey/Cornflower/issues/238) | Batch 5, tabs and pages: `TabItem`, `TabStripItem`, `TabStrip`, `TabControl`, `TabbedPage`, `CarouselPage` | exist; Simple's today | Plain theme; `TabControl` as the Pivot's headers without its swipe; done 2026-11-24 (#251) | 1 |
+| [#239](https://github.com/wdcossey/Cornflower/issues/239) | Batch 6, disclosure and navigation: `Expander`, `TreeView`, `TreeViewItem`, `SplitView`, `DrawerPage` | exist; Simple's today | Plain theme; the row for batch 9; a `HoleParts.cs` edit; done 2026-11-24 (#252) | 1 |
+| [#240](https://github.com/wdcossey/Cornflower/issues/240) | Batch 7, dates: `CalendarDayButton`, `CalendarButton`, `CalendarItem`, `Calendar`, `CalendarDatePicker` | exist; Simple's today | Plain theme; a `HoleParts.cs` edit; done 2026-11-24 (#254) | 1 |
+| [#241](https://github.com/wdcossey/Cornflower/issues/241) | Batch 8, feedback: `DataValidationErrors`, `NotificationCard`, `WindowNotificationManager`, `RefreshContainer`, `RefreshVisualizer`, `PipsPager` | exist; Simple's today | Plain theme; four PRs (validation, notifications, refresh, `PipsPager`); adds `CornflowerPlainErrorBrush`; the refresh sign is the `ProgressRing`; a `HoleParts.cs` edit; **next** | 1 |
 | [#242](https://github.com/wdcossey/Cornflower/issues/242) | Batch 9, tables: `TableViewCell`, `TableViewColumnHeader`, `TableViewRow`, `TableView` | exist; Simple's today | Plain theme, on batch 6's row | 1 |
 | [#243](https://github.com/wdcossey/Cornflower/issues/243) | Batch 10, DataGrid (package): `DataGrid` and its five parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.DataGrid`, a working name) | 1 |
 | [#244](https://github.com/wdcossey/Cornflower/issues/244) | Batch 11, ColorPicker (package): `ColorPicker` and its four parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.ColorPicker`, a working name), with keyed part themes for `ColorView` | 1 |
@@ -264,8 +264,8 @@ The runs, all on 2026-11-21: the real window (`drive.ps1`, Debug) passed on each
 (#219's 204 of 205: 'Alt+Left goes back' stopped on a UI Automation COM error before it checked anything, and
 passed 4 of 4 run alone). The
 device runs of #218 and #219 were on the Pixel 8; #221's, #223's and #224's on the local Android emulator (AVD
-`cornflower_pixel8`, the Pixel 8 profile, API 35), as the Pixel 8 was unavailable, so **their Pixel run is still
-owed** (#223's and #224's for the feel and the timing).
+`cornflower_pixel8`, the Pixel 8 profile, API 35), as the Pixel 8 was unavailable; their Pixel runs passed on
+2026-11-24, with #229's (results on each PR).
 
 After the controls, two follow-ups, both done 2026-11-21. [#225](https://github.com/wdcossey/Cornflower/issues/225)
 (#228) read the grouped ListView's pinned header as the next one arrives (`-Probe groupedpush`): the phone's is pushed up
@@ -273,22 +273,26 @@ After the controls, two follow-ups, both done 2026-11-21. [#225](https://github.
 nothing changed. [#220](https://github.com/wdcossey/Cornflower/issues/220)
 (#229): a list's scroll to an item stays in the list, as on the phone (`-Probe listintoview` and `listintoviewfocus`):
 `ListBoxOptions.KeepsScrollInList`, on in the ListView, GridView and ListBox themes, and the samples' workaround gone.
-Its runs are owed: the Pixel (the gridview and listview pages open at their top) and the real window (arrow keys and
-Tab into a list low on a page).
+Its Pixel run passed 2026-11-24 (the gridview and listview pages open at their top); its real-window run (arrow keys
+and Tab into a list low on a page) is owed.
 
 The plain themes' plan ([#216](https://github.com/wdcossey/Cornflower/issues/216)) was decided on 2026-11-24: the user took
 every recommendation, and [ADR 0007](decisions/0007-plain-themes.md) holds the rules and the answers. Its batches are
 #234 to #244, batch 1 (#234) first; `TextSelectionHandle` is a reproduction of its own (#245); the file chooser and its
-overwrite prompt are dropped and stay holes.
+overwrite prompt are dropped and stay holes. Batches 1 to 7 (#234 to #240) are done, all on 2026-11-24, one PR each
+(#247 to #252 and #254; rule 2's exception, by decision): 39 controls and seven part themes, each PR with the
+emulator's screenshots; the plain pages' look on the Pixel is owed. Also done that day: CI's token is read-only by
+default (#253).
 
-Open: the plain themes' batches, #234 (next) to #244, and #245; [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+Open: the plain themes' batches, #241 (batch 8, next) to #244, and #245; [#255](https://github.com/wdcossey/Cornflower/issues/255), Back with the
+plain CalendarDatePicker's drop-down open leaves the page rather than closing it (from #254); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
 `SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure, and
 confirmed the deferral on 2026-11-24);
 [#230](https://github.com/wdcossey/Cornflower/issues/230), the Hub listens with `handledEventsToo`, so a request a
-`KeepsScrollInList` list stopped can still move the Hub (#229's review); and #129, carried from Tier 2. Owed: the Pixel
-runs of #221, #223 and #224, and #229's runs. Owed besides the runs: the reads each README lists (the GridView's
+`KeepsScrollInList` list stopped can still move the Hub (#229's review); and #129, carried from Tier 2. Owed: #229's
+real-window run, and the plain pages' look on the Pixel. Owed besides the runs: the reads each README lists (the GridView's
 `ItemClick`, SemanticZoom's pinch). Tier 4's controls are done but RichEditBox and RichTextBlock (later, or out). Next:
-the plain themes' batch 1 (#234).
+the plain themes' batch 8 (#241).
 
 ### Out of scope
 
@@ -504,8 +508,15 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#215](https://github.com/wdcossey/Cornflower/issues/215) | SemanticZoom | Done 2026-11-21 (#224) |
 | [#225](https://github.com/wdcossey/Cornflower/issues/225) | Read: a grouped ListView's pinned header pushed by the next | Done 2026-11-21 (#228) |
 | [#220](https://github.com/wdcossey/Cornflower/issues/220) | A list's scroll to an item stays in the list | Done 2026-11-21 (#229) |
+| [#234](https://github.com/wdcossey/Cornflower/issues/234) | Plain themes, batch 1: hosts and small pieces | Done 2026-11-24 (#247) |
+| [#235](https://github.com/wdcossey/Cornflower/issues/235) | Plain themes, batch 2: buttons and the shared parts | Done 2026-11-24 (#248) |
+| [#236](https://github.com/wdcossey/Cornflower/issues/236) | Plain themes, batch 3: text and content | Done 2026-11-24 (#249) |
+| [#237](https://github.com/wdcossey/Cornflower/issues/237) | Plain themes, batch 4: menus | Done 2026-11-24 (#250) |
+| [#238](https://github.com/wdcossey/Cornflower/issues/238) | Plain themes, batch 5: tabs and pages | Done 2026-11-24 (#251) |
+| [#239](https://github.com/wdcossey/Cornflower/issues/239) | Plain themes, batch 6: disclosure and navigation | Done 2026-11-24 (#252) |
+| [#240](https://github.com/wdcossey/Cornflower/issues/240) | Plain themes, batch 7: dates | Done 2026-11-24 (#254) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
 reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Tier 4's controls are done (#131,
-#212 to #215, on #211's reads), three of them owed their Pixel run, and #220's fix (#229) its runs (above); the plain themes' plan is decided (#216, ADR 0007) and their batch 1 (#234) is next. Each row's device run on
+#212 to #215, on #211's reads), their Pixel runs passed, and #220's fix (#229) owes its real-window run (above); the plain themes' plan is decided (#216, ADR 0007), batches 1 to 7 are done (#234 to #240, their Pixel look owed), and batch 8 (#241) is next. Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.
