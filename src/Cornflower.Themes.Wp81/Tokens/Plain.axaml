@@ -143,4 +143,18 @@
     overhang (PhoneTouchTargetOverhang). None after it: the close button follows, a fingertip wide.
   -->
   <Thickness x:Key="CornflowerPlainNotificationPadding">19,9.5,0,9.5</Thickness>
+
+  <!--
+    The refresh sign while a pull hasn't yet passed the point where letting go refreshes (RefreshVisualizer, #241):
+    0.4, the opacity Avalonia's own visualizer gives its sign then (RefreshVisualizer.MinimumIndicatorOpacity), so the
+    ring comes to full strength as the pull becomes a refresh, and the finger knows it can let go.
+  -->
+  <x:Double x:Key="CornflowerPlainRefreshPullOpacity">0.4</x:Double>
+
+  <!--
+    The refresh band's height (RefreshVisualizer, #241): 100, the height Avalonia's RefreshContainer gives its default
+    visualizer (DefaultPullDimensionSize) and Simple's theme gives any, so an app's own visualizer pulls as far as the
+    default one. The pull refreshes past 0.8 of it.
+  -->
+  <x:Double x:Key="CornflowerPlainRefreshHeight">100</x:Double>
 </ResourceDictionary>
