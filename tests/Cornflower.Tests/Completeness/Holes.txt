@@ -6,7 +6,6 @@
 
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
-PipsPager
 TableView
 TableViewCell
 TableViewColumnHeader

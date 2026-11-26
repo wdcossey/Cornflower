@@ -16,9 +16,9 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The Buttons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme under Wp81: with
 /// Simple then Wp81, each is laid out as with Simple alone, and none is Wp81's Button. In Avalonia 12.1.4, Simple's
-/// templates for PipsPager and the managed file dialogs hold plain Buttons with no theme of their own (read from each
-/// of Simple's templates, built on its own). CalendarItem's (in Calendar) and CalendarDatePicker's did until Wp81 themed
-/// them (#240).
+/// templates for the managed file dialogs hold plain Buttons with no theme of their own (read from each of Simple's
+/// templates, built on its own). CalendarItem's (in Calendar) and CalendarDatePicker's did until Wp81 themed them (#240),
+/// and PipsPager's until #241: a PipsPager given Simple's theme stands in for a hole below.
 /// </summary>
 public class HolePartsTests
 {
@@ -64,23 +64,28 @@ public class HolePartsTests
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         Assert.True(holes.Count == Holes.Listed().Count, $"{holes.Count} of {Holes.Listed().Count} holes shown");
-        Assert.True(withButtons >= 3, $"only {withButtons} holes showed plain Buttons");
-        // PipsPager's two, the dialogs'. (CommandBar's overflow left with #118, NavigationPage's back with #120, and
-        // Calendar's three and CalendarDatePicker's with #240: Wp81 themes them.)
-        Assert.Contains("PipsPager.PART_NextButton", fellBack);
+        Assert.True(withButtons >= 2, $"only {withButtons} holes showed plain Buttons");
+        // The dialogs' (their Buttons have no names). (CommandBar's overflow left with #118, NavigationPage's back with
+        // #120, Calendar's three and CalendarDatePicker's with #240, and PipsPager's two with #241: Wp81 themes them.)
+        Assert.Contains(fellBack, part => part.StartsWith("ManagedFileChooserOverwritePrompt.", StringComparison.Ordinal));
     }
 
-    // A PipsPager's arrows as large as with Simple alone, narrower than the phone's minimum and in Simple's Button
-    // theme. (Calendar's header and arrows were the model until Wp81 themed CalendarItem, #240.)
+    /// <summary>Simple's own PipsPager theme, whose template holds plain Buttons (Wp81's, #241, holds the plain glyph part).</summary>
+    private static ControlTheme SimplesPager(SimpleTheme simple) =>
+        simple.TryGetResource(typeof(PipsPager), ThemeVariant.Dark, out var found) ? (ControlTheme)found! : throw new InvalidOperationException("No PipsPager theme.");
+
+    // A PipsPager given Simple's theme: its arrows as large as with Simple alone, narrower than the phone's minimum and
+    // in Simple's Button theme. (Calendar's header and arrows were the model until Wp81 themed CalendarItem, #240; a
+    // PipsPager by type is Wp81's since #241.)
     [AvaloniaFact]
-    public void A_PipsPagers_Arrows_Keep_Simples_Button()
+    public void A_PipsPager_Given_Simples_Theme_Keeps_Simples_Button()
     {
         var alone = new PipsPager();
         using var only = new Scene(alone, themes: [new SimpleTheme()]);
         var arrows = PlainButtons(alone).Select(b => (b.Name, b.Bounds.Size)).ToList();
 
         var simple = new SimpleTheme();
-        var pager = new PipsPager();
+        var pager = new PipsPager { Theme = SimplesPager(simple) };
         using var scene = new Scene(pager, themes: [simple, new Wp81Theme()]);
         var buttons = PlainButtons(pager);
 
@@ -182,9 +187,10 @@ public class HolePartsTests
         Assert.True(CfTilt.GetIsEnabled(PlainButtons(card).Single()));
     }
 
-    // An app's own theme for a control Wp81 doesn't theme, above Wp81: the template is the app's, so its Button is Wp81's.
+    // An app's own theme above Wp81 for a control the theme under Wp81 also themes (a PipsPager, Simple's): the template
+    // is the app's, so its Button is Wp81's, not the one under it.
     [AvaloniaFact]
-    public void An_Apps_Theme_Above_Wp81_For_A_Hole_Keeps_Wp81s_Button()
+    public void An_Apps_Theme_Above_Wp81_Keeps_Wp81s_Button()
     {
         var pager = new PipsPager();
         var window = new Styles { Resources = { [typeof(PipsPager)] = ThemeWith(typeof(PipsPager), InnerButton()) } };
@@ -199,7 +205,7 @@ public class HolePartsTests
     public void A_Change_Of_The_Parents_Theme_Checks_Its_Buttons_Again()
     {
         var simple = new SimpleTheme();
-        var pager = new PipsPager();
+        var pager = new PipsPager { Theme = SimplesPager(simple) };
         using var scene = new Scene(pager, themes: [simple, new Wp81Theme()]);
         Assert.All(PlainButtons(pager), b => Assert.Same(ButtonThemeOf(simple), b.Theme));
 
@@ -207,7 +213,7 @@ public class HolePartsTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(CfTilt.GetIsEnabled(PlainButtons(pager).Single()));
 
-        pager.Theme = null;
+        pager.Theme = SimplesPager(simple);
         Dispatcher.UIThread.RunJobs();
         var back = PlainButtons(pager);
         Assert.Equal(2, back.Count);
@@ -219,7 +225,7 @@ public class HolePartsTests
     public void Wp81_In_A_Styles_Group_Finds_The_Theme_Under_It()
     {
         var simple = new SimpleTheme();
-        var pager = new PipsPager();
+        var pager = new PipsPager { Theme = SimplesPager(simple) };
         using var scene = new Scene(pager, themes: [new Styles { simple, new Wp81Theme() }]);
 
         var buttons = PlainButtons(pager);

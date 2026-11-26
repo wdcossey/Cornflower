@@ -140,7 +140,9 @@ public class HoleContentControlPartsTests
     {
         var include = Include("UnderWp81.axaml");
         var simple = new SimpleTheme();
-        var pager = new PipsPager();
+        // Given the included theme: a PipsPager by type is Wp81's since #241.
+        Assert.True(include.TryGetResource(typeof(PipsPager), ThemeVariant.Dark, out var included));
+        var pager = new PipsPager { Theme = (ControlTheme)included! };
         using var scene = new Scene(pager, themes: [simple, include, new Wp81Theme()]);
 
         var button = pager.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "Inner");
@@ -167,14 +169,18 @@ public class HoleContentControlPartsTests
     [AvaloniaFact]
     public void Wp81_In_An_Included_File_Finds_The_Theme_Under_It()
     {
-        var pager = new PipsPager();
         var include = Include("SimpleThenWp81.axaml");
-        var errors = new DataValidationErrors { Content = "content", Theme = SimplesErrors(((Styles)include.Loaded).OfType<SimpleTheme>().Single()) };
+        var simple = ((Styles)include.Loaded).OfType<SimpleTheme>().Single();
+        // Given Simple's theme: a PipsPager by type is Wp81's since #241.
+        Assert.True(simple.TryGetResource(typeof(PipsPager), ThemeVariant.Dark, out var simplePager));
+        var pager = new PipsPager { Theme = (ControlTheme)simplePager! };
+        var errors = new DataValidationErrors { Content = "content", Theme = SimplesErrors(simple) };
         using var scene = new Scene(new StackPanel { Children = { pager, errors } }, themes: [include]);
 
         var buttons = pager.GetVisualDescendants().OfType<Button>().Where(b => b.GetType() == typeof(Button)).ToList();
         Assert.NotEmpty(buttons);
-        Assert.All(buttons, b => Assert.NotNull(b.Theme));
+        Assert.True(simple.TryGetResource(typeof(Button), ThemeVariant.Dark, out var simpleButton));
+        Assert.All(buttons, b => Assert.Same(simpleButton, b.Theme));
         Assert.NotEmpty(Plain(errors));
         Assert.All(Plain(errors), c => Assert.True(IsOwn(c.Theme)));
     }

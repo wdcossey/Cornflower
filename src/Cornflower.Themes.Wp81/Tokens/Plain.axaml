@@ -157,4 +157,17 @@
     default one. The pull refreshes past 0.8 of it.
   -->
   <x:Double x:Key="CornflowerPlainRefreshHeight">100</x:Double>
+
+  <!--
+    A PipsPager's mark (PipsPager, #241): 9.5 square, the phone's touch-target overhang (PhoneTouchTargetOverhang's
+    9.5), a small flat mark, a quarter of the square round it.
+  -->
+  <x:Double x:Key="CornflowerPlainPipSize">9.5</x:Double>
+
+  <!--
+    The square round each of a PipsPager's marks and arrows (PipsPager, #241): 38.5, a phone Button's box
+    (PhoneButtonMinHeight's 57.5 less PhoneTouchTargetOverhang's 9.5 above and below), as the tree's chevron column
+    (CornflowerPlainTreeViewItemIndent), so each mark and arrow takes a fingertip. The squares touch: no space between.
+  -->
+  <x:Double x:Key="CornflowerPlainPipTargetSize">38.5</x:Double>
 </ResourceDictionary>
