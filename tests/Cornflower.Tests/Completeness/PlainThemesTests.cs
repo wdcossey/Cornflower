@@ -28,6 +28,7 @@ public class PlainThemesTests
         "DataValidationErrors",                                                                             // batch 8a, #241
         "NotificationCard", "WindowNotificationManager",                                                    // batch 8b, #241
         "RefreshContainer", "RefreshVisualizer",                                                            // batch 8c, #241
+        "PipsPager",                                                                                        // batch 8d, #241
     ];
 
     /// <summary>

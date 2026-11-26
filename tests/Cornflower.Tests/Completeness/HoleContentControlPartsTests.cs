@@ -140,7 +140,9 @@ public class HoleContentControlPartsTests
     {
         var include = Include("UnderWp81.axaml");
         var simple = new SimpleTheme();
-        var pager = new PipsPager();
+        // Given the included theme: a PipsPager by type is Wp81's since #241.
+        Assert.True(include.TryGetResource(typeof(PipsPager), ThemeVariant.Dark, out var included));
+        var pager = new PipsPager { Theme = (ControlTheme)included! };
         using var scene = new Scene(pager, themes: [simple, include, new Wp81Theme()]);
 
         var button = pager.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "Inner");

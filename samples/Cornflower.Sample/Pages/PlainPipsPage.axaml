@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainPipsPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The eighth plain themes, part d (ADR 0007, #241): Cornflower's design, not the phone's. A PipsPager of five pages,
+    one of twelve with five marks shown and the arrows, which pans to its selection, and a vertical one, each with a
+    line showing its selected index. Two are selected at load, low on the page; nothing is focused, so the page stays
+    at its top.
+  -->
+  <ScrollViewer x:Name="Scroller">
+    <StackPanel Margin="19,12,19,24" Spacing="12">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's. Tap a mark or an arrow."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+      <TextBlock Text="five pages" Theme="{DynamicResource BodyTextBlockStyle}" />
+      <PipsPager x:Name="Five" NumberOfPages="5" HorizontalAlignment="Left" />
+      <TextBlock x:Name="FiveIndex" Theme="{DynamicResource BodyTextBlockStyle}" />
+
+      <TextBlock Text="twelve pages, five marks" Theme="{DynamicResource BodyTextBlockStyle}" />
+      <PipsPager x:Name="Twelve" NumberOfPages="12" MaxVisiblePips="5" SelectedPageIndex="7" HorizontalAlignment="Left" />
+      <TextBlock x:Name="TwelveIndex" Theme="{DynamicResource BodyTextBlockStyle}" />
+
+      <TextBlock Text="vertical" Theme="{DynamicResource BodyTextBlockStyle}" />
+      <StackPanel Orientation="Horizontal" Spacing="19">
+        <PipsPager x:Name="Vertical" NumberOfPages="4" Orientation="Vertical" SelectedPageIndex="2" />
+        <TextBlock x:Name="VerticalIndex" VerticalAlignment="Center" Theme="{DynamicResource BodyTextBlockStyle}" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
