@@ -16,9 +16,9 @@ namespace Cornflower.Tests.Completeness;
 /// <summary>
 /// The Buttons in the templates of controls Wp81 doesn't theme yet (the holes) keep the theme under Wp81: with
 /// Simple then Wp81, each is laid out as with Simple alone, and none is Wp81's Button. In Avalonia 12.1.4, Simple's
-/// templates for PipsPager and the managed file dialogs hold plain Buttons with no theme of their own (read from each
-/// of Simple's templates, built on its own). CalendarItem's (in Calendar) and CalendarDatePicker's did until Wp81 themed
-/// them (#240).
+/// templates for the managed file dialogs hold plain Buttons with no theme of their own (read from each of Simple's
+/// templates, built on its own). CalendarItem's (in Calendar) and CalendarDatePicker's did until Wp81 themed them (#240),
+/// and PipsPager's until #241: a PipsPager given Simple's theme stands in for a hole below.
 /// </summary>
 public class HolePartsTests
 {
@@ -67,7 +67,7 @@ public class HolePartsTests
         Assert.True(withButtons >= 2, $"only {withButtons} holes showed plain Buttons");
         // The dialogs' (their Buttons have no names). (CommandBar's overflow left with #118, NavigationPage's back with
         // #120, Calendar's three and CalendarDatePicker's with #240, and PipsPager's two with #241: Wp81 themes them.)
-        Assert.Contains("ManagedFileChooserOverwritePrompt.", fellBack);
+        Assert.Contains(fellBack, part => part.StartsWith("ManagedFileChooserOverwritePrompt.", StringComparison.Ordinal));
     }
 
     /// <summary>Simple's own PipsPager theme, whose template holds plain Buttons (Wp81's, #241, holds the plain glyph part).</summary>
@@ -187,9 +187,10 @@ public class HolePartsTests
         Assert.True(CfTilt.GetIsEnabled(PlainButtons(card).Single()));
     }
 
-    // An app's own theme for a control Wp81 doesn't theme, above Wp81: the template is the app's, so its Button is Wp81's.
+    // An app's own theme above Wp81 for a control the theme under Wp81 also themes (a PipsPager, Simple's): the template
+    // is the app's, so its Button is Wp81's, not the one under it.
     [AvaloniaFact]
-    public void An_Apps_Theme_Above_Wp81_For_A_Hole_Keeps_Wp81s_Button()
+    public void An_Apps_Theme_Above_Wp81_Keeps_Wp81s_Button()
     {
         var pager = new PipsPager();
         var window = new Styles { Resources = { [typeof(PipsPager)] = ThemeWith(typeof(PipsPager), InnerButton()) } };

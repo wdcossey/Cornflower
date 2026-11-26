@@ -24,10 +24,10 @@ the accent, with an arrow either side.
 | Unselected | `PhoneLowBrush`, the foreground at the phone's low opacity |
 | Selected | `PhoneAccentBrush`: a selection is state (rule 3); disabled, `PhoneDisabledBrush` |
 | Pressed | `PhoneForegroundBrush`, the full foreground, on an unselected mark |
-| The arrows | plain `Button`s in `Wp81PlainGlyphButtonTheme` (the plain glyph part), each a 38.5 square, Lucide's `ChevronLeft` and `ChevronRight` (`ChevronUp` and `ChevronDown` when vertical); pressed, the accent fill; at the first or last page, the arrow that can't go on is disabled and dimmed, not hidden |
+| The arrows | plain `Button`s in `Wp81PlainGlyphButtonTheme` (the plain glyph part), each a 38.5 square, Lucide's `ChevronLeft` and `ChevronRight` (`ChevronUp` and `ChevronDown` when vertical); pressed, the accent fill and the tilt (rule 7: a button-like part); at the first or last page, the arrow that can't go on is disabled and dimmed, not hidden |
 | `Orientation` | `Vertical` stacks the arrows and the marks in a column |
 
-No circles, no shadows, no tilt (a mark is smaller than an item) and no motion of its own (rule 8): Simple's colour
+No circles, no shadows, no tilt on a mark (smaller than an item) and no motion of its own (rule 8): Simple's colour
 transitions on the marks and the arrows are left out. With more pages than `MaxVisiblePips`, the marks pan to keep the
 selected one in view: that slide is Avalonia's `PipsPager` code, not the theme's, and is kept.
 

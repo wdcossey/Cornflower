@@ -102,6 +102,7 @@ public class PipsPagerTests
         foreach (var arrow in new[] { previous, next })
         {
             Assert.Same(glyph, arrow.Theme);
+            Assert.True(Tilt.GetIsEnabled(arrow), $"{arrow.Name} has no tilt");
             Near(target, arrow.Bounds.Width);
             Near(target, arrow.Bounds.Height);
             Assert.True(arrow.IsVisible);

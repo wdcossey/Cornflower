@@ -14,7 +14,8 @@
 
     The arrows are plain Buttons, as Avalonia's template has them, in the plain glyph button part
     (Wp81PlainGlyphButtonTheme, by DynamicResource, through PreviousButtonTheme and NextButtonTheme), each the same
-    fingertip square, with Lucide's chevrons (rule 10): left and right, up and down when vertical. At the first and the
+    fingertip square, with Lucide's chevrons (rule 10): left and right, up and down when vertical, and the tilt on a
+    press (rule 7: a button-like part), as CalendarItem's arrows. At the first and the
     last page the arrow that can't go on is disabled, Avalonia's own, and drawn dimmed, not hidden.
 
     No motion of its own (rule 8): Simple's colour transitions on the marks and the arrows are left out. The overflow
@@ -29,7 +30,6 @@
   <ControlTheme x:Key="Wp81PlainPipTheme" TargetType="ListBoxItem">
     <Setter Property="Width" Value="{DynamicResource CornflowerPlainPipTargetSize}" />
     <Setter Property="Height" Value="{DynamicResource CornflowerPlainPipTargetSize}" />
-    <Setter Property="Padding" Value="0" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Template">
@@ -59,8 +59,6 @@
 
   <ControlTheme x:Key="Wp81PlainPipsListTheme" TargetType="ListBox">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="0" />
     <Setter Property="AutoScrollToSelectedItem" Value="False" />
     <Setter Property="cf:ListBoxOptions.KeepsScrollInList" Value="True" />
     <Setter Property="ItemContainerTheme" Value="{DynamicResource Wp81PlainPipTheme}" />
@@ -100,7 +98,8 @@
                   Width="{DynamicResource CornflowerPlainPipTargetSize}"
                   Height="{DynamicResource CornflowerPlainPipTargetSize}"
                   Padding="0"
-                  IsVisible="{TemplateBinding IsPreviousButtonVisible}">
+                  IsVisible="{TemplateBinding IsPreviousButtonVisible}"
+                  cf:Tilt.IsEnabled="True">
             <cf:LucideIcon x:Name="PreviousGlyph" Kind="ChevronLeft" />
           </Button>
           <ListBox x:Name="PART_PipsPagerList"
@@ -112,7 +111,8 @@
                   Width="{DynamicResource CornflowerPlainPipTargetSize}"
                   Height="{DynamicResource CornflowerPlainPipTargetSize}"
                   Padding="0"
-                  IsVisible="{TemplateBinding IsNextButtonVisible}">
+                  IsVisible="{TemplateBinding IsNextButtonVisible}"
+                  cf:Tilt.IsEnabled="True">
             <cf:LucideIcon x:Name="NextGlyph" Kind="ChevronRight" />
           </Button>
         </StackPanel>
