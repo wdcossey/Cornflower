@@ -95,6 +95,9 @@ public class RefreshContainerTests
         Assert.Same(Resource<IBrush>(visualizer, "PhoneBackgroundBrush"), visualizer.Background);
         Assert.Same(Resource<IBrush>(visualizer, "PhoneBackgroundBrush"), Part<Grid>(visualizer, "PART_Root").Background);
         Assert.Same(Resource<IBrush>(visualizer, "ProgressBarIndeterminateForegroundThemeBrush"), ring.Foreground);
+        // The visualizer's Foreground is the ring's, so an app can colour the sign where it sets the visualizer.
+        visualizer.Foreground = Brushes.Red;
+        Assert.Same(Brushes.Red, ring.Foreground);
         // Wp81's ring, its own theme and parts: the 57.5 ring, centred in the 100-tall band.
         Assert.NotNull(Part<Ellipse>(ring, "PART_E1"));
         Assert.Equal(new Rect(196.25, 21.25, 57.5, 57.5), ring.Bounds);
