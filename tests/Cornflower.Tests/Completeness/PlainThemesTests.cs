@@ -27,6 +27,7 @@ public class PlainThemesTests
         "Calendar", "CalendarButton", "CalendarDatePicker", "CalendarDayButton", "CalendarItem",            // batch 7, #240
         "DataValidationErrors",                                                                             // batch 8a, #241
         "NotificationCard", "WindowNotificationManager",                                                    // batch 8b, #241
+        "RefreshContainer", "RefreshVisualizer",                                                            // batch 8c, #241
     ];
 
     /// <summary>

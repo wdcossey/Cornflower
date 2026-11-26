@@ -7,8 +7,6 @@
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
 PipsPager
-RefreshContainer
-RefreshVisualizer
 TableView
 TableViewCell
 TableViewColumnHeader

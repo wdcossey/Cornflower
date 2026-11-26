@@ -1,0 +1,60 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/RefreshVisualizer/README.md.
+
+    The sign is Wp81's own ProgressRing (ADR 0007, "The refresh sign"), its control and its theme by type, in the
+    accent, on the page's own surface (PhoneBackgroundBrush), as the band the pull opens above the list. What it shows
+    follows Avalonia's RefreshVisualizerState:
+    - Idle: nothing; the ring is off and the band out of sight above the container.
+    - Interacting (pulled, not yet far enough to refresh on letting go): the ring runs, at CornflowerPlainRefreshPullOpacity.
+    - Pending (far enough: letting go refreshes): the ring at full strength.
+    - Refreshing: the ring at full strength until the app's deferral completes.
+    - Peeking (the band shown with no finger on it): the ring at full strength.
+
+    Avalonia's visualizer turns, fades, pulses (to 1.5 at Pending) and spins (every 0.5 s while refreshing) its Content,
+    and smooths the band's and the list's moves over 150 ms. None of that is the pull's or the ring's (rule 8), so the
+    Content here is an empty Panel that takes those transforms unseen, and the ring is the template's own PART_Ring;
+    PlainRefreshMotion lets the moves follow the finger with no smoothing. The band and the list still move with the
+    pull, as that is the pull itself.
+  -->
+  <ControlTheme x:Key="{x:Type RefreshVisualizer}" TargetType="RefreshVisualizer">
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Background" Value="{DynamicResource PhoneBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ProgressBarIndeterminateForegroundThemeBrush}" />
+    <Setter Property="wp81:PlainRefreshMotion.IsEnabled" Value="True" />
+    <Setter Property="Content">
+      <Template>
+        <Panel />
+      </Template>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_Root" Background="{TemplateBinding Background}">
+          <cf:ProgressRing x:Name="PART_Ring"
+                           Foreground="{TemplateBinding Foreground}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^[RefreshVisualizerState=Interacting] /template/ cf|ProgressRing#PART_Ring">
+      <Setter Property="IsActive" Value="True" />
+      <Setter Property="Opacity" Value="{DynamicResource CornflowerPlainRefreshPullOpacity}" />
+    </Style>
+    <Style Selector="^[RefreshVisualizerState=Pending] /template/ cf|ProgressRing#PART_Ring">
+      <Setter Property="IsActive" Value="True" />
+    </Style>
+    <Style Selector="^[RefreshVisualizerState=Refreshing] /template/ cf|ProgressRing#PART_Ring">
+      <Setter Property="IsActive" Value="True" />
+    </Style>
+    <Style Selector="^[RefreshVisualizerState=Peeking] /template/ cf|ProgressRing#PART_Ring">
+      <Setter Property="IsActive" Value="True" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

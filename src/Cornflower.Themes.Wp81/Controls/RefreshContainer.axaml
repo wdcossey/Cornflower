@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/RefreshContainer/README.md.
+
+    8.1 had no pull-to-refresh of its own (apps built one on a ScrollViewer). Avalonia's RefreshContainer, which puts its
+    RefreshVisualizer (Wp81's, the ProgressRing on the page, RefreshVisualizer.axaml) in PART_RefreshVisualizerPresenter
+    over the content, and moves it and the content's ScrollViewer as the pull grows. The template is Simple's, but
+    clipped: the visualizer waits above the container, out of sight, and comes in from the container's own edge, so it
+    never covers what is above the container on the page. No background of its own: the page shows.
+  -->
+  <ControlTheme x:Key="{x:Type RefreshContainer}" TargetType="RefreshContainer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_Root" ClipToBounds="True">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Content="{TemplateBinding Content}"
+                            Padding="{TemplateBinding Padding}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+          <Grid x:Name="PART_RefreshVisualizerPresenter" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

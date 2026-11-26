@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             x:Class="Cornflower.Sample.Pages.PlainRefreshPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The eighth plain themes, part c (ADR 0007, #241): Cornflower's design, not the phone's. A RefreshContainer round a
+    list of 30 rows: pull it down (touch, or the mouse on a desktop), or tap "refresh", and Wp81's ProgressRing runs in
+    the band at the list's top for two seconds. The page itself doesn't scroll, nothing is selected or focused at load,
+    so the list opens at its top.
+  -->
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="19,12,19,0">
+    <sample:SamplePageHeader x:Name="Header" />
+
+    <TextBlock Grid.Row="1"
+               Text="Plain themes: Cornflower's design, not the phone's. Pull the list down, or tap refresh."
+               Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="19">
+      <Button x:Name="Refresh" Content="refresh" />
+      <TextBlock x:Name="Status" Text="not refreshed yet" VerticalAlignment="Center"
+                 Theme="{DynamicResource BodyTextBlockStyle}" />
+    </StackPanel>
+
+    <RefreshContainer x:Name="Container" Grid.Row="3" IsMouseEnabled="True">
+      <ScrollViewer x:Name="List">
+        <ItemsControl x:Name="Rows">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" Theme="{DynamicResource BodyTextBlockStyle}" Margin="0,9.5" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </RefreshContainer>
+  </Grid>
+</UserControl>
