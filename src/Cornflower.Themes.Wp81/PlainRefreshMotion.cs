@@ -33,11 +33,28 @@ internal static class PlainRefreshMotion
         if (!visualizer.GetValue(IsEnabledProperty))
             return;
         Unease(visualizer);
-        // The ScrollViewer Avalonia's adapter moves: the first in the container's content.
-        if (visualizer.FindAncestorOfType<RefreshContainer>() is { } container
-            && container.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault() is { } scroller)
+        if (visualizer.FindAncestorOfType<RefreshContainer>() is { } container && Scroller(container) is { } scroller)
             Unease(scroller);
     }
+
+    /// <summary>
+    /// The ScrollViewer Avalonia's adapter moves, found as its own search finds it: the shallowest under the container,
+    /// level by level, at most <see cref="Depth"/> down.
+    /// </summary>
+    internal static ScrollViewer? Scroller(RefreshContainer container)
+    {
+        var level = container.GetVisualChildren().ToList();
+        for (var depth = 0; depth < Depth && level.Count > 0; depth++)
+        {
+            if (level.OfType<ScrollViewer>().FirstOrDefault() is { } found)
+                return found;
+            level = level.SelectMany(visual => visual.GetVisualChildren()).ToList();
+        }
+        return null;
+    }
+
+    /// <summary>How deep Avalonia's adapter looks for its ScrollViewer (ScrollViewerIRefreshInfoProviderAdapter).</summary>
+    private const int Depth = 10;
 
     private static void Unease(Visual visual)
     {

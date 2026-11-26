@@ -12,7 +12,7 @@ control and its theme by type, in the accent.
 ## What a pull shows
 
 Avalonia's visualizer moves through `RefreshVisualizerState`; the band moves down with the pull, as far as its own
-height (100, the container's default), and the list with it.
+height (`CornflowerPlainRefreshHeight`, 100), and the list with it.
 
 | State | When | The ring |
 |---|---|---|
@@ -20,12 +20,13 @@ height (100, the container's default), and the list with it.
 | `Interacting` | pulled, short of 0.8 of the band (letting go does nothing) | running, at `CornflowerPlainRefreshPullOpacity` (0.4) |
 | `Pending` | pulled past 0.8 (letting go refreshes) | running, at full strength |
 | `Refreshing` | let go there, or `RequestRefresh()` | running, at full strength, until the app's deferral completes |
-| `Peeking` | the band shown with no finger on it | running, at full strength |
+| `Peeking` | a pull that began with the list scrolled down and carried on past its top; for a moment inside `RequestRefresh()` | off: Avalonia doesn't move the band in `Peeking`, so it stays out of sight |
 
 ## What it sets
 
 | Property | Value |
 |---|---|
+| `Height` | `CornflowerPlainRefreshHeight` (100): Avalonia's default visualizer's and Simple's, so an app's own pulls as far |
 | `Background` | `PhoneBackgroundBrush`: the page's own surface |
 | `Foreground` | `ProgressBarIndeterminateForegroundThemeBrush` (the accent), the ring's |
 | `Content` | an empty `Panel` (below) |
@@ -40,8 +41,14 @@ after the finger and slides them back when a refresh ends. None of that is the p
 
 - The `Content` is an empty `Panel`, which takes Avalonia's turn, fade, pulse and spin unseen. The ring is the
   template's own `PART_Ring`, and moves only as the ring does.
-- `PlainRefreshMotion` (internal) takes the implicit animations off the band's and the list's composition visuals at
-  each change of state, before Avalonia moves them, so they follow the finger as it is and go back at once.
+- `PlainRefreshMotion` (internal) takes the implicit animations off the band's and the list's composition visuals (the ScrollViewer found as Avalonia's adapter finds it: the shallowest under the
+  container, at most 10 levels down) at each change of state, before Avalonia moves them, so they follow the finger as it is and go back at once.
+
+## Resource keys
+
+- `CornflowerPlainRefreshPullOpacity` (new, in `Tokens/Plain.axaml`): 0.4, the ring before letting go refreshes.
+- `CornflowerPlainRefreshHeight` (new): 100, the band's height.
+- `PhoneBackgroundBrush`, `ProgressBarIndeterminateForegroundThemeBrush`: the band and the ring.
 
 ## The template's parts
 
@@ -51,6 +58,5 @@ after the finger and slides them back when a refresh ends. None of that is the p
 ## Known gaps
 
 - An app's own `Content` is turned, faded, pulsed and spun as Avalonia does, over the ring.
-- An app's own visualizer (`RefreshContainer.Visualizer`) has no height from the theme: the container sets 100 only
-  on its default one, so give an app's a `Height`.
-- `Peeking` is shown as Avalonia raises it, untried on the phone.
+- The theme's `Height` suits a vertical pull; for a sideways `PullDirection` give an app's own visualizer a `Width`
+  and `Height` (the container does that for its default one).

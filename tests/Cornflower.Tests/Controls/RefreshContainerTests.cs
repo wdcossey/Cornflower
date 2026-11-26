@@ -192,20 +192,51 @@ public class RefreshContainerTests
     }
 
     [AvaloniaFact]
-    public void Peeking_Shows_The_Ring_At_Full_Strength()
+    public void Peeking_Leaves_The_Ring_Off_As_The_Band_Stays_Out_Of_Sight()
     {
         var (scene, container, _) = Pullable();
         using var _scene = scene;
-        // Peeking is the band partly shown with no finger on it: the provider's ratio above 0 while no pull is held.
-        // Avalonia keeps the provider internal, so the test reaches it as the container's adapter does.
+        // Peeking: the provider's ratio above 0 with no pull for refresh held (a drag that began with the list scrolled
+        // down). Avalonia keeps the provider internal, so the test reaches it by reflection.
         var provider = typeof(RefreshVisualizer).GetProperty("RefreshInfoProvider", BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(Visualizer(container))!;
         provider.GetType().GetProperty("InteractionRatio")!.SetValue(provider, 0.5);
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(RefreshVisualizerState.Peeking, State(container));
-        Assert.True(Ring(container).IsActive);
-        Assert.Equal(1, Ring(container).Opacity);
+        // Avalonia doesn't move the band in Peeking, so a running ring would run unseen.
+        Assert.Equal(0, ElementComposition.GetElementVisual(Visualizer(container))!.Offset.Y, 0.5);
+        Assert.False(Ring(container).IsActive);
+    }
+
+    [AvaloniaFact]
+    public void An_Apps_Own_Visualizer_Is_As_Tall_As_The_Default()
+    {
+        var (scene, container, _) = Pullable();
+        using var _scene = scene;
+        var own = new RefreshVisualizer();
+        container.Visualizer = own;
+        scene.Window.UpdateLayout();
+
+        Assert.Equal(Resource<double>(own, "CornflowerPlainRefreshHeight"), own.Bounds.Height, 0.5);
+        Assert.Equal(100, own.Bounds.Height, 0.5);
+    }
+
+    [AvaloniaFact]
+    public void The_List_Avalonia_Moves_Is_The_One_Uneased()
+    {
+        // A deep ScrollViewer first, a shallow one after: Avalonia's adapter takes the shallowest.
+        var deep = new ScrollViewer { Content = new TextBlock { Text = "deep" } };
+        var shallow = new ScrollViewer { Content = new TextBlock { Text = "shallow" } };
+        var content = new Grid { Children = { new Border { Child = new Border { Child = deep } }, shallow } };
+        var container = new RefreshContainer { Content = content, Height = 400 };
+        using var scene = new Scene(container);
+        Assert.NotNull(ElementComposition.GetElementVisual(shallow)!.ImplicitAnimations);
+
+        container.RequestRefresh();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Null(ElementComposition.GetElementVisual(shallow)!.ImplicitAnimations);
     }
 
     [AvaloniaFact]

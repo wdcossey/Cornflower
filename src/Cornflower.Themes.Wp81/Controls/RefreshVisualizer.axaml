@@ -13,7 +13,8 @@
     - Interacting (pulled, not yet far enough to refresh on letting go): the ring runs, at CornflowerPlainRefreshPullOpacity.
     - Pending (far enough: letting go refreshes): the ring at full strength.
     - Refreshing: the ring at full strength until the app's deferral completes.
-    - Peeking (the band shown with no finger on it): the ring at full strength.
+    - Peeking (a pull that began with the list scrolled down, and for a moment inside RequestRefresh): off, as
+      Avalonia doesn't move the band in Peeking, so it stays out of sight.
 
     Avalonia's visualizer turns, fades, pulses (to 1.5 at Pending) and spins (every 0.5 s while refreshing) its Content,
     and smooths the band's and the list's moves over 150 ms. None of that is the pull's or the ring's (rule 8), so the
@@ -24,6 +25,7 @@
   <ControlTheme x:Key="{x:Type RefreshVisualizer}" TargetType="RefreshVisualizer">
     <Setter Property="IsTabStop" Value="False" />
     <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Height" Value="{DynamicResource CornflowerPlainRefreshHeight}" />
     <Setter Property="Background" Value="{DynamicResource PhoneBackgroundBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource ProgressBarIndeterminateForegroundThemeBrush}" />
     <Setter Property="wp81:PlainRefreshMotion.IsEnabled" Value="True" />
@@ -51,9 +53,6 @@
       <Setter Property="IsActive" Value="True" />
     </Style>
     <Style Selector="^[RefreshVisualizerState=Refreshing] /template/ cf|ProgressRing#PART_Ring">
-      <Setter Property="IsActive" Value="True" />
-    </Style>
-    <Style Selector="^[RefreshVisualizerState=Peeking] /template/ cf|ProgressRing#PART_Ring">
       <Setter Property="IsActive" Value="True" />
     </Style>
   </ControlTheme>

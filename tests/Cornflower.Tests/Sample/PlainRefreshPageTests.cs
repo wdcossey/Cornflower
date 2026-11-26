@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -25,7 +26,7 @@ public class PlainRefreshPageTests
 
         Assert.Equal("plain refresh", page.FindControl<SamplePageHeader>("Header")!.Title);
         Assert.Equal(default, page.FindControl<ScrollViewer>("List")!.Offset);
-        Assert.Null(scene.Window.FocusManager?.GetFocusedElement());
+        Assert.Null(Assert.IsAssignableFrom<IFocusManager>(scene.Window.FocusManager).GetFocusedElement());
         Assert.Equal(RefreshVisualizerState.Idle, State(page));
     }
 
@@ -37,7 +38,12 @@ public class PlainRefreshPageTests
         var ring = page.FindControl<RefreshContainer>("Container")!.Visualizer!.GetVisualDescendants()
             .OfType<ProgressRing>().Single();
 
+        var refreshes = 0;
+        page.FindControl<RefreshContainer>("Container")!.RefreshRequested += (_, _) => refreshes++;
         page.FindControl<Button>("Refresh")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        // A second tap while it runs starts no second refresh over the first.
+        page.FindControl<Button>("Refresh")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal(1, refreshes);
         Assert.Equal(RefreshVisualizerState.Refreshing, State(page));
         Assert.True(ring.IsActive);
 
