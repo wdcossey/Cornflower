@@ -42,12 +42,13 @@ public class TableViewTests
         ItemsSource = Enumerable.Range(0, rows).Select(i => new Item("file " + i, i + " KB", "text")).ToList(),
     };
 
-    // An app's own type round the table, so what the themes set can't come from the window's.
+    // An app's own type and colour round the table, so what the themes set can't come from the window's.
     private static Border Host(Control child)
     {
         var host = new Border { Child = child };
         TextElement.SetFontFamily(host, new FontFamily("Arial"));
         TextElement.SetFontSize(host, 12);
+        TextElement.SetForeground(host, Brushes.Red);
         return host;
     }
 
@@ -82,7 +83,6 @@ public class TableViewTests
         Assert.Equal(new Thickness(0), table.Padding);
         Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(table.Background).Color);
         Assert.Same(Resource<IBrush>(table, "PhoneForegroundBrush"), table.Foreground);
-        Assert.Null(table.FocusAdorner);
         Assert.Equal(TextTrimming.CharacterEllipsis, table.GetValue(TextBlock.TextTrimmingProperty));
 
         // The headers' strip: no fill, the row's rule under it.
@@ -128,7 +128,6 @@ public class TableViewTests
 
         Assert.True(Tilt.GetIsEnabled(item));
         Assert.Same(Part<TableViewCellsPresenter>(item, "PART_CellsPresenter"), Tilt.TargetOf(item));
-        Assert.Null(item.FocusAdorner);
     }
 
     // No grid lines and no box round a cell; its text starts at the page's edge in the first column, and where its

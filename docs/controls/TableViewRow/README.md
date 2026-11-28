@@ -15,12 +15,11 @@ a table's row reads as a list's.
 | `Background` | `Transparent`, so the whole row takes the finger |
 | `Padding` | 0 (Simple's is 2,1): the page insets the table, so the first cell's text lines up with the page's |
 | `FontFamily`, `FontSize` | `PhoneFontFamilyNormal` at `TextStyleLargeFontSize` (18.14), the body's type, which the cells inherit |
-| `FocusAdorner` | none |
 | `Tilt.IsEnabled` | `True`: the press is the tilt (an item-sized press), with no fill |
 | `Template` | `PART_Row`, the plain row, round the cells |
 
 Selected, the row's text is `PhoneAccentBrush`, with no fill (Simple fills it). Disabled, `PhoneDisabledBrush`. No
-pointer-over look, and no motion.
+pointer-over look, no focus adorner (as Simple's row, it sets none), and no motion.
 
 ## The template's parts
 

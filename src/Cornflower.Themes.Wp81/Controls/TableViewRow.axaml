@@ -17,15 +17,14 @@
     The press is the tilt (rule 7: a row is item-sized), on PART_CellsPresenter (Tilt.IsTarget) inside PART_Row, which
     stays untilted and takes the finger across the row, with no fill. Selected, the row's text is PhoneAccentBrush (rule
     3: a selected item's text, as the phone's list shows a selection), with no fill: Simple's fills it. Disabled,
-    PhoneDisabledBrush. No pointer-over look and no focus adorner, as the phone's list items have neither, and no
-    motion (rule 8).
+    PhoneDisabledBrush. No pointer-over look, as the phone's list items have none (and no focus adorner: nothing
+    under Wp81 sets one on a row), and no motion (rule 8).
   -->
   <ControlTheme x:Key="{x:Type TableViewRow}" TargetType="TableViewRow">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
     <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="cf:Tilt.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>

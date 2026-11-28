@@ -12,7 +12,7 @@
     (Controls/TableViewColumnHeader.axaml) with the same rule under it. No grid lines between cells, as Metro's lists
     had none. As the plain TreeView and Wp81's ListView: no box (Simple's border is the app's to set), a Transparent
     background over the page (rule 5: Simple's headers sit on a filled strip; these don't), PhoneForegroundBrush, which
-    the rows inherit, no padding of its own (the page insets it), no focus adorner.
+    the rows inherit, no padding of its own (the page insets it).
 
     PART_ScrollViewer wears Wp81PlainTableScrollViewerTheme, below: Wp81's ScrollViewer (its thin indicators over the
     rows, Controls/ScrollViewer.axaml) with the headers docked above what scrolls, as Simple's table has them, so a
@@ -87,7 +87,6 @@
   <ControlTheme x:Key="{x:Type TableView}" TargetType="TableView">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="AutoScrollToSelectedItem" Value="False" />
     <Setter Property="cf:ListBoxOptions.KeepsScrollInList" Value="True" />
     <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />

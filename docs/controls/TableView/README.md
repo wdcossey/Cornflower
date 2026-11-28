@@ -28,7 +28,6 @@ Write the headers in lower case, as the phone's headers are: the theme shows the
 |---|---|
 | `Background` | `Transparent`, over the page (Simple's headers sit on a filled strip) |
 | `Foreground` | `PhoneForegroundBrush`, which the rows inherit |
-| `FocusAdorner` | none, as the phone's lists have none |
 | `AutoScrollToSelectedItem` | `False`: a selection at load or from code brings nothing into view, the page or the table's own rows (#220, #251, #252) |
 | `ListBoxOptions.KeepsScrollInList` | `True`, as on Wp81's lists: a request for a row (`ScrollIntoView`, a press's focus) stops at the table. Keyboard focus still brings a row into view |
 | `ScrollViewer.HorizontalScrollBarVisibility`, `VerticalScrollBarVisibility` | `Auto` |
