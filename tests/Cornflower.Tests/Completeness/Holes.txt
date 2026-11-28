@@ -6,8 +6,4 @@
 
 ManagedFileChooser
 ManagedFileChooserOverwritePrompt
-TableView
-TableViewCell
-TableViewColumnHeader
-TableViewRow
 TextSelectionHandle

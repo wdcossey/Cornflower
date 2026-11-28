@@ -98,7 +98,7 @@
   <Thickness x:Key="CornflowerPlainTabHeaderMargin">16,0,0,0</Thickness>
 
   <!--
-    A row's rule (Wp81PlainRowTheme: a tree's row, #239, and batch 9's table rows): the 1.5 line (rule 4: a line that
+    A row's rule (Wp81PlainRowTheme: a tree's row, #239, and a table's, #242; and under a table's headers): the 1.5 line (rule 4: a line that
     divides), under the row only, so the rows of a list are divided once each, not twice.
   -->
   <Thickness x:Key="CornflowerPlainRuleThickness">0,0,0,1.5</Thickness>
@@ -170,4 +170,18 @@
     (CornflowerPlainTreeViewItemIndent), so each mark and arrow takes a fingertip. The squares touch: no space between.
   -->
   <x:Double x:Key="CornflowerPlainPipTargetSize">38.5</x:Double>
+
+  <!--
+    A table's cell (TableViewCell, #242): 9.5 after its text, the phone's PhoneButtonContentPadding's sides, and nothing
+    before it, so the first column's text lines up with the page's, the columns stand 9.5 apart, and a trimmed text's
+    ellipsis keeps off the next column. None above or below: the row's least height (PhoneButtonMinHeight) gives the room.
+  -->
+  <Thickness x:Key="CornflowerPlainTableCellPadding">0,0,9.5,0</Thickness>
+
+  <!--
+    A table's column header (TableViewColumnHeader, #242): the cell's 9.5 after it and nothing before, so a header
+    starts where its column's text does; 4.8 above and below, the control header's gap
+    (TextControlHeaderMarginThemeThickness), round a line of small print, as the tooltip's (CornflowerPlainToolTipPadding).
+  -->
+  <Thickness x:Key="CornflowerPlainTableHeaderPadding">0,4.8,9.5,4.8</Thickness>
 </ResourceDictionary>
