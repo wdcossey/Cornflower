@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#236](https://github.com/wdcossey/Cornflower/issues/236) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#236](https://github.com/wdcossey/Cornflower/issues/236) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `HeaderedContentControl`, themed by type in
 `src/Cornflower.Themes.Wp81/Controls/HeaderedContentControl.axaml`. The phone's nearest is a control header (the

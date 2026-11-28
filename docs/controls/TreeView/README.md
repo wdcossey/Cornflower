@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#239](https://github.com/wdcossey/Cornflower/issues/239) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#239](https://github.com/wdcossey/Cornflower/issues/239) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `TreeView`, themed by type in `src/Cornflower.Themes.Wp81/Controls/TreeView.axaml`. The phone had no tree:
 an 8.1 app showed one as a grouped `ListView`, a `SemanticZoom` or a page per level. This is a list of plain

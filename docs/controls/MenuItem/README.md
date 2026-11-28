@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#237](https://github.com/wdcossey/Cornflower/issues/237) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#237](https://github.com/wdcossey/Cornflower/issues/237) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `MenuItem`, themed by type in `src/Cornflower.Themes.Wp81/Controls/MenuItem.axaml`: the items of a
 `ContextMenu` and of a sub-menu (a desktop `Menu`'s drop-down included). The phone had no MenuItem; its

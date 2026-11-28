@@ -22,10 +22,10 @@ More in [PREVIEW.md](PREVIEW.md).
 > #197); the 8.1 ListBox, GridView, grouped lists with their headers, FlipView and SemanticZoom (Tier 4, each run in
 > the desktop window; the ListBox and GridView on a phone, the other three on the Android emulator and, since, on a
 > phone); a list's scroll to an item stays in the list, as on the phone (#220, its Pixel run passed, its
-> real-window run owed). Plain themes, Cornflower's own design for 36 controls the phone never had (ADR 0007, batches 1
-> to 7 of 11), not measured; their look on a phone is owed. Tier 2's follow-ups from the emulator's last reads (#162 to #169) are done and run. Motion is configurable
+> real-window run owed). Plain themes, Cornflower's own design for 42 controls the phone never had (ADR 0007, batches 1
+> to 8 of 11), not measured; their look on a phone done, but the validation page's. Tier 2's follow-ups from the emulator's last reads (#162 to #169) are done and run. Motion is configurable
 > (`CornflowerConfig`: off, or faster or slower, overall or by area), and faithful by default. Owed: the sample at
-> speed 2 on a phone. Next: the plain themes' batch 8 (validation, notifications, refresh, PipsPager). The [roadmap](docs/ROADMAP.md) has
+> speed 2 on a phone. Next: the plain themes' batch 9 (tables). The [roadmap](docs/ROADMAP.md) has
 > the rest.
 
 ## What "faithful" means here
