@@ -134,6 +134,7 @@ public class DataValidationErrorsTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("Enter a name.", Assert.Single(Lines(errors, "PART_ContentErrors")).Text);
+        GC.KeepAlive(person); // the binding holds it weakly (#262)
     }
 
     // #262: Avalonia passes on any exception a binding catches that isn't a DataValidationException as itself, and its
