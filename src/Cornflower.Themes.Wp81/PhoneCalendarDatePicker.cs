@@ -16,28 +16,31 @@ internal static class PhoneCalendarDatePicker
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<CalendarDatePicker, bool>("IsEnabled", typeof(PhoneCalendarDatePicker));
 
-    /// <summary>The pickers of ours open now, in the order they opened.</summary>
-    private static readonly List<CalendarDatePicker> Open = [];
+    /// <summary>
+    /// The pickers of ours open now, in the order they opened: weakly, as one may leave its window still open, or be
+    /// set open in none.
+    /// </summary>
+    private static readonly List<WeakReference<CalendarDatePicker>> Open = [];
 
     static PhoneCalendarDatePicker()
     {
-        CalendarDatePicker.IsDropDownOpenProperty.Changed.AddClassHandler<CalendarDatePicker>((picker, change) =>
-        {
-            Open.Remove(picker);
-            if (change.GetNewValue<bool>() && GetIsEnabled(picker))
-                Open.Add(picker);
-        });
-        IsEnabledProperty.Changed.AddClassHandler<CalendarDatePicker>((picker, change) =>
-        {
-            if (!change.GetNewValue<bool>())
-                Open.Remove(picker);
-        });
+        CalendarDatePicker.IsDropDownOpenProperty.Changed.AddClassHandler<CalendarDatePicker>((picker, _) => Update(picker));
+        // Set open before the theme turned this on (in XAML, or from code before it is styled): listed now.
+        IsEnabledProperty.Changed.AddClassHandler<CalendarDatePicker>((picker, _) => Update(picker));
         PhonePopupHost.TakeBackFirst(TakesBack);
     }
 
     public static bool GetIsEnabled(CalendarDatePicker picker) => picker.GetValue(IsEnabledProperty);
 
     public static void SetIsEnabled(CalendarDatePicker picker, bool value) => picker.SetValue(IsEnabledProperty, value);
+
+    /// <summary>Lists the picker while it is open and ours, at the end; drops it, and any gone, otherwise.</summary>
+    private static void Update(CalendarDatePicker picker)
+    {
+        Open.RemoveAll(entry => !entry.TryGetTarget(out var listed) || listed == picker);
+        if (picker.IsDropDownOpen && GetIsEnabled(picker))
+            Open.Add(new WeakReference<CalendarDatePicker>(picker));
+    }
 
     /// <summary>
     /// Back: the last picker opened in the window, not under the popup Back would close, closes, and Back stops there.
@@ -46,8 +49,7 @@ internal static class PhoneCalendarDatePicker
     {
         for (var i = Open.Count - 1; i >= 0; i--)
         {
-            var picker = Open[i];
-            if (TopLevel.GetTopLevel(picker) != top || (host is not null && !host.Holds(picker)))
+            if (!Open[i].TryGetTarget(out var picker) || TopLevel.GetTopLevel(picker) != top || (host is not null && !host.Holds(picker)))
                 continue;
             picker.SetCurrentValue(CalendarDatePicker.IsDropDownOpenProperty, false);
             return true;

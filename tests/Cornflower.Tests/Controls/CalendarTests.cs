@@ -377,6 +377,23 @@ public class CalendarTests
         Assert.Equal(1, reached);
     }
 
+    // A picker set open before the theme turns its Back on (in XAML, or from code before it is styled) is closed by
+    // Back too (review finding 1).
+    [AvaloniaFact]
+    public void Back_Closes_A_Drop_Down_Set_Open_Before_The_Theme()
+    {
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24), IsDropDownOpen = true };
+        using var scene = new Scene(new StackPanel { Width = 373, Children = { picker } });
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(picker.IsDropDownOpen);
+
+        var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
+        scene.Window.RaiseEvent(back);
+
+        Assert.True(back.Handled);
+        Assert.False(picker.IsDropDownOpen);
+    }
+
     /// <summary>The text client the platform's input method gets for the focused element, as Avalonia's manager asks.</summary>
     private static Avalonia.Input.TextInput.TextInputMethodClient? TextClientOf(IInputElement? focused)
     {

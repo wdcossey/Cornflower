@@ -21,6 +21,7 @@ Avalonia's `CalendarDatePicker`, themed by type in `src/Cornflower.Themes.Wp81/C
 |---|---|
 | `Margin` | `TextControlMarginThemeThickness`: it sits on a page as a TextBox does, and the TextBox inside has none |
 | `Template` | the TextBox with the button in it, and the popup (below) |
+| `wp81:PhoneCalendarDatePicker.IsEnabled` | `True`: Back with the popup open closes it and stops there, as every Wp81 popup closes on Back first; the next Back goes on (#255) |
 
 ## Resource keys
 
