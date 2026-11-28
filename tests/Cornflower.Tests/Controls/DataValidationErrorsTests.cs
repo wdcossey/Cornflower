@@ -134,6 +134,35 @@ public class DataValidationErrorsTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("Enter a name.", Assert.Single(Lines(errors, "PART_ContentErrors")).Text);
+        GC.KeepAlive(person); // the binding holds it weakly (#262)
+    }
+
+    // #262: Avalonia passes on any exception a binding catches that isn't a DataValidationException as itself, and its
+    // ToString() is its whole stack; the line shows its message.
+    [AvaloniaFact]
+    public void An_Exception_Shows_Its_Message_Not_Its_Stack()
+    {
+        var thrower = new Thrower();
+        var field = new TextBox();
+        field.Bind(TextBox.TextProperty, new Binding(nameof(Thrower.Name)) { Source = thrower, Mode = BindingMode.TwoWay });
+        var errors = new DataValidationErrors { Content = field };
+        using var scene = new Scene(new StackPanel { Children = { errors } });
+
+        field.Text = "";
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.IsType<InvalidOperationException>(Assert.Single(DataValidationErrors.GetErrors(field)!));
+        Assert.Equal("Not a name.", Assert.Single(Lines(errors, "PART_ContentErrors")).Text);
+        GC.KeepAlive(thrower);
+    }
+
+    public class Thrower
+    {
+        public string Name
+        {
+            get => "Ada";
+            set => throw new InvalidOperationException("Not a name.");
+        }
     }
 
     public class Person

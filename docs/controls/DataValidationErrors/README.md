@@ -26,7 +26,7 @@ A binding's validation error (an exception, a `DataValidationException`, `INotif
 | Property | Value |
 |---|---|
 | `Background` | transparent |
-| `ErrorTemplate` | each error a `TextBlock` in `ControlContextualInfoTextBlockStyle` (16, rule 2: small print), `Foreground` `CornflowerPlainErrorBrush`, wrapped |
+| `ErrorTemplate` | each error a `TextBlock` in `ControlContextualInfoTextBlockStyle` (16, rule 2: small print), `Foreground` `CornflowerPlainErrorBrush`, wrapped; an exception (one a binding catches that isn't a `DataValidationException`) shows its `Message`, not its `ToString()` with the whole stack, which Simple and Fluent show (#262); an app's `DataValidationErrors.ErrorConverter` still runs first, so it can give an error text of its own |
 | `Template` | the content, then the error lines under it (below) |
 | `HoleParts.FallBack` | true: in a template written for the theme under Wp81 (Simple's TextBox, which the managed file dialog still holds), it takes that theme's, so no line is drawn inside a box laid out for Simple's |
 
@@ -55,6 +55,4 @@ accent isn't used (rule 3), and nothing moves (rule 8). The line has no margin o
 - **The content must be the field itself**, a `Control`: a view model shown through a `ContentTemplate` shows
   nothing, as the errors are on the field the template builds. Put the `DataValidationErrors` inside the template,
   round the field, instead.
-- An error that is an exception other than a `DataValidationException` shows as its `ToString()` (its type and
-  message), as Simple's does; an app's `DataValidationErrors.ErrorConverter` gives it a message.
 - `:error` is set on the field (Avalonia's), and nothing styles it: the field's box stays the phone's.

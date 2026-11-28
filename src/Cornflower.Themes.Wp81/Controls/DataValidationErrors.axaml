@@ -18,6 +18,9 @@
     Wp81's own TextBox, PasswordBox and ComboBox hold none in their templates (the phone had none), so wrapping is how
     an app shows theirs.
 
+    An error that is an exception (Avalonia passes on any a binding catches that isn't a DataValidationException) shows
+    its message, not its ToString(), which is its whole stack (PlainErrorText, #262).
+
     In a template written for the theme under Wp81 (Simple's TextBox, which a hole still holds, holds one inside its
     box) it takes that theme's instead (HoleParts.FallBack), so no line is drawn inside a box laid out for Simple's.
   -->
@@ -32,7 +35,7 @@
               <TextBlock Theme="{DynamicResource ControlContextualInfoTextBlockStyle}"
                          Foreground="{DynamicResource CornflowerPlainErrorBrush}"
                          TextWrapping="Wrap"
-                         Text="{Binding}" />
+                         Text="{Binding Converter={x:Static wp81:PlainErrorText.Converter}}" />
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
