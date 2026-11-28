@@ -300,11 +300,17 @@ public class GroupedListTests
         Assert.Equal(HeaderC + 1, page.List.SelectedIndex);
     }
 
-    // With item click on, a tap on a header clicks nothing; a tap on an item clicks it.
+    // With item click on, a tap on a header clicks nothing; a tap on an item clicks it. Avalonia's hold is on a real
+    // timer that any dispatcher job runs once it is due, so a tap that a slow machine stretches past the hold's wait
+    // (300 ms) is a hold, which clicks nothing (#265). Holds are off here; A_Hold_Clicks_Nothing in ItemClickTests has them.
     [AvaloniaFact]
     public void A_Header_Never_Clicks()
     {
         using var page = new ProbePage();
+        page.List.Styles.Add(new Style(x => x.Is<InputElement>())
+        {
+            Setters = { new Setter(InputElement.IsHoldingEnabledProperty, false) },
+        });
         ListBoxOptions.SetIsItemClickEnabled(page.List, true);
         var clicked = new List<object?>();
         page.List.AddHandler(ListBoxOptions.ItemClickEvent, (_, e) => clicked.Add(e.ClickedItem));
