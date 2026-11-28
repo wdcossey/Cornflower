@@ -156,6 +156,35 @@ public class TableViewTests
         Near(270, X(Presenter(cells[2]).Child!, table));
     }
 
+    // An app's Padding goes round the headers and the rows both, so a cell's text still starts where its header's does.
+    [AvaloniaFact]
+    public void With_A_Padding_The_Cells_Stay_Under_Their_Headers()
+    {
+        var table = Table();
+        table.Padding = new Thickness(12, 0);
+        using var scene = new Scene(Host(table));
+
+        var cells = Cells(Row(table, 0));
+        var headers = Headers(table);
+        for (var i = 0; i < 3; i++)
+            Near(X(Presenter(headers[i]).Child!, table), X(Presenter(cells[i]).Child!, table));
+        Near(12, X(Presenter(cells[0]).Child!, table));
+    }
+
+    // Columns wider than the table: the headers are clipped to it, as the rows are, and don't draw on the page.
+    [AvaloniaFact]
+    public void Wide_Columns_Headers_Are_Clipped_To_The_Table()
+    {
+        var table = Table();
+        foreach (var column in table.Columns)
+            column.Width = new GridLength(200);
+        using var scene = new Scene(Host(table));
+
+        var strip = Part<Border>(Part<ScrollViewer>(table, "PART_ScrollViewer"), "PART_HeaderRow");
+        Assert.True(strip.ClipToBounds);
+        Assert.True(X(Headers(table)[2], strip) + 200 > strip.Bounds.Width, "the headers fit the table");
+    }
+
     // A header is small print: 16, PhoneMidBrush, not bold, no fill; its resizer a transparent 9.5 bar over the gap
     // after its text, with nothing drawn.
     [AvaloniaTheory]

@@ -35,17 +35,18 @@ Write the headers in lower case, as the phone's headers are: the theme shows the
 | `TextBlock.TextTrimming` | `CharacterEllipsis`, as Simple's: a cell's text that doesn't fit ends in an ellipsis |
 | `Template` | a border (the app's), the table's `ScrollViewer`, the rows |
 
-No border and no padding of its own (Simple's has a 1 border): the page insets it.
+No border and no padding of its own (Simple's has a 1 border): the page insets it. An app's `Padding` goes round the
+headers and the rows both, so they stay lined up (Simple's pads the rows alone).
 
 ## The template's parts
 
-- `PART_Border`: bound to the app's `BorderBrush`, `BorderThickness` and `CornerRadius`, unset.
+- `PART_Border`: bound to the app's `BorderBrush`, `BorderThickness`, `CornerRadius` and `Padding`, unset.
 - `PART_ScrollViewer`: in `Wp81PlainTableScrollViewerTheme` (keyed, in the same file): Wp81's `ScrollViewer`, its thin
   indicators over the rows, with `PART_HeaderRow` docked above what scrolls. `PART_HeaderRow` holds the
   `TableViewColumnHeadersPresenter`, with no fill and the row's rule under it (`CornflowerPlainRuleThickness`,
-  0,0,0,1.5, in `PhoneLowBrush`). A table given a height keeps its headers while its rows scroll, and they follow
+  0,0,0,1.5, in `PhoneLowBrush`), clipped to the table as the rows are. A table given a height keeps its headers while its rows scroll, and they follow
   its rows sideways. A table with no height, on a page in a `ScrollViewer`, scrolls with the page, headers and all.
-- `PART_ItemsPresenter`: inside the `Padding`.
+- `PART_ItemsPresenter`: the rows.
 
 ## Known gaps
 

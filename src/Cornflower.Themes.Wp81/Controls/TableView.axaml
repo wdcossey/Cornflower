@@ -17,8 +17,9 @@
     PART_ScrollViewer wears Wp81PlainTableScrollViewerTheme, below: Wp81's ScrollViewer (its thin indicators over the
     rows, Controls/ScrollViewer.axaml) with the headers docked above what scrolls, as Simple's table has them, so a
     table given a height keeps its headers while its rows scroll, and they follow its rows sideways
-    (TableViewColumnHeadersPresenter reads the scroll's offset). A table with no height of its own, on a page in a
-    ScrollViewer, scrolls with the page, headers and all.
+    (TableViewColumnHeadersPresenter reads the scroll's offset), clipped to the table as the rows are. A table with no
+    height of its own, on a page in a ScrollViewer, scrolls with the page, headers and all. An app's Padding is on
+    PART_Border, round the headers and the rows both, so they stay lined up (Simple's pads the rows alone).
 
     A selection never moves the page (#220, #251, #252): AutoScrollToSelectedItem is off, so a selection at load or
     from code brings nothing into view, in the table's own scroller either (the phone's lists don't move for one), and
@@ -34,6 +35,7 @@
         <DockPanel Background="{TemplateBinding Background}">
           <Border x:Name="PART_HeaderRow"
                   DockPanel.Dock="Top"
+                  ClipToBounds="True"
                   BorderBrush="{DynamicResource PhoneLowBrush}"
                   BorderThickness="{DynamicResource CornflowerPlainRuleThickness}">
             <TableViewColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter" />
@@ -97,6 +99,7 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Border x:Name="PART_Border"
+                Padding="{TemplateBinding Padding}"
                 ClipToBounds="{TemplateBinding ClipToBounds}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
@@ -114,8 +117,7 @@
                         AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
                         BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
             <ItemsPresenter x:Name="PART_ItemsPresenter"
-                            ItemsPanel="{TemplateBinding ItemsPanel}"
-                            Margin="{TemplateBinding Padding}" />
+                            ItemsPanel="{TemplateBinding ItemsPanel}" />
           </ScrollViewer>
         </Border>
       </ControlTemplate>

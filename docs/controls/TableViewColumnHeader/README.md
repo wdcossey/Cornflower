@@ -16,10 +16,11 @@ header, in small print over the page.
 | `FontFamily`, `FontSize` | `PhoneFontFamilyNormal` at `TextStyleMediumFontSize` (16), in the table's weight (Simple's is SemiBold) |
 | `Background` | `Transparent` |
 | `Padding` | `CornflowerPlainTableHeaderPadding`, 0,4.8,9.5,4.8: the cells' 9.5 after it, so it starts where its column's text does, and the control header's 4.8 above and below |
-| `HorizontalContentAlignment`, `VerticalContentAlignment` | `Left` (the column's wins), `Center` |
+| `VerticalContentAlignment` | `Center` |
 | `Template` | `PART_ContentPresenter` (with `PhoneHeaderLine`'s 1.33 em line) and `PART_Resizer` |
 
-The text is as the app writes it: the phone's headers are lower case because apps wrote them so, and the theme
+Its horizontal alignment is its column's (`TableViewColumn.HorizontalContentAlignment`, `Left` by default), so a
+header stands over its column's text. The text is as the app writes it: the phone's headers are lower case because apps wrote them so, and the theme
 doesn't change an app's text. Avalonia's table has no sorting, so there's no sort glyph. A header isn't pressed, so it
 has no tilt. The strip of headers has the row's rule under it (`TableView`'s `PART_HeaderRow`).
 

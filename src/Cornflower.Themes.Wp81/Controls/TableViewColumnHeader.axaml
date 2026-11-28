@@ -11,7 +11,8 @@
     the page with no fill. Its text is as the app writes it: the phone's headers are lower case because apps wrote them so,
     and this writes nothing over the app's text. CornflowerPlainTableHeaderPadding puts the cells' 9.5 after it, so it
     starts where its column's cells do, and 4.8 above and below (the control header's gap), round the 1.33 em line
-    (PhoneHeaderLine). The strip of headers has the row's rule under it (Controls/TableView.axaml). Avalonia's table
+    (PhoneHeaderLine). Its alignment is its column's (TableViewColumn.HorizontalContentAlignment, Left by default,
+    which the header sets on itself), so a header stands over its column's text. The strip of headers has the row's rule under it (Controls/TableView.axaml). Avalonia's table
     has no sorting, so no sort glyph. Not pressed, so no tilt.
 
     PART_Resizer, the Thumb Avalonia's header drags to resize its column (when the table's CanUserResizeColumns and
@@ -34,7 +35,6 @@
     <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
     <Setter Property="FontSize" Value="{DynamicResource TextStyleMediumFontSize}" />
     <Setter Property="Padding" Value="{DynamicResource CornflowerPlainTableHeaderPadding}" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="Template">
       <ControlTemplate>

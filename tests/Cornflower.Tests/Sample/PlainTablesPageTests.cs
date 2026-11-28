@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Cornflower.Sample;
 using Cornflower.Sample.Pages;
 
@@ -37,7 +38,11 @@ public class PlainTablesPageTests
         Assert.True(songs.TranslatePoint(default, scroller)!.Value.Y + 14 * 57.5 > scroller.Viewport.Height, "the selected row isn't below the fold");
         Assert.Equal(default, scroller.Offset);
         Assert.Null(Assert.IsAssignableFrom<IFocusManager>(scene.Window.FocusManager).GetFocusedElement());
-        Assert.Equal(1, page.FindControl<TableView>("LightSongs")!.SelectedIndex);
+        var light = page.FindControl<TableView>("LightSongs")!;
+        Assert.Equal(1, light.SelectedIndex);
+        Assert.Equal(10, light.ItemCount);
+        var lightScroller = light.GetVisualDescendants().OfType<ScrollViewer>().First(s => s.Name == "PART_ScrollViewer");
+        Assert.True(lightScroller.Extent.Height > lightScroller.Viewport.Height, "the light table doesn't scroll inside itself");
     }
 
     [AvaloniaFact]
