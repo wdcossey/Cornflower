@@ -44,7 +44,6 @@ Avalonia's `CalendarDatePicker`, themed by type in `src/Cornflower.Themes.Wp81/C
 ## Known gaps
 
 - The text is Avalonia's: a typed date is parsed in the culture's format.
-- Back doesn't shut the popup: it isn't one of Wp81's popup hosts, which take Back for the flyouts. A tap outside does.
 - `UseFloatingPlaceholder`, `HorizontalContentAlignment` and `VerticalContentAlignment` do nothing: Wp81's TextBox has
   no floating placeholder and places its own text.
 - Lucide in a plain theme is a new use of a third-party set (ADR 0007, rule 10).
