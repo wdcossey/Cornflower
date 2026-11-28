@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:cf="using:Cornflower.Controls">
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
   <!--
     Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
     ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/CalendarDatePicker/README.md.
@@ -19,10 +20,12 @@
     floating surface in FlyoutBackgroundThemeBrush (rule 5), no border, square, holding PART_Calendar, the plain
     Calendar (Controls/Calendar.axaml). It is drawn in the window's overlay layer, as the phone has one window (as
     AutoCompleteBox's list is), and opens and closes at once, as Avalonia's Popup does (rule 8). It isn't one of Wp81's
-    PhonePopupHosts, so Back doesn't shut it (review finding 1: a gap, in the README).
+    PhonePopupHosts, so PhoneCalendarDatePicker (internal) takes part in their Back: with it open, Back closes it and
+    stops there (#255).
   -->
   <ControlTheme x:Key="{x:Type CalendarDatePicker}" TargetType="CalendarDatePicker">
     <Setter Property="Margin" Value="{DynamicResource TextControlMarginThemeThickness}" />
+    <Setter Property="wp81:PhoneCalendarDatePicker.IsEnabled" Value="True" />
     <Setter Property="Template">
       <ControlTemplate>
         <Panel>

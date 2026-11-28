@@ -21,6 +21,7 @@ Avalonia's `CalendarDatePicker`, themed by type in `src/Cornflower.Themes.Wp81/C
 |---|---|
 | `Margin` | `TextControlMarginThemeThickness`: it sits on a page as a TextBox does, and the TextBox inside has none |
 | `Template` | the TextBox with the button in it, and the popup (below) |
+| `wp81:PhoneCalendarDatePicker.IsEnabled` | `True`: Back with the popup open closes it and stops there, as every Wp81 popup closes on Back first; the next Back goes on (#255) |
 
 ## Resource keys
 
@@ -44,7 +45,6 @@ Avalonia's `CalendarDatePicker`, themed by type in `src/Cornflower.Themes.Wp81/C
 ## Known gaps
 
 - The text is Avalonia's: a typed date is parsed in the culture's format.
-- Back doesn't shut the popup: it isn't one of Wp81's popup hosts, which take Back for the flyouts. A tap outside does.
 - `UseFloatingPlaceholder`, `HorizontalContentAlignment` and `VerticalContentAlignment` do nothing: Wp81's TextBox has
   no floating placeholder and places its own text.
 - Lucide in a plain theme is a new use of a third-party set (ADR 0007, rule 10).

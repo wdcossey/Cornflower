@@ -349,6 +349,51 @@ public class CalendarTests
         Assert.True(box.IsFocused, $"focused: {TopLevel.GetTopLevel(box)?.FocusManager?.GetFocusedElement()}, open {picker.IsDropDownOpen}");
     }
 
+    // Back with the drop-down open closes it and stays on the page, as every Wp81 popup closes on Back first (#150,
+    // #255); the next Back goes on to the page. The box stays unfocused, so Android raises no keyboard (#254).
+    [AvaloniaFact]
+    public void Back_Closes_The_Drop_Down_First()
+    {
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24) };
+        using var scene = new Scene(new StackPanel { Width = 373, Children = { picker } });
+        var reached = 0;
+        scene.Window.AddHandler(TopLevel.BackRequestedEvent, (_, _) => reached++);
+        Release(scene, Press(scene, PickerButton(picker)));
+        Assert.True(picker.IsDropDownOpen);
+
+        var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
+        scene.Window.RaiseEvent(back);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(back.Handled);
+        Assert.Equal(0, reached);
+        Assert.False(picker.IsDropDownOpen);
+        Assert.False(Part<Popup>(picker, "PART_Popup").IsOpen);
+        Assert.False(Part<TextBox>(picker, "PART_TextBox").IsFocused);
+
+        var next = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
+        scene.Window.RaiseEvent(next);
+        Assert.False(next.Handled);
+        Assert.Equal(1, reached);
+    }
+
+    // A picker set open before the theme turns its Back on (in XAML, or from code before it is styled) is closed by
+    // Back too (review finding 1).
+    [AvaloniaFact]
+    public void Back_Closes_A_Drop_Down_Set_Open_Before_The_Theme()
+    {
+        var picker = new CalendarDatePicker { SelectedDate = new DateTime(2026, 11, 24), IsDropDownOpen = true };
+        using var scene = new Scene(new StackPanel { Width = 373, Children = { picker } });
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(picker.IsDropDownOpen);
+
+        var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
+        scene.Window.RaiseEvent(back);
+
+        Assert.True(back.Handled);
+        Assert.False(picker.IsDropDownOpen);
+    }
+
     /// <summary>The text client the platform's input method gets for the focused element, as Avalonia's manager asks.</summary>
     private static Avalonia.Input.TextInput.TextInputMethodClient? TextClientOf(IInputElement? focused)
     {
