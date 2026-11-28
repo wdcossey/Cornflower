@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#241](https://github.com/wdcossey/Cornflower/issues/241) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#241](https://github.com/wdcossey/Cornflower/issues/241) · its look on the Pixel done 2026-11-28 (no timings)
 
 Avalonia's `DataValidationErrors`, themed by type in `src/Cornflower.Themes.Wp81/Controls/DataValidationErrors.axaml`.
 The phone had no validation display. Here each error is a line of small print under the field, in red.

@@ -249,8 +249,8 @@ emulator's, not copied. Next: Tier 4.
 | [#239](https://github.com/wdcossey/Cornflower/issues/239) | Batch 6, disclosure and navigation: `Expander`, `TreeView`, `TreeViewItem`, `SplitView`, `DrawerPage` | exist; Simple's today | Plain theme; the row for batch 9; a `HoleParts.cs` edit; done 2026-11-24 (#252) | 1 |
 | [#240](https://github.com/wdcossey/Cornflower/issues/240) | Batch 7, dates: `CalendarDayButton`, `CalendarButton`, `CalendarItem`, `Calendar`, `CalendarDatePicker` | exist; Simple's today | Plain theme; a `HoleParts.cs` edit; done 2026-11-24 (#254) | 1 |
 | [#241](https://github.com/wdcossey/Cornflower/issues/241) | Batch 8, feedback: `DataValidationErrors`, `NotificationCard`, `WindowNotificationManager`, `RefreshContainer`, `RefreshVisualizer`, `PipsPager` | exist; Simple's today | Plain theme; four PRs (validation, notifications, refresh, `PipsPager`); adds `CornflowerPlainErrorBrush` (and, as built, the success and warning brushes, the notification padding, two refresh and two pip tokens); the refresh sign is the `ProgressRing`; a `HoleParts.cs` edit; done 2026-11-26 (validation #257 and notifications #258 on 2026-11-24, refresh #259 and PipsPager #260 on 2026-11-26) | 1 |
-| [#242](https://github.com/wdcossey/Cornflower/issues/242) | Batch 9, tables: `TableViewCell`, `TableViewColumnHeader`, `TableViewRow`, `TableView` | exist; Simple's today | Plain theme, on batch 6's row; **next** | 1 |
-| [#243](https://github.com/wdcossey/Cornflower/issues/243) | Batch 10, DataGrid (package): `DataGrid` and its five parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.DataGrid`, a working name) | 1 |
+| [#242](https://github.com/wdcossey/Cornflower/issues/242) | Batch 9, tables: `TableViewCell`, `TableViewColumnHeader`, `TableViewRow`, `TableView` | exist; Simple's today | Plain theme, on batch 6's row; one PR; adds `CornflowerPlainTableCellPadding` and `CornflowerPlainTableHeaderPadding`; done 2026-11-28 (#264) | 1 |
+| [#243](https://github.com/wdcossey/Cornflower/issues/243) | Batch 10, DataGrid (package): `DataGrid` and its five parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.DataGrid`, a working name); **next** | 1 |
 | [#244](https://github.com/wdcossey/Cornflower/issues/244) | Batch 11, ColorPicker (package): `ColorPicker` and its four parts | exist; Simple's today | Plain theme, in an assembly of its own (`Cornflower.Themes.Wp81.ColorPicker`, a working name), with keyed part themes for `ColorView` | 1 |
 | [#245](https://github.com/wdcossey/Cornflower/issues/245) | The text selection grippers | `TextSelectionHandle` | A reproduction, not a plain theme, after a capture (moved out of #216's plan) | 1 |
 | — | The file chooser: `ManagedFileChooser`, `ManagedFileChooserOverwritePrompt` | exist; Simple's today | Dropped (#216, 2026-11-24): apps use the platform's picker. They stay holes in `Holes.txt` | — |
@@ -284,20 +284,23 @@ overwrite prompt are dropped and stay holes. Batches 1 to 7 (#234 to #240) are d
 emulator's screenshots; their seven pages had their look on the Pixel the same day, each opened at its top, with no
 exceptions. Also done that day: CI's token is read-only by default (#253). Batch 8 (#241) is done in four PRs:
 validation (#257) and notifications (#258) on 2026-11-24, refresh (#259) and `PipsPager` (#260) on 2026-11-26, six
-controls, 42 in all. The coordinator's Pixel screenshots on #258, #259 and #260 give those pages their look; #257's
-comment has the local emulator's only, and says the Pixel look is still owed.
+controls, 42 in all. The coordinator's Pixel screenshots on #258, #259 and #260 give those pages their look; the
+validation page's came with its fix: [#262](https://github.com/wdcossey/Cornflower/issues/262), a cleared name showed an
+exception's whole stack, as the page's `Person` was held only weakly by its binding (done 2026-11-28, #263, its Pixel
+look the same day). Batch 9 (#242), the four table controls, is done in one PR, #264, on 2026-11-28, with its Pixel
+look the same day: 46 controls in all. Every plain page has now had its look on the Pixel.
 
-Open: the plain themes' batches, #242 (batch 9, next) to #244, and #245; #257's proposal, the user's call: Wp81's
+Open: the plain themes' batches, #243 (batch 10, next) and #244, and #245; #257's proposal, the user's call: Wp81's
 `TextBox`, `PasswordBox` and `ComboBox` templates wrap their box row in a `DataValidationErrors`, so a binding's error
 shows with no wrapper (it flips the TextBox PLAN's "left out"); [#255](https://github.com/wdcossey/Cornflower/issues/255), Back with the
-plain CalendarDatePicker's drop-down open leaves the page rather than closing it (from #254); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+plain CalendarDatePicker's drop-down open leaves the page rather than closing it (from #254); [#269](https://github.com/wdcossey/Cornflower/issues/269), touch taps in four test files can turn into holds on a slow runner (#265, the first of them, fixed by #268); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
 `SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure, and
 confirmed the deferral on 2026-11-24);
 [#230](https://github.com/wdcossey/Cornflower/issues/230), the Hub listens with `handledEventsToo`, so a request a
 `KeepsScrollInList` list stopped can still move the Hub (#229's review); and #129, carried from Tier 2. Owed: #229's
-real-window run, and the plain validation page's look on the Pixel (#257). Owed besides the runs: the reads each README lists (the GridView's
+real-window run. Owed besides the runs: the reads each README lists (the GridView's
 `ItemClick`, SemanticZoom's pinch). Tier 4's controls are done but RichEditBox and RichTextBlock (later, or out). Next:
-the plain themes' batch 9 (#242).
+the plain themes' batch 10, DataGrid (#243).
 
 ### Out of scope
 
@@ -521,8 +524,10 @@ see the `Status:` line in each README under `docs/controls/`.
 | [#239](https://github.com/wdcossey/Cornflower/issues/239) | Plain themes, batch 6: disclosure and navigation | Done 2026-11-24 (#252) |
 | [#240](https://github.com/wdcossey/Cornflower/issues/240) | Plain themes, batch 7: dates | Done 2026-11-24 (#254) |
 | [#241](https://github.com/wdcossey/Cornflower/issues/241) | Plain themes, batch 8: feedback | Done 2026-11-26 (#257 to #260) |
+| [#262](https://github.com/wdcossey/Cornflower/issues/262) | Plain validation: a cleared name showed an exception's stack | Done 2026-11-28 (#263) |
+| [#242](https://github.com/wdcossey/Cornflower/issues/242) | Plain themes, batch 9: tables | Done 2026-11-28 (#264) |
 
 Tier 1 is complete. Tier 2 is complete but for #129, an enhancement carried forward (above); its follow-ups from #148's
 reads (#162 to #169) are done and run. Tier 3 is complete, #179, #184, #197 and #206 included; the owed runs are above. Tier 4's controls are done (#131,
-#212 to #215, on #211's reads), their Pixel runs passed, and #220's fix (#229) owes its real-window run (above); the plain themes' plan is decided (#216, ADR 0007), batches 1 to 8 are done (#234 to #241; their Pixel look done, but the validation page's), and batch 9 (#242) is next. Each row's device run on
+#212 to #215, on #211's reads), their Pixel runs passed, and #220's fix (#229) owes its real-window run (above); the plain themes' plan is decided (#216, ADR 0007), batches 1 to 9 are done (#234 to #242; every page's Pixel look done), and batch 10 (#243) is next. Each row's device run on
 the Pixel 8 is in the tier tables above, Tier 3's owed runs included.

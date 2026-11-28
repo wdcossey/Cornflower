@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#242](https://github.com/wdcossey/Cornflower/issues/242) · its look on the Pixel owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#242](https://github.com/wdcossey/Cornflower/issues/242) · its look on the Pixel done 2026-11-28 (no timings)
 
 Avalonia 12's `TableViewRow`, themed by type in `src/Cornflower.Themes.Wp81/Controls/TableViewRow.axaml`: a
 [`TableView`](../TableView/README.md)'s row, which is the plain [`TreeViewItem`](../TreeViewItem/README.md)'s row, so
