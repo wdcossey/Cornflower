@@ -180,9 +180,10 @@ For the controls Avalonia has and the phone never had, Cornflower's own design i
 ([ADR 0007](docs/decisions/0007-plain-themes.md)): not measured, and labelled so in each README. Batches 1 to 8, 42
 controls: the hosts and small pieces, with a popup open in the overlay host's text at size 12; the buttons, with the
 DropDownButton's menu open; text and content; the menus, with the menu bar's `file` open and the ContextMenu in the
-MenuFlyout's look; the tabs, as the Pivot's headers without its swipe; disclosure and navigation; the dates; the errors under a TextBox, a PasswordBox and a ComboBox; the notification cards,
-one of each kind; the refresh page at rest (the ring shows only in a pull or a refresh); and the PipsPager. The
-dates page follows the day it is drawn (today outlined, a day beside it selected), so its pictures change by the day.
+MenuFlyout's look; the tabs, as the Pivot's headers without its swipe; disclosure and navigation; the dates; the
+errors under a TextBox, a PasswordBox and a ComboBox; the notification cards, one of each kind; the refresh page at
+rest (the ring shows only in a pull or a refresh); and the PipsPager. The dates page follows the day it is drawn
+(today outlined, a day beside it selected), so its pictures change by the day.
 
 <p>
 <img src="docs/preview/dark__plain-hosts.png" width="270" alt="Plain hosts: ItemsControl, Separator, dark">
