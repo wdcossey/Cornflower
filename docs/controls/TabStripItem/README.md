@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `TabStripItem`, themed by type in `src/Cornflower.Themes.Wp81/Controls/TabStripItem.axaml`. The phone had
 no TabStripItem: a `TabStrip` here is the Pivot's header row, and a `TabStripItem` is one of its headers, the same look as

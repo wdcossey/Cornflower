@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#239](https://github.com/wdcossey/Cornflower/issues/239) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#239](https://github.com/wdcossey/Cornflower/issues/239) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `SplitView`, themed by type in `src/Cornflower.Themes.Wp81/Controls/SplitView.axaml`. The phone had no
 SplitView: the pane over or beside the content came with Windows 10. Simple's templates for each `PanePlacement` and

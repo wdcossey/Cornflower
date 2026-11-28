@@ -40,8 +40,8 @@ as an 8.1 page does. A Button that must be smaller than the phone's minimum (chr
   at any size. An app's `ContentTemplate` or `DataTemplate` keeps its own.
 - **Keyboard focus** draws nothing, as the phone's template has no focus states.
 - **Other controls' templates**: a plain Button in a template written for the theme under Wp81 (Simple's
-  CalendarItem, CalendarDatePicker, CommandBar, NavigationPage, PipsPager, the file dialogs) keeps that theme's
-  Button. The template decides, not the control's type: an app's own template, or a theme of the app's above Wp81,
+  file dialogs; Simple's CalendarItem, CalendarDatePicker, CommandBar, NavigationPage or PipsPager only where an app
+  gives that control Simple's theme) keeps that theme's Button. The template decides, not the control's type: an app's own template, or a theme of the app's above Wp81,
   has the phone's Button.
 
 ## Resource keys

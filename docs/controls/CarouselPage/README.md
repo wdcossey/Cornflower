@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia 12's `CarouselPage`, themed by type in `src/Cornflower.Themes.Wp81/Controls/CarouselPage.axaml`. The phone had
 no CarouselPage. Here it is **a FlipView of pages**: Avalonia's CarouselPage drives a `Carousel`, which Wp81 already themes

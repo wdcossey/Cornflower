@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#234](https://github.com/wdcossey/Cornflower/issues/234) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#234](https://github.com/wdcossey/Cornflower/issues/234) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `Window`, themed by type in `src/Cornflower.Themes.Wp81/Controls/Window.axaml`. The phone had no window: an
 8.1 app's frame was its page's background and the phone's font, so a window here is that. Every desktop head shows one.

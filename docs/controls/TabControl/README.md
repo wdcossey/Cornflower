@@ -2,7 +2,7 @@
 
 Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
 
-Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · a look on the Pixel is owed (no timings)
+Status: themed, plain ([ADR 0007](../../decisions/0007-plain-themes.md)), [#238](https://github.com/wdcossey/Cornflower/issues/238) · its look on the Pixel done 2026-11-24 (no timings)
 
 Avalonia's `TabControl`, themed by type in `src/Cornflower.Themes.Wp81/Controls/TabControl.axaml`. The phone had no
 TabControl. Here it takes **the Pivot's headers without its swipe** (ADR 0007, answer 8): its tabs are the plain
