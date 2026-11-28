@@ -7,13 +7,18 @@ namespace Cornflower.Sample.Pages;
 [SamplePage("plain validation", Order = 241)]
 public partial class PlainValidationPage : UserControl
 {
+    // Held here: a binding holds its Source weakly, so a Person only the binding held went at the first GC, and the
+    // setter then threw a TargetException for its missing target (#262).
+    private readonly Person _person = new();
+    private readonly Person _lightPerson = new();
+
     public PlainValidationPage()
     {
         InitializeComponent();
 
         // A binding's own validation: the name's error comes and goes as it is typed.
-        NameBox.Bind(TextBox.TextProperty, new Binding(nameof(Person.Name)) { Source = new Person(), Mode = BindingMode.TwoWay });
-        LightName.Bind(TextBox.TextProperty, new Binding(nameof(Person.Name)) { Source = new Person(), Mode = BindingMode.TwoWay });
+        NameBox.Bind(TextBox.TextProperty, new Binding(nameof(Person.Name)) { Source = _person, Mode = BindingMode.TwoWay });
+        LightName.Bind(TextBox.TextProperty, new Binding(nameof(Person.Name)) { Source = _lightPerson, Mode = BindingMode.TwoWay });
 
         DataValidationErrors.SetErrors(Code, ["Too short.", "A code is six digits: the two you have, and four more from the card's back."]);
         DataValidationErrors.SetErrors(Password, ["At least eight characters."]);
