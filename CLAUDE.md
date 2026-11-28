@@ -193,8 +193,9 @@ runtime templates and theme resources equal the SDK's design files.
    says so in its description, with the new total; past the checkpoint, measure on the phone first
    (`docs/performance/README.md`). The README's table catches up at the roll-up.
 9. **This file is ground truth.** Update it in the PR that makes a statement here true.
-10. **Closing keywords only for a close.** A PR body or commit writes "closes", "fixes" or "resolves" next to an issue
-    number only when that PR closes the issue; otherwise `Refs #N` or `Part of #N` (#257 closed #241 by mistake).
+10. **Closing keywords only for a close.** A PR body or commit writes "closes", "fixes" or "resolves" (or GitHub's other
+    forms: close, closed, fix, fixed, resolve, resolved) next to an issue number only when that PR closes the issue;
+    otherwise `Refs #N` or `Part of #N`. #257's body shut #241 by mistake.
 
 ## Attribution & licence
 
