@@ -29,6 +29,7 @@ public class PlainThemesTests
         "NotificationCard", "WindowNotificationManager",                                                    // batch 8b, #241
         "RefreshContainer", "RefreshVisualizer",                                                            // batch 8c, #241
         "PipsPager",                                                                                        // batch 8d, #241
+        "TableView", "TableViewCell", "TableViewColumnHeader", "TableViewRow",                              // batch 9, #242
     ];
 
     /// <summary>

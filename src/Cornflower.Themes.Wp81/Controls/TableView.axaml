@@ -1,0 +1,126 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TableView/README.md.
+
+    The phone had no table: an 8.1 app showed one as a ListView whose item template was a Grid. This is that list, in
+    the plain tree's row (plan section 3, "The row"): plain TableViewRows (Controls/TableViewRow.axaml), each the plain
+    row with the rule under it, in the body's type, under a strip of column headers in small print
+    (Controls/TableViewColumnHeader.axaml) with the same rule under it. No grid lines between cells, as Metro's lists
+    had none. As the plain TreeView and Wp81's ListView: no box (Simple's border is the app's to set), a Transparent
+    background over the page (rule 5: Simple's headers sit on a filled strip; these don't), PhoneForegroundBrush, which
+    the rows inherit, no padding of its own (the page insets it).
+
+    PART_ScrollViewer wears Wp81PlainTableScrollViewerTheme, below: Wp81's ScrollViewer (its thin indicators over the
+    rows, Controls/ScrollViewer.axaml) with the headers docked above what scrolls, as Simple's table has them, so a
+    table given a height keeps its headers while its rows scroll, and they follow its rows sideways
+    (TableViewColumnHeadersPresenter reads the scroll's offset), clipped to the table as the rows are. A table with no
+    height of its own, on a page in a ScrollViewer, scrolls with the page, headers and all. An app's Padding is on
+    PART_Border, round the headers and the rows both, so they stay lined up (Simple's pads the rows alone).
+
+    A selection never moves the page (#220, #251, #252): AutoScrollToSelectedItem is off, so a selection at load or
+    from code brings nothing into view, in the table's own scroller either (the phone's lists don't move for one), and
+    cf:ListBoxOptions.KeepsScrollInList is on, as on Wp81's lists, so a request for a row (ScrollIntoView, a press's
+    focus) stops at the table. Keyboard focus still brings a row into view everywhere. A cell's text that doesn't fit is
+    trimmed with an ellipsis, as Simple's is.
+  -->
+  <ControlTheme x:Key="Wp81PlainTableScrollViewerTheme" TargetType="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="wp81:PhoneScrollIndicators.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DockPanel Background="{TemplateBinding Background}">
+          <Border x:Name="PART_HeaderRow"
+                  DockPanel.Dock="Top"
+                  ClipToBounds="True"
+                  BorderBrush="{DynamicResource PhoneLowBrush}"
+                  BorderThickness="{DynamicResource CornflowerPlainRuleThickness}">
+            <TableViewColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter" />
+          </Border>
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="*,Auto">
+            <ScrollContentPresenter x:Name="PART_ContentPresenter"
+                                    Grid.RowSpan="2"
+                                    Grid.ColumnSpan="2"
+                                    Margin="{TemplateBinding Padding}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    Background="Transparent"
+                                    HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
+                                    VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
+                                    HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"
+                                    VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
+                                    ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+              <ScrollContentPresenter.GestureRecognizers>
+                <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                                         CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                                         IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                                         Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                                         Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                                         Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+              </ScrollContentPresenter.GestureRecognizers>
+            </ScrollContentPresenter>
+            <ScrollBar x:Name="PART_VerticalScrollBar"
+                       Grid.Column="1"
+                       Orientation="Vertical"
+                       HorizontalAlignment="Right" />
+            <ScrollBar x:Name="PART_HorizontalScrollBar"
+                       Grid.Row="1"
+                       Orientation="Horizontal" />
+          </Grid>
+        </DockPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- The phone's indicators, as Wp81's ScrollViewer passes them its state: they take no pointer. -->
+    <Style Selector="^ /template/ ScrollBar">
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="None" />
+    </Style>
+    <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=TouchIndicator] /template/ ScrollBar">
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="TouchIndicator" />
+    </Style>
+    <Style Selector="^[(wp81|PhoneScrollIndicators.IndicatorMode)=MouseIndicator] /template/ ScrollBar">
+      <Setter Property="wp81:PhoneScrollIndicators.IndicatorMode" Value="MouseIndicator" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TableView}" TargetType="TableView">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneForegroundBrush}" />
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
+    <Setter Property="cf:ListBoxOptions.KeepsScrollInList" Value="True" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+    <Setter Property="ScrollViewer.IsScrollInertiaEnabled" Value="True" />
+    <Setter Property="TextBlock.TextTrimming" Value="{x:Static TextTrimming.CharacterEllipsis}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Padding="{TemplateBinding Padding}"
+                ClipToBounds="{TemplateBinding ClipToBounds}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ScrollViewer x:Name="PART_ScrollViewer"
+                        Theme="{DynamicResource Wp81PlainTableScrollViewerTheme}"
+                        Background="{TemplateBinding Background}"
+                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
+                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                        IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+            <ItemsPresenter x:Name="PART_ItemsPresenter"
+                            ItemsPanel="{TemplateBinding ItemsPanel}" />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sample="using:Cornflower.Sample"
+             xmlns:pages="using:Cornflower.Sample.Pages"
+             x:Class="Cornflower.Sample.Pages.PlainTablesPage"
+             Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+             Foreground="{DynamicResource PhoneForegroundBrush}"
+             FontFamily="{DynamicResource PhoneFontFamilyNormal}"
+             FontSize="{DynamicResource TextStyleLargeFontSize}">
+  <!--
+    The ninth plain themes (ADR 0007, #242): Cornflower's design, not the phone's. A TableView of twenty songs in three
+    columns, the fifteenth selected at load, below the fold: the page opens at its top, as a selection never scrolls
+    it (#220, #251, #252). The table has no height of its own, so it scrolls with the page. A line shows the selected
+    row. Then a table in the light theme with a height of its own, its second row selected: its headers stay while its
+    ten rows scroll inside it.
+  -->
+  <ScrollViewer x:Name="Scroller">
+    <StackPanel Margin="19,12,19,24" Spacing="12">
+      <sample:SamplePageHeader x:Name="Header" />
+
+      <TextBlock Text="Plain themes: Cornflower's design, not the phone's. Tap a row to select it."
+                 Theme="{DynamicResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+      <TextBlock x:Name="Selection" Theme="{DynamicResource BodyTextBlockStyle}" />
+
+      <TableView x:Name="Songs" x:DataType="pages:PlainTableSong" SelectedIndex="14">
+        <TableView.Columns>
+          <TableViewColumn Header="title" Width="*" Binding="{Binding Title}" />
+          <TableViewColumn Header="artist" Width="120" Binding="{Binding Artist}" />
+          <TableViewColumn Header="time" Width="64" Binding="{Binding Time}" HorizontalContentAlignment="Right" />
+        </TableView.Columns>
+      </TableView>
+
+      <ThemeVariantScope RequestedThemeVariant="Light" Margin="-19,12,-19,0">
+        <Border Background="{DynamicResource ApplicationPageBackgroundThemeBrush}"
+                TextElement.Foreground="{DynamicResource PhoneForegroundBrush}"
+                Padding="19,6,19,12">
+          <TableView x:Name="LightSongs" x:DataType="pages:PlainTableSong" SelectedIndex="1" Height="260">
+            <TableView.Columns>
+              <TableViewColumn Header="title" Width="*" Binding="{Binding Title}" />
+              <TableViewColumn Header="artist" Width="120" Binding="{Binding Artist}" />
+              <TableViewColumn Header="time" Width="64" Binding="{Binding Time}" HorizontalContentAlignment="Right" />
+            </TableView.Columns>
+          </TableView>
+        </Border>
+      </ThemeVariantScope>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TableViewRow/README.md.
+
+    A table's row is a list's row: the plain tree's (plan section 3, "The row"; Controls/TreeViewItem.axaml is the
+    model). PART_Row is a Border in Wp81PlainRowTheme (Controls/PlainRow.axaml, by DynamicResource): Transparent, so the
+    whole row takes the finger, the 1.5 rule under it in PhoneLowBrush, and the phone's touch height as its least
+    (PhoneButtonMinHeight, 57.5), which the Adaptive pack can make denser. In it, PART_CellsPresenter lays out the cells
+    (Controls/TableViewCell.axaml) in the columns' widths, the same widths the headers take, with no padding of the
+    row's own (the page insets the table), so a cell's text starts where its header's does. The body's type (rule 2:
+    PhoneFontFamilyNormal at TextStyleLargeFontSize, 18.14), set on the row, as the tree's item sets it.
+
+    The press is the tilt (rule 7: a row is item-sized), on PART_CellsPresenter (Tilt.IsTarget) inside PART_Row, which
+    stays untilted and takes the finger across the row, with no fill. Selected, the row's text is PhoneAccentBrush (rule
+    3: a selected item's text, as the phone's list shows a selection), with no fill: Simple's fills it. Disabled,
+    PhoneDisabledBrush. No pointer-over look, as the phone's list items have none (and no focus adorner: nothing
+    under Wp81 sets one on a row), and no motion (rule 8).
+  -->
+  <ControlTheme x:Key="{x:Type TableViewRow}" TargetType="TableViewRow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleLargeFontSize}" />
+    <Setter Property="cf:Tilt.IsEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Row"
+                Theme="{DynamicResource Wp81PlainRowTheme}"
+                Background="{TemplateBinding Background}"
+                Padding="{TemplateBinding Padding}">
+          <TableViewCellsPresenter x:Name="PART_CellsPresenter" cf:Tilt.IsTarget="True" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:selected /template/ Border#PART_Row">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneAccentBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#PART_Row">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource PhoneDisabledBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

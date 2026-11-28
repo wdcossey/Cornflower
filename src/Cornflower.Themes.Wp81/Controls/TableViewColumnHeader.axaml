@@ -1,0 +1,62 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cf="using:Cornflower.Controls"
+                    xmlns:wp81="using:Cornflower.Themes.Wp81">
+  <!--
+    Plain theme: Cornflower's design in the era's style, not a reproduction. Nothing in it is measured from the phone.
+    ADR 0007 (docs/decisions/0007-plain-themes.md); docs/controls/TableViewColumnHeader/README.md.
+
+    A column's header: small print (plan rule 2: a column header in ControlContextualInfoTextBlockStyle's keys,
+    TextStyleMediumFontSize, 16, in PhoneMidBrush, PhoneFontFamilyNormal), in the table's weight (Simple's is SemiBold), over
+    the page with no fill. Its text is as the app writes it: the phone's headers are lower case because apps wrote them so,
+    and this writes nothing over the app's text. CornflowerPlainTableHeaderPadding puts the cells' 9.5 after it, so it
+    starts where its column's cells do, and 4.8 above and below (the control header's gap), round the 1.33 em line
+    (PhoneHeaderLine). Its alignment is its column's (TableViewColumn.HorizontalContentAlignment, Left by default,
+    which the header sets on itself), so a header stands over its column's text. The strip of headers has the row's rule under it (Controls/TableView.axaml). Avalonia's table
+    has no sorting, so no sort glyph. Not pressed, so no tilt.
+
+    PART_Resizer, the Thumb Avalonia's header drags to resize its column (when the table's CanUserResizeColumns and
+    the column allow it): Wp81PlainColumnResizerTheme, a Transparent bar with nothing drawn (no grid line), 9.5 wide
+    (CornflowerPlainSplitterMinSize, the GridSplitter's least: a bar a finger can find), over the 9.5 after the header's
+    text, so it covers the gap between the columns and none of the text. No tilt (rule 7: what is dragged has none).
+  -->
+  <ControlTheme x:Key="Wp81PlainColumnResizerTheme" TargetType="Thumb">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TableViewColumnHeader}" TargetType="TableViewColumnHeader">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PhoneMidBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource PhoneFontFamilyNormal}" />
+    <Setter Property="FontSize" Value="{DynamicResource TextStyleMediumFontSize}" />
+    <Setter Property="Padding" Value="{DynamicResource CornflowerPlainTableHeaderPadding}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            wp81:PhoneHeaderLine.IsEnabled="True" />
+          <Thumb x:Name="PART_Resizer"
+                 Theme="{DynamicResource Wp81PlainColumnResizerTheme}"
+                 Width="{DynamicResource CornflowerPlainSplitterMinSize}"
+                 HorizontalAlignment="Right"
+                 Cursor="SizeWestEast"
+                 IsEnabled="{Binding Column?.CanUserEffectivelyResize, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=False}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
