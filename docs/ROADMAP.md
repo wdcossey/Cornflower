@@ -293,7 +293,7 @@ look the same day: 46 controls in all. Every plain page has now had its look on 
 Open: the plain themes' batches, #243 (batch 10, next) and #244, and #245; #257's proposal, the user's call: Wp81's
 `TextBox`, `PasswordBox` and `ComboBox` templates wrap their box row in a `DataValidationErrors`, so a binding's error
 shows with no wrapper (it flips the TextBox PLAN's "left out"); [#255](https://github.com/wdcossey/Cornflower/issues/255), Back with the
-plain CalendarDatePicker's drop-down open leaves the page rather than closing it (from #254); [#265](https://github.com/wdcossey/Cornflower/issues/265); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
+plain CalendarDatePicker's drop-down open leaves the page rather than closing it (from #254); [#269](https://github.com/wdcossey/Cornflower/issues/269), touch taps in four test files can turn into holds on a slow runner (#265, the first of them, fixed by #268); [#222](https://github.com/wdcossey/Cornflower/issues/222), a grouped list's `SelectedIndex` counts the headers and a header sits in
 `SelectedItems` for one `SelectionChanged`, deferred until an app needs it (the user accepted it as a departure, and
 confirmed the deferral on 2026-11-24);
 [#230](https://github.com/wdcossey/Cornflower/issues/230), the Hub listens with `handledEventsToo`, so a request a
